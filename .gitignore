@@ -1,3 +1,10 @@
+/.idea
+/bin
+/pkg
+
+vendor/pkg
+vendor/src
+
 # Binaries for programs and plugins
 *.exe
 *.dll
