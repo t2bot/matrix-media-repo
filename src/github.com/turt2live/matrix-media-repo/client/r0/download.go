@@ -2,8 +2,9 @@ package r0
 
 import (
 	"net/http"
+
 	"github.com/gorilla/mux"
-	"io"
+	"github.com/turt2live/matrix-media-repo/storage"
 )
 
 // Request:
@@ -14,7 +15,14 @@ import (
 //   Headers: Content-Type, Content-Disposition
 //   Body: <byte[]>
 
-func DownloadMedia(w http.ResponseWriter, r *http.Request) {
+type DownloadMediaResponse struct {
+	Server string
+	MediaID string
+	Filename string
+	Host string
+}
+
+func DownloadMedia(w http.ResponseWriter, r *http.Request, db storage.Database) interface{} {
 	params := mux.Vars(r)
 
 	server := params["server"]
@@ -25,5 +33,5 @@ func DownloadMedia(w http.ResponseWriter, r *http.Request) {
 		filename = "testasdasdasd.jpg"
 	}
 
-	io.WriteString(w, "Server = "+server+"; mediaId = "+mediaId+"; filename = "+filename+"; Host = "+r.Host)
+	return &DownloadMediaResponse{server, mediaId, filename, r.Host}
 }

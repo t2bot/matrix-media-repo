@@ -1,6 +1,12 @@
 package r0
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/turt2live/matrix-media-repo/storage"
+)
+
+
 
 // Request:
 //   Path params: {serverName}, {mediaId}
@@ -11,6 +17,6 @@ import "net/http"
 //   Headers: Content-Type
 //   Body: <byte[]>
 
-func ThumbnailMedia(w http.ResponseWriter, r *http.Request) {
-
+func ThumbnailMedia(w http.ResponseWriter, r *http.Request, db storage.Database) interface{} {
+	return nil
 }
