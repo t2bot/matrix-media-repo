@@ -1,0 +1,37 @@
+# NOT YET IMPLEMENTED
+homeservers:
+  allowed:
+  - t2bot.io
+  - t2l.io
+
+# NOT YET IMPLEMENTED
+database:
+  # Currently only "postgres" is supported.
+  postgres: "postgres://mediarepo:yourpassword@localhost/media-repository?sslmode=disable"
+
+uploads:
+  # A location will be picked based upon estimated folder size
+  # DISTRIBUTION NOT YET IMPLEMENTED
+  storagePaths:
+  - /var/matrix/media
+  maxBytes: 10485760 # 10MB default, 0 to disable
+
+# NOT YET IMPLEMENTED
+thumbails:
+  dynamic: false
+  sizes:
+  - width: 32
+    height: 32
+    method: crop
+  - width: 96
+    height: 96
+    method: crop
+  - width: 320
+    height: 240
+    method: scale
+  - width: 640
+    height: 480
+    method: scale
+  - width: 800
+    height: 600
+    method: scale

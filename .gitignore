@@ -2,6 +2,8 @@
 /bin
 /pkg
 
+media-repo.yaml
+
 vendor/pkg
 vendor/src
 

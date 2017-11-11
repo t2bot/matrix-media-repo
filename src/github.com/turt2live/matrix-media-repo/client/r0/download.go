@@ -25,5 +25,5 @@ func DownloadMedia(w http.ResponseWriter, r *http.Request) {
 		filename = "testasdasdasd.jpg"
 	}
 
-	io.WriteString(w, "Server = " + server + "; mediaId = " + mediaId +"; filename = " + filename)
+	io.WriteString(w, "Server = "+server+"; mediaId = "+mediaId+"; filename = "+filename+"; Host = "+r.Host)
 }

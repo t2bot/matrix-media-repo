@@ -1,5 +1,7 @@
 # matrix-media-repo
-A domain-aware media repository for matrix
+A host-aware media repository for Matrix. Designed for environments with multiple homeservers.
+
+Talk about it in [#media-repo:t2bot.io](https://matrix.to/#/#media-repo:t2bot.io).
 
 # Installing
 
