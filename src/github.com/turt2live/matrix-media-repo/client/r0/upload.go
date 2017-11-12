@@ -2,7 +2,6 @@ package r0
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/turt2live/matrix-media-repo/client"
 	"github.com/turt2live/matrix-media-repo/config"
@@ -33,10 +32,6 @@ func UploadMedia(w http.ResponseWriter, r *http.Request, db storage.Database, c 
 	contentType := r.Header.Get("Content-Type")
 	if contentType == "" {
 		contentType = "application/octet-stream" // binary
-	}
-	i := strings.Index(contentType, ";")
-	if i != -1 {
-		contentType = contentType[:i]
 	}
 
 	r.Body = http.MaxBytesReader(w, r.Body, c.Uploads.MaxSizeBytes)
