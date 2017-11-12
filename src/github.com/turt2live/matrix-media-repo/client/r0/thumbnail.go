@@ -3,6 +3,7 @@ package r0
 import (
 	"net/http"
 
+	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/storage"
 )
 
@@ -17,6 +18,6 @@ import (
 //   Headers: Content-Type
 //   Body: <byte[]>
 
-func ThumbnailMedia(w http.ResponseWriter, r *http.Request, db storage.Database) interface{} {
+func ThumbnailMedia(w http.ResponseWriter, r *http.Request, db storage.Database, c config.MediaRepoConfig) interface{} {
 	return nil
 }

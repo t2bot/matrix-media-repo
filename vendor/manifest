@@ -12,6 +12,12 @@
 			"repository": "https://github.com/lib/pq",
 			"revision": "b609790bd85edf8e9ab7e0f8912750a786177bcf",
 			"branch": "master"
+		},
+		{
+			"importpath": "gopkg.in/yaml.v2",
+			"repository": "https://gopkg.in/yaml.v2",
+			"revision": "eb3733d160e74a9c7e442f435eb3bea458e1d19f",
+			"branch": "v2"
 		}
 	]
 }

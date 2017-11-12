@@ -1,8 +1,11 @@
 # NOT YET IMPLEMENTED
 homeservers:
-  allowed:
-  - t2bot.io
-  - t2l.io
+  - name: t2bot.io
+    downloadRequiresAuth: false
+    csApi: "https://t2bot.io/"
+  - name: t2l.io
+    downloadRequiresAuth: false
+    csApi: "https://t2l.io/"
 
 # NOT YET IMPLEMENTED
 database:

@@ -16,6 +16,9 @@ go get github.com/constabulary/gb/...
 gb vendor restore
 gb build
 
+# Configure it (edit media-repo.yaml to meet your needs)
+cp config.sample.yaml media-repo.yaml
+
 # Run it
 bin/matrix-media-repo
 ```

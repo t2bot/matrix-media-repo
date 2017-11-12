@@ -8,12 +8,18 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/turt2live/matrix-media-repo/client"
 	"github.com/turt2live/matrix-media-repo/client/r0"
+	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/storage"
 )
 
 type Handler struct {
-	h func(http.ResponseWriter, *http.Request, storage.Database) interface{}
+	h func(http.ResponseWriter, *http.Request, storage.Database, config.MediaRepoConfig) interface{}
+	opts HandlerOpts
+}
+
+type HandlerOpts struct {
 	db storage.Database
+	config config.MediaRepoConfig
 }
 
 type EmptyResponse struct {}
@@ -21,15 +27,26 @@ type EmptyResponse struct {}
 func main() {
 	rtr := mux.NewRouter()
 
-	db, err := storage.OpenDatabase("")
+	c, err := config.ReadConfig()
 	if err != nil {
 		panic(err)
 	}
 
-	rtr.Handle("/_matrix/client/r0/media/upload", Handler{r0.UploadMedia, *db}).Methods("POST")
-	rtr.Handle("/_matrix/client/r0/media/download/{server:[a-zA-Z0-9.]+}/{mediaId:[a-zA-Z0-9]+}", Handler{r0.DownloadMedia, *db}).Methods("GET")
-	rtr.Handle("/_matrix/client/r0/media/download/{server:[a-zA-Z0-9.]+}/{mediaId:[a-zA-Z0-9]+}/{filename:[a-zA-Z0-9._-]+}", Handler{r0.DownloadMedia, *db}).Methods("GET")
-	rtr.Handle("/_matrix/client/r0/media/thumbnail/{server:[a-zA-Z0-9.]+}/{mediaId:[a-zA-Z0-9]+}", Handler{r0.ThumbnailMedia, *db}).Methods("GET")
+	db, err := storage.OpenDatabase(c.Database.Postgres)
+	if err != nil {
+		panic(err)
+	}
+
+	hOpts := HandlerOpts{*db, c}
+
+	uploadHandler := Handler{r0.UploadMedia, hOpts}
+	downloadHandler := Handler{r0.DownloadMedia, hOpts}
+	thumbnailHandler := Handler{r0.ThumbnailMedia, hOpts}
+
+	rtr.Handle("/_matrix/client/r0/media/upload", uploadHandler).Methods("POST")
+	rtr.Handle("/_matrix/client/r0/media/download/{server:[a-zA-Z0-9.]+}/{mediaId:[a-zA-Z0-9]+}", downloadHandler).Methods("GET")
+	rtr.Handle("/_matrix/client/r0/media/download/{server:[a-zA-Z0-9.]+}/{mediaId:[a-zA-Z0-9]+}/{filename:[a-zA-Z0-9._-]+}", downloadHandler).Methods("GET")
+	rtr.Handle("/_matrix/client/r0/media/thumbnail/{server:[a-zA-Z0-9.]+}/{mediaId:[a-zA-Z0-9]+}", thumbnailHandler).Methods("GET")
 
 	http.Handle("/", rtr)
 	http.ListenAndServe(":8000", nil)
@@ -38,7 +55,7 @@ func main() {
 func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	res := h.h(w, r, h.db)
+	res := h.h(w, r, h.opts.db, h.opts.config)
 	if res == nil {
 		res = &EmptyResponse{}
 	}

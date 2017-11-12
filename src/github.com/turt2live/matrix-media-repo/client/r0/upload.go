@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/turt2live/matrix-media-repo/client"
+	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/media_handler"
 	"github.com/turt2live/matrix-media-repo/storage"
 )
@@ -24,7 +25,7 @@ type MediaUploadedResponse struct {
 	ContentUri string `json:"content_uri"`
 }
 
-func UploadMedia(w http.ResponseWriter, r *http.Request, db storage.Database) interface{} {
+func UploadMedia(w http.ResponseWriter, r *http.Request, db storage.Database, c config.MediaRepoConfig) interface{} {
 	// TODO: Validate access_token
 
 	filename := r.URL.Query().Get("filename")
@@ -41,7 +42,7 @@ func UploadMedia(w http.ResponseWriter, r *http.Request, db storage.Database) in
 		contentType = contentType[:i]
 	}
 
-	r.Body = http.MaxBytesReader(w, r.Body, 10485760) // TODO: Read max size from config
+	r.Body = http.MaxBytesReader(w, r.Body, c.Uploads.MaxSizeBytes)
 
 	tempFile, err := uploadTempFile(r.Body)
 	if err != nil {
