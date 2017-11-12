@@ -22,8 +22,8 @@ type statements struct {
 	insertOrigin *sql.Stmt
 }
 
-const selectMedia = "SELECT * FROM media WHERE origin = $1 and media_id = $2;"
-const selectMediaByHash = "SELECT origin, media_id FROM media WHERE sha256_hash = $1;"
+const selectMedia = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, location, creation_ts FROM media WHERE origin = $1 and media_id = $2;"
+const selectMediaByHash = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, location, creation_ts FROM media WHERE sha256_hash = $1;"
 const insertMedia = "INSERT INTO media (origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, location, creation_ts) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);"
 
 func OpenDatabase(connectionString string) (*Database, error) {
@@ -59,4 +59,33 @@ func (d *Database) InsertMedia(ctx context.Context, media *types.Media) error {
 	)
 
 	return err
+}
+
+func (d *Database) GetMediaByHash(ctx context.Context, hash string) ([]types.Media, error) {
+	rows, err := d.statements.selectMediaByHash.QueryContext(ctx, hash)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []types.Media
+	for rows.Next() {
+		obj := types.Media{}
+		err = rows.Scan(
+			&obj.Origin,
+			&obj.MediaId,
+			&obj.UploadName,
+			&obj.ContentType,
+			&obj.UserId,
+			&obj.Sha256Hash,
+			&obj.SizeBytes,
+			&obj.Location,
+			&obj.CreationTs,
+		)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, obj)
+	}
+
+	return results, nil
 }
