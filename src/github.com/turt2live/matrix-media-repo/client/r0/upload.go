@@ -34,7 +34,9 @@ func UploadMedia(w http.ResponseWriter, r *http.Request, db storage.Database, c 
 		contentType = "application/octet-stream" // binary
 	}
 
-	r.Body = http.MaxBytesReader(w, r.Body, c.Uploads.MaxSizeBytes)
+	if c.Uploads.MaxSizeBytes > 0 {
+		r.Body = http.MaxBytesReader(w, r.Body, c.Uploads.MaxSizeBytes)
+	}
 
 	request := &media_handler.MediaUploadRequest{
 		UploadedBy: "",
