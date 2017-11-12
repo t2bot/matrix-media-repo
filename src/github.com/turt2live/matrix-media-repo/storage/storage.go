@@ -100,3 +100,19 @@ func (d *Database) GetSizeOfFolderBytes(ctx context.Context, folderPath string) 
 	err := d.statements.selectSizeOfFolder.QueryRowContext(ctx, folderPath).Scan(&r.Size)
 	return r.Size, err
 }
+
+func (d *Database) GetMedia(ctx context.Context, origin string, mediaId string) (types.Media, error) {
+	m := &types.Media{}
+	err := d.statements.selectMedia.QueryRowContext(ctx, origin, mediaId).Scan(
+		&m.Origin,
+		&m.MediaId,
+		&m.UploadName,
+		&m.ContentType,
+		&m.UserId,
+		&m.Sha256Hash,
+		&m.SizeBytes,
+		&m.Location,
+		&m.CreationTs,
+	)
+	return *m, err
+}

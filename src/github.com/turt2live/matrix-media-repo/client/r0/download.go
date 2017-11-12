@@ -1,9 +1,11 @@
 package r0
 
 import (
+	"database/sql"
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/turt2live/matrix-media-repo/client"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/storage"
 )
@@ -17,10 +19,10 @@ import (
 //   Body: <byte[]>
 
 type DownloadMediaResponse struct {
-	Server string
-	MediaID string
+	ContentType string
 	Filename string
-	Host string
+	SizeBytes int64
+	Location string
 }
 
 func DownloadMedia(w http.ResponseWriter, r *http.Request, db storage.Database, c config.MediaRepoConfig) interface{} {
@@ -30,9 +32,23 @@ func DownloadMedia(w http.ResponseWriter, r *http.Request, db storage.Database, 
 	mediaId := params["mediaId"]
 	filename := params["filename"]
 
-	if filename == "" {
-		filename = "testasdasdasd.jpg"
+	media, err := db.GetMedia(r.Context(), server, mediaId)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// TODO: Try remote fetch
+			return client.NotFoundError()
+		}
+		return client.InternalServerError(err.Error())
 	}
 
-	return &DownloadMediaResponse{server, mediaId, filename, r.Host}
+	if filename == "" {
+		filename = media.UploadName
+	}
+
+	return &DownloadMediaResponse{
+		ContentType: media.ContentType,
+		Filename:    filename,
+		SizeBytes:   media.SizeBytes,
+		Location:    media.Location,
+	}
 }

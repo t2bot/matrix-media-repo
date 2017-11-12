@@ -8,3 +8,7 @@ type ErrorResponse struct {
 func InternalServerError(message string) *ErrorResponse {
 	return &ErrorResponse{"M_UNKNOWN", message}
 }
+
+func NotFoundError() *ErrorResponse {
+	return &ErrorResponse{"M_NOT_FOUND", "Not found"}
+}
