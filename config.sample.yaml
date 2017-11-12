@@ -1,3 +1,5 @@
+# The configuration for the homeservers this media repository is known to control. Servers
+# not listed here will not be able to upload media.
 # NOT YET IMPLEMENTED
 homeservers:
   - name: t2bot.io
@@ -7,17 +9,18 @@ homeservers:
     downloadRequiresAuth: false
     csApi: "https://t2l.io/"
 
-# NOT YET IMPLEMENTED
+# The database configuration for the media repository
 database:
   # Currently only "postgres" is supported.
-  postgres: "postgres://mediarepo:yourpassword@localhost/media-repository?sslmode=disable"
+  postgres: "postgres://your_username:your_password@localhost/database_name?sslmode=disable"
 
 uploads:
-  # A location will be picked based upon estimated folder size
-  # DISTRIBUTION NOT YET IMPLEMENTED
+  maxBytes: 10485760 # 10MB default, 0 to disable
+  # This is intended for larger deployments where media should be distributed among other
+  # directories, drives, servers, etc. For smaller deployments, a single entry in this list
+  # is recommended.
   storagePaths:
   - /var/matrix/media
-  maxBytes: 10485760 # 10MB default, 0 to disable
 
 # NOT YET IMPLEMENTED
 thumbails:
