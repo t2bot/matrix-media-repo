@@ -2,33 +2,45 @@ package media_handler
 
 import (
 	"context"
+	"io"
 	"os"
 	"time"
 
+	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
 type MediaUploadRequest struct {
-	TempLocation string
+	Contents io.Reader
 	DesiredFilename string
 	UploadedBy string
 	Host string
 	ContentType string
 }
 
-func (r MediaUploadRequest) StoreMedia(ctx context.Context, db storage.Database) (string, error) {
-	hash, err := storage.GetFileHash(r.TempLocation)
+func (r MediaUploadRequest) StoreMedia(ctx context.Context, c config.MediaRepoConfig, db storage.Database) (string, error) {
+	destination, err := storage.PersistTempFile(ctx, r.Contents, c, db)
 	if err != nil {
+		return "", err
+	}
+
+	hash, err := storage.GetFileHash(destination)
+	if err != nil {
+		os.Remove(destination)
 		return "", err
 	}
 
 	records, err := db.GetMediaByHash(ctx, hash)
 	if err != nil {
+		os.Remove(destination)
 		return "", err
 	}
 	if len(records) > 0 {
+		// We can delete the media: It's already duplicated at this point
+		os.Remove(destination)
+
 		var media types.Media
 
 		// Try and find an already-existing media item for this host
@@ -61,13 +73,9 @@ func (r MediaUploadRequest) StoreMedia(ctx context.Context, db storage.Database)
 		return util.MediaToMxc(&media), nil
 	}
 
-	destination, err := storage.PersistTempFile(r.TempLocation)
-	if err != nil {
-		return "", err
-	}
-
 	f, err := os.Open(destination)
 	if err != nil {
+		os.Remove(destination)
 		return "", err
 	}
 
@@ -93,6 +101,7 @@ func (r MediaUploadRequest) StoreMedia(ctx context.Context, db storage.Database)
 
 	err = db.InsertMedia(ctx, media)
 	if err != nil {
+		os.Remove(destination)
 		return "", err
 	}
 

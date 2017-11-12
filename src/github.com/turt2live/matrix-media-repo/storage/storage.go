@@ -9,6 +9,15 @@ import (
 	"github.com/turt2live/matrix-media-repo/types"
 )
 
+const selectMedia = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, location, creation_ts FROM media WHERE origin = $1 and media_id = $2;"
+const selectMediaByHash = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, location, creation_ts FROM media WHERE sha256_hash = $1;"
+const insertMedia = "INSERT INTO media (origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, location, creation_ts) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);"
+const selectSizeOfFolder = "SELECT COALESCE(SUM(size_bytes), 0) AS size_total FROM media WHERE location ILIKE $1 || '%'"
+
+type folderSize struct {
+	Size int64
+}
+
 type Database struct {
 	db         *sql.DB
 	statements statements
@@ -16,15 +25,10 @@ type Database struct {
 
 type statements struct {
 	selectMedia *sql.Stmt
-	selectMediaOrigins *sql.Stmt
 	selectMediaByHash *sql.Stmt
 	insertMedia *sql.Stmt
-	insertOrigin *sql.Stmt
+	selectSizeOfFolder *sql.Stmt
 }
-
-const selectMedia = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, location, creation_ts FROM media WHERE origin = $1 and media_id = $2;"
-const selectMediaByHash = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, location, creation_ts FROM media WHERE sha256_hash = $1;"
-const insertMedia = "INSERT INTO media (origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, location, creation_ts) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);"
 
 func OpenDatabase(connectionString string) (*Database, error) {
 	var d Database
@@ -40,6 +44,7 @@ func OpenDatabase(connectionString string) (*Database, error) {
 	if d.statements.selectMedia, err = d.db.Prepare(selectMedia); err != nil { return nil, err }
 	if d.statements.selectMediaByHash, err = d.db.Prepare(selectMediaByHash); err != nil { return nil, err }
 	if d.statements.insertMedia, err = d.db.Prepare(insertMedia); err != nil { return nil, err }
+	if d.statements.selectSizeOfFolder, err = d.db.Prepare(selectSizeOfFolder); err != nil { return nil, err }
 
 	return &d, nil
 }
@@ -88,4 +93,10 @@ func (d *Database) GetMediaByHash(ctx context.Context, hash string) ([]types.Med
 	}
 
 	return results, nil
+}
+
+func (d *Database) GetSizeOfFolderBytes(ctx context.Context, folderPath string) (int64, error) {
+	r := &folderSize{}
+	err := d.statements.selectSizeOfFolder.QueryRowContext(ctx, folderPath).Scan(&r.Size)
+	return r.Size, err
 }

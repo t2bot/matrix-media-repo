@@ -1,10 +1,7 @@
 package r0
 
 import (
-	"io"
-	"io/ioutil"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/turt2live/matrix-media-repo/client"
@@ -44,39 +41,18 @@ func UploadMedia(w http.ResponseWriter, r *http.Request, db storage.Database, c 
 
 	r.Body = http.MaxBytesReader(w, r.Body, c.Uploads.MaxSizeBytes)
 
-	tempFile, err := uploadTempFile(r.Body)
-	if err != nil {
-		return client.InternalServerError(err.Error())
-	}
-
 	request := &media_handler.MediaUploadRequest{
-		TempLocation: tempFile,
 		UploadedBy: "",
 		ContentType: contentType,
 		DesiredFilename:filename,
 		Host:r.Host,
+		Contents: r.Body,
 	}
 
-	mxc, err := request.StoreMedia(r.Context(), db)
+	mxc, err := request.StoreMedia(r.Context(), c, db)
 	if err != nil {
 		return client.InternalServerError(err.Error())
 	}
 
 	return &MediaUploadedResponse{mxc}
-}
-
-func uploadTempFile(reqReader io.ReadCloser) (string, error) {
-	file, err := ioutil.TempFile(os.TempDir(), "mtx-media-repo")
-	if err != nil {
-		return "", err
-	}
-
-	defer file.Close()
-
-	_, err = io.Copy(file, reqReader)
-	if err != nil {
-		return "", err
-	}
-
-	return file.Name(), nil
 }
