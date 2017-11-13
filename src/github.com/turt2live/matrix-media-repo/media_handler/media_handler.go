@@ -14,11 +14,11 @@ import (
 )
 
 type MediaUploadRequest struct {
-	Contents io.Reader
+	Contents        io.Reader
 	DesiredFilename string
-	UploadedBy string
-	Host string
-	ContentType string
+	UploadedBy      string
+	Host            string
+	ContentType     string
 }
 
 func (r MediaUploadRequest) StoreAndGetMxcUri(ctx context.Context, c config.MediaRepoConfig, db storage.Database, log *logrus.Entry) (string, error) {

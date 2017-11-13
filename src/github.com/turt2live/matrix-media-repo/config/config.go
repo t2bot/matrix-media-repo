@@ -8,15 +8,15 @@ import (
 )
 
 type HomeserverConfig struct {
-	Name string `yaml:"name"`
-	DownloadRequiresAuth bool `yaml:"downloadRequiresAuth"`
-	ClientServerApi string `yaml:"csApi"`
+	Name                 string `yaml:"name"`
+	DownloadRequiresAuth bool   `yaml:"downloadRequiresAuth"`
+	ClientServerApi      string `yaml:"csApi"`
 }
 
 type MediaRepoConfig struct {
 	General struct {
-		BindAddress string `yaml:"bindAddress"`
-		Port int `yaml:"port"`
+		BindAddress  string `yaml:"bindAddress"`
+		Port         int    `yaml:"port"`
 		LogDirectory string `yaml:"logDirectory"`
 	} `yaml:"repo"`
 
@@ -28,7 +28,7 @@ type MediaRepoConfig struct {
 
 	Uploads struct {
 		StoragePaths []string `yaml:"storagePaths,flow"`
-		MaxSizeBytes int64 `yaml:"maxBytes"`
+		MaxSizeBytes int64    `yaml:"maxBytes"`
 	} `yaml:"uploads"`
 
 	Downloads struct {
@@ -38,8 +38,8 @@ type MediaRepoConfig struct {
 	Thumbnails struct {
 		MaxSourceBytes int64 `yaml:"maxSourceBytes"`
 		Sizes []struct {
-			Width int `yaml:"width"`
-			Height int `yaml:"height"`
+			Width  int    `yaml:"width"`
+			Height int    `yaml:"height"`
 			Method string `yaml:"method"`
 		} `yaml:"sizes,flow"`
 	} `yaml:"thumbnails"`

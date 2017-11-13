@@ -12,14 +12,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
-// Request:
-//   QS: ?filename=
-//   Headers: Content-Type
-//   Body: <byte[]>
-//
-// Response:
-//   Body: {"content_uri":"mxc://domain.com/media_id"}
-
 type MediaUploadedResponse struct {
 	ContentUri string `json:"content_uri"`
 }
@@ -38,7 +30,7 @@ func UploadMedia(w http.ResponseWriter, r *http.Request, db storage.Database, c 
 
 	log = log.WithFields(logrus.Fields{
 		"filename": filename,
-		"userId": userId,
+		"userId":   userId,
 	})
 
 	contentType := r.Header.Get("Content-Type")

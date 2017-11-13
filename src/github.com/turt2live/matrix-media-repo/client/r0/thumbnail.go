@@ -12,17 +12,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/storage"
 )
 
-
-
-// Request:
-//   Path params: {serverName}, {mediaId}
-//   QS: ?width=&height=&method=
-//       "method" can be crop or scale
-//
-// Response:
-//   Headers: Content-Type
-//   Body: <byte[]>
-
 func ThumbnailMedia(w http.ResponseWriter, r *http.Request, db storage.Database, c config.MediaRepoConfig, log *logrus.Entry) interface{} {
 	if !ValidateUserCanDownload(r, db, c) {
 		return client.AuthFailed()
@@ -35,7 +24,7 @@ func ThumbnailMedia(w http.ResponseWriter, r *http.Request, db storage.Database,
 
 	log = log.WithFields(logrus.Fields{
 		"mediaId": mediaId,
-		"server": server,
+		"server":  server,
 	})
 
 	widthStr := r.URL.Query().Get("width")

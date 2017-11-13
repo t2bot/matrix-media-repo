@@ -1,8 +1,8 @@
 package client
 
 type ErrorResponse struct {
-	Code string `json:"errcode"`
-	Message string `json:"error"`
+	Code         string `json:"errcode"`
+	Message      string `json:"error"`
 	InternalCode string `json:"mr_errcode"`
 }
 

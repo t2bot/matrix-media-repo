@@ -26,12 +26,12 @@ type Database struct {
 }
 
 type statements struct {
-	selectMedia *sql.Stmt
-	selectMediaByHash *sql.Stmt
-	insertMedia *sql.Stmt
+	selectMedia        *sql.Stmt
+	selectMediaByHash  *sql.Stmt
+	insertMedia        *sql.Stmt
 	selectSizeOfFolder *sql.Stmt
-	selectThumbnail *sql.Stmt
-	insertThumbnail *sql.Stmt
+	selectThumbnail    *sql.Stmt
+	insertThumbnail    *sql.Stmt
 }
 
 func OpenDatabase(connectionString string) (*Database, error) {
@@ -46,12 +46,24 @@ func OpenDatabase(connectionString string) (*Database, error) {
 	schema.PrepareThumbnails(d.db)
 
 	// prepare a bunch of statements for use
-	if d.statements.selectMedia, err = d.db.Prepare(selectMedia); err != nil { return nil, err }
-	if d.statements.selectMediaByHash, err = d.db.Prepare(selectMediaByHash); err != nil { return nil, err }
-	if d.statements.insertMedia, err = d.db.Prepare(insertMedia); err != nil { return nil, err }
-	if d.statements.selectSizeOfFolder, err = d.db.Prepare(selectSizeOfFolder); err != nil { return nil, err }
-	if d.statements.selectThumbnail, err = d.db.Prepare(selectThumbnail); err != nil { return nil, err }
-	if d.statements.insertThumbnail, err = d.db.Prepare(insertThumbnail); err != nil { return nil, err }
+	if d.statements.selectMedia, err = d.db.Prepare(selectMedia); err != nil {
+		return nil, err
+	}
+	if d.statements.selectMediaByHash, err = d.db.Prepare(selectMediaByHash); err != nil {
+		return nil, err
+	}
+	if d.statements.insertMedia, err = d.db.Prepare(insertMedia); err != nil {
+		return nil, err
+	}
+	if d.statements.selectSizeOfFolder, err = d.db.Prepare(selectSizeOfFolder); err != nil {
+		return nil, err
+	}
+	if d.statements.selectThumbnail, err = d.db.Prepare(selectThumbnail); err != nil {
+		return nil, err
+	}
+	if d.statements.insertThumbnail, err = d.db.Prepare(insertThumbnail); err != nil {
+		return nil, err
+	}
 
 	return &d, nil
 }

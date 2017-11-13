@@ -26,17 +26,17 @@ type requestCounter struct {
 }
 
 type Handler struct {
-	h func(http.ResponseWriter, *http.Request, storage.Database, config.MediaRepoConfig, *log.Entry) interface{}
+	h    func(http.ResponseWriter, *http.Request, storage.Database, config.MediaRepoConfig, *log.Entry) interface{}
 	opts HandlerOpts
 }
 
 type HandlerOpts struct {
-	db storage.Database
-	config config.MediaRepoConfig
+	db         storage.Database
+	config     config.MediaRepoConfig
 	reqCounter *requestCounter
 }
 
-type EmptyResponse struct {}
+type EmptyResponse struct{}
 
 func main() {
 	rtr := mux.NewRouter()
@@ -82,7 +82,7 @@ func main() {
 	// TODO: Intercept 404, 500, and 400 to respond with M_NOT_FOUND and M_UNKNOWN
 	// TODO: Rate limiting (429 M_LIMIT_EXCEEDED)
 
-	address:=c.General.BindAddress+":"+strconv.Itoa(c.General.Port)
+	address := c.General.BindAddress + ":" + strconv.Itoa(c.General.Port)
 	http.Handle("/", rtr)
 
 	log.WithField("address", address).Info("Started up. Listening at http://" + address)
@@ -91,13 +91,13 @@ func main() {
 
 func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	contextLog := log.WithFields(log.Fields{
-		"method": r.Method,
-		"host": r.Host,
-		"resource": r.URL.Path,
-		"contentType": r.Header.Get("Content-Type"),
+		"method":        r.Method,
+		"host":          r.Host,
+		"resource":      r.URL.Path,
+		"contentType":   r.Header.Get("Content-Type"),
 		"contentLength": r.Header.Get("Content-Length"),
-		"queryString": util.GetLogSafeQueryString(r),
-		"requestId": h.opts.reqCounter.GetNextId(),
+		"queryString":   util.GetLogSafeQueryString(r),
+		"requestId":     h.opts.reqCounter.GetNextId(),
 	})
 	contextLog.Info("Received request")
 
@@ -127,7 +127,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	jsonStr := string(b)
 
-	contextLog.Info("Replying with result: " + reflect.TypeOf(res).Elem().Name() +" " + jsonStr)
+	contextLog.Info("Replying with result: " + reflect.TypeOf(res).Elem().Name() + " " + jsonStr)
 
 	switch result := res.(type) {
 	case *client.ErrorResponse:
@@ -142,7 +142,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case "M_MEDIA_TOO_LARGE":
 			http.Error(w, jsonStr, http.StatusRequestEntityTooLarge)
 			break
-		//case "M_UNKNOWN":
+			//case "M_UNKNOWN":
 		default:
 			http.Error(w, jsonStr, http.StatusInternalServerError)
 			break
@@ -150,7 +150,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		break
 	case *r0.DownloadMediaResponse:
 		w.Header().Set("Content-Type", result.ContentType)
-		w.Header().Set("Content-Disposition", "inline; filename=\"" + result.Filename +"\"")
+		w.Header().Set("Content-Disposition", "inline; filename=\""+result.Filename+"\"")
 		w.Header().Set("Content-Length", fmt.Sprint(result.SizeBytes))
 		f, err := os.Open(result.Location)
 		if err != nil {

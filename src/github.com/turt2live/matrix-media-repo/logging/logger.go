@@ -31,15 +31,17 @@ func Setup(dir string) error {
 	})
 	logrus.SetOutput(os.Stdout)
 
-	if dir == "" { return nil }
+	if dir == "" {
+		return nil
+	}
 	_ = os.MkdirAll(dir, os.ModePerm)
 
 	logFile := path.Join(dir, "media_repo.log")
 	writer, err := rotatelogs.New(
-		logFile + ".%Y%m%d%H%M",
+		logFile+".%Y%m%d%H%M",
 		rotatelogs.WithLinkName(logFile),
-		rotatelogs.WithMaxAge((24 * time.Hour) * 14), // keep for 14 days
-		rotatelogs.WithRotationTime(24 * time.Hour), // rotate every 24 hours
+		rotatelogs.WithMaxAge((24*time.Hour)*14),  // keep for 14 days
+		rotatelogs.WithRotationTime(24*time.Hour), // rotate every 24 hours
 	)
 	if err != nil {
 		return err
@@ -47,8 +49,8 @@ func Setup(dir string) error {
 
 	logrus.AddHook(lfshook.NewHook(lfshook.WriterMap{
 		logrus.DebugLevel: writer,
-		logrus.InfoLevel: writer,
-		logrus.WarnLevel: writer,
+		logrus.InfoLevel:  writer,
+		logrus.WarnLevel:  writer,
 		logrus.ErrorLevel: writer,
 		logrus.FatalLevel: writer,
 		logrus.PanicLevel: writer,

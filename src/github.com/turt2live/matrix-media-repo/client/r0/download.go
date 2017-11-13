@@ -12,19 +12,11 @@ import (
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
-// Request:
-//   Path params: {serverName}, {mediaId}
-//   Optional path param: {filename}
-//
-// Response:
-//   Headers: Content-Type, Content-Disposition
-//   Body: <byte[]>
-
 type DownloadMediaResponse struct {
 	ContentType string
-	Filename string
-	SizeBytes int64
-	Location string
+	Filename    string
+	SizeBytes   int64
+	Location    string
 }
 
 func DownloadMedia(w http.ResponseWriter, r *http.Request, db storage.Database, c config.MediaRepoConfig, log *logrus.Entry) interface{} {
@@ -39,8 +31,8 @@ func DownloadMedia(w http.ResponseWriter, r *http.Request, db storage.Database, 
 	filename := params["filename"]
 
 	log = log.WithFields(logrus.Fields{
-		"mediaId": mediaId,
-		"server": server,
+		"mediaId":  mediaId,
+		"server":   server,
 		"filename": filename,
 	})
 

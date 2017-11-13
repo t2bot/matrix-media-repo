@@ -32,7 +32,7 @@ func GetThumbnail(ctx context.Context, media types.Media, width int, height int,
 
 	for i := 0; i < len(c.Thumbnails.Sizes); i++ {
 		size := c.Thumbnails.Sizes[i]
-		lastSize := i == len(c.Thumbnails.Sizes) - 1
+		lastSize := i == len(c.Thumbnails.Sizes)-1
 
 		if width == size.Width && height == size.Height {
 			targetWidth = width
@@ -60,7 +60,7 @@ func GetThumbnail(ctx context.Context, media types.Media, width int, height int,
 	}
 
 	log = log.WithFields(logrus.Fields{
-		"targetWidth": targetWidth,
+		"targetWidth":  targetWidth,
 		"targetHeight": targetHeight,
 	})
 	log.Info("Looking up thumbnail")
