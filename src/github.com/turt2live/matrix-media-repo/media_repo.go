@@ -64,6 +64,15 @@ func main() {
 }
 
 func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Send CORS and other basic headers
+	w.Header().Set("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Security-Policy", "default-src 'none'; script-src 'none'; plugin-types application/pdf; style-src 'unsafe-inline'; object-src 'self'")
+	w.Header().Set("Cache-Control", "public,max-age=86400,s-maxage=86400")
+	w.Header().Set("Server", "matrix-media-repo")
+
+	// Process response
 	res := h.h(w, r, h.opts.db, h.opts.config)
 	if res == nil {
 		res = &EmptyResponse{}
