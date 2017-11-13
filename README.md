@@ -39,7 +39,7 @@ location /_matrix {
 }
 
 # Redirect all media endpoints to the media-repo
-location /_matrix/client/r0/media {
+location /_matrix/media {
     proxy_read_timeout 60s;
     proxy_set_header Host $host; # Make sure this matches your homeserver in media-repo.yaml
     proxy_set_header X-Real-IP $remote_addr;

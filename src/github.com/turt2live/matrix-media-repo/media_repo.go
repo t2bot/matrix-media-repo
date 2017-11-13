@@ -47,10 +47,17 @@ func main() {
 	downloadHandler := Handler{r0.DownloadMedia, hOpts}
 	thumbnailHandler := Handler{r0.ThumbnailMedia, hOpts}
 
-	rtr.Handle("/_matrix/client/r0/media/upload", uploadHandler).Methods("POST")
-	rtr.Handle("/_matrix/client/r0/media/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}", downloadHandler).Methods("GET")
-	rtr.Handle("/_matrix/client/r0/media/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}/{filename:[a-zA-Z0-9._-]+}", downloadHandler).Methods("GET")
-	rtr.Handle("/_matrix/client/r0/media/thumbnail/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}", thumbnailHandler).Methods("GET")
+	// r0 endpoints
+	rtr.Handle("/_matrix/media/r0/upload", uploadHandler).Methods("POST")
+	rtr.Handle("/_matrix/media/r0/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}", downloadHandler).Methods("GET")
+	rtr.Handle("/_matrix/media/r0/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}/{filename:[a-zA-Z0-9._-]+}", downloadHandler).Methods("GET")
+	rtr.Handle("/_matrix/media/r0/thumbnail/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}", thumbnailHandler).Methods("GET")
+
+	// v1 endpoints (legacy)
+	rtr.Handle("/_matrix/media/v1/upload", uploadHandler).Methods("POST")
+	rtr.Handle("/_matrix/media/v1/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}", downloadHandler).Methods("GET")
+	rtr.Handle("/_matrix/media/v1/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}/{filename:[a-zA-Z0-9._-]+}", downloadHandler).Methods("GET")
+	rtr.Handle("/_matrix/media/v1/thumbnail/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}", thumbnailHandler).Methods("GET")
 
 	http.Handle("/", rtr)
 	http.ListenAndServe(":8000", nil)
