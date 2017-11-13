@@ -6,7 +6,7 @@ Designed for environments with multiple homeservers, matrix-media-repo de-duplic
 
 # Installing
 
-Assuming Go 1.9 and JDK 1.8 are already installed on your PATH:
+Assuming Go 1.9 is already installed on your PATH:
 ```
 # Get it
 git clone https://github.com/turt2live/matrix-media-repo
