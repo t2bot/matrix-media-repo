@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/turt2live/matrix-media-repo/client"
@@ -64,7 +65,7 @@ func main() {
 	// TODO: Rate limiting (429 M_LIMIT_EXCEEDED)
 
 	http.Handle("/", rtr)
-	http.ListenAndServe(":8000", nil)
+	http.ListenAndServe(c.General.BindAddress+":"+strconv.Itoa(c.General.Port), nil)
 }
 
 func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

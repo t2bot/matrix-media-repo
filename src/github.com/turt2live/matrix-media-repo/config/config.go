@@ -14,6 +14,11 @@ type HomeserverConfig struct {
 }
 
 type MediaRepoConfig struct {
+	General struct {
+		BindAddress string `yaml:"bindAddress"`
+		Port int `yaml:"port"`
+	} `yaml:"repo"`
+
 	Homeservers []HomeserverConfig `yaml:"homeservers,flow"`
 
 	Database struct {
