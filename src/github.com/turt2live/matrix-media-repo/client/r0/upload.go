@@ -1,6 +1,7 @@
 package r0
 
 import (
+	"io"
 	"net/http"
 
 	"github.com/turt2live/matrix-media-repo/client"
@@ -34,16 +35,18 @@ func UploadMedia(w http.ResponseWriter, r *http.Request, db storage.Database, c 
 		contentType = "application/octet-stream" // binary
 	}
 
+	var reader io.Reader
+	reader = r.Body
 	if c.Uploads.MaxSizeBytes > 0 {
-		r.Body = http.MaxBytesReader(w, r.Body, c.Uploads.MaxSizeBytes)
+		reader = io.LimitReader(r.Body, c.Uploads.MaxSizeBytes)
 	}
 
 	request := &media_handler.MediaUploadRequest{
-		UploadedBy: "",
-		ContentType: contentType,
-		DesiredFilename:filename,
-		Host:r.Host,
-		Contents: r.Body,
+		UploadedBy:      "",
+		ContentType:     contentType,
+		DesiredFilename: filename,
+		Host:            r.Host,
+		Contents:        reader,
 	}
 
 	mxc, err := request.StoreMedia(r.Context(), c, db)
