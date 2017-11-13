@@ -13,3 +13,13 @@ func GetAccessTokenFromRequest(request *http.Request) (string) {
 
 	return request.URL.Query().Get("access_token")
 }
+
+func GetLogSafeQueryString(r *http.Request) (string) {
+	qs := r.URL.Query()
+
+	if qs.Get("access_token") != "" {
+		qs.Set("access_token", "redacted")
+	}
+
+	return qs.Encode()
+}

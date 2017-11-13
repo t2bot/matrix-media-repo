@@ -17,6 +17,7 @@ type MediaRepoConfig struct {
 	General struct {
 		BindAddress string `yaml:"bindAddress"`
 		Port int `yaml:"port"`
+		LogDirectory string `yaml:"logDirectory"`
 	} `yaml:"repo"`
 
 	Homeservers []HomeserverConfig `yaml:"homeservers,flow"`

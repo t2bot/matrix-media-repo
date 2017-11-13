@@ -8,13 +8,14 @@ import (
 	"time"
 
 	"github.com/disintegration/imaging"
+	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
-func GetThumbnail(ctx context.Context, media types.Media, width int, height int, method string, c config.MediaRepoConfig, db storage.Database) (types.Thumbnail, error) {
+func GetThumbnail(ctx context.Context, media types.Media, width int, height int, method string, c config.MediaRepoConfig, db storage.Database, log *logrus.Entry) (types.Thumbnail, error) {
 	if width <= 0 {
 		return types.Thumbnail{}, errors.New("width must be positive")
 	}
@@ -58,22 +59,32 @@ func GetThumbnail(ctx context.Context, media types.Media, width int, height int,
 		}
 	}
 
+	log = log.WithFields(logrus.Fields{
+		"targetWidth": targetWidth,
+		"targetHeight": targetHeight,
+	})
+	log.Info("Looking up thumbnail")
+
 	thumb, err := db.GetThumbnail(ctx, media.Origin, media.MediaId, targetWidth, targetHeight, method)
 	if err != nil && err != sql.ErrNoRows {
+		log.Error("Unexpected error processing thumbnail lookup: " + err.Error())
 		return thumb, err
 	}
 	if err != sql.ErrNoRows {
-		return thumb, err
+		log.Info("Found existing thumbnail")
+		return thumb, nil
 	}
 
 	if media.SizeBytes > c.Thumbnails.MaxSourceBytes {
+		log.Warn("Media too large to thumbnail")
 		return thumb, errors.New("cannot thumbnail, image too large")
 	}
 
-	return generateThumbnail(ctx, media, targetWidth, targetHeight, method, c, db)
+	log.Info("Generating new thumbnail")
+	return generateThumbnail(ctx, media, targetWidth, targetHeight, method, c, db, log)
 }
 
-func generateThumbnail(ctx context.Context, media types.Media, width int, height int, method string, c config.MediaRepoConfig, db storage.Database) (types.Thumbnail, error) {
+func generateThumbnail(ctx context.Context, media types.Media, width int, height int, method string, c config.MediaRepoConfig, db storage.Database, log *logrus.Entry) (types.Thumbnail, error) {
 	thumb := &types.Thumbnail{
 		Origin:     media.Origin,
 		MediaId:    media.MediaId,
@@ -99,6 +110,7 @@ func generateThumbnail(ctx context.Context, media types.Media, width int, height
 	if aspectRatio == targetAspectRatio {
 		// Highly unlikely, but if the aspect ratios match then just resize
 		method = "scale"
+		log.Info("Aspect ratio is the same, converting method to 'scale'")
 	}
 
 	if srcWidth <= width && srcHeight <= height {
@@ -106,6 +118,7 @@ func generateThumbnail(ctx context.Context, media types.Media, width int, height
 		thumb.ContentType = media.ContentType
 		thumb.Location = media.Location
 		thumb.SizeBytes = media.SizeBytes
+		log.Warn("Image too small, returning raw image")
 		return *thumb, nil
 	}
 
@@ -114,6 +127,7 @@ func generateThumbnail(ctx context.Context, media types.Media, width int, height
 	} else if method == "crop" {
 		src = imaging.Fill(src, width, height, imaging.Center, imaging.Lanczos)
 	} else {
+		log.Error("Unrecognized thumbnail method: " + method)
 		return *thumb, errors.New("unrecognized method: " + method)
 	}
 
@@ -121,17 +135,20 @@ func generateThumbnail(ctx context.Context, media types.Media, width int, height
 	imgData := &bytes.Buffer{}
 	err = imaging.Encode(imgData, src, imaging.PNG)
 	if err != nil {
+		log.Error("Unexpected error encoding thumbnail: " + err.Error())
 		return *thumb, err
 	}
 
 	// Reset the buffer pointer and store the file
 	location, err := storage.PersistFile(ctx, imgData, c, db)
 	if err != nil {
+		log.Error("Unexpected error saving thumbnail: " + err.Error())
 		return *thumb, err
 	}
 
 	fileSize, err := util.FileSize(location)
 	if err != nil {
+		log.Error("Unexpected error getting the size of the thumbnail: " + err.Error())
 		return *thumb, err
 	}
 
@@ -141,6 +158,7 @@ func generateThumbnail(ctx context.Context, media types.Media, width int, height
 
 	err = db.InsertThumbnail(ctx, thumb)
 	if err != nil {
+		log.Error("Unexpected error caching thumbnail: " + err.Error())
 		return *thumb, err
 	}
 

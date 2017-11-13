@@ -1,6 +1,7 @@
 /.idea
 /bin
 /pkg
+/logs
 
 media-repo.yaml
 

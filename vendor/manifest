@@ -14,6 +14,18 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/lestrrat/go-file-rotatelogs",
+			"repository": "https://github.com/lestrrat/go-file-rotatelogs",
+			"revision": "9df8b44f21785240553882138c5df2e9cc1db910",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/lestrrat/go-strftime",
+			"repository": "https://github.com/lestrrat/go-strftime",
+			"revision": "04ef93e285313c8978cbc7cad26d2aa7a9927451",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/lib/pq",
 			"repository": "https://github.com/lib/pq",
 			"revision": "b609790bd85edf8e9ab7e0f8912750a786177bcf",
@@ -35,6 +47,18 @@
 			"importpath": "github.com/matrix-org/util",
 			"repository": "https://github.com/matrix-org/util",
 			"revision": "8b1c8ab81986c1ce7f06a52fce48f4a1156b66ee",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/pkg/errors",
+			"repository": "https://github.com/pkg/errors",
+			"revision": "f15c970de5b76fac0b59abb32d62c17cc7bed265",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/rifflock/lfshook",
+			"repository": "https://github.com/rifflock/lfshook",
+			"revision": "3bcf86f879c771238f8a67832a1af71308801a47",
 			"branch": "master"
 		},
 		{

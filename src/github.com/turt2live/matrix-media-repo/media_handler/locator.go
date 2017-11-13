@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/matrix-org/gomatrixserverlib"
+	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/types"
@@ -17,15 +18,18 @@ import (
 var ErrMediaNotFound = errors.New("media not found")
 var ErrMediaTooLarge = errors.New("media too large")
 
-func FindMedia(ctx context.Context, server string, mediaId string, c config.MediaRepoConfig, db storage.Database) (types.Media, error) {
+func FindMedia(ctx context.Context, server string, mediaId string, c config.MediaRepoConfig, db storage.Database, log *logrus.Entry) (types.Media, error) {
+	log.Info("Looking up media")
 	media, err := db.GetMedia(ctx, server, mediaId)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			if util.IsServerOurs(server, c) {
+				log.Warn("Media not found")
 				return media, ErrMediaNotFound
 			}
 
-			media, err = DownloadMedia(ctx, server, mediaId, c, db)
+			log.Info("Attempting to download remote media")
+			media, err = DownloadMedia(ctx, server, mediaId, c, db, log)
 			return media, err
 		}
 		return media, err
@@ -34,7 +38,7 @@ func FindMedia(ctx context.Context, server string, mediaId string, c config.Medi
 	return media, nil
 }
 
-func DownloadMedia(ctx context.Context, server string, mediaId string, c config.MediaRepoConfig, db storage.Database) (types.Media, error) {
+func DownloadMedia(ctx context.Context, server string, mediaId string, c config.MediaRepoConfig, db storage.Database, log *logrus.Entry) (types.Media, error) {
 	request := &MediaUploadRequest{
 		UploadedBy: "",
 		Host:       server,
@@ -51,8 +55,10 @@ func DownloadMedia(ctx context.Context, server string, mediaId string, c config.
 	}
 
 	if resp.StatusCode == 404 {
+		log.Info("Remote media not found")
 		return types.Media{}, ErrMediaNotFound
 	} else if resp.StatusCode != 200 {
+		log.Info("Unknown error fetching remote media; received status code " + strconv.Itoa(resp.StatusCode))
 		return types.Media{}, errors.New("could not fetch remote media")
 	}
 
@@ -62,6 +68,7 @@ func DownloadMedia(ctx context.Context, server string, mediaId string, c config.
 		return types.Media{}, err
 	}
 	if c.Downloads.MaxSizeBytes > 0 && contentLength > c.Downloads.MaxSizeBytes {
+		log.Warn("Attempted to download media that was too large")
 		return types.Media{}, ErrMediaTooLarge
 	}
 
@@ -73,5 +80,6 @@ func DownloadMedia(ctx context.Context, server string, mediaId string, c config.
 		request.DesiredFilename = params["filename"]
 	}
 
-	return request.StoreMediaWithId(ctx, mediaId, c, db)
+	log.Info("Persisting downloaded remote media")
+	return request.StoreMediaWithId(ctx, mediaId, c, db, log)
 }

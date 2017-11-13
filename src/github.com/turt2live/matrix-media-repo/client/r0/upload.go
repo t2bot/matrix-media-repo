@@ -4,6 +4,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/client"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/media_handler"
@@ -23,7 +24,7 @@ type MediaUploadedResponse struct {
 	ContentUri string `json:"content_uri"`
 }
 
-func UploadMedia(w http.ResponseWriter, r *http.Request, db storage.Database, c config.MediaRepoConfig) interface{} {
+func UploadMedia(w http.ResponseWriter, r *http.Request, db storage.Database, c config.MediaRepoConfig, log *logrus.Entry) interface{} {
 	accessToken := util.GetAccessTokenFromRequest(r)
 	userId, err := util.GetUserIdFromToken(r.Context(), r.Host, accessToken, c)
 	if err != nil || userId == "" {
@@ -34,6 +35,11 @@ func UploadMedia(w http.ResponseWriter, r *http.Request, db storage.Database, c 
 	if filename == "" {
 		filename = "upload.bin"
 	}
+
+	log = log.WithFields(logrus.Fields{
+		"filename": filename,
+		"userId": userId,
+	})
 
 	contentType := r.Header.Get("Content-Type")
 	if contentType == "" {
@@ -54,9 +60,10 @@ func UploadMedia(w http.ResponseWriter, r *http.Request, db storage.Database, c 
 		Contents:        reader,
 	}
 
-	mxc, err := request.StoreAndGetMxcUri(r.Context(), c, db)
+	mxc, err := request.StoreAndGetMxcUri(r.Context(), c, db, log)
 	if err != nil {
-		return client.InternalServerError(err.Error())
+		log.Error("Unexpected error storing media: " + err.Error())
+		return client.InternalServerError("Unexpected Error")
 	}
 
 	return &MediaUploadedResponse{mxc}

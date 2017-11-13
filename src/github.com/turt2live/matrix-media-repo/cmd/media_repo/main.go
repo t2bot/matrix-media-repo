@@ -1,31 +1,39 @@
 package main
 
 import (
-	json "encoding/json"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"reflect"
 	"strconv"
 
 	"github.com/gorilla/mux"
+	log "github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/client"
 	"github.com/turt2live/matrix-media-repo/client/r0"
 	"github.com/turt2live/matrix-media-repo/config"
+	"github.com/turt2live/matrix-media-repo/logging"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
 const UnkErrJson = `{"code":"M_UNKNOWN","message":"Unexpected error processing response"}`
 
+type requestCounter struct {
+	lastId int
+}
+
 type Handler struct {
-	h func(http.ResponseWriter, *http.Request, storage.Database, config.MediaRepoConfig) interface{}
+	h func(http.ResponseWriter, *http.Request, storage.Database, config.MediaRepoConfig, *log.Entry) interface{}
 	opts HandlerOpts
 }
 
 type HandlerOpts struct {
 	db storage.Database
 	config config.MediaRepoConfig
+	reqCounter *requestCounter
 }
 
 type EmptyResponse struct {}
@@ -38,24 +46,34 @@ func main() {
 		panic(err)
 	}
 
+	err = logging.Setup(c.General.LogDirectory)
+	if err != nil {
+		panic(err)
+	}
+
+	log.Info("Starting media repository...")
+
 	db, err := storage.OpenDatabase(c.Database.Postgres)
 	if err != nil {
 		panic(err)
 	}
 
-	hOpts := HandlerOpts{*db, c}
+	counter := requestCounter{}
+	hOpts := HandlerOpts{*db, c, &counter}
 
 	uploadHandler := Handler{r0.UploadMedia, hOpts}
 	downloadHandler := Handler{r0.DownloadMedia, hOpts}
 	thumbnailHandler := Handler{r0.ThumbnailMedia, hOpts}
 
 	// r0 endpoints
+	log.Info("Registering r0 endpoints")
 	rtr.Handle("/_matrix/media/r0/upload", uploadHandler).Methods("POST")
 	rtr.Handle("/_matrix/media/r0/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}", downloadHandler).Methods("GET")
 	rtr.Handle("/_matrix/media/r0/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}/{filename:[a-zA-Z0-9._-]+}", downloadHandler).Methods("GET")
 	rtr.Handle("/_matrix/media/r0/thumbnail/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}", thumbnailHandler).Methods("GET")
 
 	// v1 endpoints (legacy)
+	log.Info("Registering v1 endpoints")
 	rtr.Handle("/_matrix/media/v1/upload", uploadHandler).Methods("POST")
 	rtr.Handle("/_matrix/media/v1/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}", downloadHandler).Methods("GET")
 	rtr.Handle("/_matrix/media/v1/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}/{filename:[a-zA-Z0-9._-]+}", downloadHandler).Methods("GET")
@@ -64,11 +82,25 @@ func main() {
 	// TODO: Intercept 404, 500, and 400 to respond with M_NOT_FOUND and M_UNKNOWN
 	// TODO: Rate limiting (429 M_LIMIT_EXCEEDED)
 
+	address:=c.General.BindAddress+":"+strconv.Itoa(c.General.Port)
 	http.Handle("/", rtr)
-	http.ListenAndServe(c.General.BindAddress+":"+strconv.Itoa(c.General.Port), nil)
+
+	log.WithField("address", address).Info("Started up. Listening at http://" + address)
+	http.ListenAndServe(address, nil)
 }
 
 func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	contextLog := log.WithFields(log.Fields{
+		"method": r.Method,
+		"host": r.Host,
+		"resource": r.URL.Path,
+		"contentType": r.Header.Get("Content-Type"),
+		"contentLength": r.Header.Get("Content-Length"),
+		"queryString": util.GetLogSafeQueryString(r),
+		"requestId": h.opts.reqCounter.GetNextId(),
+	})
+	contextLog.Info("Received request")
+
 	// Send CORS and other basic headers
 	w.Header().Set("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
@@ -80,7 +112,8 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Process response
 	var res interface{} = client.AuthFailed()
 	if util.IsServerOurs(r.Host, h.opts.config) {
-		res = h.h(w, r, h.opts.db, h.opts.config)
+		contextLog.Info("Server is owned by us, processing request")
+		res = h.h(w, r, h.opts.db, h.opts.config, contextLog)
 		if res == nil {
 			res = &EmptyResponse{}
 		}
@@ -93,6 +126,13 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	jsonStr := string(b)
+
+	_, isDownload := res.(r0.DownloadMediaResponse)
+	if isDownload {
+		contextLog.Info("Replying with result: " + reflect.TypeOf(res).Elem().Name())
+	} else {
+		contextLog.Info("Replying with result: " + jsonStr)
+	}
 
 	switch result := res.(type) {
 	case *client.ErrorResponse:
@@ -131,4 +171,11 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		io.WriteString(w, jsonStr)
 		break
 	}
+}
+
+func (c *requestCounter) GetNextId() string {
+	strId := strconv.Itoa(c.lastId)
+	c.lastId = c.lastId + 1
+
+	return "REQ-" + strId
 }

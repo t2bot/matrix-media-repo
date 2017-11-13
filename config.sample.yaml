@@ -2,6 +2,7 @@
 repo:
   bindAddress: '127.0.0.1'
   port: 8000
+  logDirectory: logs
 
 # The configuration for the homeservers this media repository is known to control. Servers
 # not listed here will not be able to upload media.
