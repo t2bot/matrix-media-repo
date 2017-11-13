@@ -2,6 +2,7 @@ package main
 
 import (
 	json "encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -86,6 +87,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case *r0.DownloadMediaResponse:
 		w.Header().Set("Content-Type", result.ContentType)
 		w.Header().Set("Content-Disposition", "inline; filename=\"" + result.Filename +"\"")
+		w.Header().Set("Content-Length", fmt.Sprint(result.SizeBytes))
 		f, err := os.Open(result.Location)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")

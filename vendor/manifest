@@ -2,6 +2,12 @@
 	"version": 0,
 	"dependencies": [
 		{
+			"importpath": "github.com/disintegration/imaging",
+			"repository": "https://github.com/disintegration/imaging",
+			"revision": "dd50a3ee9985ccd313a2f03c398fcaedc96dc707",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/gorilla/mux",
 			"repository": "https://github.com/gorilla/mux",
 			"revision": "2d5fef06b891c971b14aa6f71ca5ab6c03a36e0e",
@@ -12,6 +18,20 @@
 			"repository": "https://github.com/lib/pq",
 			"revision": "b609790bd85edf8e9ab7e0f8912750a786177bcf",
 			"branch": "master"
+		},
+		{
+			"importpath": "golang.org/x/image/bmp",
+			"repository": "https://go.googlesource.com/image",
+			"revision": "f7e31b4ea2e3413ab91b4e7d2dc83e5f8d19a44c",
+			"branch": "master",
+			"path": "/bmp"
+		},
+		{
+			"importpath": "golang.org/x/image/tiff",
+			"repository": "https://go.googlesource.com/image",
+			"revision": "f7e31b4ea2e3413ab91b4e7d2dc83e5f8d19a44c",
+			"branch": "master",
+			"path": "/tiff"
 		},
 		{
 			"importpath": "gopkg.in/yaml.v2",

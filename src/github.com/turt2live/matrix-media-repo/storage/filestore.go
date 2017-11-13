@@ -13,7 +13,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
-func PersistTempFile(ctx context.Context, file io.Reader, config config.MediaRepoConfig, db Database) (string, error) {
+func PersistFile(ctx context.Context, file io.Reader, config config.MediaRepoConfig, db Database) (string, error) {
 	var basePath string
 	var pathSize int64
 	for i := 0; i < len(config.Uploads.StoragePaths); i++ {
@@ -69,10 +69,10 @@ func PersistTempFile(ctx context.Context, file io.Reader, config config.MediaRep
 	if err != nil {
 		return "", err
 	}
-	defer f.Close()
 
 	io.Copy(f, file)
 
+	defer f.Close()
 	return f.Name(), nil
 }
 
@@ -84,10 +84,10 @@ func GetFileHash(filePath string) (string, error) {
 
 	hasher := sha256.New()
 
-	defer f.Close()
 	if _, err := io.Copy(hasher, f); err != nil {
 		return "", err
 	}
 
+	defer f.Close()
 	return hex.EncodeToString(hasher.Sum(nil)), nil
 }

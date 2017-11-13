@@ -24,7 +24,6 @@ type MediaRepoConfig struct {
 	} `yaml:"uploads"`
 
 	Thumbnails struct {
-		Dynamic bool `yaml:"dynamic"`
 		Sizes []struct {
 			Width int `yaml:"width"`
 			Height int `yaml:"height"`

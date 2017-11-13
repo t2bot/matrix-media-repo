@@ -21,7 +21,7 @@ type MediaUploadRequest struct {
 }
 
 func (r MediaUploadRequest) StoreMedia(ctx context.Context, c config.MediaRepoConfig, db storage.Database) (string, error) {
-	destination, err := storage.PersistTempFile(ctx, r.Contents, c, db)
+	destination, err := storage.PersistFile(ctx, r.Contents, c, db)
 	if err != nil {
 		return "", err
 	}
@@ -73,19 +73,10 @@ func (r MediaUploadRequest) StoreMedia(ctx context.Context, c config.MediaRepoCo
 		return util.MediaToMxc(&media), nil
 	}
 
-	f, err := os.Open(destination)
-	if err != nil {
-		os.Remove(destination)
-		return "", err
-	}
-
-	defer f.Close()
-	fi, err := f.Stat()
+	fileSize, err := util.FileSize(destination)
 	if err != nil {
 		return "", err
 	}
-
-	fileSize := fi.Size()
 
 	media := &types.Media{
 		Origin:      r.Host,
