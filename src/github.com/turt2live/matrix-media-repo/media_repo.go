@@ -59,6 +59,9 @@ func main() {
 	rtr.Handle("/_matrix/media/v1/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}/{filename:[a-zA-Z0-9._-]+}", downloadHandler).Methods("GET")
 	rtr.Handle("/_matrix/media/v1/thumbnail/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}", thumbnailHandler).Methods("GET")
 
+	// TODO: Intercept 404, 500, and 400 to respond with M_NOT_FOUND and M_UNKNOWN
+	// TODO: Rate limiting (429 M_LIMIT_EXCEEDED)
+
 	http.Handle("/", rtr)
 	http.ListenAndServe(":8000", nil)
 }
@@ -88,18 +91,19 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	switch result := res.(type) {
 	case *client.ErrorResponse:
+		w.Header().Set("Content-Type", "application/json")
 		switch result.InternalCode {
+		case "M_UNKNOWN_TOKEN":
+			http.Error(w, jsonStr, http.StatusForbidden)
+			break
 		case "M_NOT_FOUND":
-			w.Header().Set("Content-Type", "application/json")
 			http.Error(w, jsonStr, http.StatusNotFound)
 			break
 		case "M_MEDIA_TOO_LARGE":
-			w.Header().Set("Content-Type", "application/json")
 			http.Error(w, jsonStr, http.StatusRequestEntityTooLarge)
 			break
 		//case "M_UNKNOWN":
 		default:
-			w.Header().Set("Content-Type", "application/json")
 			http.Error(w, jsonStr, http.StatusInternalServerError)
 			break
 		}

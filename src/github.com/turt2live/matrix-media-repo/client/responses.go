@@ -17,3 +17,7 @@ func NotFoundError() *ErrorResponse {
 func RequestTooLarge() *ErrorResponse {
 	return &ErrorResponse{"M_UNKNOWN", "Too Large", "M_MEDIA_TOO_LARGE"}
 }
+
+func AuthFailed() *ErrorResponse {
+	return &ErrorResponse{"M_UNKNOWN_TOKEN", "Authenticaton Failed", "M_UNKNOWN_TOKEN"}
+}

@@ -8,6 +8,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/media_handler"
 	"github.com/turt2live/matrix-media-repo/storage"
+	"github.com/turt2live/matrix-media-repo/util"
 )
 
 // Request:
@@ -23,7 +24,14 @@ type MediaUploadedResponse struct {
 }
 
 func UploadMedia(w http.ResponseWriter, r *http.Request, db storage.Database, c config.MediaRepoConfig) interface{} {
-	// TODO: Validate access_token
+	if !util.IsServerOurs(r.Host, c) {
+		return client.AuthFailed()
+	}
+	accessToken := util.GetAccessTokenFromRequest(r)
+	userId, err := util.GetUserIdFromToken(r.Context(), r.Host, accessToken, c)
+	if err != nil || userId == "" {
+		return client.AuthFailed()
+	}
 
 	filename := r.URL.Query().Get("filename")
 	if filename == "" {
@@ -42,7 +50,7 @@ func UploadMedia(w http.ResponseWriter, r *http.Request, db storage.Database, c 
 	}
 
 	request := &media_handler.MediaUploadRequest{
-		UploadedBy:      "",
+		UploadedBy:      userId,
 		ContentType:     contentType,
 		DesiredFilename: filename,
 		Host:            r.Host,

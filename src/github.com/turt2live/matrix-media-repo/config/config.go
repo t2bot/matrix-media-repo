@@ -7,12 +7,14 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+type HomeserverConfig struct {
+	Name string `yaml:"name"`
+	DownloadRequiresAuth bool `yaml:"downloadRequiresAuth"`
+	ClientServerApi string `yaml:"csApi"`
+}
+
 type MediaRepoConfig struct {
-	Homeservers []struct {
-		Name string `yaml:"name"`
-		DownloadRequiresAuth bool `yaml:"downloadRequiresAuth"`
-		ClientServerApi string `yaml:"csApi"`
-	} `yaml:"homeservers,flow"`
+	Homeservers []HomeserverConfig `yaml:"homeservers,flow"`
 
 	Database struct {
 		Postgres string `yaml:"postgres"`
