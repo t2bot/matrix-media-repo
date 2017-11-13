@@ -72,6 +72,13 @@
 			"path": "/tiff"
 		},
 		{
+			"importpath": "golang.org/x/sys/unix",
+			"repository": "https://go.googlesource.com/sys",
+			"revision": "1e2299c37cc91a509f1b12369872d27be0ce98a6",
+			"branch": "master",
+			"path": "/unix"
+		},
+		{
 			"importpath": "golang.org/x/sys/windows",
 			"repository": "https://go.googlesource.com/sys",
 			"revision": "1e2299c37cc91a509f1b12369872d27be0ce98a6",
