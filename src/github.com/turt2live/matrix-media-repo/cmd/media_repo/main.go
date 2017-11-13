@@ -127,12 +127,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	jsonStr := string(b)
 
-	_, isDownload := res.(r0.DownloadMediaResponse)
-	if isDownload {
-		contextLog.Info("Replying with result: " + reflect.TypeOf(res).Elem().Name())
-	} else {
-		contextLog.Info("Replying with result: " + jsonStr)
-	}
+	contextLog.Info("Replying with result: " + reflect.TypeOf(res).Elem().Name() +" " + jsonStr)
 
 	switch result := res.(type) {
 	case *client.ErrorResponse:
