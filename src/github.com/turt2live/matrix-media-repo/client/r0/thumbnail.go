@@ -23,6 +23,10 @@ import (
 //   Body: <byte[]>
 
 func ThumbnailMedia(w http.ResponseWriter, r *http.Request, db storage.Database, c config.MediaRepoConfig) interface{} {
+	if !ValidateUserCanDownload(r, db, c) {
+		return client.AuthFailed()
+	}
+
 	params := mux.Vars(r)
 
 	server := params["server"]
