@@ -66,6 +66,10 @@ func GetThumbnail(ctx context.Context, media types.Media, width int, height int,
 		return thumb, err
 	}
 
+	if media.SizeBytes > c.Thumbnails.MaxSourceBytes {
+		return thumb, errors.New("cannot thumbnail, image too large")
+	}
+
 	return generateThumbnail(ctx, media, targetWidth, targetHeight, method, c, db)
 }
 

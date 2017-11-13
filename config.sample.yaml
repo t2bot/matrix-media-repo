@@ -25,6 +25,9 @@ uploads:
 
 # The thumbnail configuration for the media repository.
 thumbnails:
+  # The maximum number of bytes an image can be before the thumbnailer refuses.
+  maxSourceBytes: 10485760 # 10MB default, 0 to disable
+
   # All thumbnails are generated into one of the sizes listed here. The first size is used as
   # the default for when no width or height is requested. The media repository will return
   # either an exact match or the next largest size of thumbnail.
