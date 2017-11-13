@@ -31,6 +31,7 @@ func GetThumbnail(ctx context.Context, media types.Media, width int, height int,
 
 	for i := 0; i < len(c.Thumbnails.Sizes); i++ {
 		size := c.Thumbnails.Sizes[i]
+		lastSize := i == len(c.Thumbnails.Sizes) - 1
 
 		if width == size.Width && height == size.Height {
 			targetWidth = width
@@ -38,7 +39,7 @@ func GetThumbnail(ctx context.Context, media types.Media, width int, height int,
 			break
 		}
 
-		if size.Width < width || size.Height < height {
+		if (size.Width < width || size.Height < height) && !lastSize {
 			continue // too small
 		}
 
@@ -50,7 +51,7 @@ func GetThumbnail(ctx context.Context, media types.Media, width int, height int,
 		diff := diffWidth + diffHeight
 		currDiff := currDiffWidth + currDiffHeight
 
-		if !foundFirst || diff < currDiff {
+		if !foundFirst || diff < currDiff || lastSize {
 			foundFirst = true
 			targetWidth = size.Width
 			targetHeight = size.Height
