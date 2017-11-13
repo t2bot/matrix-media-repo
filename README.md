@@ -29,21 +29,81 @@ bin/matrix-media-repo
 This is intended to run behind a load balancer and beside your homeserver deployments. A sample nginx configuration for this is:
 
 ```ini
-# Redirect all matrix traffic by default to the homeserver
-location /_matrix {
-    proxy_read_timeout 60s;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $remote_addr;
-    proxy_pass http://localhost:8008; # Point this towards your homeserver
+# Client-server API
+server {
+  listen 80;
+  listen [::]:80;
+  # ssl configuration not shown
+
+  # Redirect all matrix traffic by default to the homeserver
+  location /_matrix {
+      proxy_read_timeout 60s;
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $remote_addr;
+      proxy_pass http://localhost:8008; # Point this towards your homeserver
+  }
+  
+  # Redirect all media endpoints to the media-repo
+  location /_matrix/media {
+      proxy_read_timeout 60s;
+      proxy_set_header Host $host; # Make sure this matches your homeserver in media-repo.yaml
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $remote_addr;
+      proxy_pass http://localhost:8000; # Point this towards media-repo
+  }
 }
 
-# Redirect all media endpoints to the media-repo
-location /_matrix/media {
-    proxy_read_timeout 60s;
-    proxy_set_header Host $host; # Make sure this matches your homeserver in media-repo.yaml
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $remote_addr;
-    proxy_pass http://localhost:8000; # Point this towards media-repo
+# Federation
+# This also needs to be reverse proxied to capture the remote media fetching from other servers
+server {
+  listen 8448 ssl;
+  listen [::]:8448 ssl;
+
+  # These MUST match the certificates used by synapse!
+  ssl_certificate /home/matrix/.synapse/your.homeserver.com.tls.cert;
+  ssl_certificate_key /home/matrix/.synapse/your.homeserver.com.tls.key;
+  ssl_dhparam /home/matrix/.synapse/your.homeserver.com.tls.dh;
+
+  # Redirect all traffic by default to the homeserver
+  location / {
+      proxy_read_timeout 60s;
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $remote_addr;
+      proxy_pass http://localhost:8008; # Point this towards your homeserver
+  }
+  
+  # Redirect all media endpoints to the media-repo
+  location /_matrix/media {
+      proxy_read_timeout 60s;
+      proxy_set_header Host $host; # Make sure this matches your homeserver in media-repo.yaml
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $remote_addr;
+      proxy_pass http://localhost:8000; # Point this towards media-repo
+  }
 }
+```
+
+Your synapse listener configuration would look something like this:
+```yaml
+listeners:
+  - port: 8558
+    bind_addresses: ['127.0.0.1']
+    type: http
+    tls: true
+    x_forwarded: true
+    resoruces:
+      - names: [federation]
+        compress: false
+  - port: 8008
+    bind_addresses: ['127.0.0.1']
+    type: http
+    tls: false
+    x_forwarded: true
+    resources:
+      - names: [client]
+        compress: true
+      - names: [federation]
+        compress: false
 ```
