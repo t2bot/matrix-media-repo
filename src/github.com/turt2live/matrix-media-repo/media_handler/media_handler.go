@@ -20,22 +20,33 @@ type MediaUploadRequest struct {
 	ContentType string
 }
 
-func (r MediaUploadRequest) StoreMedia(ctx context.Context, c config.MediaRepoConfig, db storage.Database) (string, error) {
-	destination, err := storage.PersistFile(ctx, r.Contents, c, db)
+func (r MediaUploadRequest) StoreAndGetMxcUri(ctx context.Context, c config.MediaRepoConfig, db storage.Database) (string, error) {
+	media, err := r.StoreMedia(ctx, c, db)
 	if err != nil {
 		return "", err
+	}
+
+	return util.MediaToMxc(&media), nil
+}
+
+func (r MediaUploadRequest) StoreMedia(ctx context.Context, c config.MediaRepoConfig, db storage.Database) (types.Media, error) {
+	placeholder := types.Media{}
+
+	destination, err := storage.PersistFile(ctx, r.Contents, c, db)
+	if err != nil {
+		return placeholder, err
 	}
 
 	hash, err := storage.GetFileHash(destination)
 	if err != nil {
 		os.Remove(destination)
-		return "", err
+		return placeholder, err
 	}
 
 	records, err := db.GetMediaByHash(ctx, hash)
 	if err != nil {
 		os.Remove(destination)
-		return "", err
+		return placeholder, err
 	}
 	if len(records) > 0 {
 		// We can delete the media: It's already duplicated at this point
@@ -49,7 +60,7 @@ func (r MediaUploadRequest) StoreMedia(ctx context.Context, c config.MediaRepoCo
 
 			// If the media is exactly the same, just return it
 			if IsMediaSame(media, r) {
-				return util.MediaToMxc(&media), nil
+				return media, nil
 			}
 
 			if media.Origin == r.Host {
@@ -67,15 +78,15 @@ func (r MediaUploadRequest) StoreMedia(ctx context.Context, c config.MediaRepoCo
 
 		err = db.InsertMedia(ctx, &media)
 		if err != nil {
-			return "", err
+			return placeholder, err
 		}
 
-		return util.MediaToMxc(&media), nil
+		return media, nil
 	}
 
 	fileSize, err := util.FileSize(destination)
 	if err != nil {
-		return "", err
+		return placeholder, err
 	}
 
 	media := &types.Media{
@@ -93,10 +104,10 @@ func (r MediaUploadRequest) StoreMedia(ctx context.Context, c config.MediaRepoCo
 	err = db.InsertMedia(ctx, media)
 	if err != nil {
 		os.Remove(destination)
-		return "", err
+		return placeholder, err
 	}
 
-	return util.MediaToMxc(media), nil
+	return *media, nil
 }
 
 func GenerateMediaId() string {

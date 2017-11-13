@@ -23,6 +23,10 @@ type MediaRepoConfig struct {
 		MaxSizeBytes int64 `yaml:"maxBytes"`
 	} `yaml:"uploads"`
 
+	Downloads struct {
+		MaxSizeBytes int64 `yaml:"maxBytes"`
+	} `yaml:"downloads"`
+
 	Thumbnails struct {
 		MaxSourceBytes int64 `yaml:"maxSourceBytes"`
 		Sizes []struct {

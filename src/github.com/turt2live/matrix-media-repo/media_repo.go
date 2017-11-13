@@ -72,10 +72,14 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	switch result := res.(type) {
 	case *client.ErrorResponse:
-		switch result.Code {
+		switch result.InternalCode {
 		case "M_NOT_FOUND":
 			w.Header().Set("Content-Type", "application/json")
 			http.Error(w, jsonStr, http.StatusNotFound)
+			break
+		case "M_MEDIA_TOO_LARGE":
+			w.Header().Set("Content-Type", "application/json")
+			http.Error(w, jsonStr, http.StatusRequestEntityTooLarge)
 			break
 		//case "M_UNKNOWN":
 		default:

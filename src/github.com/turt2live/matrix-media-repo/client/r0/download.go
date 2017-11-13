@@ -1,12 +1,12 @@
 package r0
 
 import (
-	"database/sql"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	"github.com/turt2live/matrix-media-repo/client"
 	"github.com/turt2live/matrix-media-repo/config"
+	"github.com/turt2live/matrix-media-repo/media_handler"
 	"github.com/turt2live/matrix-media-repo/storage"
 )
 
@@ -32,11 +32,12 @@ func DownloadMedia(w http.ResponseWriter, r *http.Request, db storage.Database, 
 	mediaId := params["mediaId"]
 	filename := params["filename"]
 
-	media, err := db.GetMedia(r.Context(), server, mediaId)
+	media, err := media_handler.FindMedia(r.Context(), server, mediaId, c, db)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			// TODO: Try remote fetch
+		if err == media_handler.ErrMediaNotFound {
 			return client.NotFoundError()
+		} else if err == media_handler.ErrMediaTooLarge {
+			return client.RequestTooLarge()
 		}
 		return client.InternalServerError(err.Error())
 	}

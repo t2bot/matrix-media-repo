@@ -49,7 +49,7 @@ func UploadMedia(w http.ResponseWriter, r *http.Request, db storage.Database, c 
 		Contents:        reader,
 	}
 
-	mxc, err := request.StoreMedia(r.Context(), c, db)
+	mxc, err := request.StoreAndGetMxcUri(r.Context(), c, db)
 	if err != nil {
 		return client.InternalServerError(err.Error())
 	}

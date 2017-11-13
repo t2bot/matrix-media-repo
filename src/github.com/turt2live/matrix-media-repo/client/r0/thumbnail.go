@@ -1,7 +1,6 @@
 package r0
 
 import (
-	"database/sql"
 	"net/http"
 	"strconv"
 
@@ -54,10 +53,9 @@ func ThumbnailMedia(w http.ResponseWriter, r *http.Request, db storage.Database,
 		method = "crop"
 	}
 
-	media, err := db.GetMedia(r.Context(), server, mediaId)
+	media, err := media_handler.FindMedia(r.Context(), server, mediaId, c, db)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			// TODO: Try remote fetch
+		if err == media_handler.ErrMediaNotFound {
 			return client.NotFoundError()
 		}
 		return client.InternalServerError(err.Error())

@@ -23,6 +23,10 @@ uploads:
   storagePaths:
   - /var/matrix/media
 
+# The file download settings when retrieving media from other servers
+downloads:
+  maxBytes: 10485760 # 10MB default, 0 to disable
+
 # The thumbnail configuration for the media repository.
 thumbnails:
   # The maximum number of bytes an image can be before the thumbnailer refuses.

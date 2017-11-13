@@ -20,6 +20,44 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/matrix-org/gomatrix",
+			"repository": "https://github.com/matrix-org/gomatrix",
+			"revision": "a7fc80c8060c2544fe5d4dae465b584f8e9b4e27",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/matrix-org/gomatrixserverlib",
+			"repository": "https://github.com/matrix-org/gomatrixserverlib",
+			"revision": "e46695aa9a7cd517095c9e2c518e2701eae291d5",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/matrix-org/util",
+			"repository": "https://github.com/matrix-org/util",
+			"revision": "8b1c8ab81986c1ce7f06a52fce48f4a1156b66ee",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/sirupsen/logrus",
+			"repository": "https://github.com/sirupsen/logrus",
+			"revision": "89742aefa4b206dcf400792f3bd35b542998eb3b",
+			"branch": "master"
+		},
+		{
+			"importpath": "golang.org/x/crypto/ed25519",
+			"repository": "https://go.googlesource.com/crypto",
+			"revision": "6a293f2d4b14b8e6d3f0539e383f6d0d30fce3fd",
+			"branch": "master",
+			"path": "/ed25519"
+		},
+		{
+			"importpath": "golang.org/x/crypto/ssh/terminal",
+			"repository": "https://go.googlesource.com/crypto",
+			"revision": "6a293f2d4b14b8e6d3f0539e383f6d0d30fce3fd",
+			"branch": "master",
+			"path": "/ssh/terminal"
+		},
+		{
 			"importpath": "golang.org/x/image/bmp",
 			"repository": "https://go.googlesource.com/image",
 			"revision": "f7e31b4ea2e3413ab91b4e7d2dc83e5f8d19a44c",
@@ -32,6 +70,13 @@
 			"revision": "f7e31b4ea2e3413ab91b4e7d2dc83e5f8d19a44c",
 			"branch": "master",
 			"path": "/tiff"
+		},
+		{
+			"importpath": "golang.org/x/sys/windows",
+			"repository": "https://go.googlesource.com/sys",
+			"revision": "1e2299c37cc91a509f1b12369872d27be0ce98a6",
+			"branch": "master",
+			"path": "/windows"
 		},
 		{
 			"importpath": "gopkg.in/yaml.v2",
