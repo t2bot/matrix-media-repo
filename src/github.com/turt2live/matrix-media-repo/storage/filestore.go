@@ -65,12 +65,15 @@ func PersistFile(ctx context.Context, file io.Reader, config config.MediaRepoCon
 		return "", err
 	}
 
-	f, err := os.OpenFile(targetFile, os.O_CREATE, 0755)
+	f, err := os.OpenFile(targetFile, os.O_WRONLY|os.O_CREATE, 0755)
 	if err != nil {
 		return "", err
 	}
 
-	io.Copy(f, file)
+	_, err = io.Copy(f, file)
+	if err != nil {
+		return "", err
+	}
 
 	defer f.Close()
 	return f.Name(), nil
