@@ -73,5 +73,5 @@ func DownloadMedia(ctx context.Context, server string, mediaId string, c config.
 		request.DesiredFilename = params["filename"]
 	}
 
-	return request.StoreMedia(ctx, c, db)
+	return request.StoreMediaWithId(ctx, mediaId, c, db)
 }

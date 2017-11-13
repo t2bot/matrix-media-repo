@@ -29,24 +29,22 @@ func (r MediaUploadRequest) StoreAndGetMxcUri(ctx context.Context, c config.Medi
 	return util.MediaToMxc(&media), nil
 }
 
-func (r MediaUploadRequest) StoreMedia(ctx context.Context, c config.MediaRepoConfig, db storage.Database) (types.Media, error) {
-	placeholder := types.Media{}
-
+func (r MediaUploadRequest) StoreMediaWithId(ctx context.Context, mediaId string, c config.MediaRepoConfig, db storage.Database) (types.Media, error) {
 	destination, err := storage.PersistFile(ctx, r.Contents, c, db)
 	if err != nil {
-		return placeholder, err
+		return types.Media{}, err
 	}
 
 	hash, err := storage.GetFileHash(destination)
 	if err != nil {
 		os.Remove(destination)
-		return placeholder, err
+		return types.Media{}, err
 	}
 
 	records, err := db.GetMediaByHash(ctx, hash)
 	if err != nil {
 		os.Remove(destination)
-		return placeholder, err
+		return types.Media{}, err
 	}
 	if len(records) > 0 {
 		// We can delete the media: It's already duplicated at this point
@@ -78,7 +76,7 @@ func (r MediaUploadRequest) StoreMedia(ctx context.Context, c config.MediaRepoCo
 
 		err = db.InsertMedia(ctx, &media)
 		if err != nil {
-			return placeholder, err
+			return types.Media{}, err
 		}
 
 		return media, nil
@@ -86,12 +84,12 @@ func (r MediaUploadRequest) StoreMedia(ctx context.Context, c config.MediaRepoCo
 
 	fileSize, err := util.FileSize(destination)
 	if err != nil {
-		return placeholder, err
+		return types.Media{}, err
 	}
 
 	media := &types.Media{
 		Origin:      r.Host,
-		MediaId:     GenerateMediaId(),
+		MediaId:     mediaId,
 		UploadName:  r.DesiredFilename,
 		ContentType: r.ContentType,
 		UserId:      r.UploadedBy,
@@ -104,10 +102,14 @@ func (r MediaUploadRequest) StoreMedia(ctx context.Context, c config.MediaRepoCo
 	err = db.InsertMedia(ctx, media)
 	if err != nil {
 		os.Remove(destination)
-		return placeholder, err
+		return types.Media{}, err
 	}
 
 	return *media, nil
+}
+
+func (r MediaUploadRequest) StoreMedia(ctx context.Context, c config.MediaRepoConfig, db storage.Database) (types.Media, error) {
+	return r.StoreMediaWithId(ctx, GenerateMediaId(), c, db)
 }
 
 func GenerateMediaId() string {
