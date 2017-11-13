@@ -1,6 +1,5 @@
 # The configuration for the homeservers this media repository is known to control. Servers
 # not listed here will not be able to upload media.
-# NOT YET IMPLEMENTED
 homeservers:
   - name: t2bot.io
     downloadRequiresAuth: false

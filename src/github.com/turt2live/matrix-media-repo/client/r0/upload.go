@@ -24,9 +24,6 @@ type MediaUploadedResponse struct {
 }
 
 func UploadMedia(w http.ResponseWriter, r *http.Request, db storage.Database, c config.MediaRepoConfig) interface{} {
-	if !util.IsServerOurs(r.Host, c) {
-		return client.AuthFailed()
-	}
 	accessToken := util.GetAccessTokenFromRequest(r)
 	userId, err := util.GetUserIdFromToken(r.Context(), r.Host, accessToken, c)
 	if err != nil || userId == "" {

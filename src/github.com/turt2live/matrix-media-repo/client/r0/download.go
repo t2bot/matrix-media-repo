@@ -60,10 +60,6 @@ func DownloadMedia(w http.ResponseWriter, r *http.Request, db storage.Database, 
 }
 
 func ValidateUserCanDownload(r *http.Request, db storage.Database, c config.MediaRepoConfig) (bool) {
-	if !util.IsServerOurs(r.Host, c) {
-		return true // TODO: Restrict remote media too?
-	}
-
 	hs := util.GetHomeserverConfig(r.Host, c)
 	if !hs.DownloadRequiresAuth {
 		return true // no auth required == can access

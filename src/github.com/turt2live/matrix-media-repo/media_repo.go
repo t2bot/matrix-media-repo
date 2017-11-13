@@ -12,6 +12,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/client/r0"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/storage"
+	"github.com/turt2live/matrix-media-repo/util"
 )
 
 const UnkErrJson = `{"code":"M_UNKNOWN","message":"Unexpected error processing response"}`
@@ -76,9 +77,12 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Server", "matrix-media-repo")
 
 	// Process response
-	res := h.h(w, r, h.opts.db, h.opts.config)
-	if res == nil {
-		res = &EmptyResponse{}
+	var res interface{} = client.AuthFailed()
+	if util.IsServerOurs(r.Host, h.opts.config) {
+		res = h.h(w, r, h.opts.db, h.opts.config)
+		if res == nil {
+			res = &EmptyResponse{}
+		}
 	}
 
 	b, err := json.Marshal(res)
