@@ -19,5 +19,5 @@ func RequestTooLarge() *ErrorResponse {
 }
 
 func AuthFailed() *ErrorResponse {
-	return &ErrorResponse{"M_UNKNOWN_TOKEN", "Authenticaton Failed", "M_UNKNOWN_TOKEN"}
+	return &ErrorResponse{"M_UNKNOWN_TOKEN", "Authentication Failed", "M_UNKNOWN_TOKEN"}
 }

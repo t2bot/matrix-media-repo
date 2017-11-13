@@ -21,7 +21,7 @@ gb build
 cp config.sample.yaml media-repo.yaml
 
 # Run it
-bin/matrix-media-repo
+bin/media_repo
 ```
 
 # Deployment
