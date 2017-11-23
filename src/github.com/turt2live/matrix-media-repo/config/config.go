@@ -43,6 +43,13 @@ type MediaRepoConfig struct {
 			Method string `yaml:"method"`
 		} `yaml:"sizes,flow"`
 	} `yaml:"thumbnails"`
+
+	UrlPreviews struct {
+		Enabled bool `yaml:"enabled"`
+		MaxPageSizeBytes int64 `yaml:"maxPageSizeBytes"`
+		DisallowedNetworks []string `yaml:"disallowedNetworks,flow"`
+		AllowedNetworks []string `yaml:"allowedNetworks,flow"`
+	} `yaml:"urlPreviews"`
 }
 
 func ReadConfig() (MediaRepoConfig, error) {

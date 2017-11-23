@@ -32,6 +32,25 @@ uploads:
 downloads:
   maxBytes: 10485760 # 10MB default, 0 to disable
 
+# URL Preview settings
+urlPreviews:
+  enabled: true # If enabled, the preview_url routes will be accessible
+  maxPageSizeBytes: 10485760 # 10MB default, 0 to disable
+
+  # Either allowedNetworks or disallowedNetworks must be provided. If both are provided, they
+  # will be merged. URL previews will be disabled if neither is supplied. Each entry must be
+  # a CIDR range.
+  disallowedNetworks:
+    - "127.0.0.1/8"
+    - "10.0.0.0/8"
+    - "172.16.0.0/12"
+    - "192.168.0.0/16"
+    - "100.64.0.0/10"
+    - "169.254.0.0/16"
+  allowedNetworks:
+    - "0.0.0.0/0" # "Everything". The blacklist will help limit this.
+                  # This is the default value for this field.
+
 # The thumbnail configuration for the media repository.
 thumbnails:
   # The maximum number of bytes an image can be before the thumbnailer refuses.

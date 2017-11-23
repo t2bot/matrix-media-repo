@@ -8,6 +8,13 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/dyatlov/go-opengraph/opengraph",
+			"repository": "https://github.com/dyatlov/go-opengraph",
+			"revision": "41a3523719dfbe7e8f853fbd4061867543db5270",
+			"branch": "master",
+			"path": "/opengraph"
+		},
+		{
 			"importpath": "github.com/gorilla/mux",
 			"repository": "https://github.com/gorilla/mux",
 			"revision": "2d5fef06b891c971b14aa6f71ca5ab6c03a36e0e",
@@ -94,6 +101,13 @@
 			"revision": "f7e31b4ea2e3413ab91b4e7d2dc83e5f8d19a44c",
 			"branch": "master",
 			"path": "/tiff"
+		},
+		{
+			"importpath": "golang.org/x/net/html",
+			"repository": "https://go.googlesource.com/net",
+			"revision": "fb018015d54fd2e3bfd5362a041991d350fde9d7",
+			"branch": "master",
+			"path": "/html"
 		},
 		{
 			"importpath": "golang.org/x/sys/unix",
