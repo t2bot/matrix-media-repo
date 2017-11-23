@@ -42,11 +42,11 @@ func PreviewUrl(w http.ResponseWriter, r *http.Request, db storage.Database, c c
 		return client.NotFoundError()
 	}
 
-	//accessToken := util.GetAccessTokenFromRequest(r)
-	//userId, err := util.GetUserIdFromToken(r.Context(), r.Host, accessToken, c)
-	//if err != nil || userId == "" {
-	//	return client.AuthFailed()
-	//}
+	accessToken := util.GetAccessTokenFromRequest(r)
+	userId, err := util.GetUserIdFromToken(r.Context(), r.Host, accessToken, c)
+	if err != nil || userId == "" {
+		return client.AuthFailed()
+	}
 
 	params := r.URL.Query()
 
@@ -128,7 +128,7 @@ func PreviewUrl(w http.ResponseWriter, r *http.Request, db storage.Database, c c
 	}
 
 	if og.Images != nil && len(og.Images) > 0 {
-		media, err := downloadImage(r.Context(), og.Images[0].URL, r.Host, "", c, db, log)
+		media, err := downloadImage(r.Context(), og.Images[0].URL, r.Host, userId, c, db, log)
 		if err != nil {
 			log.Error("Non-fatal error getting thumbnail: " + err.Error())
 		} else {
