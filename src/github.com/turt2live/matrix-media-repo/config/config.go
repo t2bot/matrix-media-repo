@@ -45,10 +45,10 @@ type MediaRepoConfig struct {
 	} `yaml:"thumbnails"`
 
 	UrlPreviews struct {
-		Enabled bool `yaml:"enabled"`
-		MaxPageSizeBytes int64 `yaml:"maxPageSizeBytes"`
+		Enabled            bool     `yaml:"enabled"`
+		MaxPageSizeBytes   int64    `yaml:"maxPageSizeBytes"`
 		DisallowedNetworks []string `yaml:"disallowedNetworks,flow"`
-		AllowedNetworks []string `yaml:"allowedNetworks,flow"`
+		AllowedNetworks    []string `yaml:"allowedNetworks,flow"`
 	} `yaml:"urlPreviews"`
 }
 

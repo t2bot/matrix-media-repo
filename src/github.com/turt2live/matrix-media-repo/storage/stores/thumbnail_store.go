@@ -29,7 +29,7 @@ type ThumbnailStore struct {
 }
 
 func InitThumbnailStore(sqlDb *sql.DB) (*ThumbnailStoreFactory, error) {
-	store := ThumbnailStoreFactory{stmts:&thumbnailStatements{}}
+	store := ThumbnailStoreFactory{stmts: &thumbnailStatements{}}
 	var err error
 
 	store.sqlDb = sqlDb

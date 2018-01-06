@@ -10,7 +10,7 @@ import (
 
 type RequestInfo struct {
 	Context context.Context
-	Log *logrus.Entry
-	Db storage.Database
-	Config config.MediaRepoConfig
+	Log     *logrus.Entry
+	Db      storage.Database
+	Config  config.MediaRepoConfig
 }
