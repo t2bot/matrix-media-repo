@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/url"
 
+	"github.com/disintegration/imaging"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/rcontext"
 	"github.com/turt2live/matrix-media-repo/services/handlers"
@@ -58,12 +59,10 @@ func (s *UrlService) GetPreview(urlStr string, onHost string, forUserId string) 
 	})
 
 	previewer := &handlers.OpenGraphUrlPreviewer{Info: s.i}
-	preview, err := previewer.GeneratePreview(urlStr, onHost, forUserId)
+	preview, err := previewer.GeneratePreview(urlStr)
 	if err != nil {
 		return types.UrlPreview{}, err
 	}
-
-	// TODO: Store URL preview in db
 
 	result := &types.UrlPreview{
 		Url:         preview.Url,
@@ -71,12 +70,29 @@ func (s *UrlService) GetPreview(urlStr string, onHost string, forUserId string) 
 		Type:        preview.Type,
 		Description: preview.Description,
 		Title:       preview.Title,
-		ImageMxc:    preview.ImageMxc,
-		ImageType:   preview.ImageType,
-		ImageSize:   preview.ImageSize,
-		ImageWidth:  preview.ImageWidth,
-		ImageHeight: preview.ImageHeight,
 	}
+
+	// Store the thumbnail, if there is one
+	if preview.HasImage {
+		mediaSvc := CreateMediaService(s.i)
+		media, err := mediaSvc.UploadMedia(preview.Image.Data, preview.Image.ContentType, preview.Image.Filename, forUserId, onHost)
+		if err != nil {
+			s.i.Log.Warn("Non-fatal error storing preview thumbnail: " + err.Error())
+		} else {
+			img, err := imaging.Open(media.Location)
+			if err != nil {
+				s.i.Log.Warn("Non-fatal error getting thumbnail dimensions: " + err.Error())
+			} else {
+				result.ImageMxc = util.MediaToMxc(&media)
+				result.ImageType = media.ContentType
+				result.ImageSize = media.SizeBytes
+				result.ImageWidth = img.Bounds().Max.X
+				result.ImageHeight = img.Bounds().Max.Y
+			}
+		}
+	}
+
+	// TODO: Store URL preview in db
 
 	return *result, nil
 }

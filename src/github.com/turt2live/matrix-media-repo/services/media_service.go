@@ -2,9 +2,14 @@ package services
 
 import (
 	"database/sql"
+	"io"
+	"os"
+	"time"
 
+	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/rcontext"
 	"github.com/turt2live/matrix-media-repo/services/handlers"
+	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/stores"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
@@ -41,15 +46,121 @@ func (s *MediaService) GetMedia(server string, mediaId string) (types.Media, err
 			return types.Media{}, err
 		}
 
-		request := &handlers.MediaUploadRequest{
-			DesiredFilename: downloaded.DesiredFilename,
-			ContentType:     downloaded.ContentType,
-			Contents:        downloaded.Contents,
-			Host:            server,
-			UploadedBy:      "",
-		}
-		return request.StoreMedia(s.i)
+		return s.StoreMedia(downloaded.Contents, downloaded.ContentType, downloaded.DesiredFilename, "", server, mediaId)
 	}
 
 	return media, nil
+}
+
+func (s *MediaService) UploadMedia(contents io.Reader, contentType string, filename string, userId string, host string) (types.Media, error) {
+	data := io.LimitReader(contents, s.i.Config.Uploads.MaxSizeBytes)
+	return s.StoreMedia(data, contentType, filename, userId, host, generateMediaId())
+}
+
+func (s *MediaService) StoreMedia(contents io.Reader, contentType string, filename string, userId string, host string, mediaId string) (types.Media, error) {
+	log := s.i.Log.WithFields(logrus.Fields{
+		"mediaService_mediaId": mediaId,
+		"mediaService_host":    host,
+	})
+
+	// Store the file in a temporary location
+	fileLocation, err := storage.PersistFile(contents, s.i.Config, s.i.Context, &s.i.Db)
+	if err != nil {
+		return types.Media{}, err
+	}
+
+	hash, err := storage.GetFileHash(fileLocation)
+	if err != nil {
+		defer os.Remove(fileLocation) // attempt cleanup
+		return types.Media{}, err
+	}
+
+	records, err := s.store.GetByHash(hash)
+	if err != nil {
+		defer os.Remove(fileLocation) // attempt cleanup
+		return types.Media{}, err
+	}
+
+	// If there's at least one record, then we have a duplicate hash - try and process it
+	if len(records) > 0 {
+		// We can delete the file - it's already duplicated at this point
+		defer os.Remove(fileLocation)
+
+		// See if we one of the duplicate records is a match for the host and media ID. We'll otherwise use
+		// the last duplicate (should only be 1 anyways) as our starting point for a new record.
+		var media types.Media
+		for i := 0; i < len(records); i++ {
+			media = records[i]
+
+			if media.Origin == host && media.MediaId == mediaId {
+				if media.ContentType != contentType || media.UserId != userId || media.UploadName != filename {
+					// The unique constraint in the database prevents us from storing a duplicate, and we can't generate a new
+					// media ID because then we'd be discarding the caller's media ID. In practice, this particular branch would
+					// only be executed if a file over federation got changed and we, for some reason, re-downloaded it.
+					log.Warn("Match found for media based on host and media ID. Filename, content type, or user ID may not match. Returning unaltered media record")
+				} else {
+					log.Info("Match found for media based on host and media ID. Returning unaltered media record.")
+				}
+
+				return media, nil
+			}
+
+			// The last media object will be used to create a new pointer (normally there should only be one anyways)
+		}
+
+		log.Info("Duplicate media hash found, generating a new record using the existing file")
+
+		media.Origin = host
+		media.UserId = userId
+		media.MediaId = mediaId
+		media.UploadName = filename
+		media.ContentType = contentType
+		media.CreationTs = time.Now().UnixNano() / 1000000
+
+		err = s.store.Insert(&media)
+		if err != nil {
+			return types.Media{}, err
+		}
+
+		return media, nil
+	}
+
+	// No duplicate hash, so we have to create a new record
+
+	fileSize, err := util.FileSize(fileLocation)
+	if err != nil {
+		defer os.Remove(fileLocation) // attempt cleanup
+		return types.Media{}, err
+	}
+
+	log.Info("Persisting unique media record")
+
+	media := &types.Media{
+		Origin:      host,
+		MediaId:     mediaId,
+		UploadName:  filename,
+		ContentType: contentType,
+		UserId:      userId,
+		Sha256Hash:  hash,
+		SizeBytes:   fileSize,
+		Location:    fileLocation,
+		CreationTs:  time.Now().UnixNano() / 1000000,
+	}
+
+	err = s.store.Insert(media)
+	if err != nil {
+		defer os.Remove(fileLocation) // attempt cleanup
+		return types.Media{}, err
+	}
+
+	return *media, nil
+}
+
+func generateMediaId() string {
+	str, err := util.GenerateRandomString(64)
+	if err != nil {
+		panic(err)
+	}
+
+	return str
 }

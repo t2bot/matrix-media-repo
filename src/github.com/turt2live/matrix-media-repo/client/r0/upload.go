@@ -1,13 +1,12 @@
 package r0
 
 import (
-	"io"
 	"net/http"
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/client"
 	"github.com/turt2live/matrix-media-repo/rcontext"
-	"github.com/turt2live/matrix-media-repo/services/handlers"
+	"github.com/turt2live/matrix-media-repo/services"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
@@ -37,25 +36,13 @@ func UploadMedia(w http.ResponseWriter, r *http.Request, i rcontext.RequestInfo)
 		contentType = "application/octet-stream" // binary
 	}
 
-	var reader io.Reader
-	reader = r.Body
-	if i.Config.Uploads.MaxSizeBytes > 0 {
-		reader = io.LimitReader(r.Body, i.Config.Uploads.MaxSizeBytes)
-	}
-
-	request := &handlers.MediaUploadRequest{
-		UploadedBy:      userId,
-		ContentType:     contentType,
-		DesiredFilename: filename,
-		Host:            r.Host,
-		Contents:        reader,
-	}
-
-	mxc, err := request.StoreAndGetMxcUri(i)
+	svc := services.CreateMediaService(i)
+	media, err := svc.UploadMedia(r.Body, contentType, filename, userId, r.Host)
 	if err != nil {
 		i.Log.Error("Unexpected error storing media: " + err.Error())
 		return client.InternalServerError("Unexpected Error")
 	}
 
+	mxc := util.MediaToMxc(&media)
 	return &MediaUploadedResponse{mxc}
 }

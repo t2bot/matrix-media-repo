@@ -9,12 +9,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/disintegration/imaging"
 	"github.com/dyatlov/go-opengraph/opengraph"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/rcontext"
-	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
@@ -24,18 +22,21 @@ type OpenGraphResult struct {
 	Type        string
 	Description string
 	Title       string
-	ImageMxc    string
-	ImageType   string
-	ImageSize   int64
-	ImageWidth  int
-	ImageHeight int
+	Image       OpenGraphImage
+	HasImage    bool
+}
+
+type OpenGraphImage struct {
+	ContentType string
+	Data        io.Reader
+	Filename    string
 }
 
 type OpenGraphUrlPreviewer struct {
 	Info rcontext.RequestInfo
 }
 
-func (p *OpenGraphUrlPreviewer) GeneratePreview(url string, onHost string, forUserId string) (OpenGraphResult, error) {
+func (p *OpenGraphUrlPreviewer) GeneratePreview(url string) (OpenGraphResult, error) {
 	html, err := downloadContent(url, p.Info.Config, p.Info.Log)
 	if err != nil {
 		p.Info.Log.Error("Error downloading content: " + err.Error())
@@ -60,20 +61,12 @@ func (p *OpenGraphUrlPreviewer) GeneratePreview(url string, onHost string, forUs
 	}
 
 	if og.Images != nil && len(og.Images) > 0 {
-		media, err := downloadImage(og.Images[0].URL, onHost, forUserId, p.Info)
+		img, err := downloadImage(og.Images[0].URL, p.Info)
 		if err != nil {
 			p.Info.Log.Error("Non-fatal error getting thumbnail: " + err.Error())
 		} else {
-			img, err := imaging.Open(media.Location)
-			if err != nil {
-				p.Info.Log.Error("Non-fatal error getting thumbnail dimensions: " + err.Error())
-			} else {
-				graph.ImageMxc = util.MediaToMxc(&media)
-				graph.ImageSize = media.SizeBytes
-				graph.ImageType = media.ContentType
-				graph.ImageWidth = img.Bounds().Max.X
-				graph.ImageHeight = img.Bounds().Max.Y
-			}
+			graph.Image = img
+			graph.HasImage = true
 		}
 	}
 
@@ -108,33 +101,26 @@ func downloadContent(urlStr string, c config.MediaRepoConfig, log *logrus.Entry)
 	return html, nil
 }
 
-func downloadImage(imageUrl string, host string, userId string, i rcontext.RequestInfo) (types.Media, error) {
+func downloadImage(imageUrl string, i rcontext.RequestInfo) (OpenGraphImage, error) {
 	i.Log.Info("Getting image from " + imageUrl)
 	resp, err := http.Get(imageUrl)
 	if err != nil {
-		return types.Media{}, err
+		return OpenGraphImage{}, err
 	}
 	if resp.StatusCode != http.StatusOK {
 		i.Log.Warn("Received status code " + strconv.Itoa(resp.StatusCode))
-		return types.Media{}, errors.New("error during transfer")
+		return OpenGraphImage{}, errors.New("error during transfer")
 	}
 
-	var reader io.Reader
-	reader = resp.Body
-	if i.Config.Uploads.MaxSizeBytes > 0 {
-		reader = io.LimitReader(resp.Body, i.Config.Uploads.MaxSizeBytes)
-	}
-
-	request := &MediaUploadRequest{
+	image := &OpenGraphImage{
 		ContentType: resp.Header.Get("Content-Type"),
-		Host:        host,
-		Contents:    reader,
-		UploadedBy:  userId,
+		Data:        resp.Body,
 	}
+
 	_, params, err := mime.ParseMediaType(resp.Header.Get("Content-Disposition"))
 	if err == nil && params["filename"] != "" {
-		request.DesiredFilename = params["filename"]
+		image.Filename = params["filename"]
 	}
 
-	return request.StoreMedia(i)
+	return *image, nil
 }
