@@ -6,9 +6,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/client"
-	"github.com/turt2live/matrix-media-repo/config"
-	"github.com/turt2live/matrix-media-repo/media_handler"
-	"github.com/turt2live/matrix-media-repo/storage"
+	"github.com/turt2live/matrix-media-repo/rcontext"
+	"github.com/turt2live/matrix-media-repo/services"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
@@ -19,8 +18,8 @@ type DownloadMediaResponse struct {
 	Location    string
 }
 
-func DownloadMedia(w http.ResponseWriter, r *http.Request, db storage.Database, c config.MediaRepoConfig, log *logrus.Entry) interface{} {
-	if !ValidateUserCanDownload(r, db, c) {
+func DownloadMedia(w http.ResponseWriter, r *http.Request, i rcontext.RequestInfo) interface{} {
+	if !ValidateUserCanDownload(r, i) {
 		return client.AuthFailed()
 	}
 
@@ -30,20 +29,22 @@ func DownloadMedia(w http.ResponseWriter, r *http.Request, db storage.Database, 
 	mediaId := params["mediaId"]
 	filename := params["filename"]
 
-	log = log.WithFields(logrus.Fields{
+	i.Log = i.Log.WithFields(logrus.Fields{
 		"mediaId":  mediaId,
 		"server":   server,
 		"filename": filename,
 	})
 
-	media, err := media_handler.FindMedia(r.Context(), server, mediaId, c, db, log)
+	svc := services.CreateMediaService(i)
+
+	media, err := svc.GetMedia(server, mediaId)
 	if err != nil {
-		if err == media_handler.ErrMediaNotFound {
+		if err == util.ErrMediaNotFound {
 			return client.NotFoundError()
-		} else if err == media_handler.ErrMediaTooLarge {
+		} else if err == util.ErrMediaTooLarge {
 			return client.RequestTooLarge()
 		}
-		log.Error("Unexpected error locating media: " + err.Error())
+		i.Log.Error("Unexpected error locating media: " + err.Error())
 		return client.InternalServerError("Unexpected Error")
 	}
 
@@ -59,13 +60,13 @@ func DownloadMedia(w http.ResponseWriter, r *http.Request, db storage.Database, 
 	}
 }
 
-func ValidateUserCanDownload(r *http.Request, db storage.Database, c config.MediaRepoConfig) (bool) {
-	hs := util.GetHomeserverConfig(r.Host, c)
+func ValidateUserCanDownload(r *http.Request, i rcontext.RequestInfo) (bool) {
+	hs := util.GetHomeserverConfig(r.Host, i.Config)
 	if !hs.DownloadRequiresAuth {
 		return true // no auth required == can access
 	}
 
 	accessToken := util.GetAccessTokenFromRequest(r)
-	userId, err := util.GetUserIdFromToken(r.Context(), r.Host, accessToken, c)
+	userId, err := util.GetUserIdFromToken(i.Context, r.Host, accessToken, i.Config)
 	return userId != "" && err != nil
 }

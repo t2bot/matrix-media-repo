@@ -6,9 +6,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/client"
-	"github.com/turt2live/matrix-media-repo/config"
-	"github.com/turt2live/matrix-media-repo/media_handler"
-	"github.com/turt2live/matrix-media-repo/storage"
+	"github.com/turt2live/matrix-media-repo/rcontext"
+	"github.com/turt2live/matrix-media-repo/services/handlers"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
@@ -16,9 +15,9 @@ type MediaUploadedResponse struct {
 	ContentUri string `json:"content_uri"`
 }
 
-func UploadMedia(w http.ResponseWriter, r *http.Request, db storage.Database, c config.MediaRepoConfig, log *logrus.Entry) interface{} {
+func UploadMedia(w http.ResponseWriter, r *http.Request, i rcontext.RequestInfo) interface{} {
 	accessToken := util.GetAccessTokenFromRequest(r)
-	userId, err := util.GetUserIdFromToken(r.Context(), r.Host, accessToken, c)
+	userId, err := util.GetUserIdFromToken(r.Context(), r.Host, accessToken, i.Config)
 	if err != nil || userId == "" {
 		return client.AuthFailed()
 	}
@@ -28,7 +27,7 @@ func UploadMedia(w http.ResponseWriter, r *http.Request, db storage.Database, c 
 		filename = "upload.bin"
 	}
 
-	log = log.WithFields(logrus.Fields{
+	i.Log = i.Log.WithFields(logrus.Fields{
 		"filename": filename,
 		"userId":   userId,
 	})
@@ -40,11 +39,11 @@ func UploadMedia(w http.ResponseWriter, r *http.Request, db storage.Database, c 
 
 	var reader io.Reader
 	reader = r.Body
-	if c.Uploads.MaxSizeBytes > 0 {
-		reader = io.LimitReader(r.Body, c.Uploads.MaxSizeBytes)
+	if i.Config.Uploads.MaxSizeBytes > 0 {
+		reader = io.LimitReader(r.Body, i.Config.Uploads.MaxSizeBytes)
 	}
 
-	request := &media_handler.MediaUploadRequest{
+	request := &handlers.MediaUploadRequest{
 		UploadedBy:      userId,
 		ContentType:     contentType,
 		DesiredFilename: filename,
@@ -52,9 +51,9 @@ func UploadMedia(w http.ResponseWriter, r *http.Request, db storage.Database, c 
 		Contents:        reader,
 	}
 
-	mxc, err := request.StoreAndGetMxcUri(r.Context(), c, db, log)
+	mxc, err := request.StoreAndGetMxcUri(i)
 	if err != nil {
-		log.Error("Unexpected error storing media: " + err.Error())
+		i.Log.Error("Unexpected error storing media: " + err.Error())
 		return client.InternalServerError("Unexpected Error")
 	}
 

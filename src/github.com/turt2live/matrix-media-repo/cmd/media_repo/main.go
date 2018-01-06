@@ -15,6 +15,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/client/r0"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/logging"
+	"github.com/turt2live/matrix-media-repo/rcontext"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/util"
 )
@@ -26,7 +27,7 @@ type requestCounter struct {
 }
 
 type Handler struct {
-	h    func(http.ResponseWriter, *http.Request, storage.Database, config.MediaRepoConfig, *log.Entry) interface{}
+	h    func(http.ResponseWriter, *http.Request, rcontext.RequestInfo) interface{}
 	opts HandlerOpts
 }
 
@@ -116,7 +117,12 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var res interface{} = client.AuthFailed()
 	if util.IsServerOurs(r.Host, h.opts.config) {
 		contextLog.Info("Server is owned by us, processing request")
-		res = h.h(w, r, h.opts.db, h.opts.config, contextLog)
+		res = h.h(w, r, rcontext.RequestInfo{
+			Log:     contextLog,
+			Config:  h.opts.config,
+			Context: r.Context(),
+			Db:      h.opts.db,
+		})
 		if res == nil {
 			res = &EmptyResponse{}
 		}

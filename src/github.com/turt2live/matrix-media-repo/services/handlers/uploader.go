@@ -1,13 +1,12 @@
-package media_handler
+package handlers
 
 import (
-	"context"
 	"io"
 	"os"
 	"time"
 
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/config"
+	"github.com/turt2live/matrix-media-repo/rcontext"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
@@ -21,8 +20,10 @@ type MediaUploadRequest struct {
 	ContentType     string
 }
 
-func (r MediaUploadRequest) StoreAndGetMxcUri(ctx context.Context, c config.MediaRepoConfig, db storage.Database, log *logrus.Entry) (string, error) {
-	media, err := r.StoreMedia(ctx, c, db, log)
+// TODO: These functions should be moved to the media service
+
+func (r MediaUploadRequest) StoreAndGetMxcUri(i rcontext.RequestInfo) (string, error) {
+	media, err := r.StoreMedia(i)
 	if err != nil {
 		return "", err
 	}
@@ -30,12 +31,12 @@ func (r MediaUploadRequest) StoreAndGetMxcUri(ctx context.Context, c config.Medi
 	return util.MediaToMxc(&media), nil
 }
 
-func (r MediaUploadRequest) StoreMediaWithId(ctx context.Context, mediaId string, c config.MediaRepoConfig, db storage.Database, log *logrus.Entry) (types.Media, error) {
-	log = log.WithFields(logrus.Fields{
+func (r MediaUploadRequest) StoreMediaWithId(mediaId string, info rcontext.RequestInfo) (types.Media, error) {
+	info.Log = info.Log.WithFields(logrus.Fields{
 		"handlerMediaId": mediaId,
 	})
 
-	destination, err := storage.PersistFile(ctx, r.Contents, c, db)
+	destination, err := storage.PersistFile(r.Contents, info.Config, info.Context, &info.Db)
 	if err != nil {
 		return types.Media{}, err
 	}
@@ -46,7 +47,9 @@ func (r MediaUploadRequest) StoreMediaWithId(ctx context.Context, mediaId string
 		return types.Media{}, err
 	}
 
-	records, err := db.GetMediaByHash(ctx, hash)
+	mediaStore := info.Db.GetMediaStore(info.Context, info.Log)
+
+	records, err := mediaStore.GetByHash(hash)
 	if err != nil {
 		os.Remove(destination)
 		return types.Media{}, err
@@ -63,19 +66,19 @@ func (r MediaUploadRequest) StoreMediaWithId(ctx context.Context, mediaId string
 
 			// If the media is exactly the same, just return it
 			if IsMediaSame(media, r) {
-				log.Info("Exact media duplicate found, returning unaltered media record")
+				info.Log.Info("Exact media duplicate found, returning unaltered media record")
 				return media, nil
 			}
 
 			if media.Origin == r.Host {
-				log.Info("Media duplicate found, assigning a new media ID for new origin")
+				info.Log.Info("Media duplicate found, assigning a new media ID for new origin")
 				// Generate a new ID for this upload
 				media.MediaId = GenerateMediaId()
 				break
 			}
 		}
 
-		log.Info("Duplicate media found, generating new record using existing file")
+		info.Log.Info("Duplicate media found, generating new record using existing file")
 
 		media.Origin = r.Host
 		media.UserId = r.UploadedBy
@@ -83,7 +86,7 @@ func (r MediaUploadRequest) StoreMediaWithId(ctx context.Context, mediaId string
 		media.ContentType = r.ContentType
 		media.CreationTs = time.Now().UnixNano() / 1000000
 
-		err = db.InsertMedia(ctx, &media)
+		err = mediaStore.Insert(&media)
 		if err != nil {
 			return types.Media{}, err
 		}
@@ -91,7 +94,7 @@ func (r MediaUploadRequest) StoreMediaWithId(ctx context.Context, mediaId string
 		return media, nil
 	}
 
-	log.Info("Persisting unique media record")
+	info.Log.Info("Persisting unique media record")
 
 	fileSize, err := util.FileSize(destination)
 	if err != nil {
@@ -110,7 +113,7 @@ func (r MediaUploadRequest) StoreMediaWithId(ctx context.Context, mediaId string
 		CreationTs:  time.Now().UnixNano() / 1000000,
 	}
 
-	err = db.InsertMedia(ctx, media)
+	err = mediaStore.Insert(media)
 	if err != nil {
 		os.Remove(destination)
 		return types.Media{}, err
@@ -119,8 +122,8 @@ func (r MediaUploadRequest) StoreMediaWithId(ctx context.Context, mediaId string
 	return *media, nil
 }
 
-func (r MediaUploadRequest) StoreMedia(ctx context.Context, c config.MediaRepoConfig, db storage.Database, log *logrus.Entry) (types.Media, error) {
-	return r.StoreMediaWithId(ctx, GenerateMediaId(), c, db, log)
+func (r MediaUploadRequest) StoreMedia(i rcontext.RequestInfo) (types.Media, error) {
+	return r.StoreMediaWithId(GenerateMediaId(), i)
 }
 
 func GenerateMediaId() string {
