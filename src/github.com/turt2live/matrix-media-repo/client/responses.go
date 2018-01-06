@@ -10,6 +10,10 @@ func InternalServerError(message string) *ErrorResponse {
 	return &ErrorResponse{"M_UNKNOWN", message, "M_UNKNOWN"}
 }
 
+func MethodNotAllowed() *ErrorResponse {
+	return &ErrorResponse{"M_UNKNOWN", "Method Not Allowed", "M_METHOD_NOT_ALLOWED"}
+}
+
 func NotFoundError() *ErrorResponse {
 	return &ErrorResponse{"M_NOT_FOUND", "Not found", "M_NOT_FOUND"}
 }

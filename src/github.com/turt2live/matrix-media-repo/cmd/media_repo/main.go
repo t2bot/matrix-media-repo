@@ -37,6 +37,11 @@ type HandlerOpts struct {
 	reqCounter *requestCounter
 }
 
+type ApiRoute struct {
+	Method  string
+	Handler Handler
+}
+
 type EmptyResponse struct{}
 
 func main() {
@@ -62,28 +67,37 @@ func main() {
 	counter := requestCounter{}
 	hOpts := HandlerOpts{*db, c, &counter}
 
+	optionsHandler := Handler{optionsRequest, hOpts}
 	uploadHandler := Handler{r0.UploadMedia, hOpts}
 	downloadHandler := Handler{r0.DownloadMedia, hOpts}
 	thumbnailHandler := Handler{r0.ThumbnailMedia, hOpts}
 	previewUrlHandler := Handler{r0.PreviewUrl, hOpts}
 
-	// r0 endpoints
-	log.Info("Registering r0 endpoints")
-	rtr.Handle("/_matrix/media/r0/upload", uploadHandler).Methods("POST")
-	rtr.Handle("/_matrix/media/r0/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}", downloadHandler).Methods("GET")
-	rtr.Handle("/_matrix/media/r0/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}/{filename:[a-zA-Z0-9._-]+}", downloadHandler).Methods("GET")
-	rtr.Handle("/_matrix/media/r0/thumbnail/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}", thumbnailHandler).Methods("GET")
-	rtr.Handle("/_matrix/media/r0/preview_url", previewUrlHandler).Methods("GET")
+	routes := make(map[string]*ApiRoute)
 
-	// v1 endpoints (legacy)
-	log.Info("Registering v1 endpoints")
-	rtr.Handle("/_matrix/media/v1/upload", uploadHandler).Methods("POST")
-	rtr.Handle("/_matrix/media/v1/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}", downloadHandler).Methods("GET")
-	rtr.Handle("/_matrix/media/v1/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}/{filename:[a-zA-Z0-9._-]+}", downloadHandler).Methods("GET")
-	rtr.Handle("/_matrix/media/v1/thumbnail/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}", thumbnailHandler).Methods("GET")
-	rtr.Handle("/_matrix/media/v1/preview_url", previewUrlHandler).Methods("GET")
+	// r0 (typically clients)
+	routes["/_matrix/media/r0/upload"] = &ApiRoute{"POST", uploadHandler}
+	routes["/_matrix/media/r0/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}"] = &ApiRoute{"GET", downloadHandler}
+	routes["/_matrix/media/r0/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}/{filename:[a-zA-Z0-9._-]+}"] = &ApiRoute{"GET", downloadHandler}
+	routes["/_matrix/media/r0/thumbnail/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}"] = &ApiRoute{"GET", thumbnailHandler}
+	routes["/_matrix/media/r0/preview_url"] = &ApiRoute{"GET", previewUrlHandler}
 
-	// TODO: Intercept 404, 500, and 400 to respond with M_NOT_FOUND and M_UNKNOWN
+	// v1 (typically federation)
+	routes["/_matrix/media/v1/upload"] = &ApiRoute{"POST", uploadHandler}
+	routes["/_matrix/media/v1/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}"] = &ApiRoute{"GET", downloadHandler}
+	routes["/_matrix/media/v1/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}/{filename:[a-zA-Z0-9._-]+}"] = &ApiRoute{"GET", downloadHandler}
+	routes["/_matrix/media/v1/thumbnail/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}"] = &ApiRoute{"GET", thumbnailHandler}
+	routes["/_matrix/media/v1/preview_url"] = &ApiRoute{"GET", previewUrlHandler}
+
+	for routePath, opts := range routes {
+		log.Info("Registering route: " + opts.Method + " " + routePath)
+		rtr.Handle(routePath, opts.Handler).Methods(opts.Method)
+		rtr.Handle(routePath, optionsHandler).Methods("OPTIONS")
+	}
+
+	rtr.NotFoundHandler = Handler{client.NotFoundHandler, hOpts}
+	rtr.MethodNotAllowedHandler = Handler{client.MethodNotAllowedHandler, hOpts}
+
 	// TODO: Rate limiting (429 M_LIMIT_EXCEEDED)
 
 	address := c.General.BindAddress + ":" + strconv.Itoa(c.General.Port)
@@ -154,6 +168,9 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case "M_BAD_REQUEST":
 			http.Error(w, jsonStr, http.StatusBadRequest)
 			break
+		case "M_METHOD_NOT_ALLOWED":
+			http.Error(w, jsonStr, http.StatusMethodNotAllowed)
+			break
 		default: // M_UNKNOWN
 			http.Error(w, jsonStr, http.StatusInternalServerError)
 			break
@@ -184,4 +201,8 @@ func (c *requestCounter) GetNextId() string {
 	c.lastId = c.lastId + 1
 
 	return "REQ-" + strId
+}
+
+func optionsRequest(w http.ResponseWriter, r *http.Request, i rcontext.RequestInfo) interface{} {
+	return &EmptyResponse{}
 }
