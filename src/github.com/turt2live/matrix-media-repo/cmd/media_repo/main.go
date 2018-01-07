@@ -8,6 +8,7 @@ import (
 	"os"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/didip/tollbooth"
@@ -123,6 +124,7 @@ func main() {
 }
 
 func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	r.Host = strings.Split(r.Host, ":")[0]
 	contextLog := log.WithFields(log.Fields{
 		"method":        r.Method,
 		"host":          r.Host,
