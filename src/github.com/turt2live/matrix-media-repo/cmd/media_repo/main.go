@@ -74,6 +74,7 @@ func main() {
 	downloadHandler := Handler{r0.DownloadMedia, hOpts}
 	thumbnailHandler := Handler{r0.ThumbnailMedia, hOpts}
 	previewUrlHandler := Handler{r0.PreviewUrl, hOpts}
+	identiconHandler := Handler{r0.Identicon, hOpts}
 
 	routes := make(map[string]*ApiRoute)
 
@@ -83,6 +84,8 @@ func main() {
 	routes["/_matrix/media/r0/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}/{filename:[a-zA-Z0-9._-]+}"] = &ApiRoute{"GET", downloadHandler}
 	routes["/_matrix/media/r0/thumbnail/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}"] = &ApiRoute{"GET", thumbnailHandler}
 	routes["/_matrix/media/r0/preview_url"] = &ApiRoute{"GET", previewUrlHandler}
+	routes["/_matrix/media/r0/identicon"] = &ApiRoute{"GET", identiconHandler}
+	routes["/_matrix/media/r0/identicon/{seed:[a-zA-Z0-9]+}"] = &ApiRoute{"GET", identiconHandler}
 
 	// v1 (typically federation)
 	routes["/_matrix/media/v1/upload"] = &ApiRoute{"POST", uploadHandler}
@@ -90,6 +93,8 @@ func main() {
 	routes["/_matrix/media/v1/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}/{filename:[a-zA-Z0-9._-]+}"] = &ApiRoute{"GET", downloadHandler}
 	routes["/_matrix/media/v1/thumbnail/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}"] = &ApiRoute{"GET", thumbnailHandler}
 	routes["/_matrix/media/v1/preview_url"] = &ApiRoute{"GET", previewUrlHandler}
+	routes["/_matrix/media/v1/identicon"] = &ApiRoute{"GET", identiconHandler}
+	routes["/_matrix/media/v1/identicon/{seed:[a-zA-Z0-9]+}"] = &ApiRoute{"GET", identiconHandler}
 
 	for routePath, opts := range routes {
 		log.Info("Registering route: " + opts.Method + " " + routePath)
@@ -205,6 +210,10 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		defer f.Close()
 		io.Copy(w, f)
+		break
+	case *r0.IdenticonResponse:
+		w.Header().Set("Content-Type", "image/png")
+		io.Copy(w, result.Avatar)
 		break
 	default:
 		w.Header().Set("Content-Type", "application/json")

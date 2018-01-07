@@ -2,6 +2,18 @@
 	"version": 0,
 	"dependencies": [
 		{
+			"importpath": "github.com/ajstarks/svgo",
+			"repository": "https://github.com/ajstarks/svgo",
+			"revision": "f9be02f22f2c23fbdd01ed76e5c7f5af79e13f9b",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/cupcake/sigil",
+			"repository": "https://github.com/cupcake/sigil",
+			"revision": "6bf9722f2ae82f58a0c7d48daeb40ec844b78eae",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/didip/tollbooth",
 			"repository": "https://github.com/didip/tollbooth",
 			"revision": "b65680a2d5f624ed528d36f8406f31535555828a",
