@@ -107,3 +107,31 @@ listeners:
       - names: [federation]
         compress: false
 ```
+
+# Importing media from synapse
+
+Media is imported by connecting to your synapse database and downloading all the content from the homeserver. This is so you have a backup of the media repository still with synapse. **Do not point traffic at the media repo until after the import is complete.**
+
+1. Build the media repo
+2. Configure the `media-repo.yaml`
+3. Run `bin/import_synapse`. The usage is below. 
+    ```
+    Usage of ./bin/import_synapse:
+      -baseUrl string
+            The base URL to access your homeserver with (default "http://localhost:8008")
+      -dbHost string
+            The IP or hostname of the postgresql server with the synapse database (default "localhost")
+      -dbName string
+            The name of the synapse database (default "synapse")
+      -dbPassword string
+            The password to authorize the postgres user. Can be omitted to be prompted when run
+      -dbPort int
+            The port to access postgres on (default 5432)
+      -dbUsername string
+            The username to access postgres with (default "synapse")
+      -serverName string
+            The name of your homeserver (eg: matrix.org) (default "localhost")
+    ```
+    Assuming the media repository, postgres database, and synapse are all on the same host, the command to run would look something like: `bin/import_synapse -serverName myserver.com -dbUsername my_database_user -dbName synapse`
+4. Wait for the import to complete. The script will automatically deduplicate media.
+5. Point traffic to the media repository

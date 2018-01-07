@@ -39,6 +39,12 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/howeyc/gopass",
+			"repository": "https://github.com/howeyc/gopass",
+			"revision": "bf9dde6d0d2c004a008c27aaee91170c786f6db8",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/lestrrat/go-file-rotatelogs",
 			"repository": "https://github.com/lestrrat/go-file-rotatelogs",
 			"revision": "9df8b44f21785240553882138c5df2e9cc1db910",
