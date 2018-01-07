@@ -77,24 +77,17 @@ func main() {
 	identiconHandler := Handler{r0.Identicon, hOpts}
 
 	routes := make(map[string]*ApiRoute)
+	versions := []string{"r0", "v1"} // r0 is typically clients and v1 is typically servers
 
-	// r0 (typically clients)
-	routes["/_matrix/media/r0/upload"] = &ApiRoute{"POST", uploadHandler}
-	routes["/_matrix/media/r0/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}"] = &ApiRoute{"GET", downloadHandler}
-	routes["/_matrix/media/r0/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}/{filename:[a-zA-Z0-9._-]+}"] = &ApiRoute{"GET", downloadHandler}
-	routes["/_matrix/media/r0/thumbnail/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}"] = &ApiRoute{"GET", thumbnailHandler}
-	routes["/_matrix/media/r0/preview_url"] = &ApiRoute{"GET", previewUrlHandler}
-	routes["/_matrix/media/r0/identicon"] = &ApiRoute{"GET", identiconHandler}
-	routes["/_matrix/media/r0/identicon/{seed:[a-zA-Z0-9]+}"] = &ApiRoute{"GET", identiconHandler}
-
-	// v1 (typically federation)
-	routes["/_matrix/media/v1/upload"] = &ApiRoute{"POST", uploadHandler}
-	routes["/_matrix/media/v1/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}"] = &ApiRoute{"GET", downloadHandler}
-	routes["/_matrix/media/v1/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}/{filename:[a-zA-Z0-9._-]+}"] = &ApiRoute{"GET", downloadHandler}
-	routes["/_matrix/media/v1/thumbnail/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}"] = &ApiRoute{"GET", thumbnailHandler}
-	routes["/_matrix/media/v1/preview_url"] = &ApiRoute{"GET", previewUrlHandler}
-	routes["/_matrix/media/v1/identicon"] = &ApiRoute{"GET", identiconHandler}
-	routes["/_matrix/media/v1/identicon/{seed:[a-zA-Z0-9]+}"] = &ApiRoute{"GET", identiconHandler}
+	for i := 0; i < len(versions); i++ {
+		version := versions[i]
+		routes["/_matrix/media/"+version+"/upload"] = &ApiRoute{"POST", uploadHandler}
+		routes["/_matrix/media/"+version+"/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}"] = &ApiRoute{"GET", downloadHandler}
+		routes["/_matrix/media/"+version+"/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}/{filename:[a-zA-Z0-9._-]+}"] = &ApiRoute{"GET", downloadHandler}
+		routes["/_matrix/media/"+version+"/thumbnail/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}"] = &ApiRoute{"GET", thumbnailHandler}
+		routes["/_matrix/media/"+version+"/preview_url"] = &ApiRoute{"GET", previewUrlHandler}
+		routes["/_matrix/media/"+version+"/identicon/{seed:.*}"] = &ApiRoute{"GET", identiconHandler}
+	}
 
 	for routePath, opts := range routes {
 		log.Info("Registering route: " + opts.Method + " " + routePath)
