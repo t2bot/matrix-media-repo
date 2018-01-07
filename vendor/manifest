@@ -2,9 +2,27 @@
 	"version": 0,
 	"dependencies": [
 		{
+			"importpath": "github.com/PuerkitoBio/goquery",
+			"repository": "https://github.com/PuerkitoBio/goquery",
+			"revision": "bc4e06eb0792d1a14661d19dd7822163c25bb6bd",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/ajstarks/svgo",
 			"repository": "https://github.com/ajstarks/svgo",
 			"revision": "f9be02f22f2c23fbdd01ed76e5c7f5af79e13f9b",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/alixaxel/pagerank",
+			"repository": "https://github.com/alixaxel/pagerank",
+			"revision": "14bfb4c1d88cb4ca9df65cae8e530ab6b3cd74e4",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/andybalholm/cascadia",
+			"repository": "https://github.com/andybalholm/cascadia",
+			"revision": "349dd0209470eabd9514242c688c403c0926d266",
 			"branch": "master"
 		},
 		{

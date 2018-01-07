@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/dyatlov/go-opengraph/opengraph"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/config"
@@ -53,11 +54,21 @@ func (p *OpenGraphUrlPreviewer) GeneratePreview(urlStr string) (OpenGraphResult,
 		return OpenGraphResult{}, err
 	}
 
+	if og.Title == "" {
+		og.Title = calcTitle(html)
+	}
+	if og.Description == "" {
+		og.Description = calcDescription(html)
+	}
+	if len(og.Images) == 0 {
+		og.Images = calcImages(html)
+	}
+
 	graph := &OpenGraphResult{
 		Type:        og.Type,
 		Url:         og.URL,
 		Title:       og.Title,
-		Description: og.Description,
+		Description: summarize(og.Description),
 		SiteName:    og.SiteName,
 	}
 
@@ -138,4 +149,106 @@ func downloadImage(imageUrl string, i rcontext.RequestInfo) (OpenGraphImage, err
 	}
 
 	return *image, nil
+}
+
+func calcTitle(html string) string {
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
+	if err != nil {
+		return ""
+	}
+
+	titleText := doc.Find("title").Text()
+	if titleText != "" {
+		return titleText
+	}
+
+	h1Text := doc.Find("h1").Text()
+	if h1Text != "" {
+		return h1Text
+	}
+
+	h2Text := doc.Find("h2").Text()
+	if h2Text != "" {
+		return h2Text
+	}
+
+	h3Text := doc.Find("h3").Text()
+	if h3Text != "" {
+		return h3Text
+	}
+
+	return ""
+}
+
+func calcDescription(html string) string {
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
+	if err != nil {
+		return ""
+	}
+
+	metaDescription, exists := doc.Find("meta[name='description']").Attr("content")
+	if exists && metaDescription != "" {
+		return metaDescription
+	}
+
+	// Try and generate a plain text version of the page
+	// We remove tags that are probably not going to help
+	doc.Find("header").Remove()
+	doc.Find("nav").Remove()
+	doc.Find("aside").Remove()
+	doc.Find("footer").Remove()
+	doc.Find("noscript").Remove()
+	doc.Find("script").Remove()
+	return doc.Find("body").Text()
+}
+
+func calcImages(html string) []*opengraph.Image {
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
+	if err != nil {
+		return []*opengraph.Image{}
+	}
+
+	imageSrc := ""
+	dimensionScore := 0
+	doc.Find("img").Each(func(i int, s *goquery.Selection) {
+		src, exists := s.Attr("src")
+		if !exists || src == "" {
+			return
+		}
+
+		wStr, exists := s.Attr("width")
+		if !exists {
+			return
+		}
+
+		hStr, exists := s.Attr("height")
+		if !exists {
+			return
+		}
+
+		w, _ := strconv.Atoi(wStr)
+		h, _ := strconv.Atoi(hStr)
+
+		if w < 10 || h < 10 {
+			return // too small
+		}
+
+		if (w*h) < dimensionScore || dimensionScore == 0 {
+			dimensionScore = w * h
+			imageSrc = src
+		}
+	})
+
+	if imageSrc == "" || dimensionScore <= 0 {
+		return []*opengraph.Image{}
+	}
+
+	img := opengraph.Image{URL: imageSrc}
+	return []*opengraph.Image{&img}
+}
+
+func summarize(text string) (string) {
+	text = strings.TrimSpace(text)
+	// TODO: More intelligent parsing of the body to get a summary
+	return text[:200]
 }
