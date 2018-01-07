@@ -8,7 +8,9 @@ import (
 	"os"
 	"reflect"
 	"strconv"
+	"time"
 
+	"github.com/didip/tollbooth"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/client"
@@ -98,10 +100,25 @@ func main() {
 	rtr.NotFoundHandler = Handler{client.NotFoundHandler, hOpts}
 	rtr.MethodNotAllowedHandler = Handler{client.MethodNotAllowedHandler, hOpts}
 
-	// TODO: Rate limiting (429 M_LIMIT_EXCEEDED)
+	var handler http.Handler
+	handler = rtr
+	if c.RateLimit.Enabled {
+		log.Info("Enabling rate limit")
+		limiter := tollbooth.NewLimiter(0, nil)
+		limiter.SetIPLookups([]string{"X-Forwarded-For", "X-Real-IP", "RemoteAddr"})
+		limiter.SetTokenBucketExpirationTTL(time.Hour)
+		limiter.SetBurst(c.RateLimit.BurstCount)
+		limiter.SetMax(c.RateLimit.RequestsPerSecond)
+
+		b, _ := json.Marshal(client.RateLimitReached())
+		limiter.SetMessage(string(b))
+		limiter.SetMessageContentType("application/json")
+
+		handler = tollbooth.LimitHandler(limiter, rtr)
+	}
 
 	address := c.General.BindAddress + ":" + strconv.Itoa(c.General.Port)
-	http.Handle("/", rtr)
+	http.Handle("/", handler)
 
 	log.WithField("address", address).Info("Started up. Listening at http://" + address)
 	http.ListenAndServe(address, nil)

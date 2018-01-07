@@ -70,3 +70,14 @@ thumbnails:
     height: 480
   - width: 800
     height: 600
+
+# Controls for the rate limit functionality
+rateLimit:
+  # Set this to false if rate limiting is handled at a higher level or you don't want it enabled.
+  enabled: true
+
+  # The number of requests per second before an IP will be rate limited. Must be a whole number.
+  requestsPerSecond: 1
+
+  # The number of requests an IP can send at once before the rate limit is actually considered.
+  burst: 10

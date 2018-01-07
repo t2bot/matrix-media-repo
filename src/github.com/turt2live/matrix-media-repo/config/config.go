@@ -50,6 +50,13 @@ type MediaRepoConfig struct {
 		DisallowedNetworks []string `yaml:"disallowedNetworks,flow"`
 		AllowedNetworks    []string `yaml:"allowedNetworks,flow"`
 	} `yaml:"urlPreviews"`
+
+	RateLimit struct {
+		Enabled           bool  `yaml:"enabled"`
+		// TODO: Support floats when this is fixed: https://github.com/didip/tollbooth/issues/58
+		RequestsPerSecond int64 `yaml:"requestsPerSecond"`
+		BurstCount        int   `yaml:"burst"`
+	} `yaml:"rateLimit"`
 }
 
 func ReadConfig() (MediaRepoConfig, error) {
