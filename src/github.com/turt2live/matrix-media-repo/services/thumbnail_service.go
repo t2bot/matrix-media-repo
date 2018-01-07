@@ -3,13 +3,13 @@ package services
 import (
 	"database/sql"
 	"errors"
-	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/rcontext"
 	"github.com/turt2live/matrix-media-repo/services/handlers"
 	"github.com/turt2live/matrix-media-repo/storage/stores"
 	"github.com/turt2live/matrix-media-repo/types"
+	"github.com/turt2live/matrix-media-repo/util"
 )
 
 type ThumbnailService struct {
@@ -103,7 +103,7 @@ func (s *ThumbnailService) GetThumbnail(media types.Media, width int, height int
 		Width:       targetWidth,
 		Height:      targetHeight,
 		Method:      method,
-		CreationTs:  time.Now().UnixNano() / 1000000,
+		CreationTs:  util.NowMillis(),
 		ContentType: generated.ContentType,
 		Location:    generated.DiskLocation,
 		SizeBytes:   generated.SizeBytes,

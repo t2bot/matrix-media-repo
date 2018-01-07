@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"io"
 	"os"
-	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/rcontext"
@@ -121,7 +120,7 @@ func (s *MediaService) StoreMedia(contents io.Reader, contentType string, filena
 		media.MediaId = mediaId
 		media.UploadName = filename
 		media.ContentType = contentType
-		media.CreationTs = time.Now().UnixNano() / 1000000
+		media.CreationTs = util.NowMillis()
 
 		err = s.store.Insert(&media)
 		if err != nil {
@@ -150,7 +149,7 @@ func (s *MediaService) StoreMedia(contents io.Reader, contentType string, filena
 		Sha256Hash:  hash,
 		SizeBytes:   fileSize,
 		Location:    fileLocation,
-		CreationTs:  time.Now().UnixNano() / 1000000,
+		CreationTs:  util.NowMillis(),
 	}
 
 	err = s.store.Insert(media)
