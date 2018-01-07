@@ -54,13 +54,19 @@ func (s *MediaService) GetMedia(server string, mediaId string) (types.Media, err
 
 func (s *MediaService) UploadMedia(contents io.Reader, contentType string, filename string, userId string, host string) (types.Media, error) {
 	data := io.LimitReader(contents, s.i.Config.Uploads.MaxSizeBytes)
-	return s.StoreMedia(data, contentType, filename, userId, host, generateMediaId())
+	return s.StoreMedia(data, contentType, filename, userId, host, "")
 }
 
 func (s *MediaService) StoreMedia(contents io.Reader, contentType string, filename string, userId string, host string, mediaId string) (types.Media, error) {
+	isGeneratedId := false
+	if mediaId == "" {
+		mediaId = generateMediaId()
+		isGeneratedId = true
+	}
 	log := s.i.Log.WithFields(logrus.Fields{
-		"mediaService_mediaId": mediaId,
-		"mediaService_host":    host,
+		"mediaService_mediaId":            mediaId,
+		"mediaService_host":               host,
+		"mediaService_mediaIdIsGenerated": isGeneratedId,
 	})
 
 	// Store the file in a temporary location
@@ -92,7 +98,7 @@ func (s *MediaService) StoreMedia(contents io.Reader, contentType string, filena
 		for i := 0; i < len(records); i++ {
 			media = records[i]
 
-			if media.Origin == host && media.MediaId == mediaId {
+			if media.Origin == host && (media.MediaId == mediaId || isGeneratedId) {
 				if media.ContentType != contentType || media.UserId != userId || media.UploadName != filename {
 					// The unique constraint in the database prevents us from storing a duplicate, and we can't generate a new
 					// media ID because then we'd be discarding the caller's media ID. In practice, this particular branch would
