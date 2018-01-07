@@ -12,3 +12,10 @@ type UrlPreview struct {
 	ImageWidth  int
 	ImageHeight int
 }
+
+type CachedUrlPreview struct {
+	Preview   *UrlPreview
+	SearchUrl string
+	ErrorCode string
+	FetchedTs int64
+}

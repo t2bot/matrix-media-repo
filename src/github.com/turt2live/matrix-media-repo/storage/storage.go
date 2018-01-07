@@ -29,6 +29,7 @@ type statements struct {
 type repos struct {
 	mediaStore     *stores.MediaStoreFactory
 	thumbnailStore *stores.ThumbnailStoreFactory
+	urlStore       *stores.UrlStoreFactory
 }
 
 func OpenDatabase(connectionString string) (*Database, error) {
@@ -42,12 +43,16 @@ func OpenDatabase(connectionString string) (*Database, error) {
 	// Make sure the database is how we want it
 	schema.PrepareMedia(d.db)
 	schema.PrepareThumbnails(d.db)
+	schema.PrepareUrls(d.db)
 
 	// Create the repo factories
 	if d.repos.mediaStore, err = stores.InitMediaStore(d.db); err != nil {
 		return nil, err
 	}
 	if d.repos.thumbnailStore, err = stores.InitThumbnailStore(d.db); err != nil {
+		return nil, err
+	}
+	if d.repos.urlStore, err = stores.InitUrlStore(d.db); err != nil {
 		return nil, err
 	}
 
@@ -65,6 +70,10 @@ func (d *Database) GetMediaStore(ctx context.Context, log *logrus.Entry) (*store
 
 func (d *Database) GetThumbnailStore(ctx context.Context, log *logrus.Entry) (*stores.ThumbnailStore) {
 	return d.repos.thumbnailStore.Create(ctx, log)
+}
+
+func (d *Database) GetUrlStore(ctx context.Context, log *logrus.Entry) (*stores.UrlStore) {
+	return d.repos.urlStore.Create(ctx, log)
 }
 
 func (d *Database) GetSizeOfFolderBytes(ctx context.Context, folderPath string) (int64, error) {

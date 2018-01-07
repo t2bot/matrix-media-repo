@@ -1,16 +1,19 @@
 package services
 
 import (
+	"database/sql"
 	"fmt"
 	"net"
 	"net/url"
 
 	"github.com/disintegration/imaging"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/rcontext"
 	"github.com/turt2live/matrix-media-repo/services/handlers"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/urlpreview"
 )
 
 type UrlService struct {
@@ -22,19 +25,63 @@ func CreateUrlService(i rcontext.RequestInfo) (*UrlService) {
 	return &UrlService{i}
 }
 
-func (s *UrlService) GetPreview(urlStr string, onHost string, forUserId string) (types.UrlPreview, error) {
+func returnCachedPreview(cached *types.CachedUrlPreview) (types.UrlPreview, error) {
+	if cached.ErrorCode == urlpreview.ErrCodeInvalidHost {
+		return types.UrlPreview{}, util.ErrInvalidHost
+	} else if cached.ErrorCode == urlpreview.ErrCodeHostNotFound {
+		return types.UrlPreview{}, util.ErrHostNotFound
+	} else if cached.ErrorCode == urlpreview.ErrCodeHostBlacklisted {
+		return types.UrlPreview{}, util.ErrHostBlacklisted
+	} else if cached.ErrorCode == urlpreview.ErrCodeNotFound {
+		return types.UrlPreview{}, util.ErrMediaNotFound
+	} else if cached.ErrorCode == urlpreview.ErrCodeUnknown {
+		return types.UrlPreview{}, errors.New("unknown error")
+	}
+
+	return *cached.Preview, nil
+}
+
+func (s *UrlService) GetPreview(urlStr string, onHost string, forUserId string, atTs int64) (types.UrlPreview, error) {
+	s.i.Log = s.i.Log.WithFields(logrus.Fields{
+		"urlService_ts": atTs,
+	})
+
+	urlStore := s.i.Db.GetUrlStore(s.i.Context, s.i.Log)
+	cached, err := urlStore.GetPreview(urlStr, atTs)
+	if err != nil {
+		s.i.Log.Error("Error getting cached URL: " + err.Error())
+	}
+	if err != nil && err != sql.ErrNoRows {
+		return types.UrlPreview{}, err
+	}
+	if err != sql.ErrNoRows {
+		s.i.Log.Info("Returning cached URL preview")
+		return returnCachedPreview(cached)
+	}
+
+	now := util.NowMillis()
+	if (now - atTs) > 60000 { // this is to avoid infinite loops (60s window for slow execution)
+		// Original bucket failed - try getting the preview for "now"
+		return s.GetPreview(urlStr, onHost, forUserId, now)
+	}
+
+	s.i.Log.Info("URL preview not cached - fetching resource")
+
 	parsedUrl, err := url.ParseRequestURI(urlStr)
 	if err != nil {
 		s.i.Log.Error("Error parsing url: " + err.Error())
+		urlStore.InsertPreviewError(urlStr, urlpreview.ErrCodeInvalidHost)
 		return types.UrlPreview{}, util.ErrInvalidHost
 	}
 
 	addrs, err := net.LookupIP(parsedUrl.Host)
 	if err != nil {
 		s.i.Log.Error("Error getting host info: " + err.Error())
+		urlStore.InsertPreviewError(urlStr, urlpreview.ErrCodeInvalidHost)
 		return types.UrlPreview{}, util.ErrInvalidHost
 	}
 	if len(addrs) == 0 {
+		urlStore.InsertPreviewError(urlStr, urlpreview.ErrCodeHostNotFound)
 		return types.UrlPreview{}, util.ErrHostNotFound
 	}
 	addr := addrs[0]
@@ -51,6 +98,7 @@ func (s *UrlService) GetPreview(urlStr string, onHost string, forUserId string) 
 		deniedCidrs = []string{}
 	}
 	if !isAllowed(addr, allowedCidrs, deniedCidrs, s.i.Log) {
+		urlStore.InsertPreviewError(urlStr, urlpreview.ErrCodeHostBlacklisted)
 		return types.UrlPreview{}, util.ErrHostBlacklisted
 	}
 
@@ -61,6 +109,11 @@ func (s *UrlService) GetPreview(urlStr string, onHost string, forUserId string) 
 	previewer := &handlers.OpenGraphUrlPreviewer{Info: s.i}
 	preview, err := previewer.GeneratePreview(urlStr)
 	if err != nil {
+		if err == util.ErrMediaNotFound {
+			urlStore.InsertPreviewError(urlStr, urlpreview.ErrCodeNotFound)
+		} else {
+			urlStore.InsertPreviewError(urlStr, urlpreview.ErrCodeUnknown)
+		}
 		return types.UrlPreview{}, err
 	}
 
@@ -92,7 +145,16 @@ func (s *UrlService) GetPreview(urlStr string, onHost string, forUserId string) 
 		}
 	}
 
-	// TODO: Store URL preview in db
+	dbRecord := &types.CachedUrlPreview{
+		Preview:   result,
+		SearchUrl: urlStr,
+		ErrorCode: "",
+		FetchedTs: util.NowMillis(),
+	}
+	err = urlStore.InsertPreview(dbRecord)
+	if err != nil {
+		s.i.Log.Warn("Error caching URL preview: " + err.Error())
+	}
 
 	return *result, nil
 }

@@ -39,7 +39,6 @@ func (r *RemoteMediaDownloader) Download(server string, mediaId string) (Downloa
 		return DownloadedMedia{}, errors.New("could not fetch remote media")
 	}
 
-	defer resp.Body.Close()
 	contentLength, err := strconv.ParseInt(resp.Header.Get("Content-Length"), 10, 64)
 	if err != nil {
 		return DownloadedMedia{}, err

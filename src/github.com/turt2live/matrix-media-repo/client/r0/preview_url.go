@@ -2,6 +2,7 @@ package r0
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/turt2live/matrix-media-repo/client"
@@ -39,14 +40,14 @@ func PreviewUrl(w http.ResponseWriter, r *http.Request, i rcontext.RequestInfo) 
 	// Parse the parameters
 	urlStr := params.Get("url")
 	tsStr := params.Get("ts")
-	if tsStr == "" {
-		tsStr = "0"
+	ts := util.NowMillis()
+	if tsStr != "" {
+		ts, err = strconv.ParseInt(tsStr, 10, 64)
+		if err != nil {
+			i.Log.Error("Error parsing ts: " + err.Error())
+			return client.BadRequest(err.Error())
+		}
 	}
-	//ts, err := strconv.ParseInt(tsStr, 10, 64)
-	//if err != nil {
-	//	log.Error("Error parsing ts: " + err.Error())
-	//	return client.BadRequest(err.Error())
-	//}
 
 	// Validate the URL
 	if urlStr == "" {
@@ -57,7 +58,7 @@ func PreviewUrl(w http.ResponseWriter, r *http.Request, i rcontext.RequestInfo) 
 	}
 
 	svc := services.CreateUrlService(i)
-	preview, err := svc.GetPreview(urlStr, r.Host, userId)
+	preview, err := svc.GetPreview(urlStr, r.Host, userId, ts)
 	if err != nil {
 		if err == util.ErrMediaNotFound || err == util.ErrHostNotFound {
 			return client.NotFoundError()
