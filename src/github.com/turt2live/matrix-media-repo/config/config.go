@@ -45,11 +45,18 @@ type MediaRepoConfig struct {
 	} `yaml:"thumbnails"`
 
 	UrlPreviews struct {
-		Enabled bool `yaml:"enabled"`
-		MaxPageSizeBytes int64 `yaml:"maxPageSizeBytes"`
+		Enabled            bool     `yaml:"enabled"`
+		MaxPageSizeBytes   int64    `yaml:"maxPageSizeBytes"`
 		DisallowedNetworks []string `yaml:"disallowedNetworks,flow"`
-		AllowedNetworks []string `yaml:"allowedNetworks,flow"`
+		AllowedNetworks    []string `yaml:"allowedNetworks,flow"`
 	} `yaml:"urlPreviews"`
+
+	RateLimit struct {
+		Enabled           bool  `yaml:"enabled"`
+		// TODO: Support floats when this is fixed: https://github.com/didip/tollbooth/issues/58
+		RequestsPerSecond int64 `yaml:"requestsPerSecond"`
+		BurstCount        int   `yaml:"burst"`
+	} `yaml:"rateLimit"`
 }
 
 func ReadConfig() (MediaRepoConfig, error) {

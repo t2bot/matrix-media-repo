@@ -13,7 +13,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
-func PersistFile(ctx context.Context, file io.Reader, config config.MediaRepoConfig, db Database) (string, error) {
+func PersistFile(file io.Reader, config config.MediaRepoConfig, ctx context.Context, db *Database) (string, error) {
 	var basePath string
 	var pathSize int64
 	for i := 0; i < len(config.Uploads.StoragePaths); i++ {

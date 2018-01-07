@@ -7,13 +7,13 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/client"
-	"github.com/turt2live/matrix-media-repo/config"
-	"github.com/turt2live/matrix-media-repo/media_handler"
-	"github.com/turt2live/matrix-media-repo/storage"
+	"github.com/turt2live/matrix-media-repo/rcontext"
+	"github.com/turt2live/matrix-media-repo/services"
+	"github.com/turt2live/matrix-media-repo/util"
 )
 
-func ThumbnailMedia(w http.ResponseWriter, r *http.Request, db storage.Database, c config.MediaRepoConfig, log *logrus.Entry) interface{} {
-	if !ValidateUserCanDownload(r, db, c) {
+func ThumbnailMedia(w http.ResponseWriter, r *http.Request, i rcontext.RequestInfo) interface{} {
+	if !ValidateUserCanDownload(r, i) {
 		return client.AuthFailed()
 	}
 
@@ -22,7 +22,7 @@ func ThumbnailMedia(w http.ResponseWriter, r *http.Request, db storage.Database,
 	server := params["server"]
 	mediaId := params["mediaId"]
 
-	log = log.WithFields(logrus.Fields{
+	i.Log = i.Log.WithFields(logrus.Fields{
 		"mediaId": mediaId,
 		"server":  server,
 	})
@@ -31,8 +31,8 @@ func ThumbnailMedia(w http.ResponseWriter, r *http.Request, db storage.Database,
 	heightStr := r.URL.Query().Get("height")
 	method := r.URL.Query().Get("method")
 
-	width := c.Thumbnails.Sizes[0].Width
-	height := c.Thumbnails.Sizes[0].Height
+	width := i.Config.Thumbnails.Sizes[0].Width
+	height := i.Config.Thumbnails.Sizes[0].Height
 
 	if widthStr != "" {
 		parsedWidth, err := strconv.Atoi(widthStr)
@@ -52,26 +52,29 @@ func ThumbnailMedia(w http.ResponseWriter, r *http.Request, db storage.Database,
 		method = "crop"
 	}
 
-	log = log.WithFields(logrus.Fields{
+	i.Log = i.Log.WithFields(logrus.Fields{
 		"requestedWidth":  width,
 		"requestedHeight": height,
 		"requestedMethod": method,
 	})
 
-	media, err := media_handler.FindMedia(r.Context(), server, mediaId, c, db, log)
+	mediaSvc := services.CreateMediaService(i)
+	thumbSvc := services.CreateThumbnailService(i)
+
+	media, err := mediaSvc.GetMedia(server, mediaId)
 	if err != nil {
-		if err == media_handler.ErrMediaNotFound {
+		if err == util.ErrMediaNotFound {
 			return client.NotFoundError()
-		} else if err == media_handler.ErrMediaTooLarge {
+		} else if err == util.ErrMediaTooLarge {
 			return client.RequestTooLarge()
 		}
-		log.Error("Unexpected error locating media: " + err.Error())
+		i.Log.Error("Unexpected error locating media: " + err.Error())
 		return client.InternalServerError("Unexpected Error")
 	}
 
-	thumb, err := media_handler.GetThumbnail(r.Context(), media, width, height, method, c, db, log)
+	thumb, err := thumbSvc.GetThumbnail(media, width, height, method)
 	if err != nil {
-		log.Error("Unexpected error getting thumbnail: " + err.Error())
+		i.Log.Error("Unexpected error getting thumbnail: " + err.Error())
 		return client.InternalServerError("Unexpected Error")
 	}
 

@@ -8,13 +8,16 @@ import (
 	"os"
 	"reflect"
 	"strconv"
+	"time"
 
+	"github.com/didip/tollbooth"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/client"
 	"github.com/turt2live/matrix-media-repo/client/r0"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/logging"
+	"github.com/turt2live/matrix-media-repo/rcontext"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/util"
 )
@@ -26,7 +29,7 @@ type requestCounter struct {
 }
 
 type Handler struct {
-	h    func(http.ResponseWriter, *http.Request, storage.Database, config.MediaRepoConfig, *log.Entry) interface{}
+	h    func(http.ResponseWriter, *http.Request, rcontext.RequestInfo) interface{}
 	opts HandlerOpts
 }
 
@@ -34,6 +37,11 @@ type HandlerOpts struct {
 	db         storage.Database
 	config     config.MediaRepoConfig
 	reqCounter *requestCounter
+}
+
+type ApiRoute struct {
+	Method  string
+	Handler Handler
 }
 
 type EmptyResponse struct{}
@@ -61,32 +69,54 @@ func main() {
 	counter := requestCounter{}
 	hOpts := HandlerOpts{*db, c, &counter}
 
+	optionsHandler := Handler{optionsRequest, hOpts}
 	uploadHandler := Handler{r0.UploadMedia, hOpts}
 	downloadHandler := Handler{r0.DownloadMedia, hOpts}
 	thumbnailHandler := Handler{r0.ThumbnailMedia, hOpts}
 	previewUrlHandler := Handler{r0.PreviewUrl, hOpts}
+	identiconHandler := Handler{r0.Identicon, hOpts}
 
-	// r0 endpoints
-	log.Info("Registering r0 endpoints")
-	rtr.Handle("/_matrix/media/r0/upload", uploadHandler).Methods("POST")
-	rtr.Handle("/_matrix/media/r0/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}", downloadHandler).Methods("GET")
-	rtr.Handle("/_matrix/media/r0/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}/{filename:[a-zA-Z0-9._-]+}", downloadHandler).Methods("GET")
-	rtr.Handle("/_matrix/media/r0/thumbnail/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}", thumbnailHandler).Methods("GET")
-	rtr.Handle("/_matrix/media/r0/preview_url", previewUrlHandler).Methods("GET")
+	routes := make(map[string]*ApiRoute)
+	versions := []string{"r0", "v1"} // r0 is typically clients and v1 is typically servers
 
-	// v1 endpoints (legacy)
-	log.Info("Registering v1 endpoints")
-	rtr.Handle("/_matrix/media/v1/upload", uploadHandler).Methods("POST")
-	rtr.Handle("/_matrix/media/v1/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}", downloadHandler).Methods("GET")
-	rtr.Handle("/_matrix/media/v1/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}/{filename:[a-zA-Z0-9._-]+}", downloadHandler).Methods("GET")
-	rtr.Handle("/_matrix/media/v1/thumbnail/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}", thumbnailHandler).Methods("GET")
-	rtr.Handle("/_matrix/media/v1/preview_url", previewUrlHandler).Methods("GET")
+	for i := 0; i < len(versions); i++ {
+		version := versions[i]
+		routes["/_matrix/media/"+version+"/upload"] = &ApiRoute{"POST", uploadHandler}
+		routes["/_matrix/media/"+version+"/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}"] = &ApiRoute{"GET", downloadHandler}
+		routes["/_matrix/media/"+version+"/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}/{filename:[a-zA-Z0-9._-]+}"] = &ApiRoute{"GET", downloadHandler}
+		routes["/_matrix/media/"+version+"/thumbnail/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}"] = &ApiRoute{"GET", thumbnailHandler}
+		routes["/_matrix/media/"+version+"/preview_url"] = &ApiRoute{"GET", previewUrlHandler}
+		routes["/_matrix/media/"+version+"/identicon/{seed:.*}"] = &ApiRoute{"GET", identiconHandler}
+	}
 
-	// TODO: Intercept 404, 500, and 400 to respond with M_NOT_FOUND and M_UNKNOWN
-	// TODO: Rate limiting (429 M_LIMIT_EXCEEDED)
+	for routePath, opts := range routes {
+		log.Info("Registering route: " + opts.Method + " " + routePath)
+		rtr.Handle(routePath, opts.Handler).Methods(opts.Method)
+		rtr.Handle(routePath, optionsHandler).Methods("OPTIONS")
+	}
+
+	rtr.NotFoundHandler = Handler{client.NotFoundHandler, hOpts}
+	rtr.MethodNotAllowedHandler = Handler{client.MethodNotAllowedHandler, hOpts}
+
+	var handler http.Handler
+	handler = rtr
+	if c.RateLimit.Enabled {
+		log.Info("Enabling rate limit")
+		limiter := tollbooth.NewLimiter(0, nil)
+		limiter.SetIPLookups([]string{"X-Forwarded-For", "X-Real-IP", "RemoteAddr"})
+		limiter.SetTokenBucketExpirationTTL(time.Hour)
+		limiter.SetBurst(c.RateLimit.BurstCount)
+		limiter.SetMax(c.RateLimit.RequestsPerSecond)
+
+		b, _ := json.Marshal(client.RateLimitReached())
+		limiter.SetMessage(string(b))
+		limiter.SetMessageContentType("application/json")
+
+		handler = tollbooth.LimitHandler(limiter, rtr)
+	}
 
 	address := c.General.BindAddress + ":" + strconv.Itoa(c.General.Port)
-	http.Handle("/", rtr)
+	http.Handle("/", handler)
 
 	log.WithField("address", address).Info("Started up. Listening at http://" + address)
 	http.ListenAndServe(address, nil)
@@ -116,7 +146,12 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var res interface{} = client.AuthFailed()
 	if util.IsServerOurs(r.Host, h.opts.config) {
 		contextLog.Info("Server is owned by us, processing request")
-		res = h.h(w, r, h.opts.db, h.opts.config, contextLog)
+		res = h.h(w, r, rcontext.RequestInfo{
+			Log:     contextLog,
+			Config:  h.opts.config,
+			Context: r.Context(),
+			Db:      h.opts.db,
+		})
 		if res == nil {
 			res = &EmptyResponse{}
 		}
@@ -148,6 +183,9 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case "M_BAD_REQUEST":
 			http.Error(w, jsonStr, http.StatusBadRequest)
 			break
+		case "M_METHOD_NOT_ALLOWED":
+			http.Error(w, jsonStr, http.StatusMethodNotAllowed)
+			break
 		default: // M_UNKNOWN
 			http.Error(w, jsonStr, http.StatusInternalServerError)
 			break
@@ -166,6 +204,10 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		defer f.Close()
 		io.Copy(w, f)
 		break
+	case *r0.IdenticonResponse:
+		w.Header().Set("Content-Type", "image/png")
+		io.Copy(w, result.Avatar)
+		break
 	default:
 		w.Header().Set("Content-Type", "application/json")
 		io.WriteString(w, jsonStr)
@@ -178,4 +220,8 @@ func (c *requestCounter) GetNextId() string {
 	c.lastId = c.lastId + 1
 
 	return "REQ-" + strId
+}
+
+func optionsRequest(w http.ResponseWriter, r *http.Request, i rcontext.RequestInfo) interface{} {
+	return &EmptyResponse{}
 }
