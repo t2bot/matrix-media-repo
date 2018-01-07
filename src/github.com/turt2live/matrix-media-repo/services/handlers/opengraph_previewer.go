@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"mime"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -36,8 +37,8 @@ type OpenGraphUrlPreviewer struct {
 	Info rcontext.RequestInfo
 }
 
-func (p *OpenGraphUrlPreviewer) GeneratePreview(url string) (OpenGraphResult, error) {
-	html, err := downloadContent(url, p.Info.Config, p.Info.Log)
+func (p *OpenGraphUrlPreviewer) GeneratePreview(urlStr string) (OpenGraphResult, error) {
+	html, err := downloadContent(urlStr, p.Info.Config, p.Info.Log)
 	if err != nil {
 		p.Info.Log.Error("Error downloading content: " + err.Error())
 
@@ -61,13 +62,27 @@ func (p *OpenGraphUrlPreviewer) GeneratePreview(url string) (OpenGraphResult, er
 	}
 
 	if og.Images != nil && len(og.Images) > 0 {
-		img, err := downloadImage(og.Images[0].URL, p.Info)
+		baseUrl, err := url.Parse(urlStr)
 		if err != nil {
-			p.Info.Log.Error("Non-fatal error getting thumbnail: " + err.Error())
-		} else {
-			graph.Image = img
-			graph.HasImage = true
+			p.Info.Log.Error("Non-fatal error getting thumbnail (parsing base url): " + err.Error())
+			return *graph, nil
 		}
+
+		imgUrl, err := url.Parse(og.Images[0].URL)
+		if err != nil {
+			p.Info.Log.Error("Non-fatal error getting thumbnail (parsing image url): " + err.Error())
+			return *graph, nil
+		}
+
+		imgAbsUrl := baseUrl.ResolveReference(imgUrl)
+		img, err := downloadImage(imgAbsUrl.String(), p.Info)
+		if err != nil {
+			p.Info.Log.Error("Non-fatal error getting thumbnail (downloading image): " + err.Error())
+			return *graph, nil
+		}
+
+		graph.Image = img
+		graph.HasImage = true
 	}
 
 	return *graph, nil
