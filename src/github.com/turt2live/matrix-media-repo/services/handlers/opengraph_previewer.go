@@ -250,5 +250,8 @@ func calcImages(html string) []*opengraph.Image {
 func summarize(text string) (string) {
 	text = strings.TrimSpace(text)
 	// TODO: More intelligent parsing of the body to get a summary
+	if len(text) < 200 {
+		return text
+	}
 	return text[:200]
 }
