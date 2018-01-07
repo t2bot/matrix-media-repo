@@ -34,21 +34,36 @@ func (s *MediaService) GetMedia(server string, mediaId string) (types.Media, err
 			}
 		}
 
-		s.i.Log.Info("Attempting to download remote media")
-		downloader := &handlers.RemoteMediaDownloader{
-			Info:       s.i,
-			MediaStore: *s.store,
-		}
+		return s.downloadRemoteMedia(server, mediaId)
+	}
 
-		downloaded, err := downloader.Download(server, mediaId)
-		if err != nil {
-			return types.Media{}, err
+	exists, err := util.FileExists(media.Location)
+	if !exists || err != nil {
+		if util.IsServerOurs(server, s.i.Config) {
+			s.i.Log.Error("Media not found in file store when we expected it to")
+			return media, util.ErrMediaNotFound
+		} else {
+			s.i.Log.Warn("Media appears to have been deleted - redownloading")
+			return s.downloadRemoteMedia(server, mediaId)
 		}
-
-		return s.StoreMedia(downloaded.Contents, downloaded.ContentType, downloaded.DesiredFilename, "", server, mediaId)
 	}
 
 	return media, nil
+}
+
+func (s *MediaService) downloadRemoteMedia(server string, mediaId string) (types.Media, error) {
+	s.i.Log.Info("Attempting to download remote media")
+	downloader := &handlers.RemoteMediaDownloader{
+		Info:       s.i,
+		MediaStore: *s.store,
+	}
+
+	downloaded, err := downloader.Download(server, mediaId)
+	if err != nil {
+		return types.Media{}, err
+	}
+
+	return s.StoreMedia(downloaded.Contents, downloaded.ContentType, downloaded.DesiredFilename, "", server, mediaId)
 }
 
 func (s *MediaService) UploadMedia(contents io.Reader, contentType string, filename string, userId string, host string) (types.Media, error) {
@@ -88,9 +103,6 @@ func (s *MediaService) StoreMedia(contents io.Reader, contentType string, filena
 
 	// If there's at least one record, then we have a duplicate hash - try and process it
 	if len(records) > 0 {
-		// We can delete the file - it's already duplicated at this point
-		defer os.Remove(fileLocation)
-
 		// See if we one of the duplicate records is a match for the host and media ID. We'll otherwise use
 		// the last duplicate (should only be 1 anyways) as our starting point for a new record.
 		var media types.Media
@@ -107,6 +119,7 @@ func (s *MediaService) StoreMedia(contents io.Reader, contentType string, filena
 					log.Info("Match found for media based on host and media ID. Returning unaltered media record.")
 				}
 
+				overwriteExistingOrDeleteTempFile(fileLocation, media)
 				return media, nil
 			}
 
@@ -127,6 +140,7 @@ func (s *MediaService) StoreMedia(contents io.Reader, contentType string, filena
 			return types.Media{}, err
 		}
 
+		overwriteExistingOrDeleteTempFile(fileLocation, media)
 		return media, nil
 	}
 
@@ -168,4 +182,16 @@ func generateMediaId() string {
 	}
 
 	return str
+}
+
+func overwriteExistingOrDeleteTempFile(tempFileLocation string, media types.Media) {
+	// If the media's file exists, we'll delete the temp file
+	// If the media's file doesn't exist, we'll move the temp file to where the media expects it to be
+	exists, err := util.FileExists(media.Location)
+	if err != nil || !exists {
+		// We'll assume an error means it doesn't exist
+		os.Rename(tempFileLocation, media.Location)
+	} else {
+		os.Remove(tempFileLocation)
+	}
 }
