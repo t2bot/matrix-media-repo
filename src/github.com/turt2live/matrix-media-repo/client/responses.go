@@ -23,7 +23,7 @@ func NotFoundError() *ErrorResponse {
 }
 
 func RequestTooLarge() *ErrorResponse {
-	return &ErrorResponse{"M_UNKNOWN", "Too Large", "M_MEDIA_TOO_LARGE"}
+	return &ErrorResponse{"M_TOO_LARGE", "Too Large", "M_MEDIA_TOO_LARGE"}
 }
 
 func AuthFailed() *ErrorResponse {

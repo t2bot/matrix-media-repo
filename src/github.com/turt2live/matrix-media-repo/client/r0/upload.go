@@ -37,6 +37,11 @@ func UploadMedia(w http.ResponseWriter, r *http.Request, i rcontext.RequestInfo)
 	}
 
 	svc := services.CreateMediaService(i)
+
+	if svc.IsTooLarge(r.ContentLength, r.Header.Get("Content-Length")) {
+		return client.RequestTooLarge()
+	}
+
 	media, err := svc.UploadMedia(r.Body, contentType, filename, userId, r.Host)
 	if err != nil {
 		i.Log.Error("Unexpected error storing media: " + err.Error())

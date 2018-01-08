@@ -126,8 +126,9 @@ func (s *UrlService) GetPreview(urlStr string, onHost string, forUserId string, 
 	}
 
 	// Store the thumbnail, if there is one
-	if preview.HasImage {
-		mediaSvc := CreateMediaService(s.i)
+	mediaSvc := CreateMediaService(s.i)
+	if preview.HasImage && !mediaSvc.IsTooLarge(preview.Image.ContentLength, preview.Image.ContentLengthHeader) {
+		// UploadMedia will close the read stream for the thumbnail
 		media, err := mediaSvc.UploadMedia(preview.Image.Data, preview.Image.ContentType, preview.Image.Filename, forUserId, onHost)
 		if err != nil {
 			s.i.Log.Warn("Non-fatal error storing preview thumbnail: " + err.Error())

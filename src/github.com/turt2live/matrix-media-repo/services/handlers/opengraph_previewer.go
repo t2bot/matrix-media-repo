@@ -29,9 +29,11 @@ type OpenGraphResult struct {
 }
 
 type OpenGraphImage struct {
-	ContentType string
-	Data        io.Reader
-	Filename    string
+	ContentType         string
+	Data                io.ReadCloser
+	Filename            string
+	ContentLength       int64
+	ContentLengthHeader string
 }
 
 type OpenGraphUrlPreviewer struct {
@@ -110,6 +112,10 @@ func downloadContent(urlStr string, c config.MediaRepoConfig, log *logrus.Entry)
 		return "", errors.New("error during transfer")
 	}
 
+	if c.UrlPreviews.MaxPageSizeBytes > 0 && resp.ContentLength >= 0 && resp.ContentLength > c.UrlPreviews.MaxPageSizeBytes {
+		return "", util.ErrMediaTooLarge
+	}
+
 	var reader io.Reader
 	reader = resp.Body
 	if c.UrlPreviews.MaxPageSizeBytes > 0 {
@@ -139,8 +145,10 @@ func downloadImage(imageUrl string, i rcontext.RequestInfo) (OpenGraphImage, err
 	}
 
 	image := &OpenGraphImage{
-		ContentType: resp.Header.Get("Content-Type"),
-		Data:        resp.Body,
+		ContentType:         resp.Header.Get("Content-Type"),
+		Data:                resp.Body,
+		ContentLength:       resp.ContentLength,
+		ContentLengthHeader: resp.Header.Get("Content-Length"),
 	}
 
 	_, params, err := mime.ParseMediaType(resp.Header.Get("Content-Disposition"))

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"io"
 	"os"
+	"strconv"
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/rcontext"
@@ -63,11 +64,39 @@ func (s *MediaService) downloadRemoteMedia(server string, mediaId string) (types
 		return types.Media{}, err
 	}
 
+	defer downloaded.Contents.Close()
 	return s.StoreMedia(downloaded.Contents, downloaded.ContentType, downloaded.DesiredFilename, "", server, mediaId)
 }
 
-func (s *MediaService) UploadMedia(contents io.Reader, contentType string, filename string, userId string, host string) (types.Media, error) {
-	data := io.LimitReader(contents, s.i.Config.Uploads.MaxSizeBytes)
+func (s *MediaService) IsTooLarge(contentLength int64, contentLengthHeader string) (bool) {
+	if s.i.Config.Uploads.MaxSizeBytes <= 0 {
+		return false
+	}
+	if contentLength >= 0 {
+		return contentLength > s.i.Config.Uploads.MaxSizeBytes
+	}
+	if contentLengthHeader != "" {
+		parsed, err := strconv.ParseInt(contentLengthHeader, 10, 64)
+		if err != nil {
+			s.i.Log.Warn("Invalid content length header given; assuming too large. Value received: " + contentLengthHeader)
+			return true // Invalid header
+		}
+
+		return parsed > s.i.Config.Uploads.MaxSizeBytes
+	}
+
+	return false // We can only assume
+}
+
+func (s *MediaService) UploadMedia(contents io.ReadCloser, contentType string, filename string, userId string, host string) (types.Media, error) {
+	defer contents.Close()
+	var data io.Reader
+	if s.i.Config.Uploads.MaxSizeBytes > 0 {
+		data = io.LimitReader(contents, s.i.Config.Uploads.MaxSizeBytes)
+	} else {
+		data = contents
+	}
+
 	return s.StoreMedia(data, contentType, filename, userId, host, "")
 }
 

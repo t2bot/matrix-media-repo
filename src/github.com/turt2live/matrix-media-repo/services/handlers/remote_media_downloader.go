@@ -13,7 +13,7 @@ import (
 )
 
 type DownloadedMedia struct {
-	Contents        io.Reader
+	Contents        io.ReadCloser
 	DesiredFilename string
 	ContentType     string
 }
