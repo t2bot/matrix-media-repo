@@ -74,6 +74,15 @@ func ThumbnailMedia(w http.ResponseWriter, r *http.Request, i rcontext.RequestIn
 
 	thumb, err := thumbSvc.GetThumbnail(media, width, height, method)
 	if err != nil {
+		if err == util.ErrMediaTooLarge {
+			i.Log.Warn("Media too large to thumbnail, returning source image instead")
+			return &DownloadMediaResponse{
+				ContentType: media.ContentType,
+				SizeBytes:   media.SizeBytes,
+				Location:    media.Location,
+				Filename:    "thumbnail",
+			}
+		}
 		i.Log.Error("Unexpected error getting thumbnail: " + err.Error())
 		return client.InternalServerError("Unexpected Error")
 	}

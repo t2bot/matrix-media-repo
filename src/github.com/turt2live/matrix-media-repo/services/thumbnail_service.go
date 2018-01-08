@@ -83,7 +83,7 @@ func (s *ThumbnailService) GetThumbnail(media types.Media, width int, height int
 
 	if media.SizeBytes > s.i.Config.Thumbnails.MaxSourceBytes {
 		s.i.Log.Warn("Media too large to thumbnail")
-		return thumb, errors.New("cannot thumbnail, image too large")
+		return thumb, util.ErrMediaTooLarge
 	}
 
 	s.i.Log.Info("Generating new thumbnail")
