@@ -21,7 +21,7 @@ database:
 
 # The file upload settings for the media repository
 uploads:
-  maxBytes: 10485760 # 10MB default, 0 to disable
+  maxBytes: 104857600 # 100MB default, 0 to disable
   # This is intended for larger deployments where media should be distributed among other
   # directories, drives, servers, etc. For smaller deployments, a single entry in this list
   # is recommended.
@@ -30,7 +30,7 @@ uploads:
 
 # The file download settings when retrieving media from other servers
 downloads:
-  maxBytes: 10485760 # 10MB default, 0 to disable
+  maxBytes: 104857600 # 100MB default, 0 to disable
 
 # URL Preview settings
 urlPreviews:
