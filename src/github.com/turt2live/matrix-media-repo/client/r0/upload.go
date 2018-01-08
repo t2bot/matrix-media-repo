@@ -1,6 +1,8 @@
 package r0
 
 import (
+	"io"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/sirupsen/logrus"
@@ -39,11 +41,16 @@ func UploadMedia(w http.ResponseWriter, r *http.Request, i rcontext.RequestInfo)
 	svc := services.CreateMediaService(i)
 
 	if svc.IsTooLarge(r.ContentLength, r.Header.Get("Content-Length")) {
+		io.Copy(ioutil.Discard, r.Body) // Ditch the entire request
+		defer r.Body.Close()
 		return client.RequestTooLarge()
 	}
 
 	media, err := svc.UploadMedia(r.Body, contentType, filename, userId, r.Host)
 	if err != nil {
+		io.Copy(ioutil.Discard, r.Body) // Ditch the entire request
+		defer r.Body.Close()
+
 		i.Log.Error("Unexpected error storing media: " + err.Error())
 		return client.InternalServerError("Unexpected Error")
 	}
