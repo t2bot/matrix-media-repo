@@ -21,6 +21,9 @@ type IdenticonResponse struct {
 }
 
 func Identicon(w http.ResponseWriter, r *http.Request, i rcontext.RequestInfo) interface{} {
+	if !i.Config.Identicons.Enabled {
+		return client.NotFoundError()
+	}
 	if !ValidateUserCanDownload(r, i) {
 		return client.AuthFailed()
 	}

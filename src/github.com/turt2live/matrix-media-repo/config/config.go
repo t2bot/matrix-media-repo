@@ -52,11 +52,15 @@ type MediaRepoConfig struct {
 	} `yaml:"urlPreviews"`
 
 	RateLimit struct {
-		Enabled           bool  `yaml:"enabled"`
+		Enabled bool `yaml:"enabled"`
 		// TODO: Support floats when this is fixed: https://github.com/didip/tollbooth/issues/58
 		RequestsPerSecond int64 `yaml:"requestsPerSecond"`
 		BurstCount        int   `yaml:"burst"`
 	} `yaml:"rateLimit"`
+
+	Identicons struct {
+		Enabled bool `yaml:"enabled"`
+	} `yaml:"identicons"`
 }
 
 func ReadConfig() (MediaRepoConfig, error) {
