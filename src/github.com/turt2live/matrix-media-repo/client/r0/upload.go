@@ -7,7 +7,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/client"
-	"github.com/turt2live/matrix-media-repo/services"
+	"github.com/turt2live/matrix-media-repo/services/media_service"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
@@ -37,7 +37,7 @@ func UploadMedia(w http.ResponseWriter, r *http.Request, log *logrus.Entry) inte
 		contentType = "application/octet-stream" // binary
 	}
 
-	svc := services.NewMediaService(r.Context(), log)
+	svc := media_service.New(r.Context(), log)
 
 	if svc.IsTooLarge(r.ContentLength, r.Header.Get("Content-Length")) {
 		io.Copy(ioutil.Discard, r.Body) // Ditch the entire request

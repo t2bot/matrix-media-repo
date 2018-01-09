@@ -1,4 +1,4 @@
-package services
+package url_service
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/config"
-	"github.com/turt2live/matrix-media-repo/services/handlers"
+	"github.com/turt2live/matrix-media-repo/services/media_service"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/stores"
 	"github.com/turt2live/matrix-media-repo/types"
@@ -19,15 +19,15 @@ import (
 	"github.com/turt2live/matrix-media-repo/util/errs"
 )
 
-type UrlService struct {
+type urlService struct {
 	store *stores.UrlStore
 	ctx   context.Context
 	log   *logrus.Entry
 }
 
-func NewUrlService(ctx context.Context, log *logrus.Entry) (*UrlService) {
+func New(ctx context.Context, log *logrus.Entry) (*urlService) {
 	store := storage.GetDatabase().GetUrlStore(ctx, log)
-	return &UrlService{store, ctx, log}
+	return &urlService{store, ctx, log}
 }
 
 func returnCachedPreview(cached *types.CachedUrlPreview) (*types.UrlPreview, error) {
@@ -46,7 +46,7 @@ func returnCachedPreview(cached *types.CachedUrlPreview) (*types.UrlPreview, err
 	return cached.Preview, nil
 }
 
-func (s *UrlService) GetPreview(urlStr string, onHost string, forUserId string, atTs int64) (*types.UrlPreview, error) {
+func (s *urlService) GetPreview(urlStr string, onHost string, forUserId string, atTs int64) (*types.UrlPreview, error) {
 	s.log = s.log.WithFields(logrus.Fields{
 		"urlService_ts": atTs,
 	})
@@ -110,7 +110,7 @@ func (s *UrlService) GetPreview(urlStr string, onHost string, forUserId string, 
 		"previewer": "OpenGraph",
 	})
 
-	previewer := handlers.NewOpenGraphPreviewer(s.ctx, s.log)
+	previewer := NewOpenGraphPreviewer(s.ctx, s.log)
 	preview, err := previewer.GeneratePreview(urlStr)
 	if err != nil {
 		if err == errs.ErrMediaNotFound {
@@ -130,7 +130,7 @@ func (s *UrlService) GetPreview(urlStr string, onHost string, forUserId string, 
 	}
 
 	// Store the thumbnail, if there is one
-	mediaSvc := NewMediaService(s.ctx, s.log)
+	mediaSvc := media_service.New(s.ctx, s.log)
 	if preview.Image != nil && !mediaSvc.IsTooLarge(preview.Image.ContentLength, preview.Image.ContentLengthHeader) {
 		// UploadMedia will close the read stream for the thumbnail
 		media, err := mediaSvc.UploadMedia(preview.Image.Data, preview.Image.ContentType, preview.Image.Filename, forUserId, onHost)

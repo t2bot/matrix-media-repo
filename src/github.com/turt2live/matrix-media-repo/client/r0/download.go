@@ -8,7 +8,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/client"
-	"github.com/turt2live/matrix-media-repo/services"
+	"github.com/turt2live/matrix-media-repo/services/media_service"
 	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/errs"
 )
@@ -37,7 +37,7 @@ func DownloadMedia(w http.ResponseWriter, r *http.Request, log *logrus.Entry) in
 		"filename": filename,
 	})
 
-	svc := services.NewMediaService(r.Context(), log)
+	svc := media_service.New(r.Context(), log)
 
 	media, err := svc.GetMedia(server, mediaId)
 	if err != nil {

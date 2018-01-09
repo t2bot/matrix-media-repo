@@ -1,4 +1,4 @@
-package handlers
+package media_service
 
 import (
 	"context"
@@ -13,22 +13,22 @@ import (
 	"github.com/turt2live/matrix-media-repo/util/errs"
 )
 
-type DownloadedMedia struct {
+type downloadedMedia struct {
 	Contents        io.ReadCloser
 	DesiredFilename string
 	ContentType     string
 }
 
-type RemoteMediaDownloader struct {
+type remoteMediaDownloader struct {
 	ctx context.Context
 	log *logrus.Entry
 }
 
-func NewRemoteMediaDownloader(ctx context.Context, log *logrus.Entry) *RemoteMediaDownloader {
-	return &RemoteMediaDownloader{ctx, log}
+func newRemoteMediaDownloader(ctx context.Context, log *logrus.Entry) *remoteMediaDownloader {
+	return &remoteMediaDownloader{ctx, log}
 }
 
-func (r *RemoteMediaDownloader) Download(server string, mediaId string) (*DownloadedMedia, error) {
+func (r *remoteMediaDownloader) Download(server string, mediaId string) (*downloadedMedia, error) {
 	mtxClient := gomatrixserverlib.NewClient()
 	mtxServer := gomatrixserverlib.ServerName(server)
 	resp, err := mtxClient.CreateMediaDownloadRequest(r.ctx, mtxServer, mediaId)
@@ -53,7 +53,7 @@ func (r *RemoteMediaDownloader) Download(server string, mediaId string) (*Downlo
 		return nil, errs.ErrMediaTooLarge
 	}
 
-	request := &DownloadedMedia{
+	request := &downloadedMedia{
 		ContentType: resp.Header.Get("Content-Type"),
 		Contents:    resp.Body,
 		//DesiredFilename (calculated below)

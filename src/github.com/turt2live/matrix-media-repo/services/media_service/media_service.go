@@ -1,4 +1,4 @@
-package services
+package media_service
 
 import (
 	"context"
@@ -9,7 +9,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/config"
-	"github.com/turt2live/matrix-media-repo/services/handlers"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/stores"
 	"github.com/turt2live/matrix-media-repo/types"
@@ -17,18 +16,18 @@ import (
 	"github.com/turt2live/matrix-media-repo/util/errs"
 )
 
-type MediaService struct {
+type mediaService struct {
 	store *stores.MediaStore
 	ctx   context.Context
 	log   *logrus.Entry
 }
 
-func NewMediaService(ctx context.Context, log *logrus.Entry) (*MediaService) {
+func New(ctx context.Context, log *logrus.Entry) (*mediaService) {
 	store := storage.GetDatabase().GetMediaStore(ctx, log)
-	return &MediaService{store, ctx, log}
+	return &mediaService{store, ctx, log}
 }
 
-func (s *MediaService) GetMedia(server string, mediaId string) (*types.Media, error) {
+func (s *mediaService) GetMedia(server string, mediaId string) (*types.Media, error) {
 	s.log.Info("Looking up media")
 	media, err := s.store.Get(server, mediaId)
 	if err != nil {
@@ -56,9 +55,9 @@ func (s *MediaService) GetMedia(server string, mediaId string) (*types.Media, er
 	return media, nil
 }
 
-func (s *MediaService) downloadRemoteMedia(server string, mediaId string) (*types.Media, error) {
+func (s *mediaService) downloadRemoteMedia(server string, mediaId string) (*types.Media, error) {
 	s.log.Info("Attempting to download remote media")
-	downloader := handlers.NewRemoteMediaDownloader(s.ctx, s.log)
+	downloader := newRemoteMediaDownloader(s.ctx, s.log)
 
 	downloaded, err := downloader.Download(server, mediaId)
 	if err != nil {
@@ -69,7 +68,7 @@ func (s *MediaService) downloadRemoteMedia(server string, mediaId string) (*type
 	return s.StoreMedia(downloaded.Contents, downloaded.ContentType, downloaded.DesiredFilename, "", server, mediaId)
 }
 
-func (s *MediaService) IsTooLarge(contentLength int64, contentLengthHeader string) (bool) {
+func (s *mediaService) IsTooLarge(contentLength int64, contentLengthHeader string) (bool) {
 	if config.Get().Uploads.MaxSizeBytes <= 0 {
 		return false
 	}
@@ -89,7 +88,7 @@ func (s *MediaService) IsTooLarge(contentLength int64, contentLengthHeader strin
 	return false // We can only assume
 }
 
-func (s *MediaService) UploadMedia(contents io.ReadCloser, contentType string, filename string, userId string, host string) (*types.Media, error) {
+func (s *mediaService) UploadMedia(contents io.ReadCloser, contentType string, filename string, userId string, host string) (*types.Media, error) {
 	defer contents.Close()
 	var data io.Reader
 	if config.Get().Uploads.MaxSizeBytes > 0 {
@@ -101,7 +100,7 @@ func (s *MediaService) UploadMedia(contents io.ReadCloser, contentType string, f
 	return s.StoreMedia(data, contentType, filename, userId, host, "")
 }
 
-func (s *MediaService) StoreMedia(contents io.Reader, contentType string, filename string, userId string, host string, mediaId string) (*types.Media, error) {
+func (s *mediaService) StoreMedia(contents io.Reader, contentType string, filename string, userId string, host string, mediaId string) (*types.Media, error) {
 	isGeneratedId := false
 	if mediaId == "" {
 		mediaId = generateMediaId()

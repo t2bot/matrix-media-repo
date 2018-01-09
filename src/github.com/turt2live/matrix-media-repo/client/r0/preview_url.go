@@ -8,7 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/client"
 	"github.com/turt2live/matrix-media-repo/config"
-	"github.com/turt2live/matrix-media-repo/services"
+	"github.com/turt2live/matrix-media-repo/services/url_service"
 	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/errs"
 )
@@ -59,7 +59,7 @@ func PreviewUrl(w http.ResponseWriter, r *http.Request, log *logrus.Entry) inter
 		return client.BadRequest("Scheme not accepted")
 	}
 
-	svc := services.NewUrlService(r.Context(), log)
+	svc := url_service.New(r.Context(), log)
 	preview, err := svc.GetPreview(urlStr, r.Host, userId, ts)
 	if err != nil {
 		if err == errs.ErrMediaNotFound || err == errs.ErrHostNotFound {

@@ -1,4 +1,4 @@
-package services
+package thumbnail_service
 
 import (
 	"context"
@@ -7,7 +7,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/config"
-	"github.com/turt2live/matrix-media-repo/services/handlers"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/stores"
 	"github.com/turt2live/matrix-media-repo/types"
@@ -15,18 +14,18 @@ import (
 	"github.com/turt2live/matrix-media-repo/util/errs"
 )
 
-type ThumbnailService struct {
+type thumbnailService struct {
 	store *stores.ThumbnailStore
 	ctx   context.Context
 	log   *logrus.Entry
 }
 
-func NewThumbnailService(ctx context.Context, log *logrus.Entry) (*ThumbnailService) {
+func New(ctx context.Context, log *logrus.Entry) (*thumbnailService) {
 	store := storage.GetDatabase().GetThumbnailStore(ctx, log)
-	return &ThumbnailService{store, ctx, log}
+	return &thumbnailService{store, ctx, log}
 }
 
-func (s *ThumbnailService) GetThumbnail(media *types.Media, width int, height int, method string) (*types.Thumbnail, error) {
+func (s *thumbnailService) GetThumbnail(media *types.Media, width int, height int, method string) (*types.Thumbnail, error) {
 	if width <= 0 {
 		return nil, errors.New("width must be positive")
 	}
@@ -92,7 +91,7 @@ func (s *ThumbnailService) GetThumbnail(media *types.Media, width int, height in
 	}
 
 	s.log.Info("Generating new thumbnail")
-	thumbnailer := handlers.NewThumbnailer(s.ctx, s.log)
+	thumbnailer := NewThumbnailer(s.ctx, s.log)
 
 	generated, err := thumbnailer.GenerateThumbnail(media, targetWidth, targetHeight, method)
 	if err != nil {

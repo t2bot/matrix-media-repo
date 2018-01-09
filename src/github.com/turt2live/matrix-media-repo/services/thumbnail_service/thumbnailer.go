@@ -1,4 +1,4 @@
-package handlers
+package thumbnail_service
 
 import (
 	"bytes"
@@ -12,22 +12,22 @@ import (
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
-type GeneratedThumbnail struct {
+type generatedThumbnail struct {
 	ContentType  string
 	DiskLocation string
 	SizeBytes    int64
 }
 
-type Thumbnailer struct {
+type thumbnailer struct {
 	ctx context.Context
 	log *logrus.Entry
 }
 
-func NewThumbnailer(ctx context.Context, log *logrus.Entry) *Thumbnailer {
-	return &Thumbnailer{ctx, log}
+func NewThumbnailer(ctx context.Context, log *logrus.Entry) *thumbnailer {
+	return &thumbnailer{ctx, log}
 }
 
-func (t *Thumbnailer) GenerateThumbnail(media *types.Media, width int, height int, method string) (*GeneratedThumbnail, error) {
+func (t *thumbnailer) GenerateThumbnail(media *types.Media, width int, height int, method string) (*generatedThumbnail, error) {
 	src, err := imaging.Open(media.Location)
 	if err != nil {
 		return nil, err
@@ -44,7 +44,7 @@ func (t *Thumbnailer) GenerateThumbnail(media *types.Media, width int, height in
 		t.log.Info("Aspect ratio is the same, converting method to 'scale'")
 	}
 
-	thumb := &GeneratedThumbnail{}
+	thumb := &generatedThumbnail{}
 
 	if srcWidth <= width && srcHeight <= height {
 		// Image is too small - don't upscale

@@ -1,4 +1,4 @@
-package handlers
+package url_service
 
 import (
 	"context"
@@ -18,16 +18,16 @@ import (
 	"github.com/turt2live/matrix-media-repo/util/errs"
 )
 
-type OpenGraphResult struct {
+type openGraphResult struct {
 	Url         string
 	SiteName    string
 	Type        string
 	Description string
 	Title       string
-	Image       *OpenGraphImage
+	Image       *openGraphImage
 }
 
-type OpenGraphImage struct {
+type openGraphImage struct {
 	ContentType         string
 	Data                io.ReadCloser
 	Filename            string
@@ -35,29 +35,29 @@ type OpenGraphImage struct {
 	ContentLengthHeader string
 }
 
-type OpenGraphUrlPreviewer struct {
+type openGraphUrlPreviewer struct {
 	ctx context.Context
 	log *logrus.Entry
 }
 
-func NewOpenGraphPreviewer(ctx context.Context, log *logrus.Entry) *OpenGraphUrlPreviewer {
-	return &OpenGraphUrlPreviewer{ctx, log}
+func NewOpenGraphPreviewer(ctx context.Context, log *logrus.Entry) *openGraphUrlPreviewer {
+	return &openGraphUrlPreviewer{ctx, log}
 }
 
-func (p *OpenGraphUrlPreviewer) GeneratePreview(urlStr string) (OpenGraphResult, error) {
+func (p *openGraphUrlPreviewer) GeneratePreview(urlStr string) (openGraphResult, error) {
 	html, err := downloadContent(urlStr, p.log)
 	if err != nil {
 		p.log.Error("Error downloading content: " + err.Error())
 
 		// We'll consider it not found for the sake of processing
-		return OpenGraphResult{}, errs.ErrMediaNotFound
+		return openGraphResult{}, errs.ErrMediaNotFound
 	}
 
 	og := opengraph.NewOpenGraph()
 	err = og.ProcessHTML(strings.NewReader(html))
 	if err != nil {
 		p.log.Error("Error getting OpenGraph: " + err.Error())
-		return OpenGraphResult{}, err
+		return openGraphResult{}, err
 	}
 
 	if og.Title == "" {
@@ -70,7 +70,7 @@ func (p *OpenGraphUrlPreviewer) GeneratePreview(urlStr string) (OpenGraphResult,
 		og.Images = calcImages(html)
 	}
 
-	graph := &OpenGraphResult{
+	graph := &openGraphResult{
 		Type:        og.Type,
 		Url:         og.URL,
 		Title:       og.Title,
@@ -136,7 +136,7 @@ func downloadContent(urlStr string, log *logrus.Entry) (string, error) {
 	return html, nil
 }
 
-func downloadImage(imageUrl string, log *logrus.Entry) (*OpenGraphImage, error) {
+func downloadImage(imageUrl string, log *logrus.Entry) (*openGraphImage, error) {
 	log.Info("Getting image from " + imageUrl)
 	resp, err := http.Get(imageUrl)
 	if err != nil {
@@ -147,7 +147,7 @@ func downloadImage(imageUrl string, log *logrus.Entry) (*OpenGraphImage, error) 
 		return nil, errors.New("error during transfer")
 	}
 
-	image := &OpenGraphImage{
+	image := &openGraphImage{
 		ContentType:         resp.Header.Get("Content-Type"),
 		Data:                resp.Body,
 		ContentLength:       resp.ContentLength,

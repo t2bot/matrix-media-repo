@@ -9,7 +9,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/client"
 	"github.com/turt2live/matrix-media-repo/config"
-	"github.com/turt2live/matrix-media-repo/services"
+	"github.com/turt2live/matrix-media-repo/services/media_service"
+	"github.com/turt2live/matrix-media-repo/services/thumbnail_service"
 	"github.com/turt2live/matrix-media-repo/util/errs"
 )
 
@@ -59,8 +60,8 @@ func ThumbnailMedia(w http.ResponseWriter, r *http.Request, log *logrus.Entry) i
 		"requestedMethod": method,
 	})
 
-	mediaSvc := services.NewMediaService(r.Context(), log)
-	thumbSvc := services.NewThumbnailService(r.Context(), log)
+	mediaSvc := media_service.New(r.Context(), log)
+	thumbSvc := thumbnail_service.New(r.Context(), log)
 
 	media, err := mediaSvc.GetMedia(server, mediaId)
 	if err != nil {
