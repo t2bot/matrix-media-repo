@@ -44,7 +44,7 @@ func InitThumbnailStore(sqlDb *sql.DB) (*ThumbnailStoreFactory, error) {
 	return &store, nil
 }
 
-func (f *ThumbnailStoreFactory) Create(ctx context.Context, entry *logrus.Entry) (*ThumbnailStore) {
+func (f *ThumbnailStoreFactory) New(ctx context.Context, entry *logrus.Entry) (*ThumbnailStore) {
 	return &ThumbnailStore{
 		factory:    f,
 		ctx:        ctx,
@@ -70,7 +70,7 @@ func (s *ThumbnailStore) Insert(thumbnail *types.Thumbnail) (error) {
 	return err
 }
 
-func (s *ThumbnailStore) Get(origin string, mediaId string, width int, height int, method string) (types.Thumbnail, error) {
+func (s *ThumbnailStore) Get(origin string, mediaId string, width int, height int, method string) (*types.Thumbnail, error) {
 	t := &types.Thumbnail{}
 	err := s.statements.selectThumbnail.QueryRowContext(s.ctx, origin, mediaId, width, height, method).Scan(
 		&t.Origin,
@@ -83,5 +83,5 @@ func (s *ThumbnailStore) Get(origin string, mediaId string, width int, height in
 		&t.Location,
 		&t.CreationTs,
 	)
-	return *t, err
+	return t, err
 }

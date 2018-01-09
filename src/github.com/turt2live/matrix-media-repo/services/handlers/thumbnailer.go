@@ -2,12 +2,12 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"errors"
 
 	"github.com/disintegration/imaging"
-	"github.com/turt2live/matrix-media-repo/rcontext"
+	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/storage"
-	"github.com/turt2live/matrix-media-repo/storage/stores"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 )
@@ -19,16 +19,18 @@ type GeneratedThumbnail struct {
 }
 
 type Thumbnailer struct {
-	ThumbnailStore stores.ThumbnailStore
-	Info           rcontext.RequestInfo
+	ctx context.Context
+	log *logrus.Entry
 }
 
-func (t *Thumbnailer) GenerateThumbnail(media types.Media, width int, height int, method string) (GeneratedThumbnail, error) {
-	thumb := &GeneratedThumbnail{}
+func NewThumbnailer(ctx context.Context, log *logrus.Entry) *Thumbnailer {
+	return &Thumbnailer{ctx, log}
+}
 
+func (t *Thumbnailer) GenerateThumbnail(media *types.Media, width int, height int, method string) (*GeneratedThumbnail, error) {
 	src, err := imaging.Open(media.Location)
 	if err != nil {
-		return *thumb, err
+		return nil, err
 	}
 
 	srcWidth := src.Bounds().Max.X
@@ -39,16 +41,18 @@ func (t *Thumbnailer) GenerateThumbnail(media types.Media, width int, height int
 	if aspectRatio == targetAspectRatio {
 		// Highly unlikely, but if the aspect ratios match then just resize
 		method = "scale"
-		t.Info.Log.Info("Aspect ratio is the same, converting method to 'scale'")
+		t.log.Info("Aspect ratio is the same, converting method to 'scale'")
 	}
+
+	thumb := &GeneratedThumbnail{}
 
 	if srcWidth <= width && srcHeight <= height {
 		// Image is too small - don't upscale
 		thumb.ContentType = media.ContentType
 		thumb.DiskLocation = media.Location
 		thumb.SizeBytes = media.SizeBytes
-		t.Info.Log.Warn("Image too small, returning raw image")
-		return *thumb, nil
+		t.log.Warn("Image too small, returning raw image")
+		return thumb, nil
 	}
 
 	if method == "scale" {
@@ -56,34 +60,34 @@ func (t *Thumbnailer) GenerateThumbnail(media types.Media, width int, height int
 	} else if method == "crop" {
 		src = imaging.Fill(src, width, height, imaging.Center, imaging.Lanczos)
 	} else {
-		t.Info.Log.Error("Unrecognized thumbnail method: " + method)
-		return *thumb, errors.New("unrecognized method: " + method)
+		t.log.Error("Unrecognized thumbnail method: " + method)
+		return nil, errors.New("unrecognized method: " + method)
 	}
 
 	// Put the image bytes into a memory buffer
 	imgData := &bytes.Buffer{}
 	err = imaging.Encode(imgData, src, imaging.PNG)
 	if err != nil {
-		t.Info.Log.Error("Unexpected error encoding thumbnail: " + err.Error())
-		return *thumb, err
+		t.log.Error("Unexpected error encoding thumbnail: " + err.Error())
+		return nil, err
 	}
 
 	// Reset the buffer pointer and store the file
-	location, err := storage.PersistFile(imgData, t.Info.Context, &t.Info.Db)
+	location, err := storage.PersistFile(imgData, t.ctx)
 	if err != nil {
-		t.Info.Log.Error("Unexpected error saving thumbnail: " + err.Error())
-		return *thumb, err
+		t.log.Error("Unexpected error saving thumbnail: " + err.Error())
+		return nil, err
 	}
 
 	fileSize, err := util.FileSize(location)
 	if err != nil {
-		t.Info.Log.Error("Unexpected error getting the size of the thumbnail: " + err.Error())
-		return *thumb, err
+		t.log.Error("Unexpected error getting the size of the thumbnail: " + err.Error())
+		return nil, err
 	}
 
 	thumb.DiskLocation = location
 	thumb.ContentType = "image/png"
 	thumb.SizeBytes = fileSize
 
-	return *thumb, nil
+	return thumb, nil
 }

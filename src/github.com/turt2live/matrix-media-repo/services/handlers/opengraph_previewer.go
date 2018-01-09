@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"io"
 	"io/ioutil"
@@ -14,8 +15,7 @@ import (
 	"github.com/dyatlov/go-opengraph/opengraph"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/config"
-	"github.com/turt2live/matrix-media-repo/rcontext"
-	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/errs"
 )
 
 type OpenGraphResult struct {
@@ -24,8 +24,7 @@ type OpenGraphResult struct {
 	Type        string
 	Description string
 	Title       string
-	Image       OpenGraphImage
-	HasImage    bool
+	Image       *OpenGraphImage
 }
 
 type OpenGraphImage struct {
@@ -37,22 +36,27 @@ type OpenGraphImage struct {
 }
 
 type OpenGraphUrlPreviewer struct {
-	Info rcontext.RequestInfo
+	ctx context.Context
+	log *logrus.Entry
+}
+
+func NewOpenGraphPreviewer(ctx context.Context, log *logrus.Entry) *OpenGraphUrlPreviewer {
+	return &OpenGraphUrlPreviewer{ctx, log}
 }
 
 func (p *OpenGraphUrlPreviewer) GeneratePreview(urlStr string) (OpenGraphResult, error) {
-	html, err := downloadContent(urlStr, p.Info.Log)
+	html, err := downloadContent(urlStr, p.log)
 	if err != nil {
-		p.Info.Log.Error("Error downloading content: " + err.Error())
+		p.log.Error("Error downloading content: " + err.Error())
 
 		// We'll consider it not found for the sake of processing
-		return OpenGraphResult{}, util.ErrMediaNotFound
+		return OpenGraphResult{}, errs.ErrMediaNotFound
 	}
 
 	og := opengraph.NewOpenGraph()
 	err = og.ProcessHTML(strings.NewReader(html))
 	if err != nil {
-		p.Info.Log.Error("Error getting OpenGraph: " + err.Error())
+		p.log.Error("Error getting OpenGraph: " + err.Error())
 		return OpenGraphResult{}, err
 	}
 
@@ -77,25 +81,24 @@ func (p *OpenGraphUrlPreviewer) GeneratePreview(urlStr string) (OpenGraphResult,
 	if og.Images != nil && len(og.Images) > 0 {
 		baseUrl, err := url.Parse(urlStr)
 		if err != nil {
-			p.Info.Log.Error("Non-fatal error getting thumbnail (parsing base url): " + err.Error())
+			p.log.Error("Non-fatal error getting thumbnail (parsing base url): " + err.Error())
 			return *graph, nil
 		}
 
 		imgUrl, err := url.Parse(og.Images[0].URL)
 		if err != nil {
-			p.Info.Log.Error("Non-fatal error getting thumbnail (parsing image url): " + err.Error())
+			p.log.Error("Non-fatal error getting thumbnail (parsing image url): " + err.Error())
 			return *graph, nil
 		}
 
 		imgAbsUrl := baseUrl.ResolveReference(imgUrl)
-		img, err := downloadImage(imgAbsUrl.String(), p.Info)
+		img, err := downloadImage(imgAbsUrl.String(), p.log)
 		if err != nil {
-			p.Info.Log.Error("Non-fatal error getting thumbnail (downloading image): " + err.Error())
+			p.log.Error("Non-fatal error getting thumbnail (downloading image): " + err.Error())
 			return *graph, nil
 		}
 
 		graph.Image = img
-		graph.HasImage = true
 	}
 
 	return *graph, nil
@@ -113,7 +116,7 @@ func downloadContent(urlStr string, log *logrus.Entry) (string, error) {
 	}
 
 	if config.Get().UrlPreviews.MaxPageSizeBytes > 0 && resp.ContentLength >= 0 && resp.ContentLength > config.Get().UrlPreviews.MaxPageSizeBytes {
-		return "", util.ErrMediaTooLarge
+		return "", errs.ErrMediaTooLarge
 	}
 
 	var reader io.Reader
@@ -133,15 +136,15 @@ func downloadContent(urlStr string, log *logrus.Entry) (string, error) {
 	return html, nil
 }
 
-func downloadImage(imageUrl string, i rcontext.RequestInfo) (OpenGraphImage, error) {
-	i.Log.Info("Getting image from " + imageUrl)
+func downloadImage(imageUrl string, log *logrus.Entry) (*OpenGraphImage, error) {
+	log.Info("Getting image from " + imageUrl)
 	resp, err := http.Get(imageUrl)
 	if err != nil {
-		return OpenGraphImage{}, err
+		return nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
-		i.Log.Warn("Received status code " + strconv.Itoa(resp.StatusCode))
-		return OpenGraphImage{}, errors.New("error during transfer")
+		log.Warn("Received status code " + strconv.Itoa(resp.StatusCode))
+		return nil, errors.New("error during transfer")
 	}
 
 	image := &OpenGraphImage{
@@ -156,7 +159,7 @@ func downloadImage(imageUrl string, i rcontext.RequestInfo) (OpenGraphImage, err
 		image.Filename = params["filename"]
 	}
 
-	return *image, nil
+	return image, nil
 }
 
 func calcTitle(html string) string {

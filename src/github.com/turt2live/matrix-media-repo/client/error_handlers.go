@@ -3,13 +3,13 @@ package client
 import (
 	"net/http"
 
-	"github.com/turt2live/matrix-media-repo/rcontext"
+	"github.com/sirupsen/logrus"
 )
 
-func NotFoundHandler(w http.ResponseWriter, r *http.Request, i rcontext.RequestInfo) interface{} {
+func NotFoundHandler(w http.ResponseWriter, r *http.Request, log *logrus.Entry) interface{} {
 	return NotFoundError()
 }
 
-func MethodNotAllowedHandler(w http.ResponseWriter, r *http.Request, i rcontext.RequestInfo) interface{} {
+func MethodNotAllowedHandler(w http.ResponseWriter, r *http.Request, log *logrus.Entry) interface{} {
 	return MethodNotAllowed()
 }

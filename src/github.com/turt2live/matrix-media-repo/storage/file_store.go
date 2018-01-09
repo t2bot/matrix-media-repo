@@ -13,12 +13,12 @@ import (
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
-func PersistFile(file io.Reader, ctx context.Context, db *Database) (string, error) {
+func PersistFile(file io.Reader, ctx context.Context) (string, error) {
 	var basePath string
 	var pathSize int64
 	for i := 0; i < len(config.Get().Uploads.StoragePaths); i++ {
 		currPath := config.Get().Uploads.StoragePaths[i]
-		size, err := db.GetSizeOfFolderBytes(ctx, currPath)
+		size, err := GetDatabase().GetSizeOfFolderBytes(ctx, currPath)
 		if err != nil {
 			continue
 		}

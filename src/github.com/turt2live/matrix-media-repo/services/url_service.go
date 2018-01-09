@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"net"
@@ -10,53 +11,55 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/config"
-	"github.com/turt2live/matrix-media-repo/rcontext"
 	"github.com/turt2live/matrix-media-repo/services/handlers"
+	"github.com/turt2live/matrix-media-repo/storage"
+	"github.com/turt2live/matrix-media-repo/storage/stores"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/errcodes"
+	"github.com/turt2live/matrix-media-repo/util/errs"
 )
 
 type UrlService struct {
-	//store *stores.UrlStore
-	i rcontext.RequestInfo
+	store *stores.UrlStore
+	ctx   context.Context
+	log   *logrus.Entry
 }
 
-func CreateUrlService(i rcontext.RequestInfo) (*UrlService) {
-	return &UrlService{i}
+func NewUrlService(ctx context.Context, log *logrus.Entry) (*UrlService) {
+	store := storage.GetDatabase().GetUrlStore(ctx, log)
+	return &UrlService{store, ctx, log}
 }
 
-func returnCachedPreview(cached *types.CachedUrlPreview) (types.UrlPreview, error) {
-	if cached.ErrorCode == errcodes.ErrCodeInvalidHost {
-		return types.UrlPreview{}, util.ErrInvalidHost
-	} else if cached.ErrorCode == errcodes.ErrCodeHostNotFound {
-		return types.UrlPreview{}, util.ErrHostNotFound
-	} else if cached.ErrorCode == errcodes.ErrCodeHostBlacklisted {
-		return types.UrlPreview{}, util.ErrHostBlacklisted
-	} else if cached.ErrorCode == errcodes.ErrCodeNotFound {
-		return types.UrlPreview{}, util.ErrMediaNotFound
-	} else if cached.ErrorCode == errcodes.ErrCodeUnknown {
-		return types.UrlPreview{}, errors.New("unknown error")
+func returnCachedPreview(cached *types.CachedUrlPreview) (*types.UrlPreview, error) {
+	if cached.ErrorCode == errs.ErrCodeInvalidHost {
+		return nil, errs.ErrInvalidHost
+	} else if cached.ErrorCode == errs.ErrCodeHostNotFound {
+		return nil, errs.ErrHostNotFound
+	} else if cached.ErrorCode == errs.ErrCodeHostBlacklisted {
+		return nil, errs.ErrHostBlacklisted
+	} else if cached.ErrorCode == errs.ErrCodeNotFound {
+		return nil, errs.ErrMediaNotFound
+	} else if cached.ErrorCode == errs.ErrCodeUnknown {
+		return nil, errors.New("unknown error")
 	}
 
-	return *cached.Preview, nil
+	return cached.Preview, nil
 }
 
-func (s *UrlService) GetPreview(urlStr string, onHost string, forUserId string, atTs int64) (types.UrlPreview, error) {
-	s.i.Log = s.i.Log.WithFields(logrus.Fields{
+func (s *UrlService) GetPreview(urlStr string, onHost string, forUserId string, atTs int64) (*types.UrlPreview, error) {
+	s.log = s.log.WithFields(logrus.Fields{
 		"urlService_ts": atTs,
 	})
 
-	urlStore := s.i.Db.GetUrlStore(s.i.Context, s.i.Log)
-	cached, err := urlStore.GetPreview(urlStr, atTs)
+	cached, err := s.store.GetPreview(urlStr, atTs)
 	if err != nil {
-		s.i.Log.Error("Error getting cached URL: " + err.Error())
+		s.log.Error("Error getting cached URL: " + err.Error())
 	}
 	if err != nil && err != sql.ErrNoRows {
-		return types.UrlPreview{}, err
+		return nil, err
 	}
 	if err != sql.ErrNoRows {
-		s.i.Log.Info("Returning cached URL preview")
+		s.log.Info("Returning cached URL preview")
 		return returnCachedPreview(cached)
 	}
 
@@ -66,24 +69,24 @@ func (s *UrlService) GetPreview(urlStr string, onHost string, forUserId string, 
 		return s.GetPreview(urlStr, onHost, forUserId, now)
 	}
 
-	s.i.Log.Info("URL preview not cached - fetching resource")
+	s.log.Info("URL preview not cached - fetching resource")
 
 	parsedUrl, err := url.ParseRequestURI(urlStr)
 	if err != nil {
-		s.i.Log.Error("Error parsing url: " + err.Error())
-		urlStore.InsertPreviewError(urlStr, errcodes.ErrCodeInvalidHost)
-		return types.UrlPreview{}, util.ErrInvalidHost
+		s.log.Error("Error parsing url: " + err.Error())
+		s.store.InsertPreviewError(urlStr, errs.ErrCodeInvalidHost)
+		return nil, errs.ErrInvalidHost
 	}
 
 	addrs, err := net.LookupIP(parsedUrl.Host)
 	if err != nil {
-		s.i.Log.Error("Error getting host info: " + err.Error())
-		urlStore.InsertPreviewError(urlStr, errcodes.ErrCodeInvalidHost)
-		return types.UrlPreview{}, util.ErrInvalidHost
+		s.log.Error("Error getting host info: " + err.Error())
+		s.store.InsertPreviewError(urlStr, errs.ErrCodeInvalidHost)
+		return nil, errs.ErrInvalidHost
 	}
 	if len(addrs) == 0 {
-		urlStore.InsertPreviewError(urlStr, errcodes.ErrCodeHostNotFound)
-		return types.UrlPreview{}, util.ErrHostNotFound
+		s.store.InsertPreviewError(urlStr, errs.ErrCodeHostNotFound)
+		return nil, errs.ErrHostNotFound
 	}
 	addr := addrs[0]
 	addrStr := fmt.Sprintf("%v", addr)[1:]
@@ -98,24 +101,24 @@ func (s *UrlService) GetPreview(urlStr string, onHost string, forUserId string, 
 	if deniedCidrs == nil {
 		deniedCidrs = []string{}
 	}
-	if !isAllowed(addr, allowedCidrs, deniedCidrs, s.i.Log) {
-		urlStore.InsertPreviewError(urlStr, errcodes.ErrCodeHostBlacklisted)
-		return types.UrlPreview{}, util.ErrHostBlacklisted
+	if !isAllowed(addr, allowedCidrs, deniedCidrs, s.log) {
+		s.store.InsertPreviewError(urlStr, errs.ErrCodeHostBlacklisted)
+		return nil, errs.ErrHostBlacklisted
 	}
 
-	s.i.Log = s.i.Log.WithFields(logrus.Fields{
+	s.log = s.log.WithFields(logrus.Fields{
 		"previewer": "OpenGraph",
 	})
 
-	previewer := &handlers.OpenGraphUrlPreviewer{Info: s.i}
+	previewer := handlers.NewOpenGraphPreviewer(s.ctx, s.log)
 	preview, err := previewer.GeneratePreview(urlStr)
 	if err != nil {
-		if err == util.ErrMediaNotFound {
-			urlStore.InsertPreviewError(urlStr, errcodes.ErrCodeNotFound)
+		if err == errs.ErrMediaNotFound {
+			s.store.InsertPreviewError(urlStr, errs.ErrCodeNotFound)
 		} else {
-			urlStore.InsertPreviewError(urlStr, errcodes.ErrCodeUnknown)
+			s.store.InsertPreviewError(urlStr, errs.ErrCodeUnknown)
 		}
-		return types.UrlPreview{}, err
+		return nil, err
 	}
 
 	result := &types.UrlPreview{
@@ -127,18 +130,18 @@ func (s *UrlService) GetPreview(urlStr string, onHost string, forUserId string, 
 	}
 
 	// Store the thumbnail, if there is one
-	mediaSvc := CreateMediaService(s.i)
-	if preview.HasImage && !mediaSvc.IsTooLarge(preview.Image.ContentLength, preview.Image.ContentLengthHeader) {
+	mediaSvc := NewMediaService(s.ctx, s.log)
+	if preview.Image != nil && !mediaSvc.IsTooLarge(preview.Image.ContentLength, preview.Image.ContentLengthHeader) {
 		// UploadMedia will close the read stream for the thumbnail
 		media, err := mediaSvc.UploadMedia(preview.Image.Data, preview.Image.ContentType, preview.Image.Filename, forUserId, onHost)
 		if err != nil {
-			s.i.Log.Warn("Non-fatal error storing preview thumbnail: " + err.Error())
+			s.log.Warn("Non-fatal error storing preview thumbnail: " + err.Error())
 		} else {
 			img, err := imaging.Open(media.Location)
 			if err != nil {
-				s.i.Log.Warn("Non-fatal error getting thumbnail dimensions: " + err.Error())
+				s.log.Warn("Non-fatal error getting thumbnail dimensions: " + err.Error())
 			} else {
-				result.ImageMxc = util.MediaToMxc(&media)
+				result.ImageMxc = media.MxcUri()
 				result.ImageType = media.ContentType
 				result.ImageSize = media.SizeBytes
 				result.ImageWidth = img.Bounds().Max.X
@@ -153,12 +156,12 @@ func (s *UrlService) GetPreview(urlStr string, onHost string, forUserId string, 
 		ErrorCode: "",
 		FetchedTs: util.NowMillis(),
 	}
-	err = urlStore.InsertPreview(dbRecord)
+	err = s.store.InsertPreview(dbRecord)
 	if err != nil {
-		s.i.Log.Warn("Error caching URL preview: " + err.Error())
+		s.log.Warn("Error caching URL preview: " + err.Error())
 	}
 
-	return *result, nil
+	return result, nil
 }
 
 func isAllowed(ip net.IP, allowed []string, disallowed []string, log *logrus.Entry) bool {

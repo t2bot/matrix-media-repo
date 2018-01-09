@@ -2,19 +2,19 @@ package r0
 
 import (
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/client"
 	"github.com/turt2live/matrix-media-repo/config"
-	"github.com/turt2live/matrix-media-repo/rcontext"
 	"github.com/turt2live/matrix-media-repo/services"
-	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/errs"
 )
 
-func ThumbnailMedia(w http.ResponseWriter, r *http.Request, i rcontext.RequestInfo) interface{} {
-	if !ValidateUserCanDownload(r, i) {
+func ThumbnailMedia(w http.ResponseWriter, r *http.Request, log *logrus.Entry) interface{} {
+	if !ValidateUserCanDownload(r) {
 		return client.AuthFailed()
 	}
 
@@ -23,7 +23,7 @@ func ThumbnailMedia(w http.ResponseWriter, r *http.Request, i rcontext.RequestIn
 	server := params["server"]
 	mediaId := params["mediaId"]
 
-	i.Log = i.Log.WithFields(logrus.Fields{
+	log = log.WithFields(logrus.Fields{
 		"mediaId": mediaId,
 		"server":  server,
 	})
@@ -53,45 +53,57 @@ func ThumbnailMedia(w http.ResponseWriter, r *http.Request, i rcontext.RequestIn
 		method = "crop"
 	}
 
-	i.Log = i.Log.WithFields(logrus.Fields{
+	log = log.WithFields(logrus.Fields{
 		"requestedWidth":  width,
 		"requestedHeight": height,
 		"requestedMethod": method,
 	})
 
-	mediaSvc := services.CreateMediaService(i)
-	thumbSvc := services.CreateThumbnailService(i)
+	mediaSvc := services.NewMediaService(r.Context(), log)
+	thumbSvc := services.NewThumbnailService(r.Context(), log)
 
 	media, err := mediaSvc.GetMedia(server, mediaId)
 	if err != nil {
-		if err == util.ErrMediaNotFound {
+		if err == errs.ErrMediaNotFound {
 			return client.NotFoundError()
-		} else if err == util.ErrMediaTooLarge {
+		} else if err == errs.ErrMediaTooLarge {
 			return client.RequestTooLarge()
 		}
-		i.Log.Error("Unexpected error locating media: " + err.Error())
+		log.Error("Unexpected error locating media: " + err.Error())
 		return client.InternalServerError("Unexpected Error")
 	}
 
 	thumb, err := thumbSvc.GetThumbnail(media, width, height, method)
 	if err != nil {
-		if err == util.ErrMediaTooLarge {
-			i.Log.Warn("Media too large to thumbnail, returning source image instead")
+		fstream, err := os.Open(media.Location)
+		if err != nil {
+			log.Error("Unexpected error opening media: " + err.Error())
+			return client.InternalServerError("Unexpected Error")
+		}
+
+		if err == errs.ErrMediaTooLarge {
+			log.Warn("Media too large to thumbnail, returning source image instead")
 			return &DownloadMediaResponse{
 				ContentType: media.ContentType,
 				SizeBytes:   media.SizeBytes,
-				Location:    media.Location,
+				Data:        fstream,
 				Filename:    "thumbnail",
 			}
 		}
-		i.Log.Error("Unexpected error getting thumbnail: " + err.Error())
+		log.Error("Unexpected error getting thumbnail: " + err.Error())
+		return client.InternalServerError("Unexpected Error")
+	}
+
+	fstream, err := os.Open(thumb.Location)
+	if err != nil {
+		log.Error("Unexpected error opening thumbnail media: " + err.Error())
 		return client.InternalServerError("Unexpected Error")
 	}
 
 	return &DownloadMediaResponse{
 		ContentType: thumb.ContentType,
 		SizeBytes:   thumb.SizeBytes,
-		Location:    thumb.Location,
+		Data:        fstream,
 		Filename:    "thumbnail",
 	}
 }

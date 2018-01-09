@@ -13,9 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/logging"
-	"github.com/turt2live/matrix-media-repo/rcontext"
 	"github.com/turt2live/matrix-media-repo/services"
-	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/synapse"
 )
 
@@ -48,11 +46,6 @@ func main() {
 
 	logrus.Info("Setting up for importing...")
 
-	db, err := storage.OpenDatabase(config.Get().Database.Postgres)
-	if err != nil {
-		panic(err)
-	}
-
 	connectionString := "postgres://" + *postgresUsername + ":" + realPsqlPassword + "@" + *postgresHost + ":" + strconv.Itoa(*postgresPort) + "/" + *postgresDatabase + "?sslmode=disable"
 	csApiUrl := *baseUrl
 	if csApiUrl[len(csApiUrl)-1:] == "/" {
@@ -77,27 +70,19 @@ func main() {
 		percent := int((float32(i+1) / float32(len(records))) * 100)
 		record := records[i]
 
-		info := rcontext.RequestInfo{
-			Log: logrus.WithFields(logrus.Fields{
-				"mediaId": record.MediaId,
-			}),
-			Context: ctx,
-			Db:      *db,
-		}
-
-		info.Log.Info(fmt.Sprintf("Downloading %s (%d/%d %d%%)", record.MediaId, i+1, len(records), percent))
+		logrus.Info(fmt.Sprintf("Downloading %s (%d/%d %d%%)", record.MediaId, i+1, len(records), percent))
 
 		body, err := downloadMedia(csApiUrl, *serverName, record.MediaId)
 		if err != nil {
-			info.Log.Error(err.Error())
+			logrus.Error(err.Error())
 			continue
 		}
 
-		svc := services.CreateMediaService(info)
+		svc := services.NewMediaService(ctx, logrus.WithFields(logrus.Fields{}))
 
 		_, err = svc.StoreMedia(body, record.ContentType, record.UploadName, record.UserId, *serverName, record.MediaId)
 		if err != nil {
-			info.Log.Error(err.Error())
+			logrus.Error(err.Error())
 			continue
 		}
 

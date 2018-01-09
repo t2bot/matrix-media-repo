@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"database/sql"
 	"io"
 	"os"
@@ -8,31 +9,33 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/config"
-	"github.com/turt2live/matrix-media-repo/rcontext"
 	"github.com/turt2live/matrix-media-repo/services/handlers"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/stores"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/errs"
 )
 
 type MediaService struct {
 	store *stores.MediaStore
-	i     rcontext.RequestInfo
+	ctx   context.Context
+	log   *logrus.Entry
 }
 
-func CreateMediaService(i rcontext.RequestInfo) (*MediaService) {
-	return &MediaService{i.Db.GetMediaStore(i.Context, i.Log), i}
+func NewMediaService(ctx context.Context, log *logrus.Entry) (*MediaService) {
+	store := storage.GetDatabase().GetMediaStore(ctx, log)
+	return &MediaService{store, ctx, log}
 }
 
-func (s *MediaService) GetMedia(server string, mediaId string) (types.Media, error) {
-	s.i.Log.Info("Looking up media")
+func (s *MediaService) GetMedia(server string, mediaId string) (*types.Media, error) {
+	s.log.Info("Looking up media")
 	media, err := s.store.Get(server, mediaId)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			if util.IsServerOurs(server) {
-				s.i.Log.Warn("Media not found")
-				return media, util.ErrMediaNotFound
+				s.log.Warn("Media not found")
+				return media, errs.ErrMediaNotFound
 			}
 		}
 
@@ -42,10 +45,10 @@ func (s *MediaService) GetMedia(server string, mediaId string) (types.Media, err
 	exists, err := util.FileExists(media.Location)
 	if !exists || err != nil {
 		if util.IsServerOurs(server) {
-			s.i.Log.Error("Media not found in file store when we expected it to")
-			return media, util.ErrMediaNotFound
+			s.log.Error("Media not found in file store when we expected it to")
+			return media, errs.ErrMediaNotFound
 		} else {
-			s.i.Log.Warn("Media appears to have been deleted - redownloading")
+			s.log.Warn("Media appears to have been deleted - redownloading")
 			return s.downloadRemoteMedia(server, mediaId)
 		}
 	}
@@ -53,16 +56,13 @@ func (s *MediaService) GetMedia(server string, mediaId string) (types.Media, err
 	return media, nil
 }
 
-func (s *MediaService) downloadRemoteMedia(server string, mediaId string) (types.Media, error) {
-	s.i.Log.Info("Attempting to download remote media")
-	downloader := &handlers.RemoteMediaDownloader{
-		Info:       s.i,
-		MediaStore: *s.store,
-	}
+func (s *MediaService) downloadRemoteMedia(server string, mediaId string) (*types.Media, error) {
+	s.log.Info("Attempting to download remote media")
+	downloader := handlers.NewRemoteMediaDownloader(s.ctx, s.log)
 
 	downloaded, err := downloader.Download(server, mediaId)
 	if err != nil {
-		return types.Media{}, err
+		return nil, err
 	}
 
 	defer downloaded.Contents.Close()
@@ -79,7 +79,7 @@ func (s *MediaService) IsTooLarge(contentLength int64, contentLengthHeader strin
 	if contentLengthHeader != "" {
 		parsed, err := strconv.ParseInt(contentLengthHeader, 10, 64)
 		if err != nil {
-			s.i.Log.Warn("Invalid content length header given; assuming too large. Value received: " + contentLengthHeader)
+			s.log.Warn("Invalid content length header given; assuming too large. Value received: " + contentLengthHeader)
 			return true // Invalid header
 		}
 
@@ -89,7 +89,7 @@ func (s *MediaService) IsTooLarge(contentLength int64, contentLengthHeader strin
 	return false // We can only assume
 }
 
-func (s *MediaService) UploadMedia(contents io.ReadCloser, contentType string, filename string, userId string, host string) (types.Media, error) {
+func (s *MediaService) UploadMedia(contents io.ReadCloser, contentType string, filename string, userId string, host string) (*types.Media, error) {
 	defer contents.Close()
 	var data io.Reader
 	if config.Get().Uploads.MaxSizeBytes > 0 {
@@ -101,41 +101,41 @@ func (s *MediaService) UploadMedia(contents io.ReadCloser, contentType string, f
 	return s.StoreMedia(data, contentType, filename, userId, host, "")
 }
 
-func (s *MediaService) StoreMedia(contents io.Reader, contentType string, filename string, userId string, host string, mediaId string) (types.Media, error) {
+func (s *MediaService) StoreMedia(contents io.Reader, contentType string, filename string, userId string, host string, mediaId string) (*types.Media, error) {
 	isGeneratedId := false
 	if mediaId == "" {
 		mediaId = generateMediaId()
 		isGeneratedId = true
 	}
-	log := s.i.Log.WithFields(logrus.Fields{
+	log := s.log.WithFields(logrus.Fields{
 		"mediaService_mediaId":            mediaId,
 		"mediaService_host":               host,
 		"mediaService_mediaIdIsGenerated": isGeneratedId,
 	})
 
 	// Store the file in a temporary location
-	fileLocation, err := storage.PersistFile(contents, s.i.Context, &s.i.Db)
+	fileLocation, err := storage.PersistFile(contents, s.ctx)
 	if err != nil {
-		return types.Media{}, err
+		return nil, err
 	}
 
 	hash, err := storage.GetFileHash(fileLocation)
 	if err != nil {
 		defer os.Remove(fileLocation) // attempt cleanup
-		return types.Media{}, err
+		return nil, err
 	}
 
 	records, err := s.store.GetByHash(hash)
 	if err != nil {
 		defer os.Remove(fileLocation) // attempt cleanup
-		return types.Media{}, err
+		return nil, err
 	}
 
 	// If there's at least one record, then we have a duplicate hash - try and process it
 	if len(records) > 0 {
 		// See if we one of the duplicate records is a match for the host and media ID. We'll otherwise use
 		// the last duplicate (should only be 1 anyways) as our starting point for a new record.
-		var media types.Media
+		var media *types.Media
 		for i := 0; i < len(records); i++ {
 			media = records[i]
 
@@ -165,9 +165,9 @@ func (s *MediaService) StoreMedia(contents io.Reader, contentType string, filena
 		media.ContentType = contentType
 		media.CreationTs = util.NowMillis()
 
-		err = s.store.Insert(&media)
+		err = s.store.Insert(media)
 		if err != nil {
-			return types.Media{}, err
+			return nil, err
 		}
 
 		overwriteExistingOrDeleteTempFile(fileLocation, media)
@@ -179,7 +179,7 @@ func (s *MediaService) StoreMedia(contents io.Reader, contentType string, filena
 	fileSize, err := util.FileSize(fileLocation)
 	if err != nil {
 		defer os.Remove(fileLocation) // attempt cleanup
-		return types.Media{}, err
+		return nil, err
 	}
 
 	log.Info("Persisting unique media record")
@@ -199,10 +199,10 @@ func (s *MediaService) StoreMedia(contents io.Reader, contentType string, filena
 	err = s.store.Insert(media)
 	if err != nil {
 		defer os.Remove(fileLocation) // attempt cleanup
-		return types.Media{}, err
+		return nil, err
 	}
 
-	return *media, nil
+	return media, nil
 }
 
 func generateMediaId() string {
@@ -214,7 +214,7 @@ func generateMediaId() string {
 	return str
 }
 
-func overwriteExistingOrDeleteTempFile(tempFileLocation string, media types.Media) {
+func overwriteExistingOrDeleteTempFile(tempFileLocation string, media *types.Media) {
 	// If the media's file exists, we'll delete the temp file
 	// If the media's file doesn't exist, we'll move the temp file to where the media expects it to be
 	exists, err := util.FileExists(media.Location)

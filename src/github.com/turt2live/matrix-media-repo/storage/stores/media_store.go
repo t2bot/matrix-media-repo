@@ -74,15 +74,15 @@ func (s *MediaStore) Insert(media *types.Media) (error) {
 	return err
 }
 
-func (s *MediaStore) GetByHash(hash string) ([]types.Media, error) {
+func (s *MediaStore) GetByHash(hash string) ([]*types.Media, error) {
 	rows, err := s.statements.selectMediaByHash.QueryContext(s.ctx, hash)
 	if err != nil {
 		return nil, err
 	}
 
-	var results []types.Media
+	var results []*types.Media
 	for rows.Next() {
-		obj := types.Media{}
+		obj := &types.Media{}
 		err = rows.Scan(
 			&obj.Origin,
 			&obj.MediaId,
@@ -103,7 +103,7 @@ func (s *MediaStore) GetByHash(hash string) ([]types.Media, error) {
 	return results, nil
 }
 
-func (s *MediaStore) Get(origin string, mediaId string) (types.Media, error) {
+func (s *MediaStore) Get(origin string, mediaId string) (*types.Media, error) {
 	m := &types.Media{}
 	err := s.statements.selectMedia.QueryRowContext(s.ctx, origin, mediaId).Scan(
 		&m.Origin,
@@ -116,5 +116,5 @@ func (s *MediaStore) Get(origin string, mediaId string) (types.Media, error) {
 		&m.Location,
 		&m.CreationTs,
 	)
-	return *m, err
+	return m, err
 }

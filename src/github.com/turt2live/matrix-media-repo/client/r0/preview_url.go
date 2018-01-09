@@ -5,11 +5,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/client"
 	"github.com/turt2live/matrix-media-repo/config"
-	"github.com/turt2live/matrix-media-repo/rcontext"
 	"github.com/turt2live/matrix-media-repo/services"
 	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/errs"
 )
 
 type MatrixOpenGraph struct {
@@ -25,7 +26,7 @@ type MatrixOpenGraph struct {
 	ImageHeight int    `json:"og:image:height,omitempty"`
 }
 
-func PreviewUrl(w http.ResponseWriter, r *http.Request, i rcontext.RequestInfo) interface{} {
+func PreviewUrl(w http.ResponseWriter, r *http.Request, log *logrus.Entry) interface{} {
 	if !config.Get().UrlPreviews.Enabled {
 		return client.NotFoundError()
 	}
@@ -45,7 +46,7 @@ func PreviewUrl(w http.ResponseWriter, r *http.Request, i rcontext.RequestInfo) 
 	if tsStr != "" {
 		ts, err = strconv.ParseInt(tsStr, 10, 64)
 		if err != nil {
-			i.Log.Error("Error parsing ts: " + err.Error())
+			log.Error("Error parsing ts: " + err.Error())
 			return client.BadRequest(err.Error())
 		}
 	}
@@ -58,12 +59,12 @@ func PreviewUrl(w http.ResponseWriter, r *http.Request, i rcontext.RequestInfo) 
 		return client.BadRequest("Scheme not accepted")
 	}
 
-	svc := services.CreateUrlService(i)
+	svc := services.NewUrlService(r.Context(), log)
 	preview, err := svc.GetPreview(urlStr, r.Host, userId, ts)
 	if err != nil {
-		if err == util.ErrMediaNotFound || err == util.ErrHostNotFound {
+		if err == errs.ErrMediaNotFound || err == errs.ErrHostNotFound {
 			return client.NotFoundError()
-		} else if err == util.ErrInvalidHost || err == util.ErrHostBlacklisted {
+		} else if err == errs.ErrInvalidHost || err == errs.ErrHostBlacklisted {
 			return client.BadRequest(err.Error())
 		} else {
 			return client.InternalServerError("unexpected error during request")

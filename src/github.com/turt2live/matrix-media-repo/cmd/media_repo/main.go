@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -18,8 +17,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/client/r0"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/logging"
-	"github.com/turt2live/matrix-media-repo/rcontext"
-	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
@@ -30,12 +27,11 @@ type requestCounter struct {
 }
 
 type Handler struct {
-	h    func(http.ResponseWriter, *http.Request, rcontext.RequestInfo) interface{}
+	h    func(http.ResponseWriter, *http.Request, *log.Entry) interface{}
 	opts HandlerOpts
 }
 
 type HandlerOpts struct {
-	db         storage.Database
 	reqCounter *requestCounter
 }
 
@@ -56,13 +52,8 @@ func main() {
 
 	log.Info("Starting media repository...")
 
-	db, err := storage.OpenDatabase(config.Get().Database.Postgres)
-	if err != nil {
-		panic(err)
-	}
-
 	counter := requestCounter{}
-	hOpts := HandlerOpts{*db, &counter}
+	hOpts := HandlerOpts{&counter}
 
 	optionsHandler := Handler{optionsRequest, hOpts}
 	uploadHandler := Handler{r0.UploadMedia, hOpts}
@@ -146,11 +137,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var res interface{} = client.AuthFailed()
 	if util.IsServerOurs(r.Host) {
 		contextLog.Info("Server is owned by us, processing request")
-		res = h.h(w, r, rcontext.RequestInfo{
-			Log:     contextLog,
-			Context: r.Context(),
-			Db:      h.opts.db,
-		})
+		res = h.h(w, r, contextLog)
 		if res == nil {
 			res = &EmptyResponse{}
 		}
@@ -194,14 +181,8 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", result.ContentType)
 		w.Header().Set("Content-Disposition", "inline; filename=\""+result.Filename+"\"")
 		w.Header().Set("Content-Length", fmt.Sprint(result.SizeBytes))
-		f, err := os.Open(result.Location)
-		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			http.Error(w, UnkErrJson, http.StatusInternalServerError)
-			break
-		}
-		defer f.Close()
-		io.Copy(w, f)
+		defer result.Data.Close()
+		io.Copy(w, result.Data)
 		break
 	case *r0.IdenticonResponse:
 		w.Header().Set("Content-Type", "image/png")
@@ -221,6 +202,6 @@ func (c *requestCounter) GetNextId() string {
 	return "REQ-" + strId
 }
 
-func optionsRequest(w http.ResponseWriter, r *http.Request, i rcontext.RequestInfo) interface{} {
+func optionsRequest(w http.ResponseWriter, r *http.Request, log *log.Entry) interface{} {
 	return &EmptyResponse{}
 }

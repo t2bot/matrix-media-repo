@@ -1,16 +1,16 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"io"
 	"mime"
 	"strconv"
 
 	"github.com/matrix-org/gomatrixserverlib"
+	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/config"
-	"github.com/turt2live/matrix-media-repo/rcontext"
-	"github.com/turt2live/matrix-media-repo/storage/stores"
-	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/errs"
 )
 
 type DownloadedMedia struct {
@@ -20,33 +20,37 @@ type DownloadedMedia struct {
 }
 
 type RemoteMediaDownloader struct {
-	MediaStore stores.MediaStore
-	Info       rcontext.RequestInfo
+	ctx context.Context
+	log *logrus.Entry
 }
 
-func (r *RemoteMediaDownloader) Download(server string, mediaId string) (DownloadedMedia, error) {
+func NewRemoteMediaDownloader(ctx context.Context, log *logrus.Entry) *RemoteMediaDownloader {
+	return &RemoteMediaDownloader{ctx, log}
+}
+
+func (r *RemoteMediaDownloader) Download(server string, mediaId string) (*DownloadedMedia, error) {
 	mtxClient := gomatrixserverlib.NewClient()
 	mtxServer := gomatrixserverlib.ServerName(server)
-	resp, err := mtxClient.CreateMediaDownloadRequest(r.Info.Context, mtxServer, mediaId)
+	resp, err := mtxClient.CreateMediaDownloadRequest(r.ctx, mtxServer, mediaId)
 	if err != nil {
-		return DownloadedMedia{}, err
+		return nil, err
 	}
 
 	if resp.StatusCode == 404 {
-		r.Info.Log.Info("Remote media not found")
-		return DownloadedMedia{}, util.ErrMediaNotFound
+		r.log.Info("Remote media not found")
+		return nil, errs.ErrMediaNotFound
 	} else if resp.StatusCode != 200 {
-		r.Info.Log.Info("Unknown error fetching remote media; received status code " + strconv.Itoa(resp.StatusCode))
-		return DownloadedMedia{}, errors.New("could not fetch remote media")
+		r.log.Info("Unknown error fetching remote media; received status code " + strconv.Itoa(resp.StatusCode))
+		return nil, errors.New("could not fetch remote media")
 	}
 
 	contentLength, err := strconv.ParseInt(resp.Header.Get("Content-Length"), 10, 64)
 	if err != nil {
-		return DownloadedMedia{}, err
+		return nil, err
 	}
 	if config.Get().Downloads.MaxSizeBytes > 0 && contentLength > config.Get().Downloads.MaxSizeBytes {
-		r.Info.Log.Warn("Attempted to download media that was too large")
-		return DownloadedMedia{}, util.ErrMediaTooLarge
+		r.log.Warn("Attempted to download media that was too large")
+		return nil, errs.ErrMediaTooLarge
 	}
 
 	request := &DownloadedMedia{
@@ -60,6 +64,6 @@ func (r *RemoteMediaDownloader) Download(server string, mediaId string) (Downloa
 		request.DesiredFilename = params["filename"]
 	}
 
-	r.Info.Log.Info("Persisting downloaded media")
-	return *request, nil
+	r.log.Info("Persisting downloaded media")
+	return request, nil
 }

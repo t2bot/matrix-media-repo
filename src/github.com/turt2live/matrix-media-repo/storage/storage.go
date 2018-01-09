@@ -3,9 +3,11 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"sync"
 
 	_ "github.com/lib/pq" // postgres driver
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/storage/schema"
 	"github.com/turt2live/matrix-media-repo/storage/stores"
 )
@@ -32,12 +34,27 @@ type repos struct {
 	urlStore       *stores.UrlStoreFactory
 }
 
-func OpenDatabase(connectionString string) (*Database, error) {
-	var d Database
+var dbInstance *Database
+
+func GetDatabase() (*Database) {
+	if dbInstance == nil {
+		var once sync.Once
+		once.Do(func() {
+			err := OpenDatabase(config.Get().Database.Postgres)
+			if err != nil {
+				panic(err)
+			}
+		})
+	}
+	return dbInstance
+}
+
+func OpenDatabase(connectionString string) (error) {
+	d := &Database{}
 	var err error
 
 	if d.db, err = sql.Open("postgres", connectionString); err != nil {
-		return nil, err
+		return err
 	}
 
 	// Make sure the database is how we want it
@@ -45,23 +62,24 @@ func OpenDatabase(connectionString string) (*Database, error) {
 	schema.PrepareThumbnails(d.db)
 	schema.PrepareUrls(d.db)
 
-	// Create the repo factories
+	// New the repo factories
 	if d.repos.mediaStore, err = stores.InitMediaStore(d.db); err != nil {
-		return nil, err
+		return err
 	}
 	if d.repos.thumbnailStore, err = stores.InitThumbnailStore(d.db); err != nil {
-		return nil, err
+		return err
 	}
 	if d.repos.urlStore, err = stores.InitUrlStore(d.db); err != nil {
-		return nil, err
+		return err
 	}
 
 	// Prepare the general statements
 	if d.statements.selectSizeOfFolder, err = d.db.Prepare(selectSizeOfFolder); err != nil {
-		return nil, err
+		return err
 	}
 
-	return &d, nil
+	dbInstance = d
+	return nil
 }
 
 func (d *Database) GetMediaStore(ctx context.Context, log *logrus.Entry) (*stores.MediaStore) {
@@ -69,7 +87,7 @@ func (d *Database) GetMediaStore(ctx context.Context, log *logrus.Entry) (*store
 }
 
 func (d *Database) GetThumbnailStore(ctx context.Context, log *logrus.Entry) (*stores.ThumbnailStore) {
-	return d.repos.thumbnailStore.Create(ctx, log)
+	return d.repos.thumbnailStore.New(ctx, log)
 }
 
 func (d *Database) GetUrlStore(ctx context.Context, log *logrus.Entry) (*stores.UrlStore) {

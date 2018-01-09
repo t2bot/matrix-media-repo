@@ -1,36 +1,40 @@
 package services
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/config"
-	"github.com/turt2live/matrix-media-repo/rcontext"
 	"github.com/turt2live/matrix-media-repo/services/handlers"
+	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/stores"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/errs"
 )
 
 type ThumbnailService struct {
 	store *stores.ThumbnailStore
-	i     rcontext.RequestInfo
+	ctx   context.Context
+	log   *logrus.Entry
 }
 
-func CreateThumbnailService(i rcontext.RequestInfo) (*ThumbnailService) {
-	return &ThumbnailService{i.Db.GetThumbnailStore(i.Context, i.Log), i}
+func NewThumbnailService(ctx context.Context, log *logrus.Entry) (*ThumbnailService) {
+	store := storage.GetDatabase().GetThumbnailStore(ctx, log)
+	return &ThumbnailService{store, ctx, log}
 }
 
-func (s *ThumbnailService) GetThumbnail(media types.Media, width int, height int, method string) (types.Thumbnail, error) {
+func (s *ThumbnailService) GetThumbnail(media *types.Media, width int, height int, method string) (*types.Thumbnail, error) {
 	if width <= 0 {
-		return types.Thumbnail{}, errors.New("width must be positive")
+		return nil, errors.New("width must be positive")
 	}
 	if height <= 0 {
-		return types.Thumbnail{}, errors.New("height must be positive")
+		return nil, errors.New("height must be positive")
 	}
 	if method != "crop" && method != "scale" {
-		return types.Thumbnail{}, errors.New("method must be crop or scale")
+		return nil, errors.New("method must be crop or scale")
 	}
 
 	targetWidth := width
@@ -66,32 +70,29 @@ func (s *ThumbnailService) GetThumbnail(media types.Media, width int, height int
 		}
 	}
 
-	s.i.Log = s.i.Log.WithFields(logrus.Fields{
+	s.log = s.log.WithFields(logrus.Fields{
 		"targetWidth":  targetWidth,
 		"targetHeight": targetHeight,
 	})
-	s.i.Log.Info("Looking up thumbnail")
+	s.log.Info("Looking up thumbnail")
 
 	thumb, err := s.store.Get(media.Origin, media.MediaId, targetWidth, targetHeight, method)
 	if err != nil && err != sql.ErrNoRows {
-		s.i.Log.Error("Unexpected error processing thumbnail lookup: " + err.Error())
+		s.log.Error("Unexpected error processing thumbnail lookup: " + err.Error())
 		return thumb, err
 	}
 	if err != sql.ErrNoRows {
-		s.i.Log.Info("Found existing thumbnail")
+		s.log.Info("Found existing thumbnail")
 		return thumb, nil
 	}
 
 	if media.SizeBytes > config.Get().Thumbnails.MaxSourceBytes {
-		s.i.Log.Warn("Media too large to thumbnail")
-		return thumb, util.ErrMediaTooLarge
+		s.log.Warn("Media too large to thumbnail")
+		return thumb, errs.ErrMediaTooLarge
 	}
 
-	s.i.Log.Info("Generating new thumbnail")
-	thumbnailer := &handlers.Thumbnailer{
-		Info:           s.i,
-		ThumbnailStore: *s.store,
-	}
+	s.log.Info("Generating new thumbnail")
+	thumbnailer := handlers.NewThumbnailer(s.ctx, s.log)
 
 	generated, err := thumbnailer.GenerateThumbnail(media, targetWidth, targetHeight, method)
 	if err != nil {
@@ -112,9 +113,9 @@ func (s *ThumbnailService) GetThumbnail(media types.Media, width int, height int
 
 	err = s.store.Insert(newThumb)
 	if err != nil {
-		s.i.Log.Error("Unexpected error caching thumbnail: " + err.Error())
-		return *newThumb, err
+		s.log.Error("Unexpected error caching thumbnail: " + err.Error())
+		return newThumb, err
 	}
 
-	return *newThumb, nil
+	return newThumb, nil
 }

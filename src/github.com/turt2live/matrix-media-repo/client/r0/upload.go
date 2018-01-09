@@ -7,7 +7,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/client"
-	"github.com/turt2live/matrix-media-repo/rcontext"
 	"github.com/turt2live/matrix-media-repo/services"
 	"github.com/turt2live/matrix-media-repo/util"
 )
@@ -16,7 +15,7 @@ type MediaUploadedResponse struct {
 	ContentUri string `json:"content_uri"`
 }
 
-func UploadMedia(w http.ResponseWriter, r *http.Request, i rcontext.RequestInfo) interface{} {
+func UploadMedia(w http.ResponseWriter, r *http.Request, log *logrus.Entry) interface{} {
 	accessToken := util.GetAccessTokenFromRequest(r)
 	userId, err := util.GetUserIdFromToken(r.Context(), r.Host, accessToken)
 	if err != nil || userId == "" {
@@ -28,7 +27,7 @@ func UploadMedia(w http.ResponseWriter, r *http.Request, i rcontext.RequestInfo)
 		filename = "upload.bin"
 	}
 
-	i.Log = i.Log.WithFields(logrus.Fields{
+	log = log.WithFields(logrus.Fields{
 		"filename": filename,
 		"userId":   userId,
 	})
@@ -38,7 +37,7 @@ func UploadMedia(w http.ResponseWriter, r *http.Request, i rcontext.RequestInfo)
 		contentType = "application/octet-stream" // binary
 	}
 
-	svc := services.CreateMediaService(i)
+	svc := services.NewMediaService(r.Context(), log)
 
 	if svc.IsTooLarge(r.ContentLength, r.Header.Get("Content-Length")) {
 		io.Copy(ioutil.Discard, r.Body) // Ditch the entire request
@@ -51,10 +50,9 @@ func UploadMedia(w http.ResponseWriter, r *http.Request, i rcontext.RequestInfo)
 		io.Copy(ioutil.Discard, r.Body) // Ditch the entire request
 		defer r.Body.Close()
 
-		i.Log.Error("Unexpected error storing media: " + err.Error())
+		log.Error("Unexpected error storing media: " + err.Error())
 		return client.InternalServerError("Unexpected Error")
 	}
 
-	mxc := util.MediaToMxc(&media)
-	return &MediaUploadedResponse{mxc}
+	return &MediaUploadedResponse{media.MxcUri()}
 }

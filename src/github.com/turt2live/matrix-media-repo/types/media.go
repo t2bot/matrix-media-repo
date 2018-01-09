@@ -11,3 +11,7 @@ type Media struct {
 	Location    string
 	CreationTs  int64
 }
+
+func (m *Media) MxcUri() string {
+	return "mxc://" + m.Origin + "/" + m.MediaId
+}
