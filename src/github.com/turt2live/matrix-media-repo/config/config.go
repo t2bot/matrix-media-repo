@@ -33,10 +33,12 @@ type MediaRepoConfig struct {
 
 	Downloads struct {
 		MaxSizeBytes int64 `yaml:"maxBytes"`
+		NumWorkers   int   `yaml:"numWorkers"`
 	} `yaml:"downloads"`
 
 	Thumbnails struct {
 		MaxSourceBytes int64 `yaml:"maxSourceBytes"`
+		NumWorkers     int   `yaml:"numWorkers"`
 		Sizes []struct {
 			Width  int    `yaml:"width"`
 			Height int    `yaml:"height"`
@@ -47,6 +49,7 @@ type MediaRepoConfig struct {
 	UrlPreviews struct {
 		Enabled            bool     `yaml:"enabled"`
 		MaxPageSizeBytes   int64    `yaml:"maxPageSizeBytes"`
+		NumWorkers         int      `yaml:"numWorkers"`
 		DisallowedNetworks []string `yaml:"disallowedNetworks,flow"`
 		AllowedNetworks    []string `yaml:"allowedNetworks,flow"`
 	} `yaml:"urlPreviews"`
