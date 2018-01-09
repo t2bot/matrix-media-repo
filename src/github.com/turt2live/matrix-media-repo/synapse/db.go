@@ -8,7 +8,7 @@ import (
 
 const selectLocalMedia = "SELECT media_id, media_type, media_length, created_ts, upload_name, user_id FROM local_media_repository;"
 
-type SynapseDatabase struct {
+type SynDatabase struct {
 	db         *sql.DB
 	statements statements
 }
@@ -17,8 +17,8 @@ type statements struct {
 	selectLocalMedia *sql.Stmt
 }
 
-func OpenDatabase(connectionString string) (*SynapseDatabase, error) {
-	var d SynapseDatabase
+func OpenDatabase(connectionString string) (*SynDatabase, error) {
+	var d SynDatabase
 	var err error
 
 	if d.db, err = sql.Open("postgres", connectionString); err != nil {
@@ -32,16 +32,16 @@ func OpenDatabase(connectionString string) (*SynapseDatabase, error) {
 	return &d, nil
 }
 
-func (d *SynapseDatabase) GetAllMedia() ([]LocalMedia, error) {
+func (d *SynDatabase) GetAllMedia() ([]*LocalMedia, error) {
 	rows, err := d.statements.selectLocalMedia.Query()
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return []LocalMedia{}, nil // no records
+			return []*LocalMedia{}, nil // no records
 		}
 		return nil, err
 	}
 
-	var results []LocalMedia
+	var results []*LocalMedia
 	for rows.Next() {
 		var mediaId sql.NullString
 		var contentType sql.NullString
@@ -60,7 +60,7 @@ func (d *SynapseDatabase) GetAllMedia() ([]LocalMedia, error) {
 		if err != nil {
 			return nil, err
 		}
-		results = append(results, LocalMedia{
+		results = append(results, &LocalMedia{
 			MediaId:     mediaId.String,
 			ContentType: contentType.String,
 			SizeBytes:   sizeBytes.Int64,
