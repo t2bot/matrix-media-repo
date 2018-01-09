@@ -125,14 +125,18 @@ func main() {
 
 func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	r.Host = strings.Split(r.Host, ":")[0]
+	if r.Header.Get("X-Forwarded-For") != "" {
+		r.RemoteAddr = r.Header.Get("X-Forwarded-For")
+	}
 	contextLog := log.WithFields(log.Fields{
 		"method":        r.Method,
 		"host":          r.Host,
 		"resource":      r.URL.Path,
 		"contentType":   r.Header.Get("Content-Type"),
-		"contentLength": r.Header.Get("Content-Length"),
+		"contentLength": r.ContentLength,
 		"queryString":   util.GetLogSafeQueryString(r),
 		"requestId":     h.opts.reqCounter.GetNextId(),
+		"remoteAddr":    r.RemoteAddr,
 	})
 	contextLog.Info("Received request")
 
