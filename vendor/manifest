@@ -63,6 +63,12 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/jeffail/tunny",
+			"repository": "https://github.com/jeffail/tunny",
+			"revision": "452a8e97d6a39fdd8fb5fdf1327eed2bf0c3429c",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/lestrrat/go-file-rotatelogs",
 			"repository": "https://github.com/lestrrat/go-file-rotatelogs",
 			"revision": "9df8b44f21785240553882138c5df2e9cc1db910",
@@ -96,6 +102,12 @@
 			"importpath": "github.com/matrix-org/util",
 			"repository": "https://github.com/matrix-org/util",
 			"revision": "8b1c8ab81986c1ce7f06a52fce48f4a1156b66ee",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/olebedev/emitter",
+			"repository": "https://github.com/olebedev/emitter",
+			"revision": "68bb25b251f61cde3824cc316f238f0da1704331",
 			"branch": "master"
 		},
 		{
