@@ -7,17 +7,17 @@ repo:
   # rotated every day and held for 14 days.
   logDirectory: logs
 
+# The database configuration for the media repository
+database:
+  # Currently only "postgres" is supported.
+  postgres: "postgres://your_username:your_password@localhost/database_name?sslmode=disable"
+
 # The configuration for the homeservers this media repository is known to control. Servers
 # not listed here will not be able to upload media.
 homeservers:
   - name: t2bot.io # This should match the Host header given to the media repo
     downloadRequiresAuth: false # Set to true to require auth on downloads and identicons
     csApi: "https://t2bot.io/" # The base URL to where the homeserver can actually be reached
-
-# The database configuration for the media repository
-database:
-  # Currently only "postgres" is supported.
-  postgres: "postgres://your_username:your_password@localhost/database_name?sslmode=disable"
 
 # The file upload settings for the media repository
 uploads:
