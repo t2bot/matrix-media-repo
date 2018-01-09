@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/rcontext"
 	"github.com/turt2live/matrix-media-repo/services/handlers"
 	"github.com/turt2live/matrix-media-repo/storage/stores"
@@ -36,9 +37,9 @@ func (s *ThumbnailService) GetThumbnail(media types.Media, width int, height int
 	targetHeight := height
 	foundFirst := false
 
-	for i := 0; i < len(s.i.Config.Thumbnails.Sizes); i++ {
-		size := s.i.Config.Thumbnails.Sizes[i]
-		lastSize := i == len(s.i.Config.Thumbnails.Sizes)-1
+	for i := 0; i < len(config.Get().Thumbnails.Sizes); i++ {
+		size := config.Get().Thumbnails.Sizes[i]
+		lastSize := i == len(config.Get().Thumbnails.Sizes)-1
 
 		if width == size.Width && height == size.Height {
 			targetWidth = width
@@ -81,7 +82,7 @@ func (s *ThumbnailService) GetThumbnail(media types.Media, width int, height int
 		return thumb, nil
 	}
 
-	if media.SizeBytes > s.i.Config.Thumbnails.MaxSourceBytes {
+	if media.SizeBytes > config.Get().Thumbnails.MaxSourceBytes {
 		s.i.Log.Warn("Media too large to thumbnail")
 		return thumb, util.ErrMediaTooLarge
 	}

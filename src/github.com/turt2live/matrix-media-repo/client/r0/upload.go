@@ -18,7 +18,7 @@ type MediaUploadedResponse struct {
 
 func UploadMedia(w http.ResponseWriter, r *http.Request, i rcontext.RequestInfo) interface{} {
 	accessToken := util.GetAccessTokenFromRequest(r)
-	userId, err := util.GetUserIdFromToken(r.Context(), r.Host, accessToken, i.Config)
+	userId, err := util.GetUserIdFromToken(r.Context(), r.Host, accessToken)
 	if err != nil || userId == "" {
 		return client.AuthFailed()
 	}

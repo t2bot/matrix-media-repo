@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/rcontext"
 	"github.com/turt2live/matrix-media-repo/services/handlers"
 	"github.com/turt2live/matrix-media-repo/storage"
@@ -29,7 +30,7 @@ func (s *MediaService) GetMedia(server string, mediaId string) (types.Media, err
 	media, err := s.store.Get(server, mediaId)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			if util.IsServerOurs(server, s.i.Config) {
+			if util.IsServerOurs(server) {
 				s.i.Log.Warn("Media not found")
 				return media, util.ErrMediaNotFound
 			}
@@ -40,7 +41,7 @@ func (s *MediaService) GetMedia(server string, mediaId string) (types.Media, err
 
 	exists, err := util.FileExists(media.Location)
 	if !exists || err != nil {
-		if util.IsServerOurs(server, s.i.Config) {
+		if util.IsServerOurs(server) {
 			s.i.Log.Error("Media not found in file store when we expected it to")
 			return media, util.ErrMediaNotFound
 		} else {
@@ -69,11 +70,11 @@ func (s *MediaService) downloadRemoteMedia(server string, mediaId string) (types
 }
 
 func (s *MediaService) IsTooLarge(contentLength int64, contentLengthHeader string) (bool) {
-	if s.i.Config.Uploads.MaxSizeBytes <= 0 {
+	if config.Get().Uploads.MaxSizeBytes <= 0 {
 		return false
 	}
 	if contentLength >= 0 {
-		return contentLength > s.i.Config.Uploads.MaxSizeBytes
+		return contentLength > config.Get().Uploads.MaxSizeBytes
 	}
 	if contentLengthHeader != "" {
 		parsed, err := strconv.ParseInt(contentLengthHeader, 10, 64)
@@ -82,7 +83,7 @@ func (s *MediaService) IsTooLarge(contentLength int64, contentLengthHeader strin
 			return true // Invalid header
 		}
 
-		return parsed > s.i.Config.Uploads.MaxSizeBytes
+		return parsed > config.Get().Uploads.MaxSizeBytes
 	}
 
 	return false // We can only assume
@@ -91,8 +92,8 @@ func (s *MediaService) IsTooLarge(contentLength int64, contentLengthHeader strin
 func (s *MediaService) UploadMedia(contents io.ReadCloser, contentType string, filename string, userId string, host string) (types.Media, error) {
 	defer contents.Close()
 	var data io.Reader
-	if s.i.Config.Uploads.MaxSizeBytes > 0 {
-		data = io.LimitReader(contents, s.i.Config.Uploads.MaxSizeBytes)
+	if config.Get().Uploads.MaxSizeBytes > 0 {
+		data = io.LimitReader(contents, config.Get().Uploads.MaxSizeBytes)
 	} else {
 		data = contents
 	}
@@ -113,7 +114,7 @@ func (s *MediaService) StoreMedia(contents io.Reader, contentType string, filena
 	})
 
 	// Store the file in a temporary location
-	fileLocation, err := storage.PersistFile(contents, s.i.Config, s.i.Context, &s.i.Db)
+	fileLocation, err := storage.PersistFile(contents, s.i.Context, &s.i.Db)
 	if err != nil {
 		return types.Media{}, err
 	}

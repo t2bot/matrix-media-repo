@@ -41,7 +41,7 @@ type OpenGraphUrlPreviewer struct {
 }
 
 func (p *OpenGraphUrlPreviewer) GeneratePreview(urlStr string) (OpenGraphResult, error) {
-	html, err := downloadContent(urlStr, p.Info.Config, p.Info.Log)
+	html, err := downloadContent(urlStr, p.Info.Log)
 	if err != nil {
 		p.Info.Log.Error("Error downloading content: " + err.Error())
 
@@ -101,7 +101,7 @@ func (p *OpenGraphUrlPreviewer) GeneratePreview(urlStr string) (OpenGraphResult,
 	return *graph, nil
 }
 
-func downloadContent(urlStr string, c config.MediaRepoConfig, log *logrus.Entry) (string, error) {
+func downloadContent(urlStr string, log *logrus.Entry) (string, error) {
 	log.Info("Fetching remote content...")
 	resp, err := http.Get(urlStr)
 	if err != nil {
@@ -112,14 +112,14 @@ func downloadContent(urlStr string, c config.MediaRepoConfig, log *logrus.Entry)
 		return "", errors.New("error during transfer")
 	}
 
-	if c.UrlPreviews.MaxPageSizeBytes > 0 && resp.ContentLength >= 0 && resp.ContentLength > c.UrlPreviews.MaxPageSizeBytes {
+	if config.Get().UrlPreviews.MaxPageSizeBytes > 0 && resp.ContentLength >= 0 && resp.ContentLength > config.Get().UrlPreviews.MaxPageSizeBytes {
 		return "", util.ErrMediaTooLarge
 	}
 
 	var reader io.Reader
 	reader = resp.Body
-	if c.UrlPreviews.MaxPageSizeBytes > 0 {
-		reader = io.LimitReader(resp.Body, c.UrlPreviews.MaxPageSizeBytes)
+	if config.Get().UrlPreviews.MaxPageSizeBytes > 0 {
+		reader = io.LimitReader(resp.Body, config.Get().UrlPreviews.MaxPageSizeBytes)
 	}
 
 	bytes, err := ioutil.ReadAll(reader)

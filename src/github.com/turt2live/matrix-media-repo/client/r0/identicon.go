@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/client"
+	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/rcontext"
 )
 
@@ -21,7 +22,7 @@ type IdenticonResponse struct {
 }
 
 func Identicon(w http.ResponseWriter, r *http.Request, i rcontext.RequestInfo) interface{} {
-	if !i.Config.Identicons.Enabled {
+	if !config.Get().Identicons.Enabled {
 		return client.NotFoundError()
 	}
 	if !ValidateUserCanDownload(r, i) {

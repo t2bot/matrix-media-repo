@@ -36,7 +36,6 @@ type Handler struct {
 
 type HandlerOpts struct {
 	db         storage.Database
-	config     config.MediaRepoConfig
 	reqCounter *requestCounter
 }
 
@@ -50,25 +49,20 @@ type EmptyResponse struct{}
 func main() {
 	rtr := mux.NewRouter()
 
-	c, err := config.ReadConfig()
-	if err != nil {
-		panic(err)
-	}
-
-	err = logging.Setup(c.General.LogDirectory)
+	err := logging.Setup(config.Get().General.LogDirectory)
 	if err != nil {
 		panic(err)
 	}
 
 	log.Info("Starting media repository...")
 
-	db, err := storage.OpenDatabase(c.Database.Postgres)
+	db, err := storage.OpenDatabase(config.Get().Database.Postgres)
 	if err != nil {
 		panic(err)
 	}
 
 	counter := requestCounter{}
-	hOpts := HandlerOpts{*db, c, &counter}
+	hOpts := HandlerOpts{*db, &counter}
 
 	optionsHandler := Handler{optionsRequest, hOpts}
 	uploadHandler := Handler{r0.UploadMedia, hOpts}
@@ -101,13 +95,13 @@ func main() {
 
 	var handler http.Handler
 	handler = rtr
-	if c.RateLimit.Enabled {
+	if config.Get().RateLimit.Enabled {
 		log.Info("Enabling rate limit")
 		limiter := tollbooth.NewLimiter(0, nil)
 		limiter.SetIPLookups([]string{"X-Forwarded-For", "X-Real-IP", "RemoteAddr"})
 		limiter.SetTokenBucketExpirationTTL(time.Hour)
-		limiter.SetBurst(c.RateLimit.BurstCount)
-		limiter.SetMax(c.RateLimit.RequestsPerSecond)
+		limiter.SetBurst(config.Get().RateLimit.BurstCount)
+		limiter.SetMax(config.Get().RateLimit.RequestsPerSecond)
 
 		b, _ := json.Marshal(client.RateLimitReached())
 		limiter.SetMessage(string(b))
@@ -116,7 +110,7 @@ func main() {
 		handler = tollbooth.LimitHandler(limiter, rtr)
 	}
 
-	address := c.General.BindAddress + ":" + strconv.Itoa(c.General.Port)
+	address := config.Get().General.BindAddress + ":" + strconv.Itoa(config.Get().General.Port)
 	http.Handle("/", handler)
 
 	log.WithField("address", address).Info("Started up. Listening at http://" + address)
@@ -150,11 +144,10 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Process response
 	var res interface{} = client.AuthFailed()
-	if util.IsServerOurs(r.Host, h.opts.config) {
+	if util.IsServerOurs(r.Host) {
 		contextLog.Info("Server is owned by us, processing request")
 		res = h.h(w, r, rcontext.RequestInfo{
 			Log:     contextLog,
-			Config:  h.opts.config,
 			Context: r.Context(),
 			Db:      h.opts.db,
 		})

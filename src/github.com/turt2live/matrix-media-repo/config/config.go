@@ -3,6 +3,7 @@ package config
 import (
 	"io/ioutil"
 	"os"
+	"sync"
 
 	"gopkg.in/yaml.v2"
 )
@@ -66,12 +67,14 @@ type MediaRepoConfig struct {
 	} `yaml:"identicons"`
 }
 
-func ReadConfig() (MediaRepoConfig, error) {
+var instance *MediaRepoConfig
+
+func LoadConfig() (error) {
 	c := &MediaRepoConfig{}
 
 	f, err := os.Open("media-repo.yaml")
 	if err != nil {
-		return *c, err
+		return err
 	}
 
 	defer f.Close()
@@ -79,8 +82,22 @@ func ReadConfig() (MediaRepoConfig, error) {
 	buffer, err := ioutil.ReadAll(f)
 	err = yaml.Unmarshal(buffer, &c)
 	if err != nil {
-		return *c, err
+		return err
 	}
 
-	return *c, nil
+	instance = c
+	return nil
+}
+
+func Get() (*MediaRepoConfig) {
+	if instance == nil {
+		var once sync.Once
+		once.Do(func() {
+			err := LoadConfig()
+			if err != nil {
+				panic(err)
+			}
+		})
+	}
+	return instance
 }

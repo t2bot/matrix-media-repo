@@ -69,7 +69,7 @@ func (t *Thumbnailer) GenerateThumbnail(media types.Media, width int, height int
 	}
 
 	// Reset the buffer pointer and store the file
-	location, err := storage.PersistFile(imgData, t.Info.Config, t.Info.Context, &t.Info.Db)
+	location, err := storage.PersistFile(imgData, t.Info.Context, &t.Info.Db)
 	if err != nil {
 		t.Info.Log.Error("Unexpected error saving thumbnail: " + err.Error())
 		return *thumb, err

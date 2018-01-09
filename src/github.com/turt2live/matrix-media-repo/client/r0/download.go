@@ -61,12 +61,12 @@ func DownloadMedia(w http.ResponseWriter, r *http.Request, i rcontext.RequestInf
 }
 
 func ValidateUserCanDownload(r *http.Request, i rcontext.RequestInfo) (bool) {
-	hs := util.GetHomeserverConfig(r.Host, i.Config)
+	hs := util.GetHomeserverConfig(r.Host)
 	if !hs.DownloadRequiresAuth {
 		return true // no auth required == can access
 	}
 
 	accessToken := util.GetAccessTokenFromRequest(r)
-	userId, err := util.GetUserIdFromToken(i.Context, r.Host, accessToken, i.Config)
+	userId, err := util.GetUserIdFromToken(i.Context, r.Host, accessToken)
 	return userId != "" && err != nil
 }

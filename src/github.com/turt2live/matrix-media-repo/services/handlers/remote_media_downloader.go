@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/matrix-org/gomatrixserverlib"
+	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/rcontext"
 	"github.com/turt2live/matrix-media-repo/storage/stores"
 	"github.com/turt2live/matrix-media-repo/util"
@@ -43,7 +44,7 @@ func (r *RemoteMediaDownloader) Download(server string, mediaId string) (Downloa
 	if err != nil {
 		return DownloadedMedia{}, err
 	}
-	if r.Info.Config.Downloads.MaxSizeBytes > 0 && contentLength > r.Info.Config.Downloads.MaxSizeBytes {
+	if config.Get().Downloads.MaxSizeBytes > 0 && contentLength > config.Get().Downloads.MaxSizeBytes {
 		r.Info.Log.Warn("Attempted to download media that was too large")
 		return DownloadedMedia{}, util.ErrMediaTooLarge
 	}

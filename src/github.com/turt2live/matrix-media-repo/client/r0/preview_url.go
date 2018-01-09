@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/turt2live/matrix-media-repo/client"
+	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/rcontext"
 	"github.com/turt2live/matrix-media-repo/services"
 	"github.com/turt2live/matrix-media-repo/util"
@@ -25,12 +26,12 @@ type MatrixOpenGraph struct {
 }
 
 func PreviewUrl(w http.ResponseWriter, r *http.Request, i rcontext.RequestInfo) interface{} {
-	if !i.Config.UrlPreviews.Enabled {
+	if !config.Get().UrlPreviews.Enabled {
 		return client.NotFoundError()
 	}
 
 	accessToken := util.GetAccessTokenFromRequest(r)
-	userId, err := util.GetUserIdFromToken(r.Context(), r.Host, accessToken, i.Config)
+	userId, err := util.GetUserIdFromToken(r.Context(), r.Host, accessToken)
 	if err != nil || userId == "" {
 		return client.AuthFailed()
 	}

@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/client"
+	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/rcontext"
 	"github.com/turt2live/matrix-media-repo/services"
 	"github.com/turt2live/matrix-media-repo/util"
@@ -31,8 +32,8 @@ func ThumbnailMedia(w http.ResponseWriter, r *http.Request, i rcontext.RequestIn
 	heightStr := r.URL.Query().Get("height")
 	method := r.URL.Query().Get("method")
 
-	width := i.Config.Thumbnails.Sizes[0].Width
-	height := i.Config.Thumbnails.Sizes[0].Height
+	width := config.Get().Thumbnails.Sizes[0].Width
+	height := config.Get().Thumbnails.Sizes[0].Height
 
 	if widthStr != "" {
 		parsedWidth, err := strconv.Atoi(widthStr)

@@ -41,19 +41,14 @@ func main() {
 		realPsqlPassword = *postgresPassword
 	}
 
-	c, err := config.ReadConfig()
-	if err != nil {
-		panic(err)
-	}
-
-	err = logging.Setup(c.General.LogDirectory)
+	err := logging.Setup(config.Get().General.LogDirectory)
 	if err != nil {
 		panic(err)
 	}
 
 	logrus.Info("Setting up for importing...")
 
-	db, err := storage.OpenDatabase(c.Database.Postgres)
+	db, err := storage.OpenDatabase(config.Get().Database.Postgres)
 	if err != nil {
 		panic(err)
 	}
@@ -88,7 +83,6 @@ func main() {
 			}),
 			Context: ctx,
 			Db:      *db,
-			Config:  c,
 		}
 
 		info.Log.Info(fmt.Sprintf("Downloading %s (%d/%d %d%%)", record.MediaId, i+1, len(records), percent))
