@@ -24,6 +24,7 @@ func Setup(dir string) error {
 		&logrus.TextFormatter{
 			TimestampFormat:  "2006-01-02 15:04:05.000 Z07:00",
 			FullTimestamp:    true,
+			ForceColors:      true,
 			DisableColors:    false,
 			DisableTimestamp: false,
 			QuoteEmptyFields: true,
