@@ -51,7 +51,7 @@ func ThumbnailMedia(w http.ResponseWriter, r *http.Request, log *logrus.Entry) i
 		height = parsedHeight
 	}
 	if method == "" {
-		method = "crop"
+		method = "scale"
 	}
 
 	log = log.WithFields(logrus.Fields{
