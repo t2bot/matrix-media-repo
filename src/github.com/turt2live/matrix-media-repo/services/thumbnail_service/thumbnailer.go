@@ -4,6 +4,11 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
+	"image"
+	"image/draw"
+	"image/gif"
+	"os"
 
 	"github.com/disintegration/imaging"
 	"github.com/sirupsen/logrus"
@@ -69,21 +74,58 @@ func (t *thumbnailer) GenerateThumbnail(media *types.Media, width int, height in
 		}
 	}
 
-	if method == "scale" {
-		src = imaging.Fit(src, width, height, imaging.Lanczos)
-	} else if method == "crop" {
-		src = imaging.Fill(src, width, height, imaging.Center, imaging.Lanczos)
-	} else {
-		t.log.Error("Unrecognized thumbnail method: " + method)
-		return nil, errors.New("unrecognized method: " + method)
-	}
-
-	// Put the image bytes into a memory buffer
+	contentType := "image/png"
 	imgData := &bytes.Buffer{}
-	err = imaging.Encode(imgData, src, imaging.PNG)
-	if err != nil {
-		t.log.Error("Unexpected error encoding thumbnail: " + err.Error())
-		return nil, err
+	if animated && util.ArrayContains(animatedTypes, media.ContentType) {
+		t.log.Info("Generating animated thumbnail")
+		contentType = "image/gif"
+
+		// Animated GIFs are a bit more special because we need to do it frame by frame.
+		// This is fairly resource intensive. The calling code is responsible for limiting this case.
+
+		inputFile, err := os.Open(media.Location)
+		if err != nil {
+			t.log.Error("Error generating animated thumbnail: " + err.Error())
+			return nil, err
+		}
+		defer inputFile.Close()
+
+		g, err := gif.DecodeAll(inputFile)
+		if err != nil {
+			t.log.Error("Error generating animated thumbnail: " + err.Error())
+			return nil, err
+		}
+
+		for i := range g.Image {
+			frameThumb, err := thumbnailFrame(g.Image[i], method, width, height, imaging.Lanczos)
+			if err != nil {
+				t.log.Error("Error generating animated thumbnail frame: " + err.Error())
+				return nil, err
+			}
+
+			t.log.Info(fmt.Sprintf("Width = %d    Height = %d    FW=%d    FH=%d", width, height, frameThumb.Bounds().Max.X, frameThumb.Bounds().Max.Y))
+			g.Image[i] = image.NewPaletted(frameThumb.Bounds(), g.Image[i].Palette)
+			draw.Draw(g.Image[i], frameThumb.Bounds(), frameThumb, image.Pt(0, 0), draw.Over)
+		}
+
+		err = gif.EncodeAll(imgData, g)
+		if err != nil {
+			t.log.Error("Error generating animated thumbnail: " + err.Error())
+			return nil, err
+		}
+	} else {
+		src, err = thumbnailFrame(src, method, width, height, imaging.Lanczos)
+		if err != nil {
+			t.log.Error("Error generating thumbnail: " + err.Error())
+			return nil, err
+		}
+
+		// Put the image bytes into a memory buffer
+		err = imaging.Encode(imgData, src, imaging.PNG)
+		if err != nil {
+			t.log.Error("Unexpected error encoding thumbnail: " + err.Error())
+			return nil, err
+		}
 	}
 
 	// Reset the buffer pointer and store the file
@@ -100,8 +142,20 @@ func (t *thumbnailer) GenerateThumbnail(media *types.Media, width int, height in
 	}
 
 	thumb.DiskLocation = location
-	thumb.ContentType = "image/png"
+	thumb.ContentType = contentType
 	thumb.SizeBytes = fileSize
 
 	return thumb, nil
+}
+
+func thumbnailFrame(src image.Image, method string, width int, height int, filter imaging.ResampleFilter) (image.Image, error) {
+	if method == "scale" {
+		src = imaging.Fit(src, width, height, filter)
+	} else if method == "crop" {
+		src = imaging.Fill(src, width, height, imaging.Center, filter)
+	} else {
+		return nil, errors.New("unrecognized method: " + method)
+	}
+
+	return src, nil
 }

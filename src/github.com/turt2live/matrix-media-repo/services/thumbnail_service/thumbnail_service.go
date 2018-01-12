@@ -101,6 +101,11 @@ func (s *thumbnailService) GetThumbnail(media *types.Media, width int, height in
 		return nil, errors.New("cannot generate thumbnail for this media's content type")
 	}
 
+	if animated && config.Get().Thumbnails.MaxAnimateSizeBytes > 0 && config.Get().Thumbnails.MaxAnimateSizeBytes < media.SizeBytes {
+		s.log.Warn("Attempted to animate a media record that is too large. Assuming animated=false")
+		animated = false
+	}
+
 	forceThumbnail := false
 	if animated && !util.ArrayContains(animatedTypes, media.ContentType) {
 		s.log.Warn("Cannot animate a non-animated file. Assuming animated=false")

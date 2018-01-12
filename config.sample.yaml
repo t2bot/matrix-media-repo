@@ -82,25 +82,29 @@ thumbnails:
   # the default for when no width or height is requested. The media repository will return
   # either an exact match or the next largest size of thumbnail.
   sizes:
-  - width: 32
-    height: 32
-  - width: 96
-    height: 96
-  - width: 320
-    height: 240
-  - width: 640
-    height: 480
-  - width: 800
-    height: 600
+    - width: 32
+      height: 32
+    - width: 96
+      height: 96
+    - width: 320
+      height: 240
+    - width: 640
+      height: 480
+    - width: 800
+      height: 600
 
   # The content types to thumbnail when requested. Types that are not supported by the media repo
   # will not be thumbnailed (adding application/json here won't work). Clients may still not request
   # thumbnails for these types - this won't make clients automatically thumbnail these file types.
   types:
-   - "image/jpeg"
-   - "image/jpg"
-   - "image/png"
-   - "image/gif"
+    - "image/jpeg"
+    - "image/jpg"
+    - "image/png"
+    - "image/gif"
+
+  # The maximum file size to thumbnail when a capable animated thumbnail is requested. If the image
+  # is larger than this, the thumbnail will be generated as a static image.
+  maxAnimateSizeBytes: 10485760 # 10MB default, 0 to disable
 
 # Controls for the rate limit functionality
 rateLimit:
