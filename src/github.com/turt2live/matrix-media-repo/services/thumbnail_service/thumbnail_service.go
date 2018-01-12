@@ -17,6 +17,9 @@ import (
 // These are the content types that we can actually thumbnail
 var supportedThumbnailTypes = []string{"image/jpeg", "image/jpg", "image/png", "image/gif"}
 
+// Of the supportedThumbnailTypes, these are the 'animated' types
+var animatedTypes = []string{"image/gif"}
+
 type thumbnailService struct {
 	store *stores.ThumbnailStore
 	ctx   context.Context
@@ -28,7 +31,7 @@ func New(ctx context.Context, log *logrus.Entry) (*thumbnailService) {
 	return &thumbnailService{store, ctx, log}
 }
 
-func (s *thumbnailService) GetThumbnail(media *types.Media, width int, height int, method string) (*types.Thumbnail, error) {
+func (s *thumbnailService) GetThumbnail(media *types.Media, width int, height int, method string, animated bool) (*types.Thumbnail, error) {
 	if width <= 0 {
 		return nil, errors.New("width must be positive")
 	}
@@ -78,10 +81,10 @@ func (s *thumbnailService) GetThumbnail(media *types.Media, width int, height in
 	})
 	s.log.Info("Looking up thumbnail")
 
-	thumb, err := s.store.Get(media.Origin, media.MediaId, targetWidth, targetHeight, method)
+	thumb, err := s.store.Get(media.Origin, media.MediaId, targetWidth, targetHeight, method, animated)
 	if err != nil && err != sql.ErrNoRows {
 		s.log.Error("Unexpected error processing thumbnail lookup: " + err.Error())
-		return thumb, err
+		return nil, err
 	}
 	if err != sql.ErrNoRows {
 		s.log.Info("Found existing thumbnail")
@@ -98,15 +101,25 @@ func (s *thumbnailService) GetThumbnail(media *types.Media, width int, height in
 		return nil, errors.New("cannot generate thumbnail for this media's content type")
 	}
 
+	forceThumbnail := false
+	if animated && !util.ArrayContains(animatedTypes, media.ContentType) {
+		s.log.Warn("Cannot animate a non-animated file. Assuming animated=false")
+		animated = false
+	}
+	if !animated && util.ArrayContains(animatedTypes, media.ContentType) {
+		// We have to force a thumbnail otherwise we'll return a non-animated file
+		forceThumbnail = true
+	}
+
 	if media.SizeBytes > config.Get().Thumbnails.MaxSourceBytes {
 		s.log.Warn("Media too large to thumbnail")
-		return thumb, errs.ErrMediaTooLarge
+		return nil, errs.ErrMediaTooLarge
 	}
 
 	s.log.Info("Generating new thumbnail")
 	thumbnailer := NewThumbnailer(s.ctx, s.log)
 
-	generated, err := thumbnailer.GenerateThumbnail(media, targetWidth, targetHeight, method)
+	generated, err := thumbnailer.GenerateThumbnail(media, targetWidth, targetHeight, method, animated, forceThumbnail)
 	if err != nil {
 		return thumb, nil
 	}
@@ -117,6 +130,7 @@ func (s *thumbnailService) GetThumbnail(media *types.Media, width int, height in
 		Width:       targetWidth,
 		Height:      targetHeight,
 		Method:      method,
+		Animated:    generated.Animated,
 		CreationTs:  util.NowMillis(),
 		ContentType: generated.ContentType,
 		Location:    generated.DiskLocation,
@@ -126,7 +140,7 @@ func (s *thumbnailService) GetThumbnail(media *types.Media, width int, height in
 	err = s.store.Insert(newThumb)
 	if err != nil {
 		s.log.Error("Unexpected error caching thumbnail: " + err.Error())
-		return newThumb, err
+		return nil, err
 	}
 
 	return newThumb, nil

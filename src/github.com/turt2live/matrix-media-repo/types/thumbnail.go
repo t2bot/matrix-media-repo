@@ -6,6 +6,7 @@ type Thumbnail struct {
 	Width       int
 	Height      int
 	Method      string // "crop" or "scale"
+	Animated    bool
 	ContentType string
 	SizeBytes   int64
 	Location    string

@@ -32,9 +32,11 @@ func ThumbnailMedia(w http.ResponseWriter, r *http.Request, log *logrus.Entry) i
 	widthStr := r.URL.Query().Get("width")
 	heightStr := r.URL.Query().Get("height")
 	method := r.URL.Query().Get("method")
+	animatedStr := r.URL.Query().Get("animated")
 
 	width := config.Get().Thumbnails.Sizes[0].Width
 	height := config.Get().Thumbnails.Sizes[0].Height
+	animated := false
 
 	if widthStr != "" {
 		parsedWidth, err := strconv.Atoi(widthStr)
@@ -50,14 +52,22 @@ func ThumbnailMedia(w http.ResponseWriter, r *http.Request, log *logrus.Entry) i
 		}
 		height = parsedHeight
 	}
+	if animatedStr != "" {
+		parsedFlag, err := strconv.ParseBool(animatedStr)
+		if err != nil {
+			return client.InternalServerError("Animated flag does not appear to be a boolean")
+		}
+		animated = parsedFlag
+	}
 	if method == "" {
 		method = "scale"
 	}
 
 	log = log.WithFields(logrus.Fields{
-		"requestedWidth":  width,
-		"requestedHeight": height,
-		"requestedMethod": method,
+		"requestedWidth":    width,
+		"requestedHeight":   height,
+		"requestedMethod":   method,
+		"requestedAnimated": animated,
 	})
 
 	mediaSvc := media_service.New(r.Context(), log)
@@ -74,7 +84,7 @@ func ThumbnailMedia(w http.ResponseWriter, r *http.Request, log *logrus.Entry) i
 		return client.InternalServerError("Unexpected Error")
 	}
 
-	thumb, err := thumbSvc.GetThumbnail(media, width, height, method)
+	thumb, err := thumbSvc.GetThumbnail(media, width, height, method, animated)
 	if err != nil {
 		fstream, errF := os.Open(media.Location)
 		if errF != nil {

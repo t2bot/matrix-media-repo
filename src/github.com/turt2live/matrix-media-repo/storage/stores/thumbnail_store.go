@@ -8,8 +8,8 @@ import (
 	"github.com/turt2live/matrix-media-repo/types"
 )
 
-const selectThumbnail = "SELECT origin, media_id, width, height, method, content_type, size_bytes, location, creation_ts FROM thumbnails WHERE origin = $1 and media_id = $2 and width = $3 and height = $4 and method = $5;"
-const insertThumbnail = "INSERT INTO thumbnails (origin, media_id, width, height, method, content_type, size_bytes, location, creation_ts) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);"
+const selectThumbnail = "SELECT origin, media_id, width, height, method, animated, content_type, size_bytes, location, creation_ts FROM thumbnails WHERE origin = $1 and media_id = $2 and width = $3 and height = $4 and method = $5 and animated = $6;"
+const insertThumbnail = "INSERT INTO thumbnails (origin, media_id, width, height, method, animated, content_type, size_bytes, location, creation_ts) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);"
 
 type thumbnailStatements struct {
 	selectThumbnail *sql.Stmt
@@ -61,6 +61,7 @@ func (s *ThumbnailStore) Insert(thumbnail *types.Thumbnail) (error) {
 		thumbnail.Width,
 		thumbnail.Height,
 		thumbnail.Method,
+		thumbnail.Animated,
 		thumbnail.ContentType,
 		thumbnail.SizeBytes,
 		thumbnail.Location,
@@ -70,14 +71,15 @@ func (s *ThumbnailStore) Insert(thumbnail *types.Thumbnail) (error) {
 	return err
 }
 
-func (s *ThumbnailStore) Get(origin string, mediaId string, width int, height int, method string) (*types.Thumbnail, error) {
+func (s *ThumbnailStore) Get(origin string, mediaId string, width int, height int, method string, animated bool) (*types.Thumbnail, error) {
 	t := &types.Thumbnail{}
-	err := s.statements.selectThumbnail.QueryRowContext(s.ctx, origin, mediaId, width, height, method).Scan(
+	err := s.statements.selectThumbnail.QueryRowContext(s.ctx, origin, mediaId, width, height, method, animated).Scan(
 		&t.Origin,
 		&t.MediaId,
 		&t.Width,
 		&t.Height,
 		&t.Method,
+		&t.Animated,
 		&t.ContentType,
 		&t.SizeBytes,
 		&t.Location,

@@ -16,6 +16,7 @@ type generatedThumbnail struct {
 	ContentType  string
 	DiskLocation string
 	SizeBytes    int64
+	Animated     bool
 }
 
 type thumbnailer struct {
@@ -27,7 +28,12 @@ func NewThumbnailer(ctx context.Context, log *logrus.Entry) *thumbnailer {
 	return &thumbnailer{ctx, log}
 }
 
-func (t *thumbnailer) GenerateThumbnail(media *types.Media, width int, height int, method string) (*generatedThumbnail, error) {
+func (t *thumbnailer) GenerateThumbnail(media *types.Media, width int, height int, method string, animated bool, forceGeneration bool) (*generatedThumbnail, error) {
+	if animated && !util.ArrayContains(animatedTypes, media.ContentType) {
+		t.log.Warn("Attempted to animate a media record that isn't an animated type. Assuming animated=false")
+		animated = false
+	}
+
 	src, err := imaging.Open(media.Location)
 	if err != nil {
 		return nil, err
@@ -44,15 +50,23 @@ func (t *thumbnailer) GenerateThumbnail(media *types.Media, width int, height in
 		t.log.Info("Aspect ratio is the same, converting method to 'scale'")
 	}
 
-	thumb := &generatedThumbnail{}
+	thumb := &generatedThumbnail{
+		Animated: animated,
+	}
 
 	if srcWidth <= width && srcHeight <= height {
-		// Image is too small - don't upscale
-		thumb.ContentType = media.ContentType
-		thumb.DiskLocation = media.Location
-		thumb.SizeBytes = media.SizeBytes
-		t.log.Warn("Image too small, returning raw image")
-		return thumb, nil
+		if forceGeneration {
+			t.log.Warn("Image is too small but the force flag is set. Adjusting dimensions to fit image exactly.")
+			width = srcWidth
+			height = srcHeight
+		} else {
+			// Image is too small - don't upscale
+			thumb.ContentType = media.ContentType
+			thumb.DiskLocation = media.Location
+			thumb.SizeBytes = media.SizeBytes
+			t.log.Warn("Image too small, returning raw image")
+			return thumb, nil
+		}
 	}
 
 	if method == "scale" {
