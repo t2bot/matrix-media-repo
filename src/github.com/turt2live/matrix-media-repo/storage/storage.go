@@ -5,10 +5,10 @@ import (
 	"database/sql"
 	"sync"
 
+	"github.com/DavidHuie/gomigrate"
 	_ "github.com/lib/pq" // postgres driver
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/config"
-	"github.com/turt2live/matrix-media-repo/storage/schema"
 	"github.com/turt2live/matrix-media-repo/storage/stores"
 )
 
@@ -58,9 +58,14 @@ func OpenDatabase(connectionString string) (error) {
 	}
 
 	// Make sure the database is how we want it
-	schema.PrepareMedia(d.db)
-	schema.PrepareThumbnails(d.db)
-	schema.PrepareUrls(d.db)
+	migrator, err := gomigrate.NewMigratorWithLogger(d.db, gomigrate.Postgres{}, "./migrations", logrus.StandardLogger())
+	if err != nil {
+		return err
+	}
+	err = migrator.Migrate()
+	if err != nil {
+		return err
+	}
 
 	// New the repo factories
 	if d.repos.mediaStore, err = stores.InitMediaStore(d.db); err != nil {

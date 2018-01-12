@@ -2,6 +2,12 @@
 	"version": 0,
 	"dependencies": [
 		{
+			"importpath": "github.com/DavidHuie/gomigrate",
+			"repository": "https://github.com/DavidHuie/gomigrate",
+			"revision": "4004e6142040f5d622e9d2be6e833a4652741571",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/PuerkitoBio/goquery",
 			"repository": "https://github.com/PuerkitoBio/goquery",
 			"revision": "bc4e06eb0792d1a14661d19dd7822163c25bb6bd",
