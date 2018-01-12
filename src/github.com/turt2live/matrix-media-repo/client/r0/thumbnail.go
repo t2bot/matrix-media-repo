@@ -76,9 +76,9 @@ func ThumbnailMedia(w http.ResponseWriter, r *http.Request, log *logrus.Entry) i
 
 	thumb, err := thumbSvc.GetThumbnail(media, width, height, method)
 	if err != nil {
-		fstream, err := os.Open(media.Location)
-		if err != nil {
-			log.Error("Unexpected error opening media: " + err.Error())
+		fstream, errF := os.Open(media.Location)
+		if errF != nil {
+			log.Error("Unexpected error opening media: " + errF.Error())
 			return client.InternalServerError("Unexpected Error")
 		}
 
