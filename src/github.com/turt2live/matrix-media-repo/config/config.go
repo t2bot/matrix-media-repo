@@ -38,8 +38,9 @@ type MediaRepoConfig struct {
 	} `yaml:"downloads"`
 
 	Thumbnails struct {
-		MaxSourceBytes int64 `yaml:"maxSourceBytes"`
-		NumWorkers     int   `yaml:"numWorkers"`
+		MaxSourceBytes int64    `yaml:"maxSourceBytes"`
+		NumWorkers     int      `yaml:"numWorkers"`
+		Types          []string `yaml:"types,flow"`
 		Sizes []struct {
 			Width  int    `yaml:"width"`
 			Height int    `yaml:"height"`

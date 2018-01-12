@@ -14,6 +14,9 @@ import (
 	"github.com/turt2live/matrix-media-repo/util/errs"
 )
 
+// These are the content types that we can actually thumbnail
+var supportedThumbnailTypes = []string{"image/jpeg", "image/jpg", "image/png", "image/gif"}
+
 type thumbnailService struct {
 	store *stores.ThumbnailStore
 	ctx   context.Context
@@ -83,6 +86,16 @@ func (s *thumbnailService) GetThumbnail(media *types.Media, width int, height in
 	if err != sql.ErrNoRows {
 		s.log.Info("Found existing thumbnail")
 		return thumb, nil
+	}
+
+	if !util.ArrayContains(supportedThumbnailTypes, media.ContentType) {
+		s.log.Warn("Cannot generate thumbnail for " + media.ContentType + " because it is not supported")
+		return nil, errors.New("cannot generate thumbnail for this media's content type")
+	}
+
+	if !util.ArrayContains(config.Get().Thumbnails.Types, media.ContentType) {
+		s.log.Warn("Cannot generate thumbnail for " + media.ContentType + " because it is not listed in the config")
+		return nil, errors.New("cannot generate thumbnail for this media's content type")
 	}
 
 	if media.SizeBytes > config.Get().Thumbnails.MaxSourceBytes {

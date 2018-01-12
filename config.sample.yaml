@@ -93,6 +93,15 @@ thumbnails:
   - width: 800
     height: 600
 
+  # The content types to thumbnail when requested. Types that are not supported by the media repo
+  # will not be thumbnailed (adding application/json here won't work). Clients may still not request
+  # thumbnails for these types - this won't make clients automatically thumbnail these file types.
+  types:
+   - "image/jpeg"
+   - "image/jpg"
+   - "image/png"
+   - "image/gif"
+
 # Controls for the rate limit functionality
 rateLimit:
   # Set this to false if rate limiting is handled at a higher level or you don't want it enabled.
