@@ -35,11 +35,11 @@ type repos struct {
 }
 
 var dbInstance *Database
+var singletonDbLock = &sync.Once{}
 
 func GetDatabase() (*Database) {
 	if dbInstance == nil {
-		var once sync.Once
-		once.Do(func() {
+		singletonDbLock.Do(func() {
 			err := OpenDatabase(config.Get().Database.Postgres)
 			if err != nil {
 				panic(err)

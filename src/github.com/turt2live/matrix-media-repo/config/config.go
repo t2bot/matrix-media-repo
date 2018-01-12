@@ -91,10 +91,11 @@ func LoadConfig() (error) {
 	return nil
 }
 
+var singletonLock = &sync.Once{}
+
 func Get() (*MediaRepoConfig) {
 	if instance == nil {
-		var once sync.Once
-		once.Do(func() {
+		singletonLock.Do(func() {
 			err := LoadConfig()
 			if err != nil {
 				panic(err)
