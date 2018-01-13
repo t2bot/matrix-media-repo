@@ -13,7 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/logging"
-	"github.com/turt2live/matrix-media-repo/services"
+	"github.com/turt2live/matrix-media-repo/services/media_service"
 	"github.com/turt2live/matrix-media-repo/synapse"
 )
 
@@ -78,7 +78,7 @@ func main() {
 			continue
 		}
 
-		svc := services.NewMediaService(ctx, logrus.WithFields(logrus.Fields{}))
+		svc := media_service.New(ctx, logrus.WithFields(logrus.Fields{}))
 
 		_, err = svc.StoreMedia(body, record.ContentType, record.UploadName, record.UserId, *serverName, record.MediaId)
 		if err != nil {
