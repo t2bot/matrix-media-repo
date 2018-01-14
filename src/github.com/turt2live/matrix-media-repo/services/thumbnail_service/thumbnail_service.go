@@ -122,31 +122,7 @@ func (s *thumbnailService) GetThumbnail(media *types.Media, width int, height in
 	}
 
 	s.log.Info("Generating new thumbnail")
-	thumbnailer := NewThumbnailer(s.ctx, s.log)
 
-	generated, err := thumbnailer.GenerateThumbnail(media, targetWidth, targetHeight, method, animated, forceThumbnail)
-	if err != nil {
-		return thumb, nil
-	}
-
-	newThumb := &types.Thumbnail{
-		Origin:      media.Origin,
-		MediaId:     media.MediaId,
-		Width:       targetWidth,
-		Height:      targetHeight,
-		Method:      method,
-		Animated:    generated.Animated,
-		CreationTs:  util.NowMillis(),
-		ContentType: generated.ContentType,
-		Location:    generated.DiskLocation,
-		SizeBytes:   generated.SizeBytes,
-	}
-
-	err = s.store.Insert(newThumb)
-	if err != nil {
-		s.log.Error("Unexpected error caching thumbnail: " + err.Error())
-		return nil, err
-	}
-
-	return newThumb, nil
+	result := <-getResourceHandler().GenerateThumbnail(media, targetWidth, targetHeight, method, animated, forceThumbnail)
+	return result.thumbnail, result.err
 }
