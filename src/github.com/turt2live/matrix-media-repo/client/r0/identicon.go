@@ -24,7 +24,7 @@ func Identicon(w http.ResponseWriter, r *http.Request, log *logrus.Entry) interf
 	if !config.Get().Identicons.Enabled {
 		return client.NotFoundError()
 	}
-	if !ValidateUserCanDownload(r) {
+	if !ValidateUserCanDownload(r, log) {
 		return client.AuthFailed()
 	}
 

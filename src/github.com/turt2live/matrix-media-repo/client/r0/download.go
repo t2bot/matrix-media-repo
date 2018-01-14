@@ -2,6 +2,7 @@ package r0
 
 import (
 	"io"
+	"log"
 	"net/http"
 	"os"
 
@@ -21,7 +22,7 @@ type DownloadMediaResponse struct {
 }
 
 func DownloadMedia(w http.ResponseWriter, r *http.Request, log *logrus.Entry) interface{} {
-	if !ValidateUserCanDownload(r) {
+	if !ValidateUserCanDownload(r, log) {
 		return client.AuthFailed()
 	}
 
@@ -68,7 +69,7 @@ func DownloadMedia(w http.ResponseWriter, r *http.Request, log *logrus.Entry) in
 	}
 }
 
-func ValidateUserCanDownload(r *http.Request) (bool) {
+func ValidateUserCanDownload(r *http.Request, log *logrus.Entry) (bool) {
 	hs := util.GetHomeserverConfig(r.Host)
 	if !hs.DownloadRequiresAuth {
 		return true // no auth required == can access
@@ -76,5 +77,8 @@ func ValidateUserCanDownload(r *http.Request) (bool) {
 
 	accessToken := util.GetAccessTokenFromRequest(r)
 	userId, err := util.GetUserIdFromToken(r.Context(), r.Host, accessToken)
+	if err != nil {
+		log.Error("Error verifying token: " + err.Error())
+	}
 	return userId != "" && err != nil
 }

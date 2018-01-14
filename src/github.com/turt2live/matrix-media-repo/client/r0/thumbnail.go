@@ -15,7 +15,7 @@ import (
 )
 
 func ThumbnailMedia(w http.ResponseWriter, r *http.Request, log *logrus.Entry) interface{} {
-	if !ValidateUserCanDownload(r) {
+	if !ValidateUserCanDownload(r, log) {
 		return client.AuthFailed()
 	}
 

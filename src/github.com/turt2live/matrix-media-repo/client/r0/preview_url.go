@@ -34,6 +34,9 @@ func PreviewUrl(w http.ResponseWriter, r *http.Request, log *logrus.Entry) inter
 	accessToken := util.GetAccessTokenFromRequest(r)
 	userId, err := util.GetUserIdFromToken(r.Context(), r.Host, accessToken)
 	if err != nil || userId == "" {
+		if err != nil {
+			log.Error("Error verifying token: " + err.Error())
+		}
 		return client.AuthFailed()
 	}
 
