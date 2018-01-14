@@ -20,14 +20,14 @@ type urlResourceHandler struct {
 }
 
 type urlPreviewRequest struct {
-	urlStr string
+	urlStr    string
 	forUserId string
-	onHost string
+	onHost    string
 }
 
 type urlPreviewResponse struct {
 	preview *types.UrlPreview
-	err       error
+	err     error
 }
 
 var resHandlerInstance *urlResourceHandler
@@ -51,8 +51,8 @@ func getResourceHandler() (*urlResourceHandler) {
 func urlPreviewWorkFn(request *resource_handler.WorkRequest) interface{} {
 	info := request.Metadata.(*urlPreviewRequest)
 	log := logrus.WithFields(logrus.Fields{
-		"worker_requestId":       request.Id,
-		"worker_url": info.urlStr,
+		"worker_requestId": request.Id,
+		"worker_url":       info.urlStr,
 		"worker_previewer": "OpenGraph",
 	})
 	log.Info("Processing url preview request")
@@ -68,7 +68,7 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) interface{} {
 		} else {
 			svc.store.InsertPreviewError(info.urlStr, errs.ErrCodeUnknown)
 		}
-		return &urlPreviewResponse{err:err}
+		return &urlPreviewResponse{err: err}
 	}
 
 	result := &types.UrlPreview{
@@ -112,7 +112,7 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) interface{} {
 		// Non-fatal: Just report it and move on. The worst that happens is we re-cache it.
 	}
 
-	return &urlPreviewResponse{preview:result}
+	return &urlPreviewResponse{preview: result}
 }
 
 func (h *urlResourceHandler) GeneratePreview(urlStr string, forUserId string, onHost string) chan *urlPreviewResponse {
@@ -120,10 +120,10 @@ func (h *urlResourceHandler) GeneratePreview(urlStr string, forUserId string, on
 	go func() {
 		reqId := fmt.Sprintf("preview_%s", urlStr) // don't put the user id or host in the ID string
 		result := <-h.resourceHandler.GetResource(reqId, &urlPreviewRequest{
-			urlStr:urlStr,
-			forUserId:forUserId,
-			onHost:onHost,
-			})
+			urlStr:    urlStr,
+			forUserId: forUserId,
+			onHost:    onHost,
+		})
 		resultChan <- result.(*urlPreviewResponse)
 	}()
 	return resultChan
