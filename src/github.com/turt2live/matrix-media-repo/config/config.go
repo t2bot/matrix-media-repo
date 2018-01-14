@@ -70,6 +70,7 @@ type MediaRepoConfig struct {
 }
 
 var instance *MediaRepoConfig
+var singletonLock = &sync.Once{}
 
 func LoadConfig() (error) {
 	c := &MediaRepoConfig{}
@@ -90,8 +91,6 @@ func LoadConfig() (error) {
 	instance = c
 	return nil
 }
-
-var singletonLock = &sync.Once{}
 
 func Get() (*MediaRepoConfig) {
 	if instance == nil {

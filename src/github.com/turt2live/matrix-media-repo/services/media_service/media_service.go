@@ -57,15 +57,9 @@ func (s *mediaService) GetMedia(server string, mediaId string) (*types.Media, er
 
 func (s *mediaService) downloadRemoteMedia(server string, mediaId string) (*types.Media, error) {
 	s.log.Info("Attempting to download remote media")
-	downloader := newRemoteMediaDownloader(s.ctx, s.log)
 
-	downloaded, err := downloader.Download(server, mediaId)
-	if err != nil {
-		return nil, err
-	}
-
-	defer downloaded.Contents.Close()
-	return s.StoreMedia(downloaded.Contents, downloaded.ContentType, downloaded.DesiredFilename, "", server, mediaId)
+	result := <-getResourceHandler().DownloadRemoteMedia(server, mediaId)
+	return result.media, result.err
 }
 
 func (s *mediaService) IsTooLarge(contentLength int64, contentLengthHeader string) (bool) {
