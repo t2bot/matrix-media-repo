@@ -7,11 +7,9 @@ import (
 	"net"
 	"net/url"
 
-	"github.com/disintegration/imaging"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/config"
-	"github.com/turt2live/matrix-media-repo/services/media_service"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/stores"
 	"github.com/turt2live/matrix-media-repo/types"
@@ -106,62 +104,8 @@ func (s *urlService) GetPreview(urlStr string, onHost string, forUserId string, 
 		return nil, errs.ErrHostBlacklisted
 	}
 
-	s.log = s.log.WithFields(logrus.Fields{
-		"previewer": "OpenGraph",
-	})
-
-	previewer := NewOpenGraphPreviewer(s.ctx, s.log)
-	preview, err := previewer.GeneratePreview(urlStr)
-	if err != nil {
-		if err == errs.ErrMediaNotFound {
-			s.store.InsertPreviewError(urlStr, errs.ErrCodeNotFound)
-		} else {
-			s.store.InsertPreviewError(urlStr, errs.ErrCodeUnknown)
-		}
-		return nil, err
-	}
-
-	result := &types.UrlPreview{
-		Url:         preview.Url,
-		SiteName:    preview.SiteName,
-		Type:        preview.Type,
-		Description: preview.Description,
-		Title:       preview.Title,
-	}
-
-	// Store the thumbnail, if there is one
-	mediaSvc := media_service.New(s.ctx, s.log)
-	if preview.Image != nil && !mediaSvc.IsTooLarge(preview.Image.ContentLength, preview.Image.ContentLengthHeader) {
-		// UploadMedia will close the read stream for the thumbnail
-		media, err := mediaSvc.UploadMedia(preview.Image.Data, preview.Image.ContentType, preview.Image.Filename, forUserId, onHost)
-		if err != nil {
-			s.log.Warn("Non-fatal error storing preview thumbnail: " + err.Error())
-		} else {
-			img, err := imaging.Open(media.Location)
-			if err != nil {
-				s.log.Warn("Non-fatal error getting thumbnail dimensions: " + err.Error())
-			} else {
-				result.ImageMxc = media.MxcUri()
-				result.ImageType = media.ContentType
-				result.ImageSize = media.SizeBytes
-				result.ImageWidth = img.Bounds().Max.X
-				result.ImageHeight = img.Bounds().Max.Y
-			}
-		}
-	}
-
-	dbRecord := &types.CachedUrlPreview{
-		Preview:   result,
-		SearchUrl: urlStr,
-		ErrorCode: "",
-		FetchedTs: util.NowMillis(),
-	}
-	err = s.store.InsertPreview(dbRecord)
-	if err != nil {
-		s.log.Warn("Error caching URL preview: " + err.Error())
-	}
-
-	return result, nil
+	result := <-getResourceHandler().GeneratePreview(urlStr, forUserId, onHost)
+	return result.preview, result.err
 }
 
 func isAllowed(ip net.IP, allowed []string, disallowed []string, log *logrus.Entry) bool {
