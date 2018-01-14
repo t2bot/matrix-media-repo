@@ -2,7 +2,6 @@ package r0
 
 import (
 	"io"
-	"log"
 	"net/http"
 	"os"
 
