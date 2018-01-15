@@ -9,11 +9,12 @@ import (
 	"os"
 	"path"
 
+	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
-func PersistFile(file io.Reader, ctx context.Context) (string, error) {
+func PersistFile(file io.Reader, ctx context.Context, log *logrus.Entry) (string, error) {
 	var basePath string
 	var pathSize int64
 	for i := 0; i < len(config.Get().Uploads.StoragePaths); i++ {
@@ -31,6 +32,7 @@ func PersistFile(file io.Reader, ctx context.Context) (string, error) {
 	if basePath == "" {
 		return "", errors.New("could not find a suitable base path")
 	}
+	log.Info("Using the base path: " + basePath)
 
 	exists := true
 	var primaryContainer string
@@ -51,8 +53,14 @@ func PersistFile(file io.Reader, ctx context.Context) (string, error) {
 		targetDir = path.Join(basePath, primaryContainer, secondaryContainer)
 		targetFile = path.Join(targetDir, fileName)
 
+		log.Info("Checking if file exists: " + targetFile)
+
 		exists, err = util.FileExists(targetFile)
 		attempts++
+
+		if err != nil {
+			log.Error("Error checking if the file exists: " + err.Error())
+		}
 
 		// Infinite loop protection
 		if attempts > 5 {
@@ -69,13 +77,13 @@ func PersistFile(file io.Reader, ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer f.Close()
 
 	_, err = io.Copy(f, file)
 	if err != nil {
 		return "", err
 	}
 
-	defer f.Close()
 	return f.Name(), nil
 }
 
@@ -84,6 +92,7 @@ func GetFileHash(filePath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer f.Close()
 
 	hasher := sha256.New()
 
@@ -91,6 +100,5 @@ func GetFileHash(filePath string) (string, error) {
 		return "", err
 	}
 
-	defer f.Close()
 	return hex.EncodeToString(hasher.Sum(nil)), nil
 }

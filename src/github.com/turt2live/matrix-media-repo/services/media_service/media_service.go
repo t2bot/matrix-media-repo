@@ -107,7 +107,7 @@ func (s *mediaService) StoreMedia(contents io.Reader, contentType string, filena
 	})
 
 	// Store the file in a temporary location
-	fileLocation, err := storage.PersistFile(contents, s.ctx)
+	fileLocation, err := storage.PersistFile(contents, s.ctx, s.log)
 	if err != nil {
 		return nil, err
 	}
