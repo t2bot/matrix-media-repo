@@ -68,12 +68,12 @@ func PersistFile(file io.Reader, ctx context.Context, log *logrus.Entry) (string
 		}
 	}
 
-	err := os.MkdirAll(targetDir, 0644)
+	err := os.MkdirAll(targetDir, 0755)
 	if err != nil {
 		return "", err
 	}
 
-	f, err := os.OpenFile(targetFile, os.O_WRONLY|os.O_CREATE, 0755)
+	f, err := os.OpenFile(targetFile, os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return "", err
 	}
