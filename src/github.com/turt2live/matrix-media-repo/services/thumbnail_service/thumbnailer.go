@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"image"
+	"image/color/palette"
 	"image/draw"
 	"image/gif"
 	"os"
@@ -96,17 +96,31 @@ func (t *thumbnailer) GenerateThumbnail(media *types.Media, width int, height in
 			return nil, err
 		}
 
+		// Prepare a blank frame to use as swap space
+		frameImg := image.NewRGBA(g.Image[0].Bounds())
+
 		for i := range g.Image {
-			frameThumb, err := thumbnailFrame(g.Image[i], method, width, height, imaging.Lanczos)
+			img := g.Image[i]
+
+			// Copy the frame to a new image and use that
+			draw.Draw(frameImg, img.Bounds(), img, image.ZP, draw.Over)
+
+			// Do the thumbnailing on the copied frame
+			frameThumb, err := thumbnailFrame(frameImg, method, width, height, imaging.Linear)
 			if err != nil {
 				t.log.Error("Error generating animated thumbnail frame: " + err.Error())
 				return nil, err
 			}
 
-			t.log.Info(fmt.Sprintf("Width = %d    Height = %d    FW=%d    FH=%d", width, height, frameThumb.Bounds().Max.X, frameThumb.Bounds().Max.Y))
-			g.Image[i] = image.NewPaletted(frameThumb.Bounds(), g.Image[i].Palette)
-			draw.Draw(g.Image[i], frameThumb.Bounds(), frameThumb, image.Pt(0, 0), draw.Over)
+			//t.log.Info(fmt.Sprintf("Width = %d    Height = %d    FW=%d    FH=%d", width, height, frameThumb.Bounds().Max.X, frameThumb.Bounds().Max.Y))
+			targetImg := image.NewPaletted(frameThumb.Bounds(), palette.Plan9)
+			draw.FloydSteinberg.Draw(targetImg, frameThumb.Bounds(), frameThumb, image.ZP)
+			g.Image[i] = targetImg
 		}
+
+		// Set the image size to the first frame's size
+		g.Config.Width = g.Image[0].Bounds().Max.X
+		g.Config.Height = g.Image[0].Bounds().Max.Y
 
 		err = gif.EncodeAll(imgData, g)
 		if err != nil {
@@ -149,13 +163,14 @@ func (t *thumbnailer) GenerateThumbnail(media *types.Media, width int, height in
 }
 
 func thumbnailFrame(src image.Image, method string, width int, height int, filter imaging.ResampleFilter) (image.Image, error) {
+	var result image.Image
 	if method == "scale" {
-		src = imaging.Fit(src, width, height, filter)
+		result = imaging.Fit(src, width, height, filter)
 	} else if method == "crop" {
-		src = imaging.Fill(src, width, height, imaging.Center, filter)
+		result = imaging.Fill(src, width, height, imaging.Center, filter)
 	} else {
 		return nil, errors.New("unrecognized method: " + method)
 	}
 
-	return src, nil
+	return result, nil
 }
