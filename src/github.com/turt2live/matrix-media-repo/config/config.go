@@ -71,11 +71,12 @@ type MediaRepoConfig struct {
 
 var instance *MediaRepoConfig
 var singletonLock = &sync.Once{}
+var Path = "media-repo.yaml"
 
-func LoadConfig() (error) {
+func ReloadConfig() (error) {
 	c := &MediaRepoConfig{}
 
-	f, err := os.Open("media-repo.yaml")
+	f, err := os.Open(Path)
 	if err != nil {
 		return err
 	}
@@ -95,7 +96,7 @@ func LoadConfig() (error) {
 func Get() (*MediaRepoConfig) {
 	if instance == nil {
 		singletonLock.Do(func() {
-			err := LoadConfig()
+			err := ReloadConfig()
 			if err != nil {
 				panic(err)
 			}

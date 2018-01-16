@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"net/http"
@@ -43,6 +44,11 @@ type ApiRoute struct {
 type EmptyResponse struct{}
 
 func main() {
+	configPath := flag.String("config", "media-repo.yaml", "The path to the configuration")
+	flag.Parse()
+
+	config.Path = *configPath
+
 	rtr := mux.NewRouter()
 
 	err := logging.Setup(config.Get().General.LogDirectory)
