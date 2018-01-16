@@ -8,70 +8,80 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+type runtimeConfig struct {
+	MigrationsPath string
+}
+
+var Runtime = &runtimeConfig{}
+
 type HomeserverConfig struct {
 	Name                 string `yaml:"name"`
 	DownloadRequiresAuth bool   `yaml:"downloadRequiresAuth"`
 	ClientServerApi      string `yaml:"csApi"`
 }
 
-type runtimeConfig struct {
-	MigrationsPath string
+type GeneralConfig struct {
+	BindAddress  string `yaml:"bindAddress"`
+	Port         int    `yaml:"port"`
+	LogDirectory string `yaml:"logDirectory"`
 }
-var Runtime = &runtimeConfig{}
+
+type DatabaseConfig struct {
+	Postgres string `yaml:"postgres"`
+}
+
+type UploadsConfig struct {
+	StoragePaths []string `yaml:"storagePaths,flow"`
+	MaxSizeBytes int64    `yaml:"maxBytes"`
+}
+
+type DownloadsConfig struct {
+	MaxSizeBytes int64 `yaml:"maxBytes"`
+	NumWorkers   int   `yaml:"numWorkers"`
+}
+
+type ThumbnailsConfig struct {
+	MaxSourceBytes      int64            `yaml:"maxSourceBytes"`
+	NumWorkers          int              `yaml:"numWorkers"`
+	Types               []string         `yaml:"types,flow"`
+	MaxAnimateSizeBytes int64            `yaml:"maxAnimateSizeBytes"`
+	Sizes               []*ThumbnailSize `yaml:"sizes,flow"`
+}
+
+type ThumbnailSize struct {
+	Width  int `yaml:"width"`
+	Height int `yaml:"height"`
+}
+
+type UrlPreviewsConfig struct {
+	Enabled            bool     `yaml:"enabled"`
+	MaxPageSizeBytes   int64    `yaml:"maxPageSizeBytes"`
+	NumWorkers         int      `yaml:"numWorkers"`
+	DisallowedNetworks []string `yaml:"disallowedNetworks,flow"`
+	AllowedNetworks    []string `yaml:"allowedNetworks,flow"`
+}
+
+type RateLimitConfig struct {
+	// TODO: Support floats when this is fixed: https://github.com/didip/tollbooth/issues/58
+	RequestsPerSecond int64 `yaml:"requestsPerSecond"`
+	Enabled           bool  `yaml:"enabled"`
+	BurstCount        int   `yaml:"burst"`
+}
+
+type IdenticonsConfig struct {
+	Enabled bool `yaml:"enabled"`
+}
 
 type MediaRepoConfig struct {
-	General struct {
-		BindAddress  string `yaml:"bindAddress"`
-		Port         int    `yaml:"port"`
-		LogDirectory string `yaml:"logDirectory"`
-	} `yaml:"repo"`
-
-	Homeservers []HomeserverConfig `yaml:"homeservers,flow"`
-
-	Database struct {
-		Postgres string `yaml:"postgres"`
-	} `yaml:"database"`
-
-	Uploads struct {
-		StoragePaths []string `yaml:"storagePaths,flow"`
-		MaxSizeBytes int64    `yaml:"maxBytes"`
-	} `yaml:"uploads"`
-
-	Downloads struct {
-		MaxSizeBytes int64 `yaml:"maxBytes"`
-		NumWorkers   int   `yaml:"numWorkers"`
-	} `yaml:"downloads"`
-
-	Thumbnails struct {
-		MaxSourceBytes      int64    `yaml:"maxSourceBytes"`
-		NumWorkers          int      `yaml:"numWorkers"`
-		Types               []string `yaml:"types,flow"`
-		MaxAnimateSizeBytes int64    `yaml:"maxAnimateSizeBytes"`
-		Sizes []struct {
-			Width  int    `yaml:"width"`
-			Height int    `yaml:"height"`
-			Method string `yaml:"method"`
-		} `yaml:"sizes,flow"`
-	} `yaml:"thumbnails"`
-
-	UrlPreviews struct {
-		Enabled            bool     `yaml:"enabled"`
-		MaxPageSizeBytes   int64    `yaml:"maxPageSizeBytes"`
-		NumWorkers         int      `yaml:"numWorkers"`
-		DisallowedNetworks []string `yaml:"disallowedNetworks,flow"`
-		AllowedNetworks    []string `yaml:"allowedNetworks,flow"`
-	} `yaml:"urlPreviews"`
-
-	RateLimit struct {
-		Enabled bool `yaml:"enabled"`
-		// TODO: Support floats when this is fixed: https://github.com/didip/tollbooth/issues/58
-		RequestsPerSecond int64 `yaml:"requestsPerSecond"`
-		BurstCount        int   `yaml:"burst"`
-	} `yaml:"rateLimit"`
-
-	Identicons struct {
-		Enabled bool `yaml:"enabled"`
-	} `yaml:"identicons"`
+	General     *GeneralConfig      `yaml:"repo"`
+	Homeservers []*HomeserverConfig `yaml:"homeservers,flow"`
+	Database    *DatabaseConfig     `yaml:"database"`
+	Uploads     *UploadsConfig      `yaml:"uploads"`
+	Downloads   *DownloadsConfig    `yaml:"downloads"`
+	Thumbnails  *ThumbnailsConfig   `yaml:"thumbnails"`
+	UrlPreviews *UrlPreviewsConfig  `yaml:"urlPreviews"`
+	RateLimit   *RateLimitConfig    `yaml:"rateLimit"`
+	Identicons  *IdenticonsConfig   `yaml:"identicons"`
 }
 
 var instance *MediaRepoConfig
@@ -79,7 +89,7 @@ var singletonLock = &sync.Once{}
 var Path = "media-repo.yaml"
 
 func ReloadConfig() (error) {
-	c := &MediaRepoConfig{}
+	c := NewDefaultConfig()
 
 	f, err := os.Open(Path)
 	if err != nil {
@@ -108,4 +118,68 @@ func Get() (*MediaRepoConfig) {
 		})
 	}
 	return instance
+}
+
+func NewDefaultConfig() *MediaRepoConfig {
+	return &MediaRepoConfig{
+		General: &GeneralConfig{
+			BindAddress:  "127.0.0.1",
+			Port:         8000,
+			LogDirectory: "logs",
+		},
+		Database: &DatabaseConfig{
+			Postgres: "postgres://your_username:your_password@localhost/database_name?sslmode=disable",
+		},
+		Homeservers: []*HomeserverConfig{},
+		Uploads: &UploadsConfig{
+			MaxSizeBytes: 104857600, // 100mb
+			StoragePaths: []string{},
+		},
+		Downloads: &DownloadsConfig{
+			MaxSizeBytes: 104857600, // 100mb
+			NumWorkers:   10,
+		},
+		UrlPreviews: &UrlPreviewsConfig{
+			Enabled:          true,
+			MaxPageSizeBytes: 10485760, // 10mb
+			NumWorkers:       10,
+			DisallowedNetworks: []string{
+				"127.0.0.1/8",
+				"10.0.0.0/8",
+				"172.16.0.0/12",
+				"192.168.0.0/16",
+				"100.64.0.0/10",
+				"169.254.0.0/16",
+			},
+			AllowedNetworks: []string{
+				"0.0.0.0/0", // "Everything"
+			},
+		},
+		Thumbnails: &ThumbnailsConfig{
+			MaxSourceBytes:      10485760, // 10mb
+			MaxAnimateSizeBytes: 10485760, // 10mb
+			NumWorkers:          10,
+			Sizes: []*ThumbnailSize{
+				{32, 32},
+				{96, 96},
+				{320, 240},
+				{640, 480},
+				{800, 600},
+			},
+			Types: []string{
+				"image/jpeg",
+				"image/jpg",
+				"image/png",
+				"image/gif",
+			},
+		},
+		RateLimit: &RateLimitConfig{
+			Enabled:           true,
+			RequestsPerSecond: 1,
+			BurstCount:        10,
+		},
+		Identicons: &IdenticonsConfig{
+			Enabled: true,
+		},
+	}
 }
