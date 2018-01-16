@@ -12,6 +12,7 @@ import (
 
 	"github.com/disintegration/imaging"
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
@@ -85,7 +86,7 @@ func (t *thumbnailer) GenerateThumbnail(media *types.Media, width int, height in
 
 	contentType := "image/png"
 	imgData := &bytes.Buffer{}
-	if animated && util.ArrayContains(animatedTypes, media.ContentType) {
+	if config.Get().Thumbnails.AllowAnimated && animated && util.ArrayContains(animatedTypes, media.ContentType) {
 		t.log.Info("Generating animated thumbnail")
 		contentType = "image/gif"
 

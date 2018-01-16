@@ -46,6 +46,7 @@ type ThumbnailsConfig struct {
 	Types               []string         `yaml:"types,flow"`
 	MaxAnimateSizeBytes int64            `yaml:"maxAnimateSizeBytes"`
 	Sizes               []*ThumbnailSize `yaml:"sizes,flow"`
+	AllowAnimated       bool             `yaml:"allowAnimated"`
 }
 
 type ThumbnailSize struct {
@@ -159,6 +160,7 @@ func NewDefaultConfig() *MediaRepoConfig {
 			MaxSourceBytes:      10485760, // 10mb
 			MaxAnimateSizeBytes: 10485760, // 10mb
 			NumWorkers:          10,
+			AllowAnimated:       true,
 			Sizes: []*ThumbnailSize{
 				{32, 32},
 				{96, 96},
