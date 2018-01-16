@@ -210,6 +210,7 @@ func calcDescription(html string) string {
 	doc.Find("footer").Remove()
 	doc.Find("noscript").Remove()
 	doc.Find("script").Remove()
+	doc.Find("style").Remove()
 	return doc.Find("body").Text()
 }
 
