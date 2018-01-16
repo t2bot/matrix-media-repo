@@ -74,6 +74,15 @@ func (t *thumbnailer) GenerateThumbnail(media *types.Media, width int, height in
 		}
 	}
 
+	var orientation *util.ExifOrientation = nil
+	if media.ContentType == "image/jpeg" || media.ContentType == "image/jpg" {
+		orientation, err = util.GetExifOrientation(media)
+		if err != nil {
+			t.log.Warn("Non-fatal error getting EXIF orientation: " + err.Error())
+			orientation = nil // just in case
+		}
+	}
+
 	contentType := "image/png"
 	imgData := &bytes.Buffer{}
 	if animated && util.ArrayContains(animatedTypes, media.ContentType) {
@@ -106,7 +115,7 @@ func (t *thumbnailer) GenerateThumbnail(media *types.Media, width int, height in
 			draw.Draw(frameImg, img.Bounds(), img, image.ZP, draw.Over)
 
 			// Do the thumbnailing on the copied frame
-			frameThumb, err := thumbnailFrame(frameImg, method, width, height, imaging.Linear)
+			frameThumb, err := thumbnailFrame(frameImg, method, width, height, imaging.Linear, nil)
 			if err != nil {
 				t.log.Error("Error generating animated thumbnail frame: " + err.Error())
 				return nil, err
@@ -128,7 +137,7 @@ func (t *thumbnailer) GenerateThumbnail(media *types.Media, width int, height in
 			return nil, err
 		}
 	} else {
-		src, err = thumbnailFrame(src, method, width, height, imaging.Lanczos)
+		src, err = thumbnailFrame(src, method, width, height, imaging.Lanczos, orientation)
 		if err != nil {
 			t.log.Error("Error generating thumbnail: " + err.Error())
 			return nil, err
@@ -162,7 +171,7 @@ func (t *thumbnailer) GenerateThumbnail(media *types.Media, width int, height in
 	return thumb, nil
 }
 
-func thumbnailFrame(src image.Image, method string, width int, height int, filter imaging.ResampleFilter) (image.Image, error) {
+func thumbnailFrame(src image.Image, method string, width int, height int, filter imaging.ResampleFilter, orientation *util.ExifOrientation) (image.Image, error) {
 	var result image.Image
 	if method == "scale" {
 		result = imaging.Fit(src, width, height, filter)
@@ -170,6 +179,25 @@ func thumbnailFrame(src image.Image, method string, width int, height int, filte
 		result = imaging.Fill(src, width, height, imaging.Center, filter)
 	} else {
 		return nil, errors.New("unrecognized method: " + method)
+	}
+
+	if orientation != nil {
+		// Rotate first
+		if orientation.RotateDegrees == 90 {
+			result = imaging.Rotate90(result)
+		} else if orientation.RotateDegrees == 180 {
+			result = imaging.Rotate180(result)
+		} else if orientation.RotateDegrees == 270 {
+			result = imaging.Rotate270(result)
+		} // else we don't care to rotate
+
+		// Flip second
+		if orientation.FlipHorizontal {
+			result = imaging.FlipH(result)
+		}
+		if orientation.FlipVertical {
+			result = imaging.FlipV(result)
+		}
 	}
 
 	return result, nil

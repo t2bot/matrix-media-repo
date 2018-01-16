@@ -135,6 +135,12 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/rwcarlsen/goexif",
+			"repository": "https://github.com/rwcarlsen/goexif",
+			"revision": "17202558c8d9c3fd047859f1a5e73fd9ae709187",
+			"branch": "go1"
+		},
+		{
 			"importpath": "github.com/sirupsen/logrus",
 			"repository": "https://github.com/sirupsen/logrus",
 			"revision": "89742aefa4b206dcf400792f3bd35b542998eb3b",
