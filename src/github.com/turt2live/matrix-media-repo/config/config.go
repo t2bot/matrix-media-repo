@@ -14,6 +14,11 @@ type HomeserverConfig struct {
 	ClientServerApi      string `yaml:"csApi"`
 }
 
+type runtimeConfig struct {
+	MigrationsPath string
+}
+var Runtime = &runtimeConfig{}
+
 type MediaRepoConfig struct {
 	General struct {
 		BindAddress  string `yaml:"bindAddress"`

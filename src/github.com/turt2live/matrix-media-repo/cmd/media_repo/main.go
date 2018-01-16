@@ -45,9 +45,11 @@ type EmptyResponse struct{}
 
 func main() {
 	configPath := flag.String("config", "media-repo.yaml", "The path to the configuration")
+	migrationsPath := flag.String("migrations", "./migrations", "The absolute path the migrations folder")
 	flag.Parse()
 
 	config.Path = *configPath
+	config.Runtime.MigrationsPath = *migrationsPath
 
 	rtr := mux.NewRouter()
 

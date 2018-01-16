@@ -58,7 +58,7 @@ func OpenDatabase(connectionString string) (error) {
 	}
 
 	// Make sure the database is how we want it
-	migrator, err := gomigrate.NewMigratorWithLogger(d.db, gomigrate.Postgres{}, "./migrations", logrus.StandardLogger())
+	migrator, err := gomigrate.NewMigratorWithLogger(d.db, gomigrate.Postgres{}, config.Runtime.MigrationsPath, logrus.StandardLogger())
 	if err != nil {
 		return err
 	}
