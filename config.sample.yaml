@@ -40,6 +40,32 @@ downloads:
   # Average memory usage is dependent on how many concurrent downloads your users are doing.
   numWorkers: 10
 
+  # The cache control settings for downloads. This can help speed up downloads for users by
+  # keeping popular media in the cache.
+  cache:
+    enabled: true
+
+    # The maximum size of cache to have. Higher numbers are better.
+    maxSizeBytes: 1048576000 # 1GB default
+
+    # The maximum file size to cache. This should normally be the same size as your maximum
+    # upload size.
+    maxFileSizeBytes: 104857600 # 100MB default
+
+    # The number of minutes to track how many downloads a file gets
+    trackedMinutes: 30
+
+    # The number of downloads a file must receive in the window above (trackedMinutes) in
+    # order to be cached.
+    minDownloads: 5
+
+    # The minimum amount of time an item should remain in the cache. This prevents the cache
+    # from cycling out the file if it needs more room during this time.
+    minCacheTimeSeconds: 300
+
+    # The minimum amount of time an item should remain outside the cache once it is removed.
+    minEvictedTimeSeconds: 60
+
 # URL Preview settings
 urlPreviews:
   enabled: true # If enabled, the preview_url routes will be accessible

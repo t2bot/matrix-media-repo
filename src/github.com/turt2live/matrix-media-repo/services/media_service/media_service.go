@@ -2,7 +2,6 @@ package media_service
 
 import (
 	"context"
-	"database/sql"
 	"io"
 	"os"
 	"strconv"
@@ -13,7 +12,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/storage/stores"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/errs"
 )
 
 type mediaService struct {
@@ -28,31 +26,7 @@ func New(ctx context.Context, log *logrus.Entry) (*mediaService) {
 }
 
 func (s *mediaService) GetMedia(server string, mediaId string) (*types.Media, error) {
-	s.log.Info("Looking up media")
-	media, err := s.store.Get(server, mediaId)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			if util.IsServerOurs(server) {
-				s.log.Warn("Media not found")
-				return media, errs.ErrMediaNotFound
-			}
-		}
-
-		return s.downloadRemoteMedia(server, mediaId)
-	}
-
-	exists, err := util.FileExists(media.Location)
-	if !exists || err != nil {
-		if util.IsServerOurs(server) {
-			s.log.Error("Media not found in file store when we expected it to")
-			return media, errs.ErrMediaNotFound
-		} else {
-			s.log.Warn("Media appears to have been deleted - redownloading")
-			return s.downloadRemoteMedia(server, mediaId)
-		}
-	}
-
-	return media, nil
+	return getMediaCache(s).GetMedia(server, mediaId)
 }
 
 func (s *mediaService) downloadRemoteMedia(server string, mediaId string) (*types.Media, error) {

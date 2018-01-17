@@ -36,8 +36,9 @@ type UploadsConfig struct {
 }
 
 type DownloadsConfig struct {
-	MaxSizeBytes int64 `yaml:"maxBytes"`
-	NumWorkers   int   `yaml:"numWorkers"`
+	MaxSizeBytes int64        `yaml:"maxBytes"`
+	NumWorkers   int          `yaml:"numWorkers"`
+	Cache        *CacheConfig `yaml:"cache"`
 }
 
 type ThumbnailsConfig struct {
@@ -71,6 +72,16 @@ type RateLimitConfig struct {
 
 type IdenticonsConfig struct {
 	Enabled bool `yaml:"enabled"`
+}
+
+type CacheConfig struct {
+	Enabled               bool  `yaml:"enabled"`
+	MaxSizeBytes          int64 `yaml:"maxSizeBytes"`
+	MaxFileSizeBytes      int64 `yaml:"maxFileSizeBytes"`
+	TrackedMinutes        int   `yaml:"trackedMinutes"`
+	MinCacheTimeSeconds   int   `yaml:"minCacheTimeSeconds"`
+	MinEvictedTimeSeconds int   `yaml:"minEvictedTimeSeconds"`
+	MinDownloads          int   `yaml:"minDownloads"`
 }
 
 type MediaRepoConfig struct {
@@ -139,6 +150,15 @@ func NewDefaultConfig() *MediaRepoConfig {
 		Downloads: &DownloadsConfig{
 			MaxSizeBytes: 104857600, // 100mb
 			NumWorkers:   10,
+			Cache: &CacheConfig{
+				Enabled:               true,
+				MaxSizeBytes:          1048576000, // 1gb
+				MaxFileSizeBytes:      104857600,  // 100mb
+				TrackedMinutes:        30,
+				MinDownloads:          5,
+				MinCacheTimeSeconds:   300, // 5min
+				MinEvictedTimeSeconds: 60,
+			},
 		},
 		UrlPreviews: &UrlPreviewsConfig{
 			Enabled:          true,
