@@ -25,8 +25,16 @@ func New(ctx context.Context, log *logrus.Entry) (*mediaService) {
 	return &mediaService{store, ctx, log}
 }
 
-func (s *mediaService) GetMedia(server string, mediaId string) (*types.Media, error) {
+func (s *mediaService) GetStreamedMedia(server string, mediaId string) (*StreamedMedia, error) {
 	return getMediaCache(s).GetMedia(server, mediaId)
+}
+
+func (s *mediaService) GetMedia(server string, mediaId string) (*types.Media, error) {
+	stream, err := getMediaCache(s).GetMedia(server, mediaId)
+	if err != nil {
+		return nil, err
+	}
+	return stream.Media, nil
 }
 
 func (s *mediaService) downloadRemoteMedia(server string, mediaId string) (*types.Media, error) {

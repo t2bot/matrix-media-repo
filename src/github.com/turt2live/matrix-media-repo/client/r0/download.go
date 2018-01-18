@@ -3,7 +3,6 @@ package r0
 import (
 	"io"
 	"net/http"
-	"os"
 
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
@@ -39,7 +38,7 @@ func DownloadMedia(w http.ResponseWriter, r *http.Request, log *logrus.Entry) in
 
 	svc := media_service.New(r.Context(), log)
 
-	media, err := svc.GetMedia(server, mediaId)
+	streamedMedia, err := svc.GetStreamedMedia(server, mediaId)
 	if err != nil {
 		if err == errs.ErrMediaNotFound {
 			return client.NotFoundError()
@@ -51,20 +50,14 @@ func DownloadMedia(w http.ResponseWriter, r *http.Request, log *logrus.Entry) in
 	}
 
 	if filename == "" {
-		filename = media.UploadName
-	}
-
-	fstream, err := os.Open(media.Location)
-	if err != nil {
-		log.Error("Unexpected error opening media: " + err.Error())
-		return client.InternalServerError("Unexpected Error")
+		filename = streamedMedia.Media.UploadName
 	}
 
 	return &DownloadMediaResponse{
-		ContentType: media.ContentType,
+		ContentType: streamedMedia.Media.ContentType,
 		Filename:    filename,
-		SizeBytes:   media.SizeBytes,
-		Data:        fstream,
+		SizeBytes:   streamedMedia.Media.SizeBytes,
+		Data:        streamedMedia.Stream,
 	}
 }
 

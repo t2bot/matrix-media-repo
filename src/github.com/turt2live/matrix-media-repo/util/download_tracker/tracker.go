@@ -1,0 +1,107 @@
+package download_tracker
+
+import (
+	"container/list"
+	"time"
+
+	"github.com/patrickmn/go-cache"
+	"github.com/turt2live/matrix-media-repo/util"
+)
+
+type DownloadTracker struct {
+	cache  *cache.Cache
+	maxAge int64
+}
+
+type mediaRecord struct {
+	buckets   *list.List
+	downloads int
+}
+
+type bucket struct {
+	ts        int64
+	downloads int
+}
+
+func New(maxAgeMinutes int) (*DownloadTracker) {
+	maxAge := time.Duration(maxAgeMinutes) * time.Minute
+	return &DownloadTracker{
+		cache:  cache.New(maxAge, maxAge*2),
+		maxAge: int64(maxAgeMinutes),
+	}
+}
+
+func (d *DownloadTracker) getCacheKey(server string, mediaId string) (string) {
+	return server + "/" + mediaId
+}
+
+func (d *DownloadTracker) NumDownloads(server string, mediaId string) (int) {
+	item, found := d.cache.Get(d.getCacheKey(server, mediaId))
+	if !found {
+		return 0
+	}
+
+	return d.recountDownloads(item.(*mediaRecord), server, mediaId)
+}
+
+func (d *DownloadTracker) Increment(server string, mediaId string) (int) {
+	item, found := d.cache.Get(d.getCacheKey(server, mediaId))
+	var record *mediaRecord
+	if !found {
+		record = &mediaRecord{buckets: list.New()}
+	} else {
+		record = item.(*mediaRecord)
+	}
+
+	bucketTs := util.NowMillis() / 60000 // minutes
+
+	if record.buckets.Len() <= 0 {
+		// First bucket
+		record.buckets.PushFront(&bucket{
+			ts:        bucketTs,
+			downloads: 1,
+		})
+	} else {
+		firstRecord := record.buckets.Front().Value.(*bucket)
+		if firstRecord.ts != bucketTs {
+			record.buckets.PushFront(&bucket{
+				ts:        bucketTs,
+				downloads: 1,
+			})
+		} else {
+			firstRecord.downloads++
+		}
+	}
+
+	return d.recountDownloads(record, server, mediaId)
+}
+
+func (d *DownloadTracker) recountDownloads(record *mediaRecord, server string, mediaId string) int {
+	currentBucketTs := util.NowMillis() / 60000 // minutes
+	changed := false
+
+	// Trim off anything that is too old
+	for e := record.buckets.Back(); e != nil; e = record.buckets.Back() {
+		b := e.Value.(*bucket)
+		if (currentBucketTs - b.ts) > d.maxAge {
+			changed = true
+			record.buckets.Remove(e)
+		} else {
+			break // count is still relevant
+		}
+	}
+
+	// Count the number of downloads
+	downloads := 0
+	for e := record.buckets.Front(); e != nil; e = e.Next() {
+		b := e.Value.(*bucket)
+		downloads += b.downloads
+	}
+
+	if changed || downloads != record.downloads {
+		record.downloads = downloads
+		d.cache.Set(d.getCacheKey(server, mediaId), record, cache.DefaultExpiration)
+	}
+
+	return downloads
+}
