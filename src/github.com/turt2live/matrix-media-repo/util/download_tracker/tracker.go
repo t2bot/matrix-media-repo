@@ -8,6 +8,20 @@ import (
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
+/*
+ * The download tracker works by keeping a limited number of buckets for each media record
+ * in an expiring cache. The number of buckets is the equal to the number of minutes to track
+ * downloads for (max age). The entire download history expires after the max age so long
+ * as it is not added to.
+ *
+ * The underlying data structure is a linked list of buckets (which are just a timestamp and
+ * number of downloads). A linked list was chosen for it's capability to easily append and
+ * remove items without having to do array slicing. Buckets were chosen to limit the number
+ * of entries in the list because the total downloads are calculated through iteration. If
+ * each calculation had to iterate over thousands of items, the execution would be slow. A
+ * smaller number, like 30, is a lot more manageable.
+ */
+
 type DownloadTracker struct {
 	cache  *cache.Cache
 	maxAge int64
