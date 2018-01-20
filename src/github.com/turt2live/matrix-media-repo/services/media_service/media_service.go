@@ -6,12 +6,14 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/ryanuber/go-glob"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/stores"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/errs"
 )
 
 type mediaService struct {
@@ -90,15 +92,32 @@ func (s *mediaService) StoreMedia(contents io.Reader, contentType string, filena
 		return nil, err
 	}
 
+	// Check to make sure the file is allowed
+	fileMime, err := util.GetContentType(fileLocation)
+	if err != nil {
+		s.log.Error("Error while checking content type of file: " + err.Error())
+		os.Remove(fileLocation) // attempt cleanup
+		return nil, err
+	}
+
+	for _, allowedType := range config.Get().Uploads.AllowedTypes {
+		if !glob.Glob(allowedType, fileMime) {
+			s.log.Warn("Content type " + fileMime + " (reported as " + contentType + ") is not allowed to be uploaded")
+
+			os.Remove(fileLocation) // attempt cleanup
+			return nil, errs.ErrMediaNotAllowed
+		}
+	}
+
 	hash, err := storage.GetFileHash(fileLocation)
 	if err != nil {
-		defer os.Remove(fileLocation) // attempt cleanup
+		os.Remove(fileLocation) // attempt cleanup
 		return nil, err
 	}
 
 	records, err := s.store.GetByHash(hash)
 	if err != nil {
-		defer os.Remove(fileLocation) // attempt cleanup
+		os.Remove(fileLocation) // attempt cleanup
 		return nil, err
 	}
 
@@ -149,7 +168,7 @@ func (s *mediaService) StoreMedia(contents io.Reader, contentType string, filena
 
 	fileSize, err := util.FileSize(fileLocation)
 	if err != nil {
-		defer os.Remove(fileLocation) // attempt cleanup
+		os.Remove(fileLocation) // attempt cleanup
 		return nil, err
 	}
 
@@ -169,7 +188,7 @@ func (s *mediaService) StoreMedia(contents io.Reader, contentType string, filena
 
 	err = s.store.Insert(media)
 	if err != nil {
-		defer os.Remove(fileLocation) // attempt cleanup
+		os.Remove(fileLocation) // attempt cleanup
 		return nil, err
 	}
 

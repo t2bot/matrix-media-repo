@@ -34,6 +34,7 @@ type DatabaseConfig struct {
 type UploadsConfig struct {
 	StoragePaths []string `yaml:"storagePaths,flow"`
 	MaxSizeBytes int64    `yaml:"maxBytes"`
+	AllowedTypes []string `yaml:"allowedTypes,flow"`
 }
 
 type DownloadsConfig struct {
@@ -149,6 +150,7 @@ func NewDefaultConfig() *MediaRepoConfig {
 		Uploads: &UploadsConfig{
 			MaxSizeBytes: 104857600, // 100mb
 			StoragePaths: []string{},
+			AllowedTypes: []string{"*/*"},
 		},
 		Downloads: &DownloadsConfig{
 			MaxSizeBytes:        104857600, // 100mb

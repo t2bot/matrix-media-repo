@@ -10,6 +10,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/matrix"
 	"github.com/turt2live/matrix-media-repo/services/media_service"
 	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/errs"
 )
 
 type MediaUploadedResponse struct {
@@ -53,6 +54,10 @@ func UploadMedia(w http.ResponseWriter, r *http.Request, log *logrus.Entry) inte
 	if err != nil {
 		io.Copy(ioutil.Discard, r.Body) // Ditch the entire request
 		defer r.Body.Close()
+
+		if err == errs.ErrMediaNotAllowed {
+			return client.BadRequest("Media content type not allowed on this server")
+		}
 
 		log.Error("Unexpected error storing media: " + err.Error())
 		return client.InternalServerError("Unexpected Error")

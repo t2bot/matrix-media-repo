@@ -75,6 +75,12 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/h2non/filetype",
+			"repository": "https://github.com/h2non/filetype",
+			"revision": "3af83f124ffa7608154f68763a5d668359a20419",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/howeyc/gopass",
 			"repository": "https://github.com/howeyc/gopass",
 			"revision": "bf9dde6d0d2c004a008c27aaee91170c786f6db8",
@@ -159,6 +165,12 @@
 			"branch": "go1"
 		},
 		{
+			"importpath": "github.com/ryanuber/go-glob",
+			"repository": "https://github.com/ryanuber/go-glob",
+			"revision": "256dc444b735e061061cf46c809487313d5b0065",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/sirupsen/logrus",
 			"repository": "https://github.com/sirupsen/logrus",
 			"revision": "89742aefa4b206dcf400792f3bd35b542998eb3b",
@@ -226,6 +238,20 @@
 			"revision": "6dc17368e09b0e8634d71cac8168d853e869a0c7",
 			"branch": "master",
 			"path": "/rate"
+		},
+		{
+			"importpath": "gopkg.in/h2non/filetype.v1/matchers",
+			"repository": "https://gopkg.in/h2non/filetype.v1",
+			"revision": "cc14fdc9ca0e4c2bafad7458f6ff79fd3947cfbb",
+			"branch": "master",
+			"path": "/matchers"
+		},
+		{
+			"importpath": "gopkg.in/h2non/filetype.v1/types",
+			"repository": "https://gopkg.in/h2non/filetype.v1",
+			"revision": "cc14fdc9ca0e4c2bafad7458f6ff79fd3947cfbb",
+			"branch": "master",
+			"path": "/types"
 		},
 		{
 			"importpath": "gopkg.in/yaml.v2",
