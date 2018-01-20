@@ -1,5 +1,7 @@
 package types
 
+import "io"
+
 type Media struct {
 	Origin      string
 	MediaId     string
@@ -10,6 +12,12 @@ type Media struct {
 	SizeBytes   int64
 	Location    string
 	CreationTs  int64
+}
+
+type StreamedMedia struct {
+	Media  *Media
+	Thumbnail *Thumbnail // Only set if the media represents a thumbnail
+	Stream io.ReadCloser
 }
 
 func (m *Media) MxcUri() string {

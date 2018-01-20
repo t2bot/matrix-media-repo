@@ -7,7 +7,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/client"
-	"github.com/turt2live/matrix-media-repo/services/media_service"
+	"github.com/turt2live/matrix-media-repo/media_cache"
 	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/errs"
 )
@@ -36,9 +36,9 @@ func DownloadMedia(w http.ResponseWriter, r *http.Request, log *logrus.Entry) in
 		"filename": filename,
 	})
 
-	svc := media_service.New(r.Context(), log)
+	mediaCache := media_cache.Create(r.Context(), log)
 
-	streamedMedia, err := svc.GetStreamedMedia(server, mediaId)
+	streamedMedia, err := mediaCache.GetMedia(server, mediaId)
 	if err != nil {
 		if err == errs.ErrMediaNotFound {
 			return client.NotFoundError()

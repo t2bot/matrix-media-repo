@@ -9,7 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/client"
 	"github.com/turt2live/matrix-media-repo/config"
-	"github.com/turt2live/matrix-media-repo/services/media_service"
+	"github.com/turt2live/matrix-media-repo/media_cache"
 	"github.com/turt2live/matrix-media-repo/services/thumbnail_service"
 	"github.com/turt2live/matrix-media-repo/util/errs"
 )
@@ -70,10 +70,10 @@ func ThumbnailMedia(w http.ResponseWriter, r *http.Request, log *logrus.Entry) i
 		"requestedAnimated": animated,
 	})
 
-	mediaSvc := media_service.New(r.Context(), log)
+	mediaCache := media_cache.Create(r.Context(), log)
 	thumbSvc := thumbnail_service.New(r.Context(), log)
 
-	media, err := mediaSvc.GetMedia(server, mediaId)
+	media, err := mediaCache.GetRawMedia(server, mediaId)
 	if err != nil {
 		if err == errs.ErrMediaNotFound {
 			return client.NotFoundError()
