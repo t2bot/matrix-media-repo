@@ -16,7 +16,6 @@ type Media struct {
 
 type StreamedMedia struct {
 	Media  *Media
-	Thumbnail *Thumbnail // Only set if the media represents a thumbnail
 	Stream io.ReadCloser
 }
 

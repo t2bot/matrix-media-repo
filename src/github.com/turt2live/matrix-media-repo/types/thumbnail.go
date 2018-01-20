@@ -1,5 +1,7 @@
 package types
 
+import "io"
+
 type Thumbnail struct {
 	Origin      string
 	MediaId     string
@@ -11,4 +13,9 @@ type Thumbnail struct {
 	SizeBytes   int64
 	Location    string
 	CreationTs  int64
+}
+
+type StreamedThumbnail struct {
+	Thumbnail *Thumbnail
+	Stream    io.ReadCloser
 }

@@ -63,7 +63,7 @@ func thumbnailWorkFn(request *resource_handler.WorkRequest) interface{} {
 
 	ctx := context.TODO() // TODO: Should we use a real context?
 
-	thumbnailer := NewThumbnailer(ctx, log)
+	thumbnailer := newThumbnailer(ctx, log)
 	generated, err := thumbnailer.GenerateThumbnail(info.media, info.width, info.height, info.method, info.animated, info.forceGeneration)
 	if err != nil {
 		return &thumbnailResponse{err: err}

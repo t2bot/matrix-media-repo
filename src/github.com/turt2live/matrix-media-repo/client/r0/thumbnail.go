@@ -2,7 +2,6 @@ package r0
 
 import (
 	"net/http"
-	"os"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -10,7 +9,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/client"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/media_cache"
-	"github.com/turt2live/matrix-media-repo/services/thumbnail_service"
 	"github.com/turt2live/matrix-media-repo/util/errs"
 )
 
@@ -71,9 +69,8 @@ func ThumbnailMedia(w http.ResponseWriter, r *http.Request, log *logrus.Entry) i
 	})
 
 	mediaCache := media_cache.Create(r.Context(), log)
-	thumbSvc := thumbnail_service.New(r.Context(), log)
 
-	media, err := mediaCache.GetRawMedia(server, mediaId)
+	streamedThumbnail, err := mediaCache.GetThumbnail(server, mediaId, width, height, method, animated)
 	if err != nil {
 		if err == errs.ErrMediaNotFound {
 			return client.NotFoundError()
@@ -84,37 +81,10 @@ func ThumbnailMedia(w http.ResponseWriter, r *http.Request, log *logrus.Entry) i
 		return client.InternalServerError("Unexpected Error")
 	}
 
-	thumb, err := thumbSvc.GetThumbnail(media, width, height, method, animated)
-	if err != nil {
-		fstream, errF := os.Open(media.Location)
-		if errF != nil {
-			log.Error("Unexpected error opening media: " + errF.Error())
-			return client.InternalServerError("Unexpected Error")
-		}
-
-		if err == errs.ErrMediaTooLarge {
-			log.Warn("Media too large to thumbnail, returning source image instead")
-			return &DownloadMediaResponse{
-				ContentType: media.ContentType,
-				SizeBytes:   media.SizeBytes,
-				Data:        fstream,
-				Filename:    "thumbnail",
-			}
-		}
-		log.Error("Unexpected error getting thumbnail: " + err.Error())
-		return client.InternalServerError("Unexpected Error")
-	}
-
-	fstream, err := os.Open(thumb.Location)
-	if err != nil {
-		log.Error("Unexpected error opening thumbnail media: " + err.Error())
-		return client.InternalServerError("Unexpected Error")
-	}
-
 	return &DownloadMediaResponse{
-		ContentType: thumb.ContentType,
-		SizeBytes:   thumb.SizeBytes,
-		Data:        fstream,
+		ContentType: streamedThumbnail.Thumbnail.ContentType,
+		SizeBytes:   streamedThumbnail.Thumbnail.SizeBytes,
+		Data:        streamedThumbnail.Stream,
 		Filename:    "thumbnail",
 	}
 }

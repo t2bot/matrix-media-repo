@@ -45,21 +45,17 @@ func New(maxAgeMinutes int) (*DownloadTracker) {
 	}
 }
 
-func (d *DownloadTracker) getCacheKey(server string, mediaId string) (string) {
-	return server + "/" + mediaId
-}
-
-func (d *DownloadTracker) NumDownloads(server string, mediaId string) (int) {
-	item, found := d.cache.Get(d.getCacheKey(server, mediaId))
+func (d *DownloadTracker) NumDownloads(recordId string) (int) {
+	item, found := d.cache.Get(recordId)
 	if !found {
 		return 0
 	}
 
-	return d.recountDownloads(item.(*mediaRecord), server, mediaId)
+	return d.recountDownloads(item.(*mediaRecord), recordId)
 }
 
-func (d *DownloadTracker) Increment(server string, mediaId string) (int) {
-	item, found := d.cache.Get(d.getCacheKey(server, mediaId))
+func (d *DownloadTracker) Increment(recordId string) (int) {
+	item, found := d.cache.Get(recordId)
 	var record *mediaRecord
 	if !found {
 		record = &mediaRecord{buckets: list.New()}
@@ -87,10 +83,10 @@ func (d *DownloadTracker) Increment(server string, mediaId string) (int) {
 		}
 	}
 
-	return d.recountDownloads(record, server, mediaId)
+	return d.recountDownloads(record, recordId)
 }
 
-func (d *DownloadTracker) recountDownloads(record *mediaRecord, server string, mediaId string) int {
+func (d *DownloadTracker) recountDownloads(record *mediaRecord, recordId string) int {
 	currentBucketTs := util.NowMillis() / 60000 // minutes
 	changed := false
 
@@ -114,7 +110,7 @@ func (d *DownloadTracker) recountDownloads(record *mediaRecord, server string, m
 
 	if changed || downloads != record.downloads {
 		record.downloads = downloads
-		d.cache.Set(d.getCacheKey(server, mediaId), record, cache.DefaultExpiration)
+		d.cache.Set(recordId, record, cache.DefaultExpiration)
 	}
 
 	return downloads

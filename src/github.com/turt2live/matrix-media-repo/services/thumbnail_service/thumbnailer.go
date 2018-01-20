@@ -30,7 +30,7 @@ type thumbnailer struct {
 	log *logrus.Entry
 }
 
-func NewThumbnailer(ctx context.Context, log *logrus.Entry) *thumbnailer {
+func newThumbnailer(ctx context.Context, log *logrus.Entry) *thumbnailer {
 	return &thumbnailer{ctx, log}
 }
 

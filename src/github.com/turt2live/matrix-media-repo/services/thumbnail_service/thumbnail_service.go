@@ -2,7 +2,6 @@ package thumbnail_service
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 
 	"github.com/sirupsen/logrus"
@@ -31,66 +30,11 @@ func New(ctx context.Context, log *logrus.Entry) (*thumbnailService) {
 	return &thumbnailService{store, ctx, log}
 }
 
-func (s *thumbnailService) GetThumbnail(media *types.Media, width int, height int, method string, animated bool) (*types.Thumbnail, error) {
-	if width <= 0 {
-		return nil, errors.New("width must be positive")
-	}
-	if height <= 0 {
-		return nil, errors.New("height must be positive")
-	}
-	if method != "crop" && method != "scale" {
-		return nil, errors.New("method must be crop or scale")
-	}
+func (s *thumbnailService) GetThumbnailDirect(media *types.Media, width int, height int, method string, animated bool) (*types.Thumbnail, error) {
+	return s.store.Get(media.Origin, media.MediaId, width, height, method, animated)
+}
 
-	targetWidth := width
-	targetHeight := height
-	foundFirst := false
-
-	for i := 0; i < len(config.Get().Thumbnails.Sizes); i++ {
-		size := config.Get().Thumbnails.Sizes[i]
-		lastSize := i == len(config.Get().Thumbnails.Sizes)-1
-
-		if width == size.Width && height == size.Height {
-			targetWidth = width
-			targetHeight = height
-			break
-		}
-
-		if (size.Width < width || size.Height < height) && !lastSize {
-			continue // too small
-		}
-
-		diffWidth := size.Width - width
-		diffHeight := size.Height - height
-		currDiffWidth := targetWidth - width
-		currDiffHeight := targetHeight - height
-
-		diff := diffWidth + diffHeight
-		currDiff := currDiffWidth + currDiffHeight
-
-		if !foundFirst || diff < currDiff || lastSize {
-			foundFirst = true
-			targetWidth = size.Width
-			targetHeight = size.Height
-		}
-	}
-
-	s.log = s.log.WithFields(logrus.Fields{
-		"targetWidth":  targetWidth,
-		"targetHeight": targetHeight,
-	})
-	s.log.Info("Looking up thumbnail")
-
-	thumb, err := s.store.Get(media.Origin, media.MediaId, targetWidth, targetHeight, method, animated)
-	if err != nil && err != sql.ErrNoRows {
-		s.log.Error("Unexpected error processing thumbnail lookup: " + err.Error())
-		return nil, err
-	}
-	if err != sql.ErrNoRows {
-		s.log.Info("Found existing thumbnail")
-		return thumb, nil
-	}
-
+func (s *thumbnailService) GenerateThumbnail(media *types.Media, width int, height int, method string, animated bool) (*types.Thumbnail, error) {
 	if !util.ArrayContains(supportedThumbnailTypes, media.ContentType) {
 		s.log.Warn("Cannot generate thumbnail for " + media.ContentType + " because it is not supported")
 		return nil, errors.New("cannot generate thumbnail for this media's content type")
@@ -123,6 +67,6 @@ func (s *thumbnailService) GetThumbnail(media *types.Media, width int, height in
 
 	s.log.Info("Generating new thumbnail")
 
-	result := <-getResourceHandler().GenerateThumbnail(media, targetWidth, targetHeight, method, animated, forceThumbnail)
+	result := <-getResourceHandler().GenerateThumbnail(media, width, height, method, animated, forceThumbnail)
 	return result.thumbnail, result.err
 }
