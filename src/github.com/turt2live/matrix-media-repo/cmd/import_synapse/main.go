@@ -25,7 +25,12 @@ func main() {
 	postgresDatabase := flag.String("dbName", "synapse", "The name of the synapse database")
 	baseUrl := flag.String("baseUrl", "http://localhost:8008", "The base URL to access your homeserver with")
 	serverName := flag.String("serverName", "localhost", "The name of your homeserver (eg: matrix.org)")
+	configPath := flag.String("config", "media-repo.yaml", "The path to the configuration")
+	migrationsPath := flag.String("migrations", "./migrations", "The absolute path the migrations folder")
 	flag.Parse()
+
+	config.Path = *configPath
+	config.Runtime.MigrationsPath = *migrationsPath
 
 	var realPsqlPassword string
 	if *postgresPassword == "" {
