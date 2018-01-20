@@ -57,6 +57,7 @@ type ThumbnailSize struct {
 
 type UrlPreviewsConfig struct {
 	Enabled            bool     `yaml:"enabled"`
+	NumWords           int      `yaml:"numWords"`
 	MaxPageSizeBytes   int64    `yaml:"maxPageSizeBytes"`
 	NumWorkers         int      `yaml:"numWorkers"`
 	DisallowedNetworks []string `yaml:"disallowedNetworks,flow"`
@@ -162,6 +163,7 @@ func NewDefaultConfig() *MediaRepoConfig {
 		},
 		UrlPreviews: &UrlPreviewsConfig{
 			Enabled:          true,
+			NumWords:         30,
 			MaxPageSizeBytes: 10485760, // 10mb
 			NumWorkers:       10,
 			DisallowedNetworks: []string{

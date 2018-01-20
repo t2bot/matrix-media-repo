@@ -82,7 +82,7 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) interface{} {
 	// Store the thumbnail, if there is one
 	mediaSvc := media_service.New(ctx, log)
 	if preview.Image != nil && !mediaSvc.IsTooLarge(preview.Image.ContentLength, preview.Image.ContentLengthHeader) {
-		// UploadMedia will close the read stream for the thumbnail
+		// UploadMedia will close the read stream for the thumbnail and dedupe the image
 		media, err := mediaSvc.UploadMedia(preview.Image.Data, preview.Image.ContentType, preview.Image.Filename, info.forUserId, info.onHost)
 		if err != nil {
 			log.Warn("Non-fatal error storing preview thumbnail: " + err.Error())

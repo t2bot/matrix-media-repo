@@ -8,6 +8,7 @@ import (
 	"mime"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -260,10 +261,18 @@ func calcImages(html string) []*opengraph.Image {
 }
 
 func summarize(text string) (string) {
-	text = strings.TrimSpace(text)
-	// TODO: More intelligent parsing of the body to get a summary
-	if len(text) < 200 {
+	// Normalize the whitespace to be something useful (crush it to one giant line)
+	surroundingWhitespace := regexp.MustCompile(`^[\s\p{Zs}]+|[\s\p{Zs}]+$`)
+	interiorWhitespace := regexp.MustCompile(`[\s\p{Zs}]{2,}`)
+	newlines := regexp.MustCompile(`[\r\n]`)
+	text = surroundingWhitespace.ReplaceAllString(text, "")
+	text = interiorWhitespace.ReplaceAllString(text, " ")
+	text = newlines.ReplaceAllString(text, " ")
+
+	maxWords := config.Get().UrlPreviews.NumWords
+	words := strings.Split(text, " ")
+	if len(words) < maxWords {
 		return text
 	}
-	return text[:200]
+	return strings.Join(words[:maxWords], " ")
 }

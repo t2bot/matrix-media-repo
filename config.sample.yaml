@@ -70,6 +70,7 @@ downloads:
 urlPreviews:
   enabled: true # If enabled, the preview_url routes will be accessible
   maxPageSizeBytes: 10485760 # 10MB default, 0 to disable
+  numWords: 30 # The number of words to include in a preview (maximum)
 
   # The number of workers to use when generating url previews. Raise this number if url
   # previews are slow or timing out.
