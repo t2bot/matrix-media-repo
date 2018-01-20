@@ -69,18 +69,25 @@ func main() {
 	thumbnailHandler := Handler{r0.ThumbnailMedia, hOpts}
 	previewUrlHandler := Handler{r0.PreviewUrl, hOpts}
 	identiconHandler := Handler{r0.Identicon, hOpts}
+	purgeHandler := Handler{r0.PurgeRemoteMedia, hOpts}
 
 	routes := make(map[string]*ApiRoute)
 	versions := []string{"r0", "v1"} // r0 is typically clients and v1 is typically servers
 
-	for i := 0; i < len(versions); i++ {
-		version := versions[i]
+	for _, version := range versions {
+		// Standard routes for the media repo
 		routes["/_matrix/media/"+version+"/upload"] = &ApiRoute{"POST", uploadHandler}
 		routes["/_matrix/media/"+version+"/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}"] = &ApiRoute{"GET", downloadHandler}
 		routes["/_matrix/media/"+version+"/download/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}/{filename:[a-zA-Z0-9._-]+}"] = &ApiRoute{"GET", downloadHandler}
 		routes["/_matrix/media/"+version+"/thumbnail/{server:[a-zA-Z0-9.:-_]+}/{mediaId:[a-zA-Z0-9]+}"] = &ApiRoute{"GET", thumbnailHandler}
 		routes["/_matrix/media/"+version+"/preview_url"] = &ApiRoute{"GET", previewUrlHandler}
 		routes["/_matrix/media/"+version+"/identicon/{seed:.*}"] = &ApiRoute{"GET", identiconHandler}
+
+		// Custom routes for the media repo
+		routes["/_matrix/media/"+version+"/admin/purge_remote"] = &ApiRoute{"POST", purgeHandler}
+
+		// Routes that don't fit the normal media spec
+		routes["/_matrix/client/"+version+"/admin/purge_media_cache"] = &ApiRoute{"POST", purgeHandler}
 	}
 
 	for routePath, opts := range routes {

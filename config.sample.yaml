@@ -21,6 +21,12 @@ homeservers:
     backoffAt: 10 # The number of consecutive failures in calling this homeserver before the
                   # media repository will start backing off. This defaults to 10 if not given.
 
+# These users have full access to the administrative functions of the media repository.
+# See docs/admin.md for information on what these people can do. They must belong to one of the
+# configured homeservers above.
+admins:
+  - "@your_username:server.com"
+
 # The file upload settings for the media repository
 uploads:
   maxBytes: 104857600 # 100MB default, 0 to disable

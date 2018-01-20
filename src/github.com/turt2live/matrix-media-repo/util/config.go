@@ -17,3 +17,13 @@ func GetHomeserverConfig(server string) (*config.HomeserverConfig) {
 
 	return nil
 }
+
+func IsGlobalAdmin(userId string) bool {
+	for _, admin := range config.Get().Admins {
+		if admin == userId {
+			return true
+		}
+	}
+
+	return false
+}

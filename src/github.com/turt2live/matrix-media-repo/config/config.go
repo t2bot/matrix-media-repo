@@ -91,6 +91,7 @@ type CacheConfig struct {
 type MediaRepoConfig struct {
 	General     *GeneralConfig      `yaml:"repo"`
 	Homeservers []*HomeserverConfig `yaml:"homeservers,flow"`
+	Admins      []string            `yaml:"admins,flow"`
 	Database    *DatabaseConfig     `yaml:"database"`
 	Uploads     *UploadsConfig      `yaml:"uploads"`
 	Downloads   *DownloadsConfig    `yaml:"downloads"`
@@ -147,6 +148,7 @@ func NewDefaultConfig() *MediaRepoConfig {
 			Postgres: "postgres://your_username:your_password@localhost/database_name?sslmode=disable",
 		},
 		Homeservers: []*HomeserverConfig{},
+		Admins:      []string{},
 		Uploads: &UploadsConfig{
 			MaxSizeBytes: 104857600, // 100mb
 			StoragePaths: []string{},

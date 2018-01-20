@@ -2,6 +2,7 @@ package media_service
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"strconv"
@@ -60,6 +61,47 @@ func (s *mediaService) IsTooLarge(contentLength int64, contentLengthHeader strin
 	}
 
 	return false // We can only assume
+}
+
+func (s *mediaService) PurgeRemoteMediaBefore(beforeTs int64) (int, error) {
+	origins, err := s.store.GetOrigins()
+	if err != nil {
+		return 0, err
+	}
+
+	var excludedOrigins []string
+	for _, origin := range origins {
+		if util.IsServerOurs(origin) {
+			excludedOrigins = append(excludedOrigins, origin)
+		}
+	}
+
+	oldMedia, err := s.store.GetOldMedia(excludedOrigins, beforeTs)
+	if err != nil {
+		return 0, err
+	}
+
+	s.log.Info(fmt.Sprintf("Starting removal of %d remote media files (db records will be kept)", len(oldMedia)))
+
+	removed := 0
+	for _, media := range oldMedia {
+		// Delete the file first
+		err = os.Remove(media.Location)
+		if err != nil {
+			s.log.Warn("Cannot remove media " + media.Origin + "/" + media.MediaId + " because: " + err.Error())
+		} else {
+			removed++
+			s.log.Info("Removed remote media file: " + media.Origin + "/" + media.MediaId)
+		}
+
+		// Try to remove the record from the database now
+		err = s.store.Delete(media.Origin, media.MediaId)
+		if err != nil {
+			s.log.Warn("Error removing media " + media.Origin + "/" + media.MediaId + " from database: " + err.Error())
+		}
+	}
+
+	return removed, nil
 }
 
 func (s *mediaService) UploadMedia(contents io.ReadCloser, contentType string, filename string, userId string, host string) (*types.Media, error) {
