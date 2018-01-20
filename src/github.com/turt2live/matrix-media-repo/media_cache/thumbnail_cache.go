@@ -21,7 +21,7 @@ func (c *mediaCache) getKeyForThumbnail(server string, mediaId string, width int
 }
 
 func (c *mediaCache) getThumbnailRecordId(thumbnail *types.Thumbnail) string {
-	return fmt.Sprintf("media:%s_%s_%d_%d_%s_%t", thumbnail.Origin, thumbnail.MediaId, thumbnail.Width, thumbnail.Height, thumbnail.Method, thumbnail.Animated)
+	return fmt.Sprintf("thumbnail:%s_%s_%d_%d_%s_%t", thumbnail.Origin, thumbnail.MediaId, thumbnail.Width, thumbnail.Height, thumbnail.Method, thumbnail.Animated)
 }
 
 func (c *mediaCache) GetThumbnail(server string, mediaId string, width int, height int, method string, animated bool) (*types.StreamedThumbnail, error) {
