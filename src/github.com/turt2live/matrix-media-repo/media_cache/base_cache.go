@@ -74,6 +74,12 @@ func (c *mediaCache) updateItemInCache(cacheKey string, recordId string, mediaSi
 		freeSpace := maxSpace - usedSpace
 		mediaSize := mediaSize
 
+		// Don't bother checking for space if it won't fit anyways
+		if mediaSize > maxSpace {
+			log.Warn("Media too large to cache")
+			return nil, nil
+		}
+
 		if freeSpace >= mediaSize {
 			// Perfect! It'll fit - just cache it
 			log.Info("Caching file in memory")
