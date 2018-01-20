@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/client"
+	"github.com/turt2live/matrix-media-repo/matrix"
 	"github.com/turt2live/matrix-media-repo/media_cache"
 	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/errs"
@@ -68,7 +69,7 @@ func ValidateUserCanDownload(r *http.Request, log *logrus.Entry) (bool) {
 	}
 
 	accessToken := util.GetAccessTokenFromRequest(r)
-	userId, err := util.GetUserIdFromToken(r.Context(), r.Host, accessToken)
+	userId, err := matrix.GetUserIdFromToken(r.Context(), r.Host, accessToken)
 	if err != nil {
 		log.Error("Error verifying token: " + err.Error())
 	}

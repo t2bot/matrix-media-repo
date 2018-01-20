@@ -32,6 +32,12 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/cenk/backoff",
+			"repository": "https://github.com/cenk/backoff",
+			"revision": "2ea60e5f094469f9e65adb9cd103795b73ae743e",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/cupcake/sigil",
 			"repository": "https://github.com/cupcake/sigil",
 			"revision": "6bf9722f2ae82f58a0c7d48daeb40ec844b78eae",
@@ -55,6 +61,12 @@
 			"revision": "41a3523719dfbe7e8f853fbd4061867543db5270",
 			"branch": "master",
 			"path": "/opengraph"
+		},
+		{
+			"importpath": "github.com/facebookgo/clock",
+			"repository": "https://github.com/facebookgo/clock",
+			"revision": "600d898af40aa09a7a93ecb9265d87b0504b6f03",
+			"branch": "master"
 		},
 		{
 			"importpath": "github.com/gorilla/mux",
@@ -132,6 +144,12 @@
 			"importpath": "github.com/rifflock/lfshook",
 			"repository": "https://github.com/rifflock/lfshook",
 			"revision": "3bcf86f879c771238f8a67832a1af71308801a47",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/rubyist/circuitbreaker",
+			"repository": "https://github.com/rubyist/circuitbreaker",
+			"revision": "2074adba5ddc7d5f7559448a9c3066573521c5bf",
 			"branch": "master"
 		},
 		{

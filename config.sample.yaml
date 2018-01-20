@@ -18,6 +18,8 @@ homeservers:
   - name: t2bot.io # This should match the Host header given to the media repo
     downloadRequiresAuth: false # Set to true to require auth on downloads and identicons
     csApi: "https://t2bot.io/" # The base URL to where the homeserver can actually be reached
+    backoffAt: 10 # The number of consecutive failures in calling this homeserver before the
+                  # media repository will start backing off. This defaults to 10 if not given.
 
 # The file upload settings for the media repository
 uploads:

@@ -7,6 +7,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/client"
+	"github.com/turt2live/matrix-media-repo/matrix"
 	"github.com/turt2live/matrix-media-repo/services/media_service"
 	"github.com/turt2live/matrix-media-repo/util"
 )
@@ -17,7 +18,7 @@ type MediaUploadedResponse struct {
 
 func UploadMedia(w http.ResponseWriter, r *http.Request, log *logrus.Entry) interface{} {
 	accessToken := util.GetAccessTokenFromRequest(r)
-	userId, err := util.GetUserIdFromToken(r.Context(), r.Host, accessToken)
+	userId, err := matrix.GetUserIdFromToken(r.Context(), r.Host, accessToken)
 	if err != nil || userId == "" {
 		if err != nil {
 			log.Error("Error verifying token: " + err.Error())
