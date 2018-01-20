@@ -50,10 +50,8 @@ func (s *urlService) GetPreview(urlStr string, onHost string, forUserId string, 
 	})
 
 	cached, err := s.store.GetPreview(urlStr, atTs)
-	if err != nil {
-		s.log.Error("Error getting cached URL: " + err.Error())
-	}
 	if err != nil && err != sql.ErrNoRows {
+		s.log.Error("Error getting cached URL: " + err.Error())
 		return nil, err
 	}
 	if err != sql.ErrNoRows {
