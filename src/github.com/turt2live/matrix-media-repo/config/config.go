@@ -36,9 +36,10 @@ type UploadsConfig struct {
 }
 
 type DownloadsConfig struct {
-	MaxSizeBytes int64        `yaml:"maxBytes"`
-	NumWorkers   int          `yaml:"numWorkers"`
-	Cache        *CacheConfig `yaml:"cache"`
+	MaxSizeBytes        int64        `yaml:"maxBytes"`
+	NumWorkers          int          `yaml:"numWorkers"`
+	FailureCacheMinutes int          `yaml:"failureCacheMinutes"`
+	Cache               *CacheConfig `yaml:"cache"`
 }
 
 type ThumbnailsConfig struct {
@@ -149,8 +150,9 @@ func NewDefaultConfig() *MediaRepoConfig {
 			StoragePaths: []string{},
 		},
 		Downloads: &DownloadsConfig{
-			MaxSizeBytes: 104857600, // 100mb
-			NumWorkers:   10,
+			MaxSizeBytes:        104857600, // 100mb
+			NumWorkers:          10,
+			FailureCacheMinutes: 15,
 			Cache: &CacheConfig{
 				Enabled:               true,
 				MaxSizeBytes:          1048576000, // 1gb

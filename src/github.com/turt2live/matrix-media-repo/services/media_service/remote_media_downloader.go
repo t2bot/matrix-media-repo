@@ -6,8 +6,11 @@ import (
 	"io"
 	"mime"
 	"strconv"
+	"sync"
+	"time"
 
 	"github.com/matrix-org/gomatrixserverlib"
+	"github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/util/errs"
@@ -24,24 +27,48 @@ type remoteMediaDownloader struct {
 	log *logrus.Entry
 }
 
+var downloadErrorsCache *cache.Cache
+var downloadErrorCacheSingletonLock = &sync.Once{}
+
 func newRemoteMediaDownloader(ctx context.Context, log *logrus.Entry) *remoteMediaDownloader {
 	return &remoteMediaDownloader{ctx, log}
 }
 
 func (r *remoteMediaDownloader) Download(server string, mediaId string) (*downloadedMedia, error) {
+	if downloadErrorsCache == nil {
+		downloadErrorCacheSingletonLock.Do(func() {
+			cacheTime := time.Duration(config.Get().Downloads.FailureCacheMinutes) * time.Minute
+			downloadErrorsCache = cache.New(cacheTime, cacheTime*2)
+		})
+	}
+
+	cacheKey := server + "/" + mediaId
+	item, found := downloadErrorsCache.Get(cacheKey)
+	if found {
+		r.log.Warn("Returning cached error for remote media download failure")
+		return nil, item.(error)
+	}
+
 	mtxClient := gomatrixserverlib.NewClient()
 	mtxServer := gomatrixserverlib.ServerName(server)
 	resp, err := mtxClient.CreateMediaDownloadRequest(r.ctx, mtxServer, mediaId)
 	if err != nil {
+		downloadErrorsCache.Set(cacheKey, err, cache.DefaultExpiration)
 		return nil, err
 	}
 
 	if resp.StatusCode == 404 {
 		r.log.Info("Remote media not found")
-		return nil, errs.ErrMediaNotFound
+
+		err = errs.ErrMediaNotFound
+		downloadErrorsCache.Set(cacheKey, err, cache.DefaultExpiration)
+		return nil, err
 	} else if resp.StatusCode != 200 {
 		r.log.Info("Unknown error fetching remote media; received status code " + strconv.Itoa(resp.StatusCode))
-		return nil, errors.New("could not fetch remote media")
+
+		err = errors.New("could not fetch remote media")
+		downloadErrorsCache.Set(cacheKey, err, cache.DefaultExpiration)
+		return nil, err
 	}
 
 	contentLength, err := strconv.ParseInt(resp.Header.Get("Content-Length"), 10, 64)
@@ -50,7 +77,10 @@ func (r *remoteMediaDownloader) Download(server string, mediaId string) (*downlo
 	}
 	if config.Get().Downloads.MaxSizeBytes > 0 && contentLength > config.Get().Downloads.MaxSizeBytes {
 		r.log.Warn("Attempted to download media that was too large")
-		return nil, errs.ErrMediaTooLarge
+
+		err = errs.ErrMediaTooLarge
+		downloadErrorsCache.Set(cacheKey, err, cache.DefaultExpiration)
+		return nil, err
 	}
 
 	request := &downloadedMedia{

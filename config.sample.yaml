@@ -29,8 +29,9 @@ uploads:
   storagePaths:
     - /var/matrix/media
 
-# The file download settings when retrieving media from other servers
+# Settings related to downloading files from the media repository
 downloads:
+  # The maximum number of bytes to download from other servers
   maxBytes: 104857600 # 100MB default, 0 to disable
 
   # The number of workers to use when downloading remote media. Raise this number if remote
@@ -39,6 +40,10 @@ downloads:
   # Maximum memory usage = numWorkers multiplied by the maximum download size
   # Average memory usage is dependent on how many concurrent downloads your users are doing.
   numWorkers: 10
+
+  # How long, in minutes, to cache errors related to downloading remote media. Once this time
+  # has passed, the media is able to be re-requested.
+  failureCacheMinutes: 5
 
   # The cache control settings for downloads. This can help speed up downloads for users by
   # keeping popular media in the cache.

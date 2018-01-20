@@ -6,6 +6,7 @@ import (
 	"github.com/jeffail/tunny"
 	"github.com/olebedev/emitter"
 	"github.com/patrickmn/go-cache"
+	"github.com/sirupsen/logrus"
 )
 
 type ResourceHandler struct {
@@ -32,7 +33,7 @@ func New(workers int, fetchFn func(object *WorkRequest) interface{}) (*ResourceH
 	}
 
 	bus := &emitter.Emitter{}
-	itemCache := cache.New(1*time.Minute, 5*time.Minute) // store for 1min, clean up every 5min
+	itemCache := cache.New(30*time.Second, 1*time.Minute) // cache work for 30ish seconds
 
 	handler := &ResourceHandler{pool, bus, itemCache}
 	return handler, nil
@@ -52,7 +53,11 @@ func (h *ResourceHandler) GetResource(id string, metadata interface{}) (chan int
 
 		// If the request has already been completed, return that result
 		if res.isComplete {
-			resultChan <- res.result
+			// This is a goroutine to avoid a problem where the sending and return can race
+			go func() {
+				logrus.Warn("Returning cached reply from resource handler for resource ID " + id)
+				resultChan <- res.result
+			}()
 			return resultChan
 		}
 
