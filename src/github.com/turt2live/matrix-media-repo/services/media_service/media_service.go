@@ -63,17 +63,13 @@ func (s *mediaService) IsTooLarge(contentLength int64, contentLengthHeader strin
 	return false // We can only assume
 }
 
-func (s *mediaService) SetMediaQuarantined(media *types.Media, isQuarantined bool, allowOtherHosts bool) (error) {
-	err := s.store.SetQuarantined(media.Origin, media.MediaId, isQuarantined)
-	if err != nil {
-		return err
-	}
-	s.log.Warn("Media has been quarantined: " + media.Origin + "/" + media.MediaId)
+func (s *mediaService) SetMediaQuarantined(media *types.Media, isQuarantined bool, allowOtherHosts bool) (int, error) {
+	numQuarantined := 0
 
-	// Quarantine other media with the same hash
+	// Quarantine all media with the same hash, including the one requested
 	otherMedia, err := s.store.GetByHash(media.Sha256Hash)
 	if err != nil {
-		return err
+		return numQuarantined, err
 	}
 	for _, m := range otherMedia {
 		if m.Origin != media.Origin && !allowOtherHosts {
@@ -83,12 +79,14 @@ func (s *mediaService) SetMediaQuarantined(media *types.Media, isQuarantined boo
 
 		err := s.store.SetQuarantined(m.Origin, m.MediaId, isQuarantined)
 		if err != nil {
-			return err
+			return numQuarantined, err
 		}
+
+		numQuarantined++
 		s.log.Warn("Media has been quarantined: " + m.Origin + "/" + m.MediaId)
 	}
 
-	return nil
+	return numQuarantined, nil
 }
 
 func (s *mediaService) PurgeRemoteMediaBefore(beforeTs int64) (int, error) {
