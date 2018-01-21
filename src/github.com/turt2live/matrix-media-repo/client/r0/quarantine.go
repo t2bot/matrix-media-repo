@@ -49,7 +49,7 @@ func QuarantineMedia(w http.ResponseWriter, r *http.Request, log *logrus.Entry) 
 		return client.BadRequest("media not found or other error encountered - see logs")
 	}
 
-	err = mediaSvc.SetMediaQuarantined(media, true)
+	err = mediaSvc.SetMediaQuarantined(media, true, isAdmin)
 	if err != nil {
 		log.Error("Error quarantining media: " + err.Error())
 		return client.InternalServerError("Error quarantining media")
