@@ -95,6 +95,11 @@ func (s *mediaService) PurgeRemoteMediaBefore(beforeTs int64) (int, error) {
 
 	removed := 0
 	for _, media := range oldMedia {
+		if media.Quarantined {
+			s.log.Warn("Not removing quarantined media to maintain quarantined status: " + media.Origin + "/" + media.MediaId)
+			continue
+		}
+
 		// Delete the file first
 		err = os.Remove(media.Location)
 		if err != nil {
