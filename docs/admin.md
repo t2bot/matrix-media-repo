@@ -21,3 +21,5 @@ The quarantine media API allows administrators to quarantine media that may not 
 Remote media that has been quarantined will not be purged either. This is so that the media remains flagged as quarantined. It is safe to delete the file on your disk, but not delete the media from the database.
 
 Quarantining media will also quarantine any media with the same file hash.
+
+This API is unique in that it can allow administrators of configured homeservers to quarantine media on their homeserver only. This will not allow local administrators to quarantine remote media or media on other homeservers though, just on theirs.

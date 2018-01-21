@@ -184,3 +184,8 @@ quarantine:
 
   # If provided, the given image will be returned as a thumbnail for media that is quarantined.
   #thumbnailPath: "/path/to/thumbnail.png"
+
+  # If true, administrators of the configured homeservers may quarantine media for their server
+  # only. Global administrators can quarantine any media (local or remote) regardless of this
+  # flag.
+  allowLocalAdmins: true

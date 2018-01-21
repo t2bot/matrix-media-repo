@@ -91,6 +91,7 @@ type CacheConfig struct {
 type QuarantineConfig struct {
 	ReplaceThumbnails bool   `yaml:"replaceThumbnails"`
 	ThumbnailPath     string `yaml:"thumbnailPath"`
+	AllowLocalAdmins  bool   `yaml:"allowLocalAdmins"`
 }
 
 type MediaRepoConfig struct {
