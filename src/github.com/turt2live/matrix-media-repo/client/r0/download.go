@@ -45,6 +45,8 @@ func DownloadMedia(w http.ResponseWriter, r *http.Request, log *logrus.Entry) in
 			return client.NotFoundError()
 		} else if err == errs.ErrMediaTooLarge {
 			return client.RequestTooLarge()
+		} else if err == errs.ErrMediaQuarantined {
+			return client.NotFoundError() // We lie for security
 		}
 		log.Error("Unexpected error locating media: " + err.Error())
 		return client.InternalServerError("Unexpected Error")

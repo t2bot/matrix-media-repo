@@ -63,6 +63,16 @@ func (s *mediaService) IsTooLarge(contentLength int64, contentLengthHeader strin
 	return false // We can only assume
 }
 
+func (s *mediaService) SetMediaQuarantined(media *types.Media, isQuarantined bool) (error) {
+	err := s.store.SetQuarantined(media.Origin, media.MediaId, isQuarantined)
+	if err != nil {
+		return err
+	}
+
+	s.log.Warn("Media has been quarantined: " + media.Origin + "/" + media.MediaId)
+	return nil
+}
+
 func (s *mediaService) PurgeRemoteMediaBefore(beforeTs int64) (int, error) {
 	origins, err := s.store.GetOrigins()
 	if err != nil {

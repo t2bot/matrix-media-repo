@@ -31,6 +31,11 @@ func (c *mediaCache) GetMedia(server string, mediaId string) (*types.StreamedMed
 		return nil, err
 	}
 
+	if media.Quarantined {
+		c.log.Warn("Quarantined media accessed")
+		return nil, errs.ErrMediaQuarantined
+	}
+
 	// At this point we should have a real media object to use, so let's try caching it
 	c.incrementMediaDownloads(media)
 	cachedFile, err := c.updateMediaInCache(media)

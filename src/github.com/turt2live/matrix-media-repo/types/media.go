@@ -12,6 +12,7 @@ type Media struct {
 	SizeBytes   int64
 	Location    string
 	CreationTs  int64
+	Quarantined bool
 }
 
 type StreamedMedia struct {

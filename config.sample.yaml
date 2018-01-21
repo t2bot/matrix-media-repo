@@ -174,3 +174,13 @@ rateLimit:
 # this feature is completely optional.
 identicons:
   enabled: true
+
+# The quarantine media settings.
+quarantine:
+  # If true, when a thumbnail of quarantined media is requested an image will be returned. If no
+  # image is given in the thumbnailPath below then a generated image will be provided. This does
+  # not affect regular downloads of files.
+  replaceThumbnails: true
+
+  # If provided, the given image will be returned as a thumbnail for media that is quarantined.
+  #thumbnailPath: "/path/to/thumbnail.png"

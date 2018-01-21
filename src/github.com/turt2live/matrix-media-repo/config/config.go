@@ -88,6 +88,11 @@ type CacheConfig struct {
 	MinDownloads          int   `yaml:"minDownloads"`
 }
 
+type QuarantineConfig struct {
+	ReplaceThumbnails bool   `yaml:"replaceThumbnails"`
+	ThumbnailPath     string `yaml:"thumbnailPath"`
+}
+
 type MediaRepoConfig struct {
 	General     *GeneralConfig      `yaml:"repo"`
 	Homeservers []*HomeserverConfig `yaml:"homeservers,flow"`
@@ -99,6 +104,7 @@ type MediaRepoConfig struct {
 	UrlPreviews *UrlPreviewsConfig  `yaml:"urlPreviews"`
 	RateLimit   *RateLimitConfig    `yaml:"rateLimit"`
 	Identicons  *IdenticonsConfig   `yaml:"identicons"`
+	Quarantine  *QuarantineConfig   `yaml:"quarantine"`
 }
 
 var instance *MediaRepoConfig
@@ -211,6 +217,10 @@ func NewDefaultConfig() *MediaRepoConfig {
 		},
 		Identicons: &IdenticonsConfig{
 			Enabled: true,
+		},
+		Quarantine: &QuarantineConfig{
+			ReplaceThumbnails: true,
+			ThumbnailPath:     "",
 		},
 	}
 }

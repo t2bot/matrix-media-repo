@@ -20,12 +20,6 @@
 			"branch": "master"
 		},
 		{
-			"importpath": "github.com/alixaxel/pagerank",
-			"repository": "https://github.com/alixaxel/pagerank",
-			"revision": "14bfb4c1d88cb4ca9df65cae8e530ab6b3cd74e4",
-			"branch": "master"
-		},
-		{
 			"importpath": "github.com/andybalholm/cascadia",
 			"repository": "https://github.com/andybalholm/cascadia",
 			"revision": "349dd0209470eabd9514242c688c403c0926d266",
@@ -67,6 +61,26 @@
 			"repository": "https://github.com/facebookgo/clock",
 			"revision": "600d898af40aa09a7a93ecb9265d87b0504b6f03",
 			"branch": "master"
+		},
+		{
+			"importpath": "github.com/fogleman/gg",
+			"repository": "https://github.com/fogleman/gg",
+			"revision": "e611489b8685808726d3f603571b763982d92f67",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/golang/freetype/raster",
+			"repository": "https://github.com/golang/freetype",
+			"revision": "e2365dfdc4a05e4b8299a783240d4a7d5a65d4e4",
+			"branch": "master",
+			"path": "/raster"
+		},
+		{
+			"importpath": "github.com/golang/freetype/truetype",
+			"repository": "https://github.com/golang/freetype",
+			"revision": "e2365dfdc4a05e4b8299a783240d4a7d5a65d4e4",
+			"branch": "master",
+			"path": "/truetype"
 		},
 		{
 			"importpath": "github.com/gorilla/mux",
@@ -198,6 +212,34 @@
 			"path": "/bmp"
 		},
 		{
+			"importpath": "golang.org/x/image/draw",
+			"repository": "https://go.googlesource.com/image",
+			"revision": "12117c17ca67ffa1ce22e9409f3b0b0a93ac08c7",
+			"branch": "master",
+			"path": "/draw"
+		},
+		{
+			"importpath": "golang.org/x/image/font",
+			"repository": "https://go.googlesource.com/image",
+			"revision": "12117c17ca67ffa1ce22e9409f3b0b0a93ac08c7",
+			"branch": "master",
+			"path": "/font"
+		},
+		{
+			"importpath": "golang.org/x/image/math/f64",
+			"repository": "https://go.googlesource.com/image",
+			"revision": "12117c17ca67ffa1ce22e9409f3b0b0a93ac08c7",
+			"branch": "master",
+			"path": "/math/f64"
+		},
+		{
+			"importpath": "golang.org/x/image/math/fixed",
+			"repository": "https://go.googlesource.com/image",
+			"revision": "12117c17ca67ffa1ce22e9409f3b0b0a93ac08c7",
+			"branch": "master",
+			"path": "/math/fixed"
+		},
+		{
 			"importpath": "golang.org/x/image/tiff",
 			"repository": "https://go.googlesource.com/image",
 			"revision": "f7e31b4ea2e3413ab91b4e7d2dc83e5f8d19a44c",
@@ -238,12 +280,6 @@
 			"revision": "6dc17368e09b0e8634d71cac8168d853e869a0c7",
 			"branch": "master",
 			"path": "/rate"
-		},
-		{
-			"importpath": "gopkg.in/h2non/bimg.v1",
-			"repository": "https://gopkg.in/h2non/bimg.v1",
-			"revision": "02e621739c77c791d8c153f240b7a1f75b07816f",
-			"branch": "master"
 		},
 		{
 			"importpath": "gopkg.in/h2non/filetype.v1/matchers",

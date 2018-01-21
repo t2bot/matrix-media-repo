@@ -9,12 +9,13 @@ import (
 	"github.com/turt2live/matrix-media-repo/types"
 )
 
-const selectMedia = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, location, creation_ts FROM media WHERE origin = $1 and media_id = $2;"
-const selectMediaByHash = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, location, creation_ts FROM media WHERE sha256_hash = $1;"
-const insertMedia = "INSERT INTO media (origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, location, creation_ts) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);"
-const selectOldMedia = "SELECT m.origin, m.media_id, m.upload_name, m.content_type, m.user_id, m.sha256_hash, m.size_bytes, m.location, m.creation_ts FROM media AS m WHERE NOT(m.origin = ANY($1)) AND m.creation_ts < $2 AND (SELECT COUNT(*) FROM media AS d WHERE d.sha256_hash = m.sha256_hash AND d.creation_ts >= $2) = 0 AND (SELECT COUNT(*) FROM media AS d WHERE d.sha256_hash = m.sha256_hash AND d.origin = ANY($1)) = 0;"
+const selectMedia = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, location, creation_ts, quarantined FROM media WHERE origin = $1 and media_id = $2;"
+const selectMediaByHash = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, location, creation_ts, quarantined FROM media WHERE sha256_hash = $1;"
+const insertMedia = "INSERT INTO media (origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, location, creation_ts, quarantined) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);"
+const selectOldMedia = "SELECT m.origin, m.media_id, m.upload_name, m.content_type, m.user_id, m.sha256_hash, m.size_bytes, m.location, m.creation_ts, quarantined FROM media AS m WHERE NOT(m.origin = ANY($1)) AND m.creation_ts < $2 AND (SELECT COUNT(*) FROM media AS d WHERE d.sha256_hash = m.sha256_hash AND d.creation_ts >= $2) = 0 AND (SELECT COUNT(*) FROM media AS d WHERE d.sha256_hash = m.sha256_hash AND d.origin = ANY($1)) = 0;"
 const selectOrigins = "SELECT DISTINCT origin FROM media;"
 const deleteMedia = "DELETE FROM media WHERE origin = $1 AND media_id = $2;"
+const updateQuarantined = "UPDATE media SET quarantined = $3 WHERE origin = $1 AND media_id = $2;"
 
 type mediaStoreStatements struct {
 	selectMedia       *sql.Stmt
@@ -23,6 +24,7 @@ type mediaStoreStatements struct {
 	selectOldMedia    *sql.Stmt
 	selectOrigins     *sql.Stmt
 	deleteMedia       *sql.Stmt
+	updateQuarantined *sql.Stmt
 }
 
 type MediaStoreFactory struct {
@@ -61,6 +63,9 @@ func InitMediaStore(sqlDb *sql.DB) (*MediaStoreFactory, error) {
 	if store.stmts.deleteMedia, err = store.sqlDb.Prepare(deleteMedia); err != nil {
 		return nil, err
 	}
+	if store.stmts.updateQuarantined, err = store.sqlDb.Prepare(updateQuarantined); err != nil {
+		return nil, err
+	}
 
 	return &store, nil
 }
@@ -86,6 +91,7 @@ func (s *MediaStore) Insert(media *types.Media) (error) {
 		media.SizeBytes,
 		media.Location,
 		media.CreationTs,
+		media.Quarantined,
 	)
 	return err
 }
@@ -109,6 +115,7 @@ func (s *MediaStore) GetByHash(hash string) ([]*types.Media, error) {
 			&obj.SizeBytes,
 			&obj.Location,
 			&obj.CreationTs,
+			&obj.Quarantined,
 		)
 		if err != nil {
 			return nil, err
@@ -131,6 +138,7 @@ func (s *MediaStore) Get(origin string, mediaId string) (*types.Media, error) {
 		&m.SizeBytes,
 		&m.Location,
 		&m.CreationTs,
+		&m.Quarantined,
 	)
 	return m, err
 }
@@ -154,6 +162,7 @@ func (s *MediaStore) GetOldMedia(exceptOrigins []string, beforeTs int64) ([]*typ
 			&obj.SizeBytes,
 			&obj.Location,
 			&obj.CreationTs,
+			&obj.Quarantined,
 		)
 		if err != nil {
 			return nil, err
@@ -185,5 +194,10 @@ func (s *MediaStore) GetOrigins() ([]string, error) {
 
 func (s *MediaStore) Delete(origin string, mediaId string) (error) {
 	_, err := s.statements.deleteMedia.ExecContext(s.ctx, origin, mediaId)
+	return err
+}
+
+func (s *MediaStore) SetQuarantined(origin string, mediaId string, isQuarantined bool) (error) {
+	_, err := s.statements.updateQuarantined.ExecContext(s.ctx, origin, mediaId, isQuarantined)
 	return err
 }
