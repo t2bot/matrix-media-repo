@@ -240,6 +240,12 @@
 			"path": "/rate"
 		},
 		{
+			"importpath": "gopkg.in/h2non/bimg.v1",
+			"repository": "https://gopkg.in/h2non/bimg.v1",
+			"revision": "02e621739c77c791d8c153f240b7a1f75b07816f",
+			"branch": "master"
+		},
+		{
 			"importpath": "gopkg.in/h2non/filetype.v1/matchers",
 			"repository": "https://gopkg.in/h2non/filetype.v1",
 			"revision": "cc14fdc9ca0e4c2bafad7458f6ff79fd3947cfbb",

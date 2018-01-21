@@ -40,7 +40,15 @@ func (t *thumbnailer) GenerateThumbnail(media *types.Media, width int, height in
 		animated = false
 	}
 
-	src, err := imaging.Open(media.Location)
+	var src image.Image
+	var err error
+
+	if media.ContentType == "image/svg+xml" {
+		src, err = t.svgToImage(media)
+	} else {
+		src, err = imaging.Open(media.Location)
+	}
+
 	if err != nil {
 		return nil, err
 	}

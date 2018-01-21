@@ -14,7 +14,7 @@ import (
 )
 
 // These are the content types that we can actually thumbnail
-var supportedThumbnailTypes = []string{"image/jpeg", "image/jpg", "image/png", "image/gif"}
+var supportedThumbnailTypes = []string{"image/jpeg", "image/jpg", "image/png", "image/gif", "image/svg+xml"}
 
 // Of the supportedThumbnailTypes, these are the 'animated' types
 var animatedTypes = []string{"image/gif"}
