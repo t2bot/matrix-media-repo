@@ -113,37 +113,36 @@ func (c *mediaCache) pickThumbnailDimensions(desiredWidth int, desiredHeight int
 		return 0, 0, "", errors.New("method must be crop or scale")
 	}
 
-	targetWidth := desiredWidth
-	targetHeight := desiredHeight
-	foundFirst := false
+	foundSize := false
+	targetWidth := 0
+	targetHeight := 0
+	largestWidth := 0
+	largestHeight := 0
 
-	for i := 0; i < len(config.Get().Thumbnails.Sizes); i++ {
-		size := config.Get().Thumbnails.Sizes[i]
-		lastSize := i == len(config.Get().Thumbnails.Sizes)-1
+	for _, size := range config.Get().Thumbnails.Sizes {
+		largestWidth = util.MaxInt(largestWidth, size.Width)
+		largestHeight = util.MaxInt(largestHeight, size.Height)
 
+		// Unlikely, but if we get the exact dimensions then just use that
 		if desiredWidth == size.Width && desiredHeight == size.Height {
-			targetWidth = desiredWidth
-			targetHeight = desiredHeight
-			break
+			return size.Width, size.Height, desiredMethod, nil
 		}
 
-		if (size.Width < desiredWidth || size.Height < desiredHeight) && !lastSize {
-			continue // too small
+		// If we come across a size that's smaller, try and use that
+		if desiredWidth < size.Width && desiredHeight < size.Height {
+			// Only use our new found size if it's smaller than one we've already picked
+			if !foundSize || (targetWidth > size.Width && targetHeight > size.Height) {
+				targetWidth = size.Width
+				targetHeight = size.Height
+				foundSize = true
+			}
 		}
+	}
 
-		diffWidth := size.Width - desiredWidth
-		diffHeight := size.Height - desiredHeight
-		currDiffWidth := targetWidth - desiredWidth
-		currDiffHeight := targetHeight - desiredHeight
-
-		diff := diffWidth + diffHeight
-		currDiff := currDiffWidth + currDiffHeight
-
-		if !foundFirst || diff < currDiff || lastSize {
-			foundFirst = true
-			targetWidth = size.Width
-			targetHeight = size.Height
-		}
+	// Use the largest dimensions available if we didn't find anything
+	if !foundSize {
+		targetWidth = largestWidth
+		targetHeight = largestHeight
 	}
 
 	return targetWidth, targetHeight, desiredMethod, nil
