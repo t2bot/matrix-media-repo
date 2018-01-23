@@ -20,5 +20,5 @@ jobs:
     working_directory: /go/src/github.com/turt2live/matrix-media-repo
     steps:
       - checkout
-      - run: go get github.com/constabulary/gb...
+      - run: go get github.com/constabulary/gb/...
       - run: gb build all
