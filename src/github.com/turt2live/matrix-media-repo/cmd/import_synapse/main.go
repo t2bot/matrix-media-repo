@@ -116,7 +116,7 @@ func fetchMedia(req interface{}) interface{} {
 
 	svc := media_service.New(ctx, logrus.WithFields(logrus.Fields{}))
 	media, err := svc.GetMediaDirect(payload.serverName, record.MediaId)
-	if err == nil || err == sql.ErrNoRows || media != nil {
+	if err == nil || media != nil {
 		logrus.Info("Media already downloaded: " + payload.serverName + "/" + record.MediaId)
 		return nil
 	}
