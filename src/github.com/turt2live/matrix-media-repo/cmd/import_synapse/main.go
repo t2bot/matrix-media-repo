@@ -2,20 +2,29 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/howeyc/gopass"
+	"github.com/jeffail/tunny"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/logging"
 	"github.com/turt2live/matrix-media-repo/services/media_service"
 	"github.com/turt2live/matrix-media-repo/synapse"
 )
+
+type fetchRequest struct {
+	media      *synapse.LocalMedia
+	csApiUrl   string
+	serverName string
+}
 
 func main() {
 	postgresHost := flag.String("dbHost", "localhost", "The IP or hostname of the postgresql server with the synapse database")
@@ -27,6 +36,7 @@ func main() {
 	serverName := flag.String("serverName", "localhost", "The name of your homeserver (eg: matrix.org)")
 	configPath := flag.String("config", "media-repo.yaml", "The path to the configuration")
 	migrationsPath := flag.String("migrations", "./migrations", "The absolute path the migrations folder")
+	numWorkers := flag.Int("workers", 1, "The number of workers to use when downloading media. Using multiple workers risks deduplication not working as efficiently.")
 	flag.Parse()
 
 	config.Path = *configPath
@@ -70,31 +80,61 @@ func main() {
 	}
 
 	logrus.Info(fmt.Sprintf("Downloading %d media records", len(records)))
-	ctx := context.TODO()
+
+	pool, err := tunny.CreatePool(*numWorkers, fetchMedia).Open()
+	if err != nil {
+		panic(err)
+	}
+
+	numCompleted := 0
+	onComplete := func(interface{}, error) {
+		numCompleted++
+		percent := int((float32(numCompleted) / float32(len(records))) * 100)
+		logrus.Info(fmt.Sprintf("%d/%d downloaded (%d%%)", numCompleted, len(records), percent))
+	}
+
 	for i := 0; i < len(records); i++ {
 		percent := int((float32(i+1) / float32(len(records))) * 100)
 		record := records[i]
 
-		logrus.Info(fmt.Sprintf("Downloading %s (%d/%d %d%%)", record.MediaId, i+1, len(records), percent))
+		logrus.Info(fmt.Sprintf("Queuing %s (%d/%d %d%%)", record.MediaId, i+1, len(records), percent))
+		pool.SendWorkAsync(&fetchRequest{media: record, serverName: *serverName, csApiUrl: csApiUrl}, onComplete)
+	}
 
-		body, err := downloadMedia(csApiUrl, *serverName, record.MediaId)
-		if err != nil {
-			logrus.Error(err.Error())
-			continue
-		}
-
-		svc := media_service.New(ctx, logrus.WithFields(logrus.Fields{}))
-
-		_, err = svc.StoreMedia(body, record.ContentType, record.UploadName, record.UserId, *serverName, record.MediaId)
-		if err != nil {
-			logrus.Error(err.Error())
-			continue
-		}
-
-		body.Close()
+	for numCompleted < len(records)-1 {
+		logrus.Info("Waiting for import to complete...")
+		time.Sleep(1 * time.Second)
 	}
 
 	logrus.Info("Import completed")
+}
+
+func fetchMedia(req interface{}) interface{} {
+	payload := req.(*fetchRequest)
+	record := payload.media
+	ctx := context.TODO()
+
+	svc := media_service.New(ctx, logrus.WithFields(logrus.Fields{}))
+	media, err := svc.GetMediaDirect(payload.serverName, record.MediaId)
+	if err == nil || err == sql.ErrNoRows || media != nil {
+		logrus.Info("Media already downloaded: " + payload.serverName + "/" + record.MediaId)
+		return nil
+	}
+
+	body, err := downloadMedia(payload.csApiUrl, payload.serverName, record.MediaId)
+	if err != nil {
+		logrus.Error(err.Error())
+		return nil
+	}
+
+	_, err = svc.StoreMedia(body, record.ContentType, record.UploadName, record.UserId, payload.serverName, record.MediaId)
+	if err != nil {
+		logrus.Error(err.Error())
+		return nil
+	}
+
+	body.Close()
+	return nil
 }
 
 func downloadMedia(baseUrl string, serverName string, mediaId string) (io.ReadCloser, error) {
