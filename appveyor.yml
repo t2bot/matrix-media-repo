@@ -20,7 +20,7 @@ install:
   - rmdir c:\go /s /q
   - appveyor DownloadFile https://storage.googleapis.com/golang/go%GOVERSION%.windows-amd64.msi
   - msiexec /i go%GOVERSION%.windows-amd64.msi /q
-  - set PATH=c:\go\bin;c:\gopath\bin;$PATH
+  - set PATH=c:\go\bin;c:\gopath\bin;%PATH%
   - go version
   - go env
   - go get github.com/constabulary/gb/...
