@@ -31,4 +31,8 @@ build_script:
 
 artifacts:
   - path: bin/media_repo.exe
+    name: media_repo.exe
   - path: bin/import_synapse.exe
+    name: import_synapse.exe
+
+test_script: false # https://github.com/turt2live/matrix-media-repo/issues/40
