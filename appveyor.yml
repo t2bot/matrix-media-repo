@@ -30,5 +30,5 @@ build_script:
   - gb build all
 
 artifacts:
-  - bin/media-repo.exe
-  - bin/import-synapse.exe
+  - path: bin/media_repo.exe
+  - path: bin/import_synapse.exe
