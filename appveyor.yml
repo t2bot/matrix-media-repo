@@ -2,7 +2,7 @@ version: "{build}"
 
 # Source Config
 
-clone_folder: c:\gopath\src\github.com\golang\dep
+clone_folder: c:\gopath\src\github.com\turt2live\matrix-media-repo
 
 # Build host
 
