@@ -3,6 +3,7 @@
 [![#mediarepo:t2bot.io](https://img.shields.io/badge/matrix-%23mediarepo:t2bot.io-brightgreen.svg)](https://matrix.to/#/#mediarepo:t2bot.io)
 [![TravisCI badge](https://travis-ci.org/turt2live/matrix-media-repo.svg?branch=master)](https://travis-ci.org/turt2live/matrix-media-repo)
 [![AppVeyor badge](https://ci.appveyor.com/api/projects/status/github/turt2live/matrix-media-repo?branch=master&svg=true)](https://ci.appveyor.com/project/turt2live/matrix-media-repo)
+[![CircleCI](https://circleci.com/gh/turt2live/matrix-media-repo/tree/master.svg?style=svg)](https://circleci.com/gh/turt2live/matrix-media-repo/tree/master)
 
 Designed for environments with multiple homeservers, matrix-media-repo de-duplicates all media automatically, including remote content. Environments with only one homeserver can still make use of the de-duplication and performance of matrix-media-repo.
 
