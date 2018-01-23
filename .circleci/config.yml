@@ -21,4 +21,5 @@ jobs:
     steps:
       - checkout
       - run: go get github.com/constabulary/gb/...
+      - run: gb vendor restore
       - run: gb build all
