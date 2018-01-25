@@ -44,7 +44,7 @@ func (c *mediaCache) GetMedia(server string, mediaId string) (*types.StreamedMed
 	}
 
 	if cachedFile != nil {
-		return &types.StreamedMedia{Media: media, Stream: util.GetStreamFromBuffer(cachedFile.contents)}, nil
+		return &types.StreamedMedia{Media: media, Stream: util.BufferToStream(cachedFile.contents)}, nil
 	}
 
 	c.log.Info("Using media from disk")

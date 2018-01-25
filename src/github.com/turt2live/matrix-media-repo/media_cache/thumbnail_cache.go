@@ -49,7 +49,7 @@ func (c *mediaCache) GetThumbnail(server string, mediaId string, width int, heig
 			data := &bytes.Buffer{}
 			imaging.Encode(data, img, imaging.PNG)
 			return &types.StreamedThumbnail{
-				Stream: util.GetStreamFromBuffer(data),
+				Stream: util.BufferToStream(data),
 				Thumbnail: &types.Thumbnail{
 					// We lie about most of these details to maintain the contract
 					Width:       img.Bounds().Max.X,
@@ -77,7 +77,7 @@ func (c *mediaCache) GetThumbnail(server string, mediaId string, width int, heig
 	}
 
 	if cachedMedia != nil {
-		return &types.StreamedThumbnail{Thumbnail: thumbnail, Stream: util.GetStreamFromBuffer(cachedMedia.contents)}, nil
+		return &types.StreamedThumbnail{Thumbnail: thumbnail, Stream: util.BufferToStream(cachedMedia.contents)}, nil
 	}
 
 	c.log.Info("Using thumbnail from disk")
