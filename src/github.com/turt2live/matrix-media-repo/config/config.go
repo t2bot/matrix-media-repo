@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"sync"
@@ -115,11 +116,36 @@ var Path = "media-repo.yaml"
 func ReloadConfig() (error) {
 	c := NewDefaultConfig()
 
+	// Write a default config if the one given doesn't exist
+	_, err := os.Stat(Path)
+	exists := err == nil || !os.IsNotExist(err)
+	if !exists {
+		fmt.Println("Generating new configuration...")
+		configBytes, err := yaml.Marshal(c)
+		if err != nil {
+			return err
+		}
+
+		newFile, err := os.Create(Path)
+		if err != nil {
+			return err
+		}
+
+		_, err = newFile.Write(configBytes)
+		if err != nil {
+			return err
+		}
+
+		err = newFile.Close()
+		if err != nil {
+			return err
+		}
+	}
+
 	f, err := os.Open(Path)
 	if err != nil {
 		return err
 	}
-
 	defer f.Close()
 
 	buffer, err := ioutil.ReadAll(f)
