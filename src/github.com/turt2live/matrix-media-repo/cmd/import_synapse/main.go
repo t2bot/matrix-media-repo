@@ -137,7 +137,7 @@ func fetchMedia(req interface{}) interface{} {
 }
 
 func downloadMedia(baseUrl string, serverName string, mediaId string) (io.ReadCloser, error) {
-	downloadUrl := baseUrl + "/_matrix/media/r0/download/" + serverName + "/" + mediaId
+	downloadUrl := baseUrl + "/_matrix/media/v1/download/" + serverName + "/" + mediaId
 	resp, err := http.Get(downloadUrl)
 	if err != nil {
 		return nil, err
