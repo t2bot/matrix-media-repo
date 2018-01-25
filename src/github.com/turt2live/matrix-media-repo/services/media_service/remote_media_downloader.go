@@ -9,10 +9,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/matrix-org/gomatrixserverlib"
 	"github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/config"
+	"github.com/turt2live/matrix-media-repo/matrix"
 	"github.com/turt2live/matrix-media-repo/util/errs"
 )
 
@@ -49,9 +49,14 @@ func (r *remoteMediaDownloader) Download(server string, mediaId string) (*downlo
 		return nil, item.(error)
 	}
 
-	mtxClient := gomatrixserverlib.NewClient()
-	mtxServer := gomatrixserverlib.ServerName(server)
-	resp, err := mtxClient.CreateMediaDownloadRequest(r.ctx, mtxServer, mediaId)
+	baseUrl, err := matrix.GetServerApiUrl(server)
+	if err != nil {
+		downloadErrorsCache.Set(cacheKey, err, cache.DefaultExpiration)
+		return nil, err
+	}
+
+	downloadUrl := baseUrl + "/_matrix/media/v1/download/" + server + "/" + mediaId
+	resp, err := matrix.FederatedGet(downloadUrl)
 	if err != nil {
 		downloadErrorsCache.Set(cacheKey, err, cache.DefaultExpiration)
 		return nil, err

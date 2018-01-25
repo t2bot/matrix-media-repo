@@ -131,18 +131,6 @@
 			"branch": "master"
 		},
 		{
-			"importpath": "github.com/matrix-org/gomatrixserverlib",
-			"repository": "https://github.com/matrix-org/gomatrixserverlib",
-			"revision": "e46695aa9a7cd517095c9e2c518e2701eae291d5",
-			"branch": "master"
-		},
-		{
-			"importpath": "github.com/matrix-org/util",
-			"repository": "https://github.com/matrix-org/util",
-			"revision": "8b1c8ab81986c1ce7f06a52fce48f4a1156b66ee",
-			"branch": "master"
-		},
-		{
 			"importpath": "github.com/olebedev/emitter",
 			"repository": "https://github.com/olebedev/emitter",
 			"revision": "68bb25b251f61cde3824cc316f238f0da1704331",
