@@ -7,7 +7,7 @@ import (
 	"github.com/matrix-org/gomatrix"
 )
 
-func GetUserIdFromToken(ctx context.Context, serverName string, accessToken string) (string, error) {
+func GetUserIdFromToken(ctx context.Context, serverName string, accessToken string, appserviceUserId string) (string, error) {
 	hs, cb := getBreakerAndConfig(serverName)
 
 	userId := ""
@@ -18,8 +18,13 @@ func GetUserIdFromToken(ctx context.Context, serverName string, accessToken stri
 			return filterError(err, &replyError)
 		}
 
+		query := map[string]string{}
+		if appserviceUserId != "" {
+			query["user_id"] = appserviceUserId
+		}
+
 		response := &userIdResponse{}
-		url := mtxClient.BuildURL("/account/whoami")
+		url := mtxClient.BuildURLWithQuery([]string{"/account/whoami"}, query)
 		_, err = mtxClient.MakeRequest("GET", url, nil, response)
 		if err != nil {
 			return filterError(err, &replyError)

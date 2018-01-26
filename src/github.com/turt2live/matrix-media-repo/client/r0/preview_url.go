@@ -33,7 +33,8 @@ func PreviewUrl(w http.ResponseWriter, r *http.Request, log *logrus.Entry) inter
 	}
 
 	accessToken := util.GetAccessTokenFromRequest(r)
-	userId, err := matrix.GetUserIdFromToken(r.Context(), r.Host, accessToken)
+	appserviceUserId := util.GetAppserviceUserIdFromRequest(r)
+	userId, err := matrix.GetUserIdFromToken(r.Context(), r.Host, accessToken, appserviceUserId)
 	if err != nil || userId == "" {
 		if err != nil {
 			log.Error("Error verifying token: " + err.Error())

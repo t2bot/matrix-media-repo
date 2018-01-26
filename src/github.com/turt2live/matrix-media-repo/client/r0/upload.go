@@ -19,7 +19,8 @@ type MediaUploadedResponse struct {
 
 func UploadMedia(w http.ResponseWriter, r *http.Request, log *logrus.Entry) interface{} {
 	accessToken := util.GetAccessTokenFromRequest(r)
-	userId, err := matrix.GetUserIdFromToken(r.Context(), r.Host, accessToken)
+	appserviceUserId := util.GetAppserviceUserIdFromRequest(r)
+	userId, err := matrix.GetUserIdFromToken(r.Context(), r.Host, accessToken, appserviceUserId)
 	if err != nil || userId == "" {
 		if err != nil {
 			log.Error("Error verifying token: " + err.Error())
