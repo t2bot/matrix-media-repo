@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/howeyc/gopass"
@@ -86,10 +87,13 @@ func main() {
 	}
 
 	numCompleted := 0
+	lock := &sync.RWMutex{}
 	onComplete := func(interface{}, error) {
+		lock.Lock()
 		numCompleted++
 		percent := int((float32(numCompleted) / float32(len(records))) * 100)
 		logrus.Info(fmt.Sprintf("%d/%d downloaded (%d%%)", numCompleted, len(records), percent))
+		lock.Unlock()
 	}
 
 	for i := 0; i < len(records); i++ {
