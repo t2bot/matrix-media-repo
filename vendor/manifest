@@ -32,6 +32,12 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/codegangsta/negroni",
+			"repository": "https://github.com/codegangsta/negroni",
+			"revision": "ff85fb036d90eda8518001242fcded1024e05c98",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/cupcake/sigil",
 			"repository": "https://github.com/cupcake/sigil",
 			"revision": "6bf9722f2ae82f58a0c7d48daeb40ec844b78eae",
@@ -170,6 +176,12 @@
 			"importpath": "github.com/ryanuber/go-glob",
 			"repository": "https://github.com/ryanuber/go-glob",
 			"revision": "256dc444b735e061061cf46c809487313d5b0065",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/sebest/xff",
+			"repository": "https://github.com/sebest/xff",
+			"revision": "6c115e0ffa35d6a2e3f7a9e797c9cf07f0da4b9f",
 			"branch": "master"
 		},
 		{

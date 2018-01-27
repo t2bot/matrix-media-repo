@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/didip/tollbooth"
 	"github.com/gorilla/mux"
+	"github.com/sebest/xff"
 	log "github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/client"
 	"github.com/turt2live/matrix-media-repo/client/r0"
@@ -130,9 +132,15 @@ func main() {
 
 func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	r.Host = strings.Split(r.Host, ":")[0]
-	if r.Header.Get("X-Forwarded-For") != "" {
-		r.RemoteAddr = r.Header.Get("X-Forwarded-For")
+
+	raddr := xff.GetRemoteAddr(r)
+	host, _, err := net.SplitHostPort(raddr)
+	if err != nil {
+		log.Error(err)
+		host = raddr
 	}
+	r.RemoteAddr = host
+
 	contextLog := log.WithFields(log.Fields{
 		"method":        r.Method,
 		"host":          r.Host,
