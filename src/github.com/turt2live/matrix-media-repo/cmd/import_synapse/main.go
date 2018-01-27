@@ -104,7 +104,7 @@ func main() {
 		pool.SendWorkAsync(&fetchRequest{media: record, serverName: *serverName, csApiUrl: csApiUrl}, onComplete)
 	}
 
-	for numCompleted <= len(records) {
+	for numCompleted < len(records) {
 		logrus.Info("Waiting for import to complete...")
 		time.Sleep(1 * time.Second)
 	}
