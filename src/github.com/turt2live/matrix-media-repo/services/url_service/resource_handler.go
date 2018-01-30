@@ -62,7 +62,19 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) interface{} {
 	svc := New(ctx, log) // url_service (us)
 	previewer := NewOpenGraphPreviewer(ctx, log)
 	preview, err := previewer.GeneratePreview(info.urlStr)
+	if err == ErrPreviewUnsupported {
+		log.Info("OpenGraph preview for this URL is unsupported - treating it as a file")
+		log = log.WithFields(logrus.Fields{"worker_previewer": "File"})
+
+		filePreviewer := NewFilePreviewer(ctx, log)
+		preview, err = filePreviewer.GeneratePreview(info.urlStr)
+	}
 	if err != nil {
+		// Transparently convert "unsupported" to "not found" for processing
+		if err == ErrPreviewUnsupported {
+			err = errs.ErrMediaNotFound
+		}
+
 		if err == errs.ErrMediaNotFound {
 			svc.store.InsertPreviewError(info.urlStr, errs.ErrCodeNotFound)
 		} else {

@@ -8,33 +8,18 @@ import (
 	"mime"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/dyatlov/go-opengraph/opengraph"
+	"github.com/ryanuber/go-glob"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/util/errs"
 )
 
-type openGraphResult struct {
-	Url         string
-	SiteName    string
-	Type        string
-	Description string
-	Title       string
-	Image       *openGraphImage
-}
-
-type openGraphImage struct {
-	ContentType         string
-	Data                io.ReadCloser
-	Filename            string
-	ContentLength       int64
-	ContentLengthHeader string
-}
+var ogSupportedTypes = []string{"text/*"}
 
 type openGraphUrlPreviewer struct {
 	ctx context.Context
@@ -45,20 +30,25 @@ func NewOpenGraphPreviewer(ctx context.Context, log *logrus.Entry) *openGraphUrl
 	return &openGraphUrlPreviewer{ctx, log}
 }
 
-func (p *openGraphUrlPreviewer) GeneratePreview(urlStr string) (openGraphResult, error) {
-	html, err := downloadContent(urlStr, p.log)
+func (p *openGraphUrlPreviewer) GeneratePreview(urlStr string) (previewResult, error) {
+	html, err := downloadHtmlContent(urlStr, p.log)
 	if err != nil {
 		p.log.Error("Error downloading content: " + err.Error())
 
+		// Make sure the unsupported error gets passed through
+		if err == ErrPreviewUnsupported {
+			return previewResult{}, ErrPreviewUnsupported
+		}
+
 		// We'll consider it not found for the sake of processing
-		return openGraphResult{}, errs.ErrMediaNotFound
+		return previewResult{}, errs.ErrMediaNotFound
 	}
 
 	og := opengraph.NewOpenGraph()
 	err = og.ProcessHTML(strings.NewReader(html))
 	if err != nil {
 		p.log.Error("Error getting OpenGraph: " + err.Error())
-		return openGraphResult{}, err
+		return previewResult{}, err
 	}
 
 	if og.Title == "" {
@@ -75,7 +65,7 @@ func (p *openGraphUrlPreviewer) GeneratePreview(urlStr string) (openGraphResult,
 	og.Title = summarize(og.Title, config.Get().UrlPreviews.NumTitleWords, config.Get().UrlPreviews.MaxTitleLength)
 	og.Description = summarize(og.Description, config.Get().UrlPreviews.NumWords, config.Get().UrlPreviews.MaxLength)
 
-	graph := &openGraphResult{
+	graph := &previewResult{
 		Type:        og.Type,
 		Url:         og.URL,
 		Title:       og.Title,
@@ -109,7 +99,7 @@ func (p *openGraphUrlPreviewer) GeneratePreview(urlStr string) (openGraphResult,
 	return *graph, nil
 }
 
-func downloadContent(urlStr string, log *logrus.Entry) (string, error) {
+func downloadHtmlContent(urlStr string, log *logrus.Entry) (string, error) {
 	log.Info("Fetching remote content...")
 	resp, err := http.Get(urlStr)
 	if err != nil {
@@ -138,10 +128,17 @@ func downloadContent(urlStr string, log *logrus.Entry) (string, error) {
 	html := string(bytes)
 	defer resp.Body.Close()
 
+	contentType := resp.Header.Get("Content-Type")
+	for _, supportedType := range ogSupportedTypes {
+		if !glob.Glob(supportedType, contentType) {
+			return "", ErrPreviewUnsupported
+		}
+	}
+
 	return html, nil
 }
 
-func downloadImage(imageUrl string, log *logrus.Entry) (*openGraphImage, error) {
+func downloadImage(imageUrl string, log *logrus.Entry) (*previewImage, error) {
 	log.Info("Getting image from " + imageUrl)
 	resp, err := http.Get(imageUrl)
 	if err != nil {
@@ -152,7 +149,7 @@ func downloadImage(imageUrl string, log *logrus.Entry) (*openGraphImage, error) 
 		return nil, errors.New("error during transfer")
 	}
 
-	image := &openGraphImage{
+	image := &previewImage{
 		ContentType:         resp.Header.Get("Content-Type"),
 		Data:                resp.Body,
 		ContentLength:       resp.ContentLength,
@@ -262,40 +259,4 @@ func calcImages(html string) []*opengraph.Image {
 
 	img := opengraph.Image{URL: imageSrc}
 	return []*opengraph.Image{&img}
-}
-
-func summarize(text string, maxWords int, maxLength int) (string) {
-	// Normalize the whitespace to be something useful (crush it to one giant line)
-	surroundingWhitespace := regexp.MustCompile(`^[\s\p{Zs}]+|[\s\p{Zs}]+$`)
-	interiorWhitespace := regexp.MustCompile(`[\s\p{Zs}]{2,}`)
-	newlines := regexp.MustCompile(`[\r\n]`)
-	text = surroundingWhitespace.ReplaceAllString(text, "")
-	text = interiorWhitespace.ReplaceAllString(text, " ")
-	text = newlines.ReplaceAllString(text, " ")
-
-	words := strings.Split(text, " ")
-	result := text
-	if len(words) >= maxWords {
-		result = strings.Join(words[:maxWords], " ")
-	}
-
-	if len(result) > maxLength {
-		// First try trimming off the last word
-		words = strings.Split(result, " ")
-		newResult := words[0]
-		for _, word := range words {
-			if len(newResult+" "+word) > maxLength {
-				break
-			}
-			newResult = newResult + " " + word
-		}
-		result = newResult
-	}
-
-	if len(result) > maxLength {
-		// It's still too long, just trim the thing and add an ellipsis
-		result = result[:maxLength] + "..."
-	}
-
-	return result
 }
