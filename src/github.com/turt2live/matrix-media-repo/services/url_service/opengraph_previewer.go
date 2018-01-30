@@ -72,8 +72,8 @@ func (p *openGraphUrlPreviewer) GeneratePreview(urlStr string) (openGraphResult,
 	}
 
 	// Be sure to trim the title and description
-	og.Title = summarize(og.Title, config.Get().UrlPreviews.NumTitleWords)
-	og.Description = summarize(og.Description, config.Get().UrlPreviews.NumWords)
+	og.Title = summarize(og.Title, config.Get().UrlPreviews.NumTitleWords, config.Get().UrlPreviews.MaxTitleLength)
+	og.Description = summarize(og.Description, config.Get().UrlPreviews.NumWords, config.Get().UrlPreviews.MaxLength)
 
 	graph := &openGraphResult{
 		Type:        og.Type,
@@ -264,7 +264,7 @@ func calcImages(html string) []*opengraph.Image {
 	return []*opengraph.Image{&img}
 }
 
-func summarize(text string, maxWords int) (string) {
+func summarize(text string, maxWords int, maxLength int) (string) {
 	// Normalize the whitespace to be something useful (crush it to one giant line)
 	surroundingWhitespace := regexp.MustCompile(`^[\s\p{Zs}]+|[\s\p{Zs}]+$`)
 	interiorWhitespace := regexp.MustCompile(`[\s\p{Zs}]{2,}`)
@@ -274,8 +274,28 @@ func summarize(text string, maxWords int) (string) {
 	text = newlines.ReplaceAllString(text, " ")
 
 	words := strings.Split(text, " ")
-	if len(words) < maxWords {
-		return text
+	result := text
+	if len(words) >= maxWords {
+		result = strings.Join(words[:maxWords], " ")
 	}
-	return strings.Join(words[:maxWords], " ")
+
+	if len(result) > maxLength {
+		// First try trimming off the last word
+		words = strings.Split(result, " ")
+		newResult := words[0]
+		for _, word := range words {
+			if len(newResult+" "+word) > maxLength {
+				break
+			}
+			newResult = newResult + " " + word
+		}
+		result = newResult
+	}
+
+	if len(result) > maxLength {
+		// It's still too long, just trim the thing and add an ellipsis
+		result = result[:maxLength] + "..."
+	}
+
+	return result
 }

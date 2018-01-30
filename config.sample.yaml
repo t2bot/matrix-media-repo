@@ -90,8 +90,15 @@ downloads:
 urlPreviews:
   enabled: true # If enabled, the preview_url routes will be accessible
   maxPageSizeBytes: 10485760 # 10MB default, 0 to disable
+
+  # Note: URL previews are limited to a given number of words, which are then limited to a number
+  # of characters, taking off the last word if it needs to. This also applies for the title.
+
   numWords: 30 # The number of words to include in a preview (maximum)
+  maxLength: 200 # The maximum number of characters for a description
+
   numTitleWords: 30 # The maximum number of words to include in a preview's title
+  maxTitleLength: 100 # The maximum number of characters for a title
 
   # The number of workers to use when generating url previews. Raise this number if url
   # previews are slow or timing out.
