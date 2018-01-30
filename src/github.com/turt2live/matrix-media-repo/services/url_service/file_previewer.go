@@ -27,7 +27,7 @@ func NewFilePreviewer(ctx context.Context, log *logrus.Entry) *filePreviewer {
 }
 
 func (p *filePreviewer) GeneratePreview(urlStr string) (previewResult, error) {
-	img, err := downloadImageContent(urlStr, p.log)
+	img, err := downloadFileContent(urlStr, p.log)
 	if err != nil {
 		p.log.Error("Error downloading content: " + err.Error())
 
@@ -68,7 +68,7 @@ func (p *filePreviewer) GeneratePreview(urlStr string) (previewResult, error) {
 	return *result, nil
 }
 
-func downloadImageContent(urlStr string, log *logrus.Entry) (*previewImage, error) {
+func downloadFileContent(urlStr string, log *logrus.Entry) (*previewImage, error) {
 	log.Info("Fetching remote content...")
 	resp, err := http.Get(urlStr)
 	if err != nil {
@@ -94,6 +94,16 @@ func downloadImageContent(urlStr string, log *logrus.Entry) (*previewImage, erro
 		return nil, err
 	}
 
+	contentType := resp.Header.Get("Content-Type")
+	if len(config.Get().UrlPreviews.FilePreviewTypes) > 0 {
+		for _, allowedType := range config.Get().UrlPreviews.FilePreviewTypes {
+			if !glob.Glob(allowedType, contentType) {
+				log.Warn("Content type " + contentType + " is not allowed and therefore not supported")
+				return nil, ErrPreviewUnsupported
+			}
+		}
+	}
+
 	disposition := resp.Header.Get("Content-Disposition")
 	_, params, _ := mime.ParseMediaType(disposition)
 	filename := ""
@@ -101,7 +111,6 @@ func downloadImageContent(urlStr string, log *logrus.Entry) (*previewImage, erro
 		filename = params["filename"]
 	}
 
-	contentType := resp.Header.Get("Content-Type")
 	stream := util.BufferToStream(bytes2.NewBuffer(bytes))
 	return &previewImage{
 		Data:                stream,

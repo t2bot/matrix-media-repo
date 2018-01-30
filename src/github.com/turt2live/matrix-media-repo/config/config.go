@@ -67,6 +67,7 @@ type UrlPreviewsConfig struct {
 	MaxTitleLength     int      `yaml:"maxTitleLength"`
 	MaxPageSizeBytes   int64    `yaml:"maxPageSizeBytes"`
 	NumWorkers         int      `yaml:"numWorkers"`
+	FilePreviewTypes   []string `yaml:"filePreviewTypes,flow"`
 	DisallowedNetworks []string `yaml:"disallowedNetworks,flow"`
 	AllowedNetworks    []string `yaml:"allowedNetworks,flow"`
 }
@@ -212,6 +213,9 @@ func NewDefaultConfig() *MediaRepoConfig {
 			MaxTitleLength:   100,
 			MaxPageSizeBytes: 10485760, // 10mb
 			NumWorkers:       10,
+			FilePreviewTypes: []string{
+				"image/*",
+			},
 			DisallowedNetworks: []string{
 				"127.0.0.1/8",
 				"10.0.0.0/8",

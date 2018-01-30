@@ -100,6 +100,12 @@ urlPreviews:
   numTitleWords: 30 # The maximum number of words to include in a preview's title
   maxTitleLength: 100 # The maximum number of characters for a title
 
+  # The mime types to preview when OpenGraph previews cannot be rendered. OpenGraph previews are
+  # calculated on anything matching "text/*". To have a thumbnail in the preview the URL must be
+  # an image and the image's type must be allowed by the thumbnailer.
+  filePreviewTypes:
+    - "image/*"
+
   # The number of workers to use when generating url previews. Raise this number if url
   # previews are slow or timing out.
   #
