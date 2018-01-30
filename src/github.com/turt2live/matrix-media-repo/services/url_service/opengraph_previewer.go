@@ -71,11 +71,15 @@ func (p *openGraphUrlPreviewer) GeneratePreview(urlStr string) (openGraphResult,
 		og.Images = calcImages(html)
 	}
 
+	// Be sure to trim the title and description
+	og.Title = summarize(og.Title, config.Get().UrlPreviews.NumTitleWords)
+	og.Description = summarize(og.Description, config.Get().UrlPreviews.NumWords)
+
 	graph := &openGraphResult{
 		Type:        og.Type,
 		Url:         og.URL,
 		Title:       og.Title,
-		Description: summarize(og.Description),
+		Description: og.Description,
 		SiteName:    og.SiteName,
 	}
 
@@ -260,7 +264,7 @@ func calcImages(html string) []*opengraph.Image {
 	return []*opengraph.Image{&img}
 }
 
-func summarize(text string) (string) {
+func summarize(text string, maxWords int) (string) {
 	// Normalize the whitespace to be something useful (crush it to one giant line)
 	surroundingWhitespace := regexp.MustCompile(`^[\s\p{Zs}]+|[\s\p{Zs}]+$`)
 	interiorWhitespace := regexp.MustCompile(`[\s\p{Zs}]{2,}`)
@@ -269,7 +273,6 @@ func summarize(text string) (string) {
 	text = interiorWhitespace.ReplaceAllString(text, " ")
 	text = newlines.ReplaceAllString(text, " ")
 
-	maxWords := config.Get().UrlPreviews.NumWords
 	words := strings.Split(text, " ")
 	if len(words) < maxWords {
 		return text
