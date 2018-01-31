@@ -94,11 +94,11 @@ urlPreviews:
   # Note: URL previews are limited to a given number of words, which are then limited to a number
   # of characters, taking off the last word if it needs to. This also applies for the title.
 
-  numWords: 30 # The number of words to include in a preview (maximum)
+  numWords: 50 # The number of words to include in a preview (maximum)
   maxLength: 200 # The maximum number of characters for a description
 
   numTitleWords: 30 # The maximum number of words to include in a preview's title
-  maxTitleLength: 100 # The maximum number of characters for a title
+  maxTitleLength: 150 # The maximum number of characters for a title
 
   # The mime types to preview when OpenGraph previews cannot be rendered. OpenGraph previews are
   # calculated on anything matching "text/*". To have a thumbnail in the preview the URL must be

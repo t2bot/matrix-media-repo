@@ -207,10 +207,10 @@ func NewDefaultConfig() *MediaRepoConfig {
 		},
 		UrlPreviews: &UrlPreviewsConfig{
 			Enabled:          true,
-			NumWords:         30,
+			NumWords:         50,
 			NumTitleWords:    30,
 			MaxLength:        200,
-			MaxTitleLength:   100,
+			MaxTitleLength:   150,
 			MaxPageSizeBytes: 10485760, // 10mb
 			NumWorkers:       10,
 			FilePreviewTypes: []string{
