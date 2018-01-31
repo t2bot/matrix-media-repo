@@ -44,7 +44,7 @@ func summarize(text string, maxWords int, maxLength int) (string) {
 	if len(result) > maxLength {
 		// First try trimming off the last word
 		words = strings.Split(result, " ")
-		newResult := words[0]
+		newResult := ""
 		for _, word := range words {
 			if len(newResult+" "+word) > maxLength {
 				break
