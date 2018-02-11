@@ -15,15 +15,19 @@ import (
 var apiUrlCacheInstance *cache.Cache
 var apiUrlSingletonLock = &sync.Once{}
 
-func GetServerApiUrl(hostname string) (string, error) {
-	logrus.Info("Getting server API URL for " + hostname)
-
-	// Check to see if we've cached this hostname at all
+func setupCache() {
 	if apiUrlCacheInstance == nil {
 		apiUrlSingletonLock.Do(func() {
 			apiUrlCacheInstance = cache.New(1*time.Hour, 2*time.Hour)
 		})
 	}
+}
+
+func GetServerApiUrl(hostname string) (string, error) {
+	logrus.Info("Getting server API URL for " + hostname)
+
+	// Check to see if we've cached this hostname at all
+	setupCache()
 	record, found := apiUrlCacheInstance.Get(hostname)
 	if found {
 		url := record.(string)
