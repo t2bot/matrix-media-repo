@@ -76,11 +76,17 @@ func (r *remoteMediaDownloader) Download(server string, mediaId string) (*downlo
 		return nil, err
 	}
 
-	contentLength, err := strconv.ParseInt(resp.Header.Get("Content-Length"), 10, 64)
-	if err != nil {
-		return nil, err
+	var contentLength int64 = 0
+	if resp.Header.Get("Content-Length") != "" {
+		contentLength, err = strconv.ParseInt(resp.Header.Get("Content-Length"), 10, 64)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		r.log.Warn("Missing Content-Length header on response - continuing anyway")
 	}
-	if config.Get().Downloads.MaxSizeBytes > 0 && contentLength > config.Get().Downloads.MaxSizeBytes {
+
+	if contentLength > 0 && config.Get().Downloads.MaxSizeBytes > 0 && contentLength > config.Get().Downloads.MaxSizeBytes {
 		r.log.Warn("Attempted to download media that was too large")
 
 		err = errs.ErrMediaTooLarge
