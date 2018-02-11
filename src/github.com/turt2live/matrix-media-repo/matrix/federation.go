@@ -49,7 +49,12 @@ func GetServerApiUrl(hostname string) (string, error) {
 	// Note: we also ignore errors here because the hostname will fail elsewhere.
 	_, addrs, _ := net.LookupSRV("matrix", "tcp", hostname)
 	if len(addrs) > 0 {
-		url := fmt.Sprintf("https://%s:%d", addrs[0].Target, addrs[0].Port)
+		// Trim off the trailing period if there is one (golang doesn't like this)
+		realAddr := addrs[0].Target
+		if realAddr[len(realAddr)-1:] == "." {
+			realAddr = realAddr[0:len(realAddr)-1]
+		}
+		url := fmt.Sprintf("https://%s:%d", realAddr, addrs[0].Port)
 		apiUrlCacheInstance.Set(hostname, url, cache.DefaultExpiration)
 		logrus.Info("Server API URL for " + hostname + " is " + url + " (SRV)")
 		return url, nil
@@ -92,6 +97,11 @@ func FederatedGet(url string) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// TODO: Should we be following redirects?
+	//if resp.StatusCode == 301 {
+	//	return FederatedGet(resp.Header.Get("Location"))
+	//}
 
 	return resp, nil
 }
