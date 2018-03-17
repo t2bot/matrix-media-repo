@@ -68,6 +68,7 @@ func GetServerApiUrl(hostname string) (string, error) {
 }
 
 func FederatedGet(url string, realHost string) (*http.Response, error) {
+	logrus.Info("Doing federated GET to " + url + " with host " + realHost)
 	transport := &http.Transport{
 		// Based on https://github.com/matrix-org/gomatrixserverlib/blob/51152a681e69a832efcd934b60080b92bc98b286/client.go#L74-L90
 		DialTLS: func(network, addr string) (net.Conn, error) {
@@ -95,6 +96,7 @@ func FederatedGet(url string, realHost string) (*http.Response, error) {
 
 	// Override the host to be compliant with the spec
 	req.Header.Set("Host", realHost)
+	req.Host = realHost
 
 	resp, err := transport.RoundTrip(req)
 	if err != nil {
