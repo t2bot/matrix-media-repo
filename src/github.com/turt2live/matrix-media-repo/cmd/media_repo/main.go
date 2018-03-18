@@ -131,6 +131,11 @@ func main() {
 }
 
 func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	isUsingForwardedHost := false
+	if r.Header.Get("X-Forwarded-Host") != "" {
+		r.Host = r.Header.Get("X-Forwarded-Host")
+		isUsingForwardedHost = true
+	}
 	r.Host = strings.Split(r.Host, ":")[0]
 
 	raddr := xff.GetRemoteAddr(r)
@@ -142,14 +147,15 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	r.RemoteAddr = host
 
 	contextLog := log.WithFields(log.Fields{
-		"method":        r.Method,
-		"host":          r.Host,
-		"resource":      r.URL.Path,
-		"contentType":   r.Header.Get("Content-Type"),
-		"contentLength": r.ContentLength,
-		"queryString":   util.GetLogSafeQueryString(r),
-		"requestId":     h.opts.reqCounter.GetNextId(),
-		"remoteAddr":    r.RemoteAddr,
+		"method":             r.Method,
+		"host":               r.Host,
+		"usingForwardedHost": isUsingForwardedHost,
+		"resource":           r.URL.Path,
+		"contentType":        r.Header.Get("Content-Type"),
+		"contentLength":      r.ContentLength,
+		"queryString":        util.GetLogSafeQueryString(r),
+		"requestId":          h.opts.reqCounter.GetNextId(),
+		"remoteAddr":         r.RemoteAddr,
 	})
 	contextLog.Info("Received request")
 
