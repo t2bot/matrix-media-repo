@@ -60,6 +60,10 @@ func ThumbnailMedia(w http.ResponseWriter, r *http.Request, log *logrus.Entry) i
 	if method == "" {
 		method = "scale"
 	}
+	
+	if config.Get().Thumbnails.AllowAnimated && config.Get().Thumbnails.ForceAnimated {
+		animated = true
+	}
 
 	log = log.WithFields(logrus.Fields{
 		"requestedWidth":    width,
