@@ -168,6 +168,9 @@ thumbnails:
   # thumbnails, set this to false. If disabled, regular thumbnails will be returned.
   allowAnimated: true
 
+  # Default to animated thumbnails, if available
+  defaultAnimated: false
+
   # The maximum file size to thumbnail when a capable animated thumbnail is requested. If the image
   # is larger than this, the thumbnail will be generated as a static image.
   maxAnimateSizeBytes: 10485760 # 10MB default, 0 to disable
