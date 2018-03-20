@@ -34,7 +34,7 @@ func ThumbnailMedia(w http.ResponseWriter, r *http.Request, log *logrus.Entry) i
 
 	width := config.Get().Thumbnails.Sizes[0].Width
 	height := config.Get().Thumbnails.Sizes[0].Height
-	animated := false
+	animated := config.Get().Thumbnails.AllowAnimated && config.Get().Thumbnails.DefaultAnimated
 
 	if widthStr != "" {
 		parsedWidth, err := strconv.Atoi(widthStr)
@@ -59,10 +59,6 @@ func ThumbnailMedia(w http.ResponseWriter, r *http.Request, log *logrus.Entry) i
 	}
 	if method == "" {
 		method = "scale"
-	}
-	
-	if config.Get().Thumbnails.AllowAnimated && config.Get().Thumbnails.ForceAnimated {
-		animated = true
 	}
 
 	log = log.WithFields(logrus.Fields{
