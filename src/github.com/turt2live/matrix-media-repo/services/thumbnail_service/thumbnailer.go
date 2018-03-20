@@ -35,7 +35,7 @@ func newThumbnailer(ctx context.Context, log *logrus.Entry) *thumbnailer {
 }
 
 func (t *thumbnailer) GenerateThumbnail(media *types.Media, width int, height int, method string, animated bool, forceGeneration bool) (*generatedThumbnail, error) {
-	if animated && !util.ArrayContains(animatedTypes, media.ContentType) {
+	if animated && !util.ArrayContains(AnimatedTypes, media.ContentType) {
 		t.log.Warn("Attempted to animate a media record that isn't an animated type. Assuming animated=false")
 		animated = false
 	}
@@ -94,7 +94,7 @@ func (t *thumbnailer) GenerateThumbnail(media *types.Media, width int, height in
 
 	contentType := "image/png"
 	imgData := &bytes.Buffer{}
-	if config.Get().Thumbnails.AllowAnimated && animated && util.ArrayContains(animatedTypes, media.ContentType) {
+	if config.Get().Thumbnails.AllowAnimated && animated && util.ArrayContains(AnimatedTypes, media.ContentType) {
 		t.log.Info("Generating animated thumbnail")
 		contentType = "image/gif"
 

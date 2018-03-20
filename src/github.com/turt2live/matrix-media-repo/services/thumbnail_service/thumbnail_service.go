@@ -22,10 +22,10 @@ import (
 )
 
 // These are the content types that we can actually thumbnail
-var supportedThumbnailTypes = []string{"image/jpeg", "image/jpg", "image/png", "image/gif", "image/svg+xml"}
+var SupportedThumbnailTypes = []string{"image/jpeg", "image/jpg", "image/png", "image/gif", "image/svg+xml"}
 
-// Of the supportedThumbnailTypes, these are the 'animated' types
-var animatedTypes = []string{"image/gif"}
+// Of the SupportedThumbnailTypes, these are the 'animated' types
+var AnimatedTypes = []string{"image/gif"}
 
 type thumbnailService struct {
 	store *stores.ThumbnailStore
@@ -43,7 +43,7 @@ func (s *thumbnailService) GetThumbnailDirect(media *types.Media, width int, hei
 }
 
 func (s *thumbnailService) GenerateThumbnail(media *types.Media, width int, height int, method string, animated bool) (*types.Thumbnail, error) {
-	if !util.ArrayContains(supportedThumbnailTypes, media.ContentType) {
+	if !util.ArrayContains(SupportedThumbnailTypes, media.ContentType) {
 		s.log.Warn("Cannot generate thumbnail for " + media.ContentType + " because it is not supported")
 		return nil, errors.New("cannot generate thumbnail for this media's content type")
 	}
@@ -59,11 +59,7 @@ func (s *thumbnailService) GenerateThumbnail(media *types.Media, width int, heig
 	}
 
 	forceThumbnail := false
-	if animated && !util.ArrayContains(animatedTypes, media.ContentType) {
-		s.log.Warn("Cannot animate a non-animated file. Assuming animated=false")
-		return nil, errs.ErrMediaNotAnimated
-	}
-	if !animated && util.ArrayContains(animatedTypes, media.ContentType) {
+	if !animated && util.ArrayContains(AnimatedTypes, media.ContentType) {
 		// We have to force a thumbnail otherwise we'll return a non-animated file
 		forceThumbnail = true
 	}

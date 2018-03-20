@@ -69,12 +69,19 @@ func (c *mediaCache) GetThumbnail(server string, mediaId string, width int, heig
 		return nil, err
 	}
 
+	// fake the thumbnail.Animated with what was requested so that cache lookups actually work
+	thumbAnimated := thumbnail.Animated
+	thumbnail.Animated = animated
+
 	// At this point we should have a real thumbnail to use, so let's try caching it
 	c.incrementThumbnailDownloads(thumbnail)
 	cachedMedia, err := c.updateThumbnailInCache(thumbnail)
 	if err != nil {
 		return nil, err
 	}
+
+	// restore our actual thumbnail.Animation
+	thumbnail.Animated = thumbAnimated
 
 	if cachedMedia != nil {
 		return &types.StreamedThumbnail{Thumbnail: thumbnail, Stream: util.BufferToStream(cachedMedia.contents)}, nil
@@ -117,6 +124,11 @@ func (c *mediaCache) GetRawThumbnail(server string, mediaId string, width int, h
 		return nil, err
 	}
 
+	if animated && !util.ArrayContains(thumbnail_service.AnimatedTypes, media.ContentType) {
+		c.log.Warn("Cannot animate a non-animated file. Assuming animated=false")
+		animated = false
+	}
+
 	if media.Quarantined {
 		return nil, errs.ErrMediaQuarantined
 	}
@@ -133,12 +145,6 @@ func (c *mediaCache) GetRawThumbnail(server string, mediaId string, width int, h
 
 	// At this point we'll try and generate the thumbnail
 	thumb, err = thumbnailSvc.GenerateThumbnail(media, width, height, method, animated)
-	if err != nil && err == errs.ErrMediaNotAnimated {
-		c.log.Info("Re-trying with non-animated thumbnail")
-		animated = false
-		// complete re-fetch as we may be hitting cache etc.
-		return c.GetRawThumbnail(server, mediaId, width, height, method, animated)
-	}
 	if err != nil {
 		return nil, err
 	}

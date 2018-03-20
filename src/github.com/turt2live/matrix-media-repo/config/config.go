@@ -234,7 +234,7 @@ func NewDefaultConfig() *MediaRepoConfig {
 			MaxAnimateSizeBytes: 10485760, // 10mb
 			NumWorkers:          10,
 			AllowAnimated:       true,
-			DefaultAnimated:     true,
+			DefaultAnimated:     false,
 			Sizes: []*ThumbnailSize{
 				{32, 32},
 				{96, 96},
