@@ -61,7 +61,7 @@ func (s *thumbnailService) GenerateThumbnail(media *types.Media, width int, heig
 	forceThumbnail := false
 	if animated && !util.ArrayContains(animatedTypes, media.ContentType) {
 		s.log.Warn("Cannot animate a non-animated file. Assuming animated=false")
-		animated = false
+		return nil, errs.ErrMediaNotAnimated
 	}
 	if !animated && util.ArrayContains(animatedTypes, media.ContentType) {
 		// We have to force a thumbnail otherwise we'll return a non-animated file

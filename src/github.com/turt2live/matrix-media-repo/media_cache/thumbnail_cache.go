@@ -133,6 +133,12 @@ func (c *mediaCache) GetRawThumbnail(server string, mediaId string, width int, h
 
 	// At this point we'll try and generate the thumbnail
 	thumb, err = thumbnailSvc.GenerateThumbnail(media, width, height, method, animated)
+	if err != nil && err == errs.ErrMediaNotAnimated {
+		c.log.Info("Re-trying with non-animated thumbnail")
+		animated = false
+		// complete re-fetch as we may be hitting cache etc.
+		return c.GetRawThumbnail(server, mediaId, width, height, method, animated)
+	}
 	if err != nil {
 		return nil, err
 	}
