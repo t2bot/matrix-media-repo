@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"image"
-	"image/color/palette"
 	"image/draw"
 	"image/gif"
 	"os"
@@ -120,8 +119,11 @@ func (t *thumbnailer) GenerateThumbnail(media *types.Media, width int, height in
 		for i := range g.Image {
 			img := g.Image[i]
 
+			// Clear the transparency of the previous frame
+			draw.Draw(frameImg, frameImg.Bounds(), image.Transparent, image.ZP, draw.Src)
+
 			// Copy the frame to a new image and use that
-			draw.Draw(frameImg, img.Bounds(), img, image.ZP, draw.Over)
+			draw.Draw(frameImg, frameImg.Bounds(), img, image.ZP, draw.Over)
 
 			// Do the thumbnailing on the copied frame
 			frameThumb, err := thumbnailFrame(frameImg, method, width, height, imaging.Linear, nil)
@@ -131,7 +133,8 @@ func (t *thumbnailer) GenerateThumbnail(media *types.Media, width int, height in
 			}
 
 			//t.log.Info(fmt.Sprintf("Width = %d    Height = %d    FW=%d    FH=%d", width, height, frameThumb.Bounds().Max.X, frameThumb.Bounds().Max.Y))
-			targetImg := image.NewPaletted(frameThumb.Bounds(), palette.Plan9)
+
+			targetImg := image.NewPaletted(frameThumb.Bounds(), img.Palette)
 			draw.FloydSteinberg.Draw(targetImg, frameThumb.Bounds(), frameThumb, image.ZP)
 			g.Image[i] = targetImg
 		}
