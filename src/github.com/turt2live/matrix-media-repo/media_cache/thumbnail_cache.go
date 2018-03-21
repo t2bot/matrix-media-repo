@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"regexp"
 
 	"github.com/disintegration/imaging"
 	"github.com/patrickmn/go-cache"
@@ -17,6 +18,8 @@ import (
 	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/errs"
 )
+
+var regexContentType = regexp.MustCompile(`^\s*([^\/]+)\/(?:[^\.]+\.)?([^+;\s]+).*$`)
 
 func (c *mediaCache) getKeyForThumbnail(server string, mediaId string, width int, height int, method string, animated bool) string {
 	return fmt.Sprintf("thumbnail:%s_%s_%d_%d_%s_%t", server, mediaId, width, height, method, animated)
@@ -123,6 +126,9 @@ func (c *mediaCache) GetRawThumbnail(server string, mediaId string, width int, h
 	if err != nil {
 		return nil, err
 	}
+
+	// now we need to sanitize the mimetype (ContentType)
+	media.ContentType = regexContentType.ReplaceAllString(media.ContentType, `$1/$2`)
 
 	if animated && !util.ArrayContains(thumbnail_service.AnimatedTypes, media.ContentType) {
 		c.log.Warn("Cannot animate a non-animated file. Assuming animated=false")
