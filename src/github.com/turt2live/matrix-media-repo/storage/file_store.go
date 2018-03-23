@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"io"
+	"net/http"
 	"os"
 	"path"
 
@@ -101,4 +102,21 @@ func GetFileHash(filePath string) (string, error) {
 	}
 
 	return hex.EncodeToString(hasher.Sum(nil)), nil
+}
+
+func GetFileContentType(filePath string) (string, error) {
+	f, err := os.Open(filePath)
+	if err != nil {
+		return "", err
+	}
+
+	buffer := make([]byte, 512)
+
+	_, err = f.Read(buffer)
+	defer f.Close()
+	if err != nil {
+		return "", err
+	}
+
+	return http.DetectContentType(buffer), nil
 }

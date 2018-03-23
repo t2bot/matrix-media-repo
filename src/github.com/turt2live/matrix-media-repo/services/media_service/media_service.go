@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/ryanuber/go-glob"
 	"github.com/sirupsen/logrus"
@@ -29,6 +30,71 @@ func New(ctx context.Context, log *logrus.Entry) (*mediaService) {
 }
 
 func (s *mediaService) GetMediaDirect(server string, mediaId string) (*types.Media, error) {
+	// first check if we have static content to serve
+	for _, v := range config.Get().StaticContents {
+		// first check if it is for our server
+		// and check if the MXC url starts with our prefix
+		if v.Server != server || !strings.HasPrefix(mediaId, v.MxcPrefix) {
+			continue
+		}
+		
+		// okay, this is something for us to handle!
+		sanitizedMediaId := mediaId[len(v.MxcPrefix):]
+		// make sure that the media ID is actually valid (contains no /)
+		if strings.ContainsAny(sanitizedMediaId, "/") {
+			return nil, errs.ErrMediaNotFound
+		}
+		filename_nosuffix := v.FilePrefix + sanitizedMediaId
+		path := v.Directory + "/"
+		filename := filename_nosuffix
+		contentType := v.ContentType
+		if len(v.TryFiles) == 0 {
+			filename += v.FileSuffix
+		} else {
+			for _, t := range v.TryFiles {
+				filename = filename_nosuffix + t.Suffix
+				if _, err := os.Stat(path + filename); err == nil {
+					contentType = t.ContentType
+					break
+				}
+			}
+		}
+		path += filename
+		file, err := os.Open(path)
+		if err != nil {
+			return nil, errs.ErrMediaNotFound
+		}
+		fi, err := file.Stat()
+		if err != nil {
+			return nil, errs.ErrMediaNotFound
+		}
+		defer file.Close()
+		
+		hash, err := storage.GetFileHash(path)
+		if err != nil {
+			return nil, errs.ErrMediaNotFound
+		}
+		
+		if contentType == "" {
+			contentType, err = storage.GetFileContentType(path)
+			if err != nil {
+				return nil, errs.ErrMediaNotFound
+			}
+		}
+		
+		return &types.Media{
+			Origin: server,
+			MediaId: mediaId,
+			UploadName: filename,
+			ContentType: contentType,
+			UserId: "",
+			Sha256Hash: hash,
+			SizeBytes: fi.Size(),
+			Location: path,
+			CreationTs: fi.ModTime().Unix(),
+			Quarantined: false,
+		}, nil
+	}
 	return s.store.Get(server, mediaId)
 }
 
