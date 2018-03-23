@@ -208,10 +208,10 @@ quarantine:
   allowLocalAdmins: true
 
 # static content settings (all disabled by default)
-staticContent:
-  - server: t2bot.io # server for which that static content is valid
-    mxcPrefix: example # prefix for the mxc
-    directory: /path/to/folder # folder where the content is
-    filePrefix: images_ # prefix for the files to add
-    fileSuffix: .png # suffix for the files to add
-    contentType: "" # content type. Empty means autodetect
+#staticContent:
+#  - server: t2bot.io # server for which that static content is valid
+#    mxcPrefix: example # prefix for the mxc
+#    directory: /path/to/folder # folder where the content is
+#    filePrefix: images_ # prefix for the files to add
+#    fileSuffix: .png # suffix for the files to add
+#    contentType: "" # content type. Empty means autodetect
