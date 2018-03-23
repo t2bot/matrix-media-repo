@@ -77,7 +77,7 @@ func (c *mediaCache) GetRawMedia(server string, mediaId string) (*types.Media, e
 	c.log.Info("Searching for media")
 	media, err := mediaSvc.GetMediaDirect(server, mediaId)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == sql.ErrNoRows || err == errs.ErrMediaNotFound {
 			if util.IsServerOurs(server) {
 				c.log.Warn("Media not found")
 				return nil, errs.ErrMediaNotFound
