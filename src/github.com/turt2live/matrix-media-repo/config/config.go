@@ -100,13 +100,19 @@ type QuarantineConfig struct {
 	AllowLocalAdmins  bool   `yaml:"allowLocalAdmins"`
 }
 
-type StaticContentConfig struct {
-	Server      string `yaml:"server"`
-	MxcPrefix   string `yaml:"mxcPrefix"`
-	Directory   string `yaml:"directory"`
-	FilePrefix  string `yaml:"filePrefix"`
-	FileSuffix  string `yaml:"fileSuffix"`
+type StaticContentTryFiles struct {
+	Suffix      string `yaml:"suffix"`
 	ContentType string `yaml:"contentType"`
+}
+
+type StaticContentConfig struct {
+	Server      string                   `yaml:"server"`
+	MxcPrefix   string                   `yaml:"mxcPrefix"`
+	Directory   string                   `yaml:"directory"`
+	FilePrefix  string                   `yaml:"filePrefix"`
+	FileSuffix  string                   `yaml:"fileSuffix"`
+	ContentType string                   `yaml:"contentType"`
+	TryFiles    []*StaticContentTryFiles `yaml:"tryFiles"`
 }
 
 type MediaRepoConfig struct {

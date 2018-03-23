@@ -215,3 +215,10 @@ quarantine:
 #    filePrefix: images_ # prefix for the files to add
 #    fileSuffix: .png # suffix for the files to add
 #    contentType: "" # content type. Empty means autodetect
+#    tryFiles: # if this array is defined then the fileSuffix/contentType is ignored
+#      - suffix: .png
+#        contentType: image/png
+#      - suffix: .jpg
+#        contentType: image/jpeg
+#      - suffix: .gif
+#        contentType: image/gif

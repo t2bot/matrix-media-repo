@@ -44,8 +44,22 @@ func (s *mediaService) GetMediaDirect(server string, mediaId string) (*types.Med
 		if strings.ContainsAny(sanitizedMediaId, "/") {
 			return nil, errs.ErrMediaNotFound
 		}
-		filename := v.FilePrefix + sanitizedMediaId + v.FileSuffix
-		path := v.Directory + "/" + filename
+		filename_nosuffix := v.FilePrefix + sanitizedMediaId
+		path := v.Directory + "/"
+		filename := filename_nosuffix
+		contentType := v.ContentType
+		if len(v.TryFiles) == 0 {
+			filename += v.FileSuffix
+		} else {
+			for _, t := range v.TryFiles {
+				filename = filename_nosuffix + t.Suffix
+				if _, err := os.Stat(path + filename); err == nil {
+					contentType = t.ContentType
+					break
+				}
+			}
+		}
+		path += filename
 		file, err := os.Open(path)
 		if err != nil {
 			return nil, errs.ErrMediaNotFound
@@ -61,7 +75,6 @@ func (s *mediaService) GetMediaDirect(server string, mediaId string) (*types.Med
 			return nil, errs.ErrMediaNotFound
 		}
 		
-		contentType := v.ContentType
 		if contentType == "" {
 			contentType, err = storage.GetFileContentType(path)
 			if err != nil {
