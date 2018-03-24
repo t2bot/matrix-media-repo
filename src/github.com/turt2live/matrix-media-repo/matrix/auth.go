@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/matrix-org/gomatrix"
-	"github.com/sirupsen/logrus"
 )
 
 func GetUserIdFromToken(ctx context.Context, serverName string, accessToken string, appserviceUserId string) (string, error) {
@@ -24,12 +23,10 @@ func GetUserIdFromToken(ctx context.Context, serverName string, accessToken stri
 			query["user_id"] = appserviceUserId
 		}
 
-		logrus.Info("Performing whoami lookup for an access token on " + serverName)
 		response := &userIdResponse{}
 		url := mtxClient.BuildURLWithQuery([]string{"/account/whoami"}, query)
 		_, err = mtxClient.MakeRequest("GET", url, nil, response)
 		if err != nil {
-			logrus.Error(err)
 			return filterError(err, &replyError)
 		}
 
