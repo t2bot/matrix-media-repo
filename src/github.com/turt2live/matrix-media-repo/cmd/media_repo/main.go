@@ -178,36 +178,34 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	b, err := json.Marshal(res)
-	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		http.Error(w, UnkErrJson, http.StatusInternalServerError)
-		return
+	jsonStr := UnkErrJson
+	if err == nil {
+		jsonStr = string(b)
 	}
-	jsonStr := string(b)
 
 	contextLog.Info("Replying with result: " + reflect.TypeOf(res).Elem().Name() + " " + jsonStr)
 
+	statusCode := http.StatusOK
 	switch result := res.(type) {
 	case *client.ErrorResponse:
-		w.Header().Set("Content-Type", "application/json")
 		switch result.InternalCode {
 		case "M_UNKNOWN_TOKEN":
-			http.Error(w, jsonStr, http.StatusForbidden)
+			statusCode = http.StatusForbidden
 			break
 		case "M_NOT_FOUND":
-			http.Error(w, jsonStr, http.StatusNotFound)
+			statusCode = http.StatusNotFound
 			break
 		case "M_MEDIA_TOO_LARGE":
-			http.Error(w, jsonStr, http.StatusRequestEntityTooLarge)
+			statusCode = http.StatusRequestEntityTooLarge
 			break
 		case "M_BAD_REQUEST":
-			http.Error(w, jsonStr, http.StatusBadRequest)
+			statusCode = http.StatusBadRequest
 			break
 		case "M_METHOD_NOT_ALLOWED":
-			http.Error(w, jsonStr, http.StatusMethodNotAllowed)
+			statusCode = http.StatusMethodNotAllowed
 			break
 		default: // M_UNKNOWN
-			http.Error(w, jsonStr, http.StatusInternalServerError)
+			statusCode = http.StatusInternalServerError
 			break
 		}
 		break
@@ -217,16 +215,18 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Length", fmt.Sprint(result.SizeBytes))
 		defer result.Data.Close()
 		io.Copy(w, result.Data)
-		break
+		return // Prevent sending conflicting responses
 	case *r0.IdenticonResponse:
 		w.Header().Set("Content-Type", "image/png")
 		io.Copy(w, result.Avatar)
-		break
+		return // Prevent sending conflicting responses
 	default:
-		w.Header().Set("Content-Type", "application/json")
-		io.WriteString(w, jsonStr)
 		break
 	}
+
+	w.WriteHeader(statusCode)
+	w.Header().Set("Content-Type", "application/json")
+	io.WriteString(w, jsonStr)
 }
 
 func (c *requestCounter) GetNextId() string {
