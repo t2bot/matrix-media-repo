@@ -75,6 +75,7 @@ func main() {
 	quarantineHandler := Handler{r0.QuarantineMedia, hOpts}
 	quarantineRoomHandler := Handler{r0.QuarantineRoomMedia, hOpts}
 	localCopyHandler := Handler{r0.LocalCopy, hOpts}
+	infoHandler := Handler{r0.MediaInfo, hOpts}
 
 	routes := make(map[string]*ApiRoute)
 	versions := []string{"r0", "v1"} // r0 is typically clients and v1 is typically servers
@@ -93,6 +94,7 @@ func main() {
 		routes["/_matrix/media/"+version+"/admin/quarantine/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = &ApiRoute{"POST", quarantineHandler}
 		routes["/_matrix/media/"+version+"/admin/room/{roomId:[^/]+}/quarantine"] = &ApiRoute{"POST", quarantineRoomHandler}
 		routes["/_matrix/media/"+version+"/local_copy/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = &ApiRoute{"GET", localCopyHandler}
+		routes["/_matrix/media/"+version+"/info/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = &ApiRoute{"GET", infoHandler}
 
 		// Routes that don't fit the normal media spec
 		routes["/_matrix/client/"+version+"/admin/purge_media_cache"] = &ApiRoute{"POST", purgeHandler}
