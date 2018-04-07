@@ -46,7 +46,7 @@
 		{
 			"importpath": "github.com/didip/tollbooth",
 			"repository": "https://github.com/didip/tollbooth",
-			"revision": "b65680a2d5f624ed528d36f8406f31535555828a",
+			"revision": "c95eaa3ddc98f635a91e218b48727fb2e06613ea",
 			"branch": "master"
 		},
 		{

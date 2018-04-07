@@ -74,10 +74,9 @@ type UrlPreviewsConfig struct {
 }
 
 type RateLimitConfig struct {
-	// TODO: Support floats when this is fixed: https://github.com/didip/tollbooth/issues/58
-	RequestsPerSecond int64 `yaml:"requestsPerSecond"`
-	Enabled           bool  `yaml:"enabled"`
-	BurstCount        int   `yaml:"burst"`
+	RequestsPerSecond float64 `yaml:"requestsPerSecond"`
+	Enabled           bool    `yaml:"enabled"`
+	BurstCount        int     `yaml:"burst"`
 }
 
 type IdenticonsConfig struct {
@@ -251,7 +250,7 @@ func NewDefaultConfig() *MediaRepoConfig {
 		},
 		RateLimit: &RateLimitConfig{
 			Enabled:           true,
-			RequestsPerSecond: 1,
+			RequestsPerSecond: 5,
 			BurstCount:        10,
 		},
 		Identicons: &IdenticonsConfig{
