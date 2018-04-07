@@ -15,7 +15,7 @@ func GetAccessTokenFromRequest(request *http.Request) (string) {
 }
 
 func GetAppserviceUserIdFromRequest(request *http.Request) (string) {
-	return request.URL.Query().Get("userId")
+	return request.URL.Query().Get("user_id")
 }
 
 func GetLogSafeQueryString(r *http.Request) (string) {
