@@ -170,22 +170,22 @@ func calcTitle(html string) string {
 		return ""
 	}
 
-	titleText := doc.Find("title").Text()
+	titleText := doc.Find("title").First().Text()
 	if titleText != "" {
 		return titleText
 	}
 
-	h1Text := doc.Find("h1").Text()
+	h1Text := doc.Find("h1").First().Text()
 	if h1Text != "" {
 		return h1Text
 	}
 
-	h2Text := doc.Find("h2").Text()
+	h2Text := doc.Find("h2").First().Text()
 	if h2Text != "" {
 		return h2Text
 	}
 
-	h3Text := doc.Find("h3").Text()
+	h3Text := doc.Find("h3").First().Text()
 	if h3Text != "" {
 		return h3Text
 	}
@@ -199,7 +199,7 @@ func calcDescription(html string) string {
 		return ""
 	}
 
-	metaDescription, exists := doc.Find("meta[name='description']").Attr("content")
+	metaDescription, exists := doc.Find("meta[name='description']").First().Attr("content")
 	if exists && metaDescription != "" {
 		return metaDescription
 	}
