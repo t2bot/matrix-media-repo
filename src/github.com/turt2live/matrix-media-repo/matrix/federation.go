@@ -96,17 +96,13 @@ func FederatedGet(url string, realHost string) (*http.Response, error) {
 
 	// Override the host to be compliant with the spec
 	req.Header.Set("Host", realHost)
+	req.Header.Set("User-Agent", "matrix-media-repo")
 	req.Host = realHost
 
 	resp, err := transport.RoundTrip(req)
 	if err != nil {
 		return nil, err
 	}
-
-	// TODO: Should we be following redirects?
-	//if resp.StatusCode == 301 {
-	//	return FederatedGet(resp.Header.Get("Location"))
-	//}
 
 	return resp, nil
 }
