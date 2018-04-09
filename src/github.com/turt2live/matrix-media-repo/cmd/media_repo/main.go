@@ -228,8 +228,9 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		break
 	}
 
-	w.WriteHeader(statusCode)
+	// Order is important: Set headers before sending responses
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
 	io.WriteString(w, jsonStr)
 }
 
