@@ -1,25 +1,30 @@
 package matrix
 
 import (
+	"sync"
+
 	"github.com/matrix-org/gomatrix"
 	"github.com/rubyist/circuitbreaker"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
-var breakers = make(map[string]*circuit.Breaker)
+var breakers = &sync.Map{}
 
 func getBreakerAndConfig(serverName string) (*config.HomeserverConfig, *circuit.Breaker) {
 	hs := util.GetHomeserverConfig(serverName)
 
-	cb, hasCb := breakers[hs.Name]
+	var cb *circuit.Breaker
+	cbRaw, hasCb := breakers.Load(hs.Name)
 	if !hasCb {
 		backoffAt := int64(hs.BackoffAt)
 		if backoffAt <= 0 {
 			backoffAt = 10 // default to 10 for those who don't have this set
 		}
 		cb = circuit.NewConsecutiveBreaker(backoffAt)
-		breakers[hs.Name] = cb
+		breakers.Store(hs.Name, cb)
+	} else {
+		cb = cbRaw.(*circuit.Breaker)
 	}
 
 	return hs, cb
