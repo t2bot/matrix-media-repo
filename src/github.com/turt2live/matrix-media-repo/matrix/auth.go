@@ -19,7 +19,7 @@ func GetUserIdFromToken(ctx context.Context, serverName string, accessToken stri
 
 	userId := ""
 	var replyError error
-	cb.CallContext(ctx, func() error {
+	replyError = cb.CallContext(ctx, func() error {
 		mtxClient, err := gomatrix.NewClient(hs.ClientServerApi, "", accessToken)
 		if err != nil {
 			err, replyError = filterError(err)

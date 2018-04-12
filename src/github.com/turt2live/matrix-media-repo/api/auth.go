@@ -19,7 +19,6 @@ func AccessTokenRequiredRoute(next func(r *http.Request, log *logrus.Entry, user
 		appserviceUserId := util.GetAppserviceUserIdFromRequest(r)
 		userId, err := matrix.GetUserIdFromToken(r.Context(), r.Host, accessToken, appserviceUserId)
 		if err != nil || userId == "" {
-			log.Error(err)
 			if err != nil && err != matrix.ErrNoToken {
 				log.Error("Error verifying token: ", err)
 				return InternalServerError("Unexpected Error")

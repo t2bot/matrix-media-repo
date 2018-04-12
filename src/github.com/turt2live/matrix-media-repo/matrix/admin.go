@@ -13,7 +13,7 @@ func IsUserAdmin(ctx context.Context, serverName string, accessToken string) (bo
 
 	isAdmin := false
 	var replyError error
-	cb.CallContext(ctx, func() error {
+	replyError = cb.CallContext(ctx, func() error {
 		mtxClient, err := gomatrix.NewClient(hs.ClientServerApi, "", accessToken)
 		if err != nil {
 			err, replyError = filterError(err)
@@ -40,7 +40,7 @@ func ListMedia(ctx context.Context, serverName string, accessToken string, roomI
 
 	response := &mediaListResponse{}
 	var replyError error
-	cb.CallContext(ctx, func() error {
+	replyError = cb.CallContext(ctx, func() error {
 		mtxClient, err := gomatrix.NewClient(hs.ClientServerApi, "", accessToken)
 		if err != nil {
 			err, replyError = filterError(err)
