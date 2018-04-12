@@ -11,9 +11,9 @@ import (
 
 	"github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/matrix"
-	"github.com/turt2live/matrix-media-repo/util/errs"
 )
 
 type downloadedMedia struct {
@@ -65,7 +65,7 @@ func (r *remoteMediaDownloader) Download(server string, mediaId string) (*downlo
 	if resp.StatusCode == 404 {
 		r.log.Info("Remote media not found")
 
-		err = errs.ErrMediaNotFound
+		err = common.ErrMediaNotFound
 		downloadErrorsCache.Set(cacheKey, err, cache.DefaultExpiration)
 		return nil, err
 	} else if resp.StatusCode != 200 {
@@ -89,7 +89,7 @@ func (r *remoteMediaDownloader) Download(server string, mediaId string) (*downlo
 	if contentLength > 0 && config.Get().Downloads.MaxSizeBytes > 0 && contentLength > config.Get().Downloads.MaxSizeBytes {
 		r.log.Warn("Attempted to download media that was too large")
 
-		err = errs.ErrMediaTooLarge
+		err = common.ErrMediaTooLarge
 		downloadErrorsCache.Set(cacheKey, err, cache.DefaultExpiration)
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func (r *remoteMediaDownloader) Download(server string, mediaId string) (*downlo
 	request := &downloadedMedia{
 		ContentType: resp.Header.Get("Content-Type"),
 		Contents:    resp.Body,
-		//DesiredFilename (calculated below)
+		// DesiredFilename (calculated below)
 	}
 
 	_, params, err := mime.ParseMediaType(resp.Header.Get("Content-Disposition"))

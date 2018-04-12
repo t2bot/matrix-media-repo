@@ -7,10 +7,10 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
+	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/services/url_service"
 	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/errs"
 )
 
 type MatrixOpenGraph struct {
@@ -57,9 +57,9 @@ func PreviewUrl(r *http.Request, log *logrus.Entry, user api.UserInfo) interface
 	svc := url_service.New(r.Context(), log)
 	preview, err := svc.GetPreview(urlStr, r.Host, user.UserId, ts)
 	if err != nil {
-		if err == errs.ErrMediaNotFound || err == errs.ErrHostNotFound {
+		if err == common.ErrMediaNotFound || err == common.ErrHostNotFound {
 			return api.NotFoundError()
-		} else if err == errs.ErrInvalidHost || err == errs.ErrHostBlacklisted {
+		} else if err == common.ErrInvalidHost || err == common.ErrHostBlacklisted {
 			return api.BadRequest(err.Error())
 		} else {
 			return api.InternalServerError("unexpected error during request")

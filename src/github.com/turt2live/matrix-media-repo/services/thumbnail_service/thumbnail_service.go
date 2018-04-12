@@ -12,12 +12,12 @@ import (
 	"github.com/fogleman/gg"
 	"github.com/golang/freetype/truetype"
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/stores"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/errs"
 	"golang.org/x/image/font/gofont/gosmallcaps"
 )
 
@@ -66,7 +66,7 @@ func (s *thumbnailService) GenerateThumbnail(media *types.Media, width int, heig
 
 	if media.SizeBytes > config.Get().Thumbnails.MaxSourceBytes {
 		s.log.Warn("Media too large to thumbnail")
-		return nil, errs.ErrMediaTooLarge
+		return nil, common.ErrMediaTooLarge
 	}
 
 	s.log.Info("Generating new thumbnail")

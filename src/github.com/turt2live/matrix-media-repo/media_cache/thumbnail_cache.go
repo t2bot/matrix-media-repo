@@ -12,11 +12,11 @@ import (
 	"github.com/disintegration/imaging"
 	"github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/services/thumbnail_service"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/errs"
 )
 
 var regexContentType = regexp.MustCompile(`^\s*([^\/]+)\/(?:[^\.]+\.)?([^+;\s]+).*$`)
@@ -37,11 +37,11 @@ func (c *mediaCache) GetThumbnail(server string, mediaId string, width int, heig
 
 	thumbnail, err := c.GetRawThumbnail(server, mediaId, width, height, method, animated)
 	if err != nil {
-		if err == errs.ErrMediaQuarantined {
+		if err == common.ErrMediaQuarantined {
 			c.log.Warn("Quarantined media accessed")
 		}
 
-		if err == errs.ErrMediaQuarantined && config.Get().Quarantine.ReplaceThumbnails {
+		if err == common.ErrMediaQuarantined && config.Get().Quarantine.ReplaceThumbnails {
 			c.log.Info("Replacing thumbnail with a quarantined icon")
 			svc := thumbnail_service.New(c.ctx, c.log)
 			img, err := svc.GenerateQuarantineThumbnail(server, mediaId, width, height)
@@ -136,7 +136,7 @@ func (c *mediaCache) GetRawThumbnail(server string, mediaId string, width int, h
 	}
 
 	if media.Quarantined {
-		return nil, errs.ErrMediaQuarantined
+		return nil, common.ErrMediaQuarantined
 	}
 
 	thumb, err := thumbnailSvc.GetThumbnailDirect(media, width, height, method, animated)

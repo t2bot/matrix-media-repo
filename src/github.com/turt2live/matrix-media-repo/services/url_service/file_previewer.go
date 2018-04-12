@@ -12,9 +12,9 @@ import (
 
 	"github.com/ryanuber/go-glob"
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/errs"
 )
 
 type filePreviewer struct {
@@ -37,7 +37,7 @@ func (p *filePreviewer) GeneratePreview(urlStr string) (previewResult, error) {
 		}
 
 		// We'll consider it not found for the sake of processing
-		return previewResult{}, errs.ErrMediaNotFound
+		return previewResult{}, common.ErrMediaNotFound
 	}
 
 	description := ""
@@ -80,7 +80,7 @@ func downloadFileContent(urlStr string, log *logrus.Entry) (*previewImage, error
 	}
 
 	if config.Get().UrlPreviews.MaxPageSizeBytes > 0 && resp.ContentLength >= 0 && resp.ContentLength > config.Get().UrlPreviews.MaxPageSizeBytes {
-		return nil, errs.ErrMediaTooLarge
+		return nil, common.ErrMediaTooLarge
 	}
 
 	var reader io.Reader

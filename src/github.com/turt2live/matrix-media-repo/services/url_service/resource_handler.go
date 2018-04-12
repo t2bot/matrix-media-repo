@@ -7,12 +7,12 @@ import (
 
 	"github.com/disintegration/imaging"
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/resource_handler"
 	"github.com/turt2live/matrix-media-repo/services/media_service"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/errs"
 )
 
 type urlResourceHandler struct {
@@ -72,13 +72,13 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) interface{} {
 	if err != nil {
 		// Transparently convert "unsupported" to "not found" for processing
 		if err == ErrPreviewUnsupported {
-			err = errs.ErrMediaNotFound
+			err = common.ErrMediaNotFound
 		}
 
-		if err == errs.ErrMediaNotFound {
-			svc.store.InsertPreviewError(info.urlStr, errs.ErrCodeNotFound)
+		if err == common.ErrMediaNotFound {
+			svc.store.InsertPreviewError(info.urlStr, common.ErrCodeNotFound)
 		} else {
-			svc.store.InsertPreviewError(info.urlStr, errs.ErrCodeUnknown)
+			svc.store.InsertPreviewError(info.urlStr, common.ErrCodeUnknown)
 		}
 		return &urlPreviewResponse{err: err}
 	}

@@ -7,10 +7,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
+	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/media_cache"
 	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/errs"
 )
 
 func ThumbnailMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
@@ -75,9 +75,9 @@ func ThumbnailMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) inter
 
 	streamedThumbnail, err := mediaCache.GetThumbnail(server, mediaId, width, height, method, animated)
 	if err != nil {
-		if err == errs.ErrMediaNotFound {
+		if err == common.ErrMediaNotFound {
 			return api.NotFoundError()
-		} else if err == errs.ErrMediaTooLarge {
+		} else if err == common.ErrMediaTooLarge {
 			return api.RequestTooLarge()
 		}
 		log.Error("Unexpected error locating media: " + err.Error())

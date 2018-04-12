@@ -9,12 +9,12 @@ import (
 
 	"github.com/ryanuber/go-glob"
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/stores"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/errs"
 )
 
 type mediaService struct {
@@ -166,7 +166,7 @@ func (s *mediaService) StoreMedia(contents io.Reader, contentType string, filena
 	}
 
 	// Check to make sure the file is allowed
-	fileMime, err := util.GetContentType(fileLocation)
+	fileMime, err := util.GetMimeType(fileLocation)
 	if err != nil {
 		s.log.Error("Error while checking content type of file: " + err.Error())
 		os.Remove(fileLocation) // attempt cleanup
@@ -178,7 +178,7 @@ func (s *mediaService) StoreMedia(contents io.Reader, contentType string, filena
 			s.log.Warn("Content type " + fileMime + " (reported as " + contentType + ") is not allowed to be uploaded")
 
 			os.Remove(fileLocation) // attempt cleanup
-			return nil, errs.ErrMediaNotAllowed
+			return nil, common.ErrMediaNotAllowed
 		}
 	}
 

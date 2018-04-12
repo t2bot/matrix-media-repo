@@ -10,11 +10,11 @@ import (
 	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/services/media_service"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/errs"
 )
 
 func (c *mediaCache) getKeyForMedia(server string, mediaId string) string {
@@ -33,7 +33,7 @@ func (c *mediaCache) GetMedia(server string, mediaId string) (*types.StreamedMed
 
 	if media.Quarantined {
 		c.log.Warn("Quarantined media accessed")
-		return nil, errs.ErrMediaQuarantined
+		return nil, common.ErrMediaQuarantined
 	}
 
 	// At this point we should have a real media object to use, so let's try caching it
@@ -80,7 +80,7 @@ func (c *mediaCache) GetRawMedia(server string, mediaId string) (*types.Media, e
 		if err == sql.ErrNoRows {
 			if util.IsServerOurs(server) {
 				c.log.Warn("Media not found")
-				return nil, errs.ErrMediaNotFound
+				return nil, common.ErrMediaNotFound
 			}
 		}
 
@@ -94,7 +94,7 @@ func (c *mediaCache) GetRawMedia(server string, mediaId string) (*types.Media, e
 	if !exists || err != nil {
 		if util.IsServerOurs(server) {
 			c.log.Error("Media not found in file store when we expected it to")
-			return nil, errs.ErrMediaNotFound
+			return nil, common.ErrMediaNotFound
 		} else {
 			c.log.Warn("Media appears to have been deleted - redownloading")
 

@@ -1,4 +1,4 @@
-package errs
+package common
 
 const ErrCodeInvalidHost = "M_INVALID_HOST"
 const ErrCodeHostNotFound = "M_HOST_NOT_FOUND"

@@ -7,8 +7,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
+	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/services/media_service"
-	"github.com/turt2live/matrix-media-repo/util/errs"
 )
 
 type MediaUploadedResponse struct {
@@ -43,7 +43,7 @@ func UploadMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interfac
 		io.Copy(ioutil.Discard, r.Body) // Ditch the entire request
 		defer r.Body.Close()
 
-		if err == errs.ErrMediaNotAllowed {
+		if err == common.ErrMediaNotAllowed {
 			return api.BadRequest("Media content type not allowed on this server")
 		}
 

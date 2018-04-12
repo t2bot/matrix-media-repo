@@ -9,12 +9,12 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/stores"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/errs"
 )
 
 type urlService struct {
@@ -29,15 +29,15 @@ func New(ctx context.Context, log *logrus.Entry) (*urlService) {
 }
 
 func returnCachedPreview(cached *types.CachedUrlPreview) (*types.UrlPreview, error) {
-	if cached.ErrorCode == errs.ErrCodeInvalidHost {
-		return nil, errs.ErrInvalidHost
-	} else if cached.ErrorCode == errs.ErrCodeHostNotFound {
-		return nil, errs.ErrHostNotFound
-	} else if cached.ErrorCode == errs.ErrCodeHostBlacklisted {
-		return nil, errs.ErrHostBlacklisted
-	} else if cached.ErrorCode == errs.ErrCodeNotFound {
-		return nil, errs.ErrMediaNotFound
-	} else if cached.ErrorCode == errs.ErrCodeUnknown {
+	if cached.ErrorCode == common.ErrCodeInvalidHost {
+		return nil, common.ErrInvalidHost
+	} else if cached.ErrorCode == common.ErrCodeHostNotFound {
+		return nil, common.ErrHostNotFound
+	} else if cached.ErrorCode == common.ErrCodeHostBlacklisted {
+		return nil, common.ErrHostBlacklisted
+	} else if cached.ErrorCode == common.ErrCodeNotFound {
+		return nil, common.ErrMediaNotFound
+	} else if cached.ErrorCode == common.ErrCodeUnknown {
 		return nil, errors.New("unknown error")
 	}
 
@@ -70,19 +70,19 @@ func (s *urlService) GetPreview(urlStr string, onHost string, forUserId string, 
 	parsedUrl, err := url.ParseRequestURI(urlStr)
 	if err != nil {
 		s.log.Error("Error parsing url: " + err.Error())
-		s.store.InsertPreviewError(urlStr, errs.ErrCodeInvalidHost)
-		return nil, errs.ErrInvalidHost
+		s.store.InsertPreviewError(urlStr, common.ErrCodeInvalidHost)
+		return nil, common.ErrInvalidHost
 	}
 
 	addrs, err := net.LookupIP(parsedUrl.Host)
 	if err != nil {
 		s.log.Error("Error getting host info: " + err.Error())
-		s.store.InsertPreviewError(urlStr, errs.ErrCodeInvalidHost)
-		return nil, errs.ErrInvalidHost
+		s.store.InsertPreviewError(urlStr, common.ErrCodeInvalidHost)
+		return nil, common.ErrInvalidHost
 	}
 	if len(addrs) == 0 {
-		s.store.InsertPreviewError(urlStr, errs.ErrCodeHostNotFound)
-		return nil, errs.ErrHostNotFound
+		s.store.InsertPreviewError(urlStr, common.ErrCodeHostNotFound)
+		return nil, common.ErrHostNotFound
 	}
 	addr := addrs[0]
 	addrStr := fmt.Sprintf("%v", addr)[1:]
@@ -98,8 +98,8 @@ func (s *urlService) GetPreview(urlStr string, onHost string, forUserId string, 
 		deniedCidrs = []string{}
 	}
 	if !isAllowed(addr, allowedCidrs, deniedCidrs, s.log) {
-		s.store.InsertPreviewError(urlStr, errs.ErrCodeHostBlacklisted)
-		return nil, errs.ErrHostBlacklisted
+		s.store.InsertPreviewError(urlStr, common.ErrCodeHostBlacklisted)
+		return nil, common.ErrHostBlacklisted
 	}
 
 	result := <-getResourceHandler().GeneratePreview(urlStr, forUserId, onHost)
