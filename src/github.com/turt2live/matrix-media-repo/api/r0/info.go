@@ -19,7 +19,7 @@ type MediaInfoResponse struct {
 	Size        int64  `json:"size"`
 }
 
-func MediaInfo(r *http.Request, log *logrus.Entry, user userInfo) interface{} {
+func MediaInfo(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
 	params := mux.Vars(r)
 
 	server := params["server"]

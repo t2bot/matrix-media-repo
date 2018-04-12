@@ -15,7 +15,7 @@ type MediaUploadedResponse struct {
 	ContentUri string `json:"content_uri"`
 }
 
-func UploadMedia(r *http.Request, log *logrus.Entry, user userInfo) interface{} {
+func UploadMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
 	filename := r.URL.Query().Get("filename")
 	if filename == "" {
 		filename = "upload.bin"
@@ -38,7 +38,7 @@ func UploadMedia(r *http.Request, log *logrus.Entry, user userInfo) interface{} 
 		return api.RequestTooLarge()
 	}
 
-	media, err := svc.UploadMedia(r.Body, contentType, filename, user.userId, r.Host)
+	media, err := svc.UploadMedia(r.Body, contentType, filename, user.UserId, r.Host)
 	if err != nil {
 		io.Copy(ioutil.Discard, r.Body) // Ditch the entire request
 		defer r.Body.Close()

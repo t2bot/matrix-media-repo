@@ -26,7 +26,7 @@ type MatrixOpenGraph struct {
 	ImageHeight int    `json:"og:image:height,omitempty"`
 }
 
-func PreviewUrl(r *http.Request, log *logrus.Entry, user userInfo) interface{} {
+func PreviewUrl(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
 	if !config.Get().UrlPreviews.Enabled {
 		return api.NotFoundError()
 	}
@@ -55,7 +55,7 @@ func PreviewUrl(r *http.Request, log *logrus.Entry, user userInfo) interface{} {
 	}
 
 	svc := url_service.New(r.Context(), log)
-	preview, err := svc.GetPreview(urlStr, r.Host, user.userId, ts)
+	preview, err := svc.GetPreview(urlStr, r.Host, user.UserId, ts)
 	if err != nil {
 		if err == errs.ErrMediaNotFound || err == errs.ErrHostNotFound {
 			return api.NotFoundError()

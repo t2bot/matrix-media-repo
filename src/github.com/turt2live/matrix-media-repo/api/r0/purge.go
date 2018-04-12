@@ -13,7 +13,7 @@ type MediaPurgedResponse struct {
 	NumRemoved int `json:"total_removed"`
 }
 
-func PurgeRemoteMedia(r *http.Request, log *logrus.Entry, user userInfo) interface{} {
+func PurgeRemoteMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
 	beforeTsStr := r.URL.Query().Get("before_ts")
 	if beforeTsStr == "" {
 		return api.BadRequest("Missing before_ts argument")

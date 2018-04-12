@@ -11,7 +11,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/util/errs"
 )
 
-func LocalCopy(r *http.Request, log *logrus.Entry, user userInfo) interface{} {
+func LocalCopy(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
 	params := mux.Vars(r)
 
 	server := params["server"]
@@ -46,7 +46,7 @@ func LocalCopy(r *http.Request, log *logrus.Entry, user userInfo) interface{} {
 		return &MediaUploadedResponse{streamedMedia.Media.MxcUri()}
 	}
 
-	newMedia, err := svc.StoreMedia(streamedMedia.Stream, streamedMedia.Media.ContentType, streamedMedia.Media.UploadName, user.userId, r.Host, "")
+	newMedia, err := svc.StoreMedia(streamedMedia.Stream, streamedMedia.Media.ContentType, streamedMedia.Media.UploadName, user.UserId, r.Host, "")
 	if err != nil {
 		if err == errs.ErrMediaNotAllowed {
 			return api.BadRequest("Media content type not allowed on this server")

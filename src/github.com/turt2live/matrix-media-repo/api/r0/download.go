@@ -19,9 +19,9 @@ type DownloadMediaResponse struct {
 	Data        io.ReadCloser
 }
 
-func DownloadMedia(r *http.Request, log *logrus.Entry, user userInfo) interface{} {
+func DownloadMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
 	hs := util.GetHomeserverConfig(r.Host)
-	if hs.DownloadRequiresAuth && user.userId == "" {
+	if hs.DownloadRequiresAuth && user.UserId == "" {
 		log.Warn("Homeserver requires authenticated downloads - denying request")
 		return api.AuthFailed()
 	}

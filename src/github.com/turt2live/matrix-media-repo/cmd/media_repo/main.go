@@ -66,16 +66,16 @@ func main() {
 	hOpts := HandlerOpts{&counter}
 
 	optionsHandler := Handler{optionsRequest, hOpts}
-	uploadHandler := Handler{r0.AccessTokenRequiredRoute(r0.UploadMedia), hOpts}
-	downloadHandler := Handler{r0.AccessTokenOptionalRoute(r0.DownloadMedia), hOpts}
-	thumbnailHandler := Handler{r0.AccessTokenOptionalRoute(r0.ThumbnailMedia), hOpts}
-	previewUrlHandler := Handler{r0.AccessTokenRequiredRoute(r0.PreviewUrl), hOpts}
-	identiconHandler := Handler{r0.AccessTokenOptionalRoute(r0.Identicon), hOpts}
-	purgeHandler := Handler{r0.RepoAdminRoute(r0.PurgeRemoteMedia), hOpts}
-	quarantineHandler := Handler{r0.AccessTokenRequiredRoute(r0.QuarantineMedia), hOpts}
-	quarantineRoomHandler := Handler{r0.AccessTokenRequiredRoute(r0.QuarantineRoomMedia), hOpts}
-	localCopyHandler := Handler{r0.AccessTokenRequiredRoute(r0.LocalCopy), hOpts}
-	infoHandler := Handler{r0.AccessTokenRequiredRoute(r0.MediaInfo), hOpts}
+	uploadHandler := Handler{api.AccessTokenRequiredRoute(r0.UploadMedia), hOpts}
+	downloadHandler := Handler{api.AccessTokenOptionalRoute(r0.DownloadMedia), hOpts}
+	thumbnailHandler := Handler{api.AccessTokenOptionalRoute(r0.ThumbnailMedia), hOpts}
+	previewUrlHandler := Handler{api.AccessTokenRequiredRoute(r0.PreviewUrl), hOpts}
+	identiconHandler := Handler{api.AccessTokenOptionalRoute(r0.Identicon), hOpts}
+	purgeHandler := Handler{api.RepoAdminRoute(r0.PurgeRemoteMedia), hOpts}
+	quarantineHandler := Handler{api.AccessTokenRequiredRoute(r0.QuarantineMedia), hOpts}
+	quarantineRoomHandler := Handler{api.AccessTokenRequiredRoute(r0.QuarantineRoomMedia), hOpts}
+	localCopyHandler := Handler{api.AccessTokenRequiredRoute(r0.LocalCopy), hOpts}
+	infoHandler := Handler{api.AccessTokenRequiredRoute(r0.MediaInfo), hOpts}
 
 	routes := make(map[string]*ApiRoute)
 	versions := []string{"r0", "v1"} // r0 is typically clients and v1 is typically servers
