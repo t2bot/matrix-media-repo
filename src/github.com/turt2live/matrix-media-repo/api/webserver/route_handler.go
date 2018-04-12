@@ -6,7 +6,6 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"reflect"
 	"strings"
 
 	"github.com/sebest/xff"
@@ -16,8 +15,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/util"
 )
-
-const unkErrJson = `{"code":"M_UNKNOWN","message":"Unexpected error processing response"}`
 
 type handler struct {
 	h          func(r *http.Request, entry *logrus.Entry) interface{}
@@ -70,14 +67,11 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			res = &api.EmptyResponse{}
 		}
 	}
-
-	b, err := json.Marshal(res)
-	jsonStr := unkErrJson
-	if err == nil {
-		jsonStr = string(b)
+	if res == nil {
+		res = api.InternalServerError("Error processing response")
 	}
 
-	contextLog.Info("Replying with result: " + reflect.TypeOf(res).Elem().Name() + " " + jsonStr)
+	contextLog.Info(fmt.Sprintf("Replying with result: %T %+v", res, res))
 
 	statusCode := http.StatusOK
 	switch result := res.(type) {
@@ -121,5 +115,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Order is important: Set headers before sending responses
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	io.WriteString(w, jsonStr)
+
+	encoder := json.NewEncoder(w)
+	encoder.Encode(res)
 }
