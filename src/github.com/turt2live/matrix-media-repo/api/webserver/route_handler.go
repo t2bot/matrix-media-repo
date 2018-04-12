@@ -13,6 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/api/r0"
+	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
@@ -82,22 +83,22 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch result := res.(type) {
 	case *api.ErrorResponse:
 		switch result.InternalCode {
-		case "M_UNKNOWN_TOKEN":
+		case common.ErrCodeUnknownToken:
 			statusCode = http.StatusForbidden
 			break
-		case "M_NOT_FOUND":
+		case common.ErrCodeNotFound:
 			statusCode = http.StatusNotFound
 			break
-		case "M_MEDIA_TOO_LARGE":
+		case common.ErrCodeMediaTooLarge:
 			statusCode = http.StatusRequestEntityTooLarge
 			break
-		case "M_BAD_REQUEST":
+		case common.ErrCodeBadRequest:
 			statusCode = http.StatusBadRequest
 			break
-		case "M_METHOD_NOT_ALLOWED":
+		case common.ErrCodeMethodNotAllowed:
 			statusCode = http.StatusMethodNotAllowed
 			break
-		default: // M_UNKNOWN
+		default: // Treat as unknown (a generic server error)
 			statusCode = http.StatusInternalServerError
 			break
 		}

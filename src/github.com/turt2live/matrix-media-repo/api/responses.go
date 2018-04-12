@@ -1,5 +1,7 @@
 package api
 
+import "github.com/turt2live/matrix-media-repo/common"
+
 type EmptyResponse struct{}
 
 type ErrorResponse struct {
@@ -9,29 +11,29 @@ type ErrorResponse struct {
 }
 
 func InternalServerError(message string) *ErrorResponse {
-	return &ErrorResponse{"M_UNKNOWN", message, "M_UNKNOWN"}
+	return &ErrorResponse{common.ErrCodeUnknown, message, common.ErrCodeUnknown}
 }
 
 func MethodNotAllowed() *ErrorResponse {
-	return &ErrorResponse{"M_UNKNOWN", "Method Not Allowed", "M_METHOD_NOT_ALLOWED"}
+	return &ErrorResponse{common.ErrCodeUnknown, "Method Not Allowed", common.ErrCodeMethodNotAllowed}
 }
 
 func RateLimitReached() *ErrorResponse {
-	return &ErrorResponse{"M_LIMIT_EXCEEDED", "Rate Limited", "M_LIMIT_EXCEEDED"}
+	return &ErrorResponse{common.ErrCodeRateLimitExceeded, "Rate Limited", common.ErrCodeRateLimitExceeded}
 }
 
 func NotFoundError() *ErrorResponse {
-	return &ErrorResponse{"M_NOT_FOUND", "Not found", "M_NOT_FOUND"}
+	return &ErrorResponse{common.ErrCodeNotFound, "Not found", common.ErrCodeNotFound}
 }
 
 func RequestTooLarge() *ErrorResponse {
-	return &ErrorResponse{"M_TOO_LARGE", "Too Large", "M_MEDIA_TOO_LARGE"}
+	return &ErrorResponse{"M_TOO_LARGE", "Too Large", common.ErrCodeMediaTooLarge}
 }
 
 func AuthFailed() *ErrorResponse {
-	return &ErrorResponse{"M_UNKNOWN_TOKEN", "Authentication Failed", "M_UNKNOWN_TOKEN"}
+	return &ErrorResponse{common.ErrCodeUnknownToken, "Authentication Failed", common.ErrCodeUnknownToken}
 }
 
 func BadRequest(message string) *ErrorResponse {
-	return &ErrorResponse{"M_UNKNOWN", message, "M_BAD_REQUEST"}
+	return &ErrorResponse{common.ErrCodeUnknown, message, common.ErrCodeBadRequest}
 }
