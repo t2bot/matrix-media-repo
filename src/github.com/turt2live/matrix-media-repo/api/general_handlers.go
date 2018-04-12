@@ -13,3 +13,7 @@ func NotFoundHandler(r *http.Request, log *logrus.Entry) interface{} {
 func MethodNotAllowedHandler(r *http.Request, log *logrus.Entry) interface{} {
 	return MethodNotAllowed()
 }
+
+func EmptyResponseHandler(r *http.Request, log *logrus.Entry) interface{} {
+	return &EmptyResponse{}
+}

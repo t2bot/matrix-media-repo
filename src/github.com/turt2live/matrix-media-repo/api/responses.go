@@ -1,5 +1,7 @@
 package api
 
+type EmptyResponse struct{}
+
 type ErrorResponse struct {
 	Code         string `json:"errcode"`
 	Message      string `json:"error"`
