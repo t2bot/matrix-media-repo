@@ -9,7 +9,7 @@ import (
 	"github.com/h2non/filetype"
 )
 
-func GetContentType(filePath string) (string, error) {
+func GetMimeType(filePath string) (string, error) {
 	f, err := os.Open(filePath)
 	if err != nil {
 		return "", err
