@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/client"
+	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/services/media_service"
 )
 
@@ -16,11 +16,11 @@ type MediaPurgedResponse struct {
 func PurgeRemoteMedia(r *http.Request, log *logrus.Entry, user userInfo) interface{} {
 	beforeTsStr := r.URL.Query().Get("before_ts")
 	if beforeTsStr == "" {
-		return client.BadRequest("Missing before_ts argument")
+		return api.BadRequest("Missing before_ts argument")
 	}
 	beforeTs, err := strconv.ParseInt(beforeTsStr, 10, 64)
 	if err != nil {
-		return client.BadRequest("Error parsing before_ts: " + err.Error())
+		return api.BadRequest("Error parsing before_ts: " + err.Error())
 	}
 
 	log = log.WithFields(logrus.Fields{
@@ -32,7 +32,7 @@ func PurgeRemoteMedia(r *http.Request, log *logrus.Entry, user userInfo) interfa
 	removed, err := mediaSvc.PurgeRemoteMediaBefore(beforeTs)
 	if err != nil {
 		log.Error("Error purging remote media: " + err.Error())
-		return client.InternalServerError("Error purging remote media")
+		return api.InternalServerError("Error purging remote media")
 	}
 
 	return &MediaPurgedResponse{

@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/client"
+	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/matrix"
 	"github.com/turt2live/matrix-media-repo/util"
 )
@@ -23,11 +23,11 @@ func AccessTokenRequiredRoute(next func(r *http.Request, log *logrus.Entry, user
 			log.Error(err)
 			if err != nil && err != matrix.ErrNoToken {
 				log.Error("Error verifying token: ", err)
-				return client.InternalServerError("Unexpected Error")
+				return api.InternalServerError("Unexpected Error")
 			}
 
 			log.Warn("Failed to verify token (fatal)")
-			return client.AuthFailed()
+			return api.AuthFailed()
 		}
 
 		log = log.WithFields(logrus.Fields{"authUserId": userId})
@@ -43,7 +43,7 @@ func AccessTokenOptionalRoute(next func(r *http.Request, log *logrus.Entry, user
 		if err != nil {
 			if err != matrix.ErrNoToken {
 				log.Error("Error verifying token: ", err)
-				return client.InternalServerError("Unexpected Error")
+				return api.InternalServerError("Unexpected Error")
 			}
 
 			log.Warn("Failed to verify token (non-fatal)")
@@ -59,11 +59,11 @@ func RepoAdminRoute(next func(r *http.Request, log *logrus.Entry, user userInfo)
 	return AccessTokenRequiredRoute(func(r *http.Request, log *logrus.Entry, user userInfo) interface{} {
 		if user.userId == "" {
 			log.Warn("Could not identify user for this admin route")
-			return client.AuthFailed()
+			return api.AuthFailed()
 		}
 		if !util.IsGlobalAdmin(user.userId) {
 			log.Warn("User " + user.userId + " is not a repository administrator")
-			return client.AuthFailed()
+			return api.AuthFailed()
 		}
 
 		log = log.WithFields(logrus.Fields{"isRepoAdmin": true})

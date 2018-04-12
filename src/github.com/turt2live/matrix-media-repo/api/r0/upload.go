@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/client"
+	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/services/media_service"
 	"github.com/turt2live/matrix-media-repo/util/errs"
 )
@@ -35,7 +35,7 @@ func UploadMedia(r *http.Request, log *logrus.Entry, user userInfo) interface{} 
 	if svc.IsTooLarge(r.ContentLength, r.Header.Get("Content-Length")) {
 		io.Copy(ioutil.Discard, r.Body) // Ditch the entire request
 		defer r.Body.Close()
-		return client.RequestTooLarge()
+		return api.RequestTooLarge()
 	}
 
 	media, err := svc.UploadMedia(r.Body, contentType, filename, user.userId, r.Host)
@@ -44,11 +44,11 @@ func UploadMedia(r *http.Request, log *logrus.Entry, user userInfo) interface{} 
 		defer r.Body.Close()
 
 		if err == errs.ErrMediaNotAllowed {
-			return client.BadRequest("Media content type not allowed on this server")
+			return api.BadRequest("Media content type not allowed on this server")
 		}
 
 		log.Error("Unexpected error storing media: " + err.Error())
-		return client.InternalServerError("Unexpected Error")
+		return api.InternalServerError("Unexpected Error")
 	}
 
 	return &MediaUploadedResponse{media.MxcUri()}

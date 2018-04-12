@@ -1,4 +1,4 @@
-package client
+package api
 
 type ErrorResponse struct {
 	Code         string `json:"errcode"`

@@ -16,8 +16,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sebest/xff"
 	log "github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/client"
-	"github.com/turt2live/matrix-media-repo/client/r0"
+	"github.com/turt2live/matrix-media-repo/api"
+	"github.com/turt2live/matrix-media-repo/api/r0"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/logging"
 	"github.com/turt2live/matrix-media-repo/util"
@@ -107,8 +107,8 @@ func main() {
 		rtr.Handle(routePath, optionsHandler).Methods("OPTIONS")
 	}
 
-	rtr.NotFoundHandler = Handler{client.NotFoundHandler, hOpts}
-	rtr.MethodNotAllowedHandler = Handler{client.MethodNotAllowedHandler, hOpts}
+	rtr.NotFoundHandler = Handler{api.NotFoundHandler, hOpts}
+	rtr.MethodNotAllowedHandler = Handler{api.MethodNotAllowedHandler, hOpts}
 
 	var handler http.Handler
 	handler = rtr
@@ -120,7 +120,7 @@ func main() {
 		limiter.SetBurst(config.Get().RateLimit.BurstCount)
 		limiter.SetMax(config.Get().RateLimit.RequestsPerSecond)
 
-		b, _ := json.Marshal(client.RateLimitReached())
+		b, _ := json.Marshal(api.RateLimitReached())
 		limiter.SetMessage(string(b))
 		limiter.SetMessageContentType("application/json")
 
@@ -172,7 +172,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Server", "matrix-media-repo")
 
 	// Process response
-	var res interface{} = client.AuthFailed()
+	var res interface{} = api.AuthFailed()
 	if util.IsServerOurs(r.Host) {
 		contextLog.Info("Server is owned by us, processing request")
 		res = h.h(r, contextLog)
@@ -191,7 +191,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	statusCode := http.StatusOK
 	switch result := res.(type) {
-	case *client.ErrorResponse:
+	case *api.ErrorResponse:
 		switch result.InternalCode {
 		case "M_UNKNOWN_TOKEN":
 			statusCode = http.StatusForbidden

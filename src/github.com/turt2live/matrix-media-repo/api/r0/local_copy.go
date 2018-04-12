@@ -5,7 +5,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/client"
+	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/media_cache"
 	"github.com/turt2live/matrix-media-repo/services/media_service"
 	"github.com/turt2live/matrix-media-repo/util/errs"
@@ -30,14 +30,14 @@ func LocalCopy(r *http.Request, log *logrus.Entry, user userInfo) interface{} {
 	streamedMedia, err := mediaCache.GetMedia(server, mediaId)
 	if err != nil {
 		if err == errs.ErrMediaNotFound {
-			return client.NotFoundError()
+			return api.NotFoundError()
 		} else if err == errs.ErrMediaTooLarge {
-			return client.RequestTooLarge()
+			return api.RequestTooLarge()
 		} else if err == errs.ErrMediaQuarantined {
-			return client.NotFoundError() // We lie for security
+			return api.NotFoundError() // We lie for security
 		}
 		log.Error("Unexpected error locating media: " + err.Error())
-		return client.InternalServerError("Unexpected Error")
+		return api.InternalServerError("Unexpected Error")
 	}
 	defer streamedMedia.Stream.Close()
 
@@ -49,11 +49,11 @@ func LocalCopy(r *http.Request, log *logrus.Entry, user userInfo) interface{} {
 	newMedia, err := svc.StoreMedia(streamedMedia.Stream, streamedMedia.Media.ContentType, streamedMedia.Media.UploadName, user.userId, r.Host, "")
 	if err != nil {
 		if err == errs.ErrMediaNotAllowed {
-			return client.BadRequest("Media content type not allowed on this server")
+			return api.BadRequest("Media content type not allowed on this server")
 		}
 
 		log.Error("Unexpected error storing media: " + err.Error())
-		return client.InternalServerError("Unexpected Error")
+		return api.InternalServerError("Unexpected Error")
 	}
 
 	return &MediaUploadedResponse{newMedia.MxcUri()}

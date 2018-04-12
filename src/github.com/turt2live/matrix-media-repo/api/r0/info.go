@@ -6,7 +6,7 @@ import (
 	"github.com/disintegration/imaging"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/client"
+	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/media_cache"
 	"github.com/turt2live/matrix-media-repo/util/errs"
 )
@@ -35,14 +35,14 @@ func MediaInfo(r *http.Request, log *logrus.Entry, user userInfo) interface{} {
 	streamedMedia, err := mediaCache.GetMedia(server, mediaId)
 	if err != nil {
 		if err == errs.ErrMediaNotFound {
-			return client.NotFoundError()
+			return api.NotFoundError()
 		} else if err == errs.ErrMediaTooLarge {
-			return client.RequestTooLarge()
+			return api.RequestTooLarge()
 		} else if err == errs.ErrMediaQuarantined {
-			return client.NotFoundError() // We lie for security
+			return api.NotFoundError() // We lie for security
 		}
 		log.Error("Unexpected error locating media: " + err.Error())
-		return client.InternalServerError("Unexpected Error")
+		return api.InternalServerError("Unexpected Error")
 	}
 	defer streamedMedia.Stream.Close()
 

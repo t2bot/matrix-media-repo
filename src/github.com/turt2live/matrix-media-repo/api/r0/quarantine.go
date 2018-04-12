@@ -7,7 +7,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/client"
+	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/matrix"
 	"github.com/turt2live/matrix-media-repo/services/media_service"
@@ -21,7 +21,7 @@ type MediaQuarantinedResponse struct {
 func QuarantineRoomMedia(r *http.Request, log *logrus.Entry, user userInfo) interface{} {
 	canQuarantine, allowOtherHosts, isLocalAdmin := getQuarantineRequestInfo(r, log, user)
 	if !canQuarantine {
-		return client.AuthFailed()
+		return api.AuthFailed()
 	}
 
 	params := mux.Vars(r)
@@ -36,7 +36,7 @@ func QuarantineRoomMedia(r *http.Request, log *logrus.Entry, user userInfo) inte
 	allMedia, err := matrix.ListMedia(r.Context(), r.Host, user.accessToken, roomId)
 	if err != nil {
 		log.Error("Error while listing media in the room: " + err.Error())
-		return client.InternalServerError("error retrieving media in room")
+		return api.InternalServerError("error retrieving media in room")
 	}
 
 	var mxcs []string
@@ -48,7 +48,7 @@ func QuarantineRoomMedia(r *http.Request, log *logrus.Entry, user userInfo) inte
 		server, mediaId, err := util.SplitMxc(mxc)
 		if err != nil {
 			log.Error("Error parsing MXC URI (" + mxc + "): " + err.Error())
-			return client.InternalServerError("error parsing mxc uri")
+			return api.InternalServerError("error parsing mxc uri")
 		}
 
 		if !allowOtherHosts && r.Host != server {
@@ -70,7 +70,7 @@ func QuarantineRoomMedia(r *http.Request, log *logrus.Entry, user userInfo) inte
 func QuarantineMedia(r *http.Request, log *logrus.Entry, user userInfo) interface{} {
 	canQuarantine, allowOtherHosts, isLocalAdmin := getQuarantineRequestInfo(r, log, user)
 	if !canQuarantine {
-		return client.AuthFailed()
+		return api.AuthFailed()
 	}
 
 	params := mux.Vars(r)
@@ -85,7 +85,7 @@ func QuarantineMedia(r *http.Request, log *logrus.Entry, user userInfo) interfac
 	})
 
 	if !allowOtherHosts && r.Host != server {
-		return client.BadRequest("unable to quarantine media on other homeservers")
+		return api.BadRequest("unable to quarantine media on other homeservers")
 	}
 
 	resp, _ := doQuarantine(r.Context(), log, server, mediaId, allowOtherHosts)
@@ -103,13 +103,13 @@ func doQuarantine(ctx context.Context, log *logrus.Entry, server string, mediaId
 		}
 
 		log.Error("Error fetching media: " + err.Error())
-		return client.InternalServerError("error quarantining media"), false
+		return api.InternalServerError("error quarantining media"), false
 	}
 
 	num, err := mediaSvc.SetMediaQuarantined(media, true, allowOtherHosts)
 	if err != nil {
 		log.Error("Error quarantining media: " + err.Error())
-		return client.InternalServerError("Error quarantining media"), false
+		return api.InternalServerError("Error quarantining media"), false
 	}
 
 	return &MediaQuarantinedResponse{NumQuarantined: num}, true

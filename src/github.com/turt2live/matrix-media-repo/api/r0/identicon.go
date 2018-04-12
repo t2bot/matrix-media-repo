@@ -12,7 +12,7 @@ import (
 	"github.com/disintegration/imaging"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/client"
+	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/util"
 )
@@ -25,11 +25,11 @@ func Identicon(r *http.Request, log *logrus.Entry, user userInfo) interface{} {
 	hs := util.GetHomeserverConfig(r.Host)
 	if hs.DownloadRequiresAuth && user.userId == "" {
 		log.Warn("Homeserver requires authenticated downloads - denying request")
-		return client.AuthFailed()
+		return api.AuthFailed()
 	}
 
 	if !config.Get().Identicons.Enabled {
-		return client.NotFoundError()
+		return api.NotFoundError()
 	}
 
 	params := mux.Vars(r)
@@ -44,14 +44,14 @@ func Identicon(r *http.Request, log *logrus.Entry, user userInfo) interface{} {
 	if widthStr != "" {
 		width, err = strconv.Atoi(widthStr)
 		if err != nil {
-			return client.InternalServerError("Error parsing width: " + err.Error())
+			return api.InternalServerError("Error parsing width: " + err.Error())
 		}
 		height = width
 	}
 	if heightStr != "" {
 		height, err = strconv.Atoi(heightStr)
 		if err != nil {
-			return client.InternalServerError("Error parsing height: " + err.Error())
+			return api.InternalServerError("Error parsing height: " + err.Error())
 		}
 	}
 
@@ -91,7 +91,7 @@ func Identicon(r *http.Request, log *logrus.Entry, user userInfo) interface{} {
 	err = imaging.Encode(imgData, img, imaging.PNG)
 	if err != nil {
 		log.Error("Error generating image:" + err.Error())
-		return client.InternalServerError("error generating identicon")
+		return api.InternalServerError("error generating identicon")
 	}
 
 	return &IdenticonResponse{Avatar: imgData}

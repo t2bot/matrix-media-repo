@@ -6,7 +6,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/client"
+	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/media_cache"
 	"github.com/turt2live/matrix-media-repo/util"
@@ -17,7 +17,7 @@ func ThumbnailMedia(r *http.Request, log *logrus.Entry, user userInfo) interface
 	hs := util.GetHomeserverConfig(r.Host)
 	if hs.DownloadRequiresAuth && user.userId == "" {
 		log.Warn("Homeserver requires authenticated downloads - denying request")
-		return client.AuthFailed()
+		return api.AuthFailed()
 	}
 
 	params := mux.Vars(r)
@@ -42,21 +42,21 @@ func ThumbnailMedia(r *http.Request, log *logrus.Entry, user userInfo) interface
 	if widthStr != "" {
 		parsedWidth, err := strconv.Atoi(widthStr)
 		if err != nil {
-			return client.InternalServerError("Width does not appear to be an integer")
+			return api.InternalServerError("Width does not appear to be an integer")
 		}
 		width = parsedWidth
 	}
 	if heightStr != "" {
 		parsedHeight, err := strconv.Atoi(heightStr)
 		if err != nil {
-			return client.InternalServerError("Height does not appear to be an integer")
+			return api.InternalServerError("Height does not appear to be an integer")
 		}
 		height = parsedHeight
 	}
 	if animatedStr != "" {
 		parsedFlag, err := strconv.ParseBool(animatedStr)
 		if err != nil {
-			return client.InternalServerError("Animated flag does not appear to be a boolean")
+			return api.InternalServerError("Animated flag does not appear to be a boolean")
 		}
 		animated = parsedFlag
 	}
@@ -76,12 +76,12 @@ func ThumbnailMedia(r *http.Request, log *logrus.Entry, user userInfo) interface
 	streamedThumbnail, err := mediaCache.GetThumbnail(server, mediaId, width, height, method, animated)
 	if err != nil {
 		if err == errs.ErrMediaNotFound {
-			return client.NotFoundError()
+			return api.NotFoundError()
 		} else if err == errs.ErrMediaTooLarge {
-			return client.RequestTooLarge()
+			return api.RequestTooLarge()
 		}
 		log.Error("Unexpected error locating media: " + err.Error())
-		return client.InternalServerError("Unexpected Error")
+		return api.InternalServerError("Unexpected Error")
 	}
 
 	return &DownloadMediaResponse{
