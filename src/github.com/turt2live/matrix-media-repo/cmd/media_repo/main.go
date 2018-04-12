@@ -30,7 +30,7 @@ type requestCounter struct {
 }
 
 type Handler struct {
-	h    func(http.ResponseWriter, *http.Request, *log.Entry) interface{}
+	h    func(*http.Request, *log.Entry) interface{}
 	opts HandlerOpts
 }
 
@@ -66,16 +66,16 @@ func main() {
 	hOpts := HandlerOpts{&counter}
 
 	optionsHandler := Handler{optionsRequest, hOpts}
-	uploadHandler := Handler{r0.UploadMedia, hOpts}
-	downloadHandler := Handler{r0.DownloadMedia, hOpts}
-	thumbnailHandler := Handler{r0.ThumbnailMedia, hOpts}
-	previewUrlHandler := Handler{r0.PreviewUrl, hOpts}
-	identiconHandler := Handler{r0.Identicon, hOpts}
-	purgeHandler := Handler{r0.PurgeRemoteMedia, hOpts}
-	quarantineHandler := Handler{r0.QuarantineMedia, hOpts}
-	quarantineRoomHandler := Handler{r0.QuarantineRoomMedia, hOpts}
-	localCopyHandler := Handler{r0.LocalCopy, hOpts}
-	infoHandler := Handler{r0.MediaInfo, hOpts}
+	uploadHandler := Handler{r0.AccessTokenRequiredRoute(r0.UploadMedia), hOpts}
+	downloadHandler := Handler{r0.AccessTokenOptionalRoute(r0.DownloadMedia), hOpts}
+	thumbnailHandler := Handler{r0.AccessTokenOptionalRoute(r0.ThumbnailMedia), hOpts}
+	previewUrlHandler := Handler{r0.AccessTokenRequiredRoute(r0.PreviewUrl), hOpts}
+	identiconHandler := Handler{r0.AccessTokenOptionalRoute(r0.Identicon), hOpts}
+	purgeHandler := Handler{r0.RepoAdminRoute(r0.PurgeRemoteMedia), hOpts}
+	quarantineHandler := Handler{r0.AccessTokenRequiredRoute(r0.QuarantineMedia), hOpts}
+	quarantineRoomHandler := Handler{r0.AccessTokenRequiredRoute(r0.QuarantineRoomMedia), hOpts}
+	localCopyHandler := Handler{r0.AccessTokenRequiredRoute(r0.LocalCopy), hOpts}
+	infoHandler := Handler{r0.AccessTokenRequiredRoute(r0.MediaInfo), hOpts}
 
 	routes := make(map[string]*ApiRoute)
 	versions := []string{"r0", "v1"} // r0 is typically clients and v1 is typically servers
@@ -175,7 +175,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var res interface{} = client.AuthFailed()
 	if util.IsServerOurs(r.Host) {
 		contextLog.Info("Server is owned by us, processing request")
-		res = h.h(w, r, contextLog)
+		res = h.h(r, contextLog)
 		if res == nil {
 			res = &EmptyResponse{}
 		}
@@ -241,6 +241,6 @@ func (c *requestCounter) GetNextId() string {
 	return "REQ-" + strId
 }
 
-func optionsRequest(w http.ResponseWriter, r *http.Request, log *log.Entry) interface{} {
+func optionsRequest(r *http.Request, log *log.Entry) interface{} {
 	return &EmptyResponse{}
 }

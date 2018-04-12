@@ -9,11 +9,14 @@ import (
 	"github.com/turt2live/matrix-media-repo/client"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/media_cache"
+	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/errs"
 )
 
-func ThumbnailMedia(w http.ResponseWriter, r *http.Request, log *logrus.Entry) interface{} {
-	if !ValidateUserCanDownload(r, log) {
+func ThumbnailMedia(r *http.Request, log *logrus.Entry, user userInfo) interface{} {
+	hs := util.GetHomeserverConfig(r.Host)
+	if hs.DownloadRequiresAuth && user.userId == "" {
+		log.Warn("Homeserver requires authenticated downloads - denying request")
 		return client.AuthFailed()
 	}
 

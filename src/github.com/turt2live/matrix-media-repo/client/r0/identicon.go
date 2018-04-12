@@ -14,18 +14,22 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/client"
 	"github.com/turt2live/matrix-media-repo/config"
+	"github.com/turt2live/matrix-media-repo/util"
 )
 
 type IdenticonResponse struct {
 	Avatar io.Reader
 }
 
-func Identicon(w http.ResponseWriter, r *http.Request, log *logrus.Entry) interface{} {
+func Identicon(r *http.Request, log *logrus.Entry, user userInfo) interface{} {
+	hs := util.GetHomeserverConfig(r.Host)
+	if hs.DownloadRequiresAuth && user.userId == "" {
+		log.Warn("Homeserver requires authenticated downloads - denying request")
+		return client.AuthFailed()
+	}
+
 	if !config.Get().Identicons.Enabled {
 		return client.NotFoundError()
-	}
-	if !ValidateUserCanDownload(r, log) {
-		return client.AuthFailed()
 	}
 
 	params := mux.Vars(r)

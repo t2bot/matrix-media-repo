@@ -7,7 +7,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/client"
-	"github.com/turt2live/matrix-media-repo/matrix"
 	"github.com/turt2live/matrix-media-repo/media_cache"
 	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/errs"
@@ -20,8 +19,10 @@ type DownloadMediaResponse struct {
 	Data        io.ReadCloser
 }
 
-func DownloadMedia(w http.ResponseWriter, r *http.Request, log *logrus.Entry) interface{} {
-	if !ValidateUserCanDownload(r, log) {
+func DownloadMedia(r *http.Request, log *logrus.Entry, user userInfo) interface{} {
+	hs := util.GetHomeserverConfig(r.Host)
+	if hs.DownloadRequiresAuth && user.userId == "" {
+		log.Warn("Homeserver requires authenticated downloads - denying request")
 		return client.AuthFailed()
 	}
 
@@ -62,19 +63,4 @@ func DownloadMedia(w http.ResponseWriter, r *http.Request, log *logrus.Entry) in
 		SizeBytes:   streamedMedia.Media.SizeBytes,
 		Data:        streamedMedia.Stream,
 	}
-}
-
-func ValidateUserCanDownload(r *http.Request, log *logrus.Entry) (bool) {
-	hs := util.GetHomeserverConfig(r.Host)
-	if !hs.DownloadRequiresAuth {
-		return true // no auth required == can access
-	}
-
-	accessToken := util.GetAccessTokenFromRequest(r)
-	appserviceUserId := util.GetAppserviceUserIdFromRequest(r)
-	userId, err := matrix.GetUserIdFromToken(r.Context(), r.Host, accessToken, appserviceUserId)
-	if err != nil {
-		log.Error("Error verifying token: " + err.Error())
-	}
-	return userId != "" && err != nil
 }

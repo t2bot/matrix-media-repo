@@ -25,22 +25,20 @@ func getBreakerAndConfig(serverName string) (*config.HomeserverConfig, *circuit.
 	return hs, cb
 }
 
-func filterError(err error, replyError *error) error {
+func filterError(err error) (error, error) {
 	if err == nil {
-		replyError = nil
-		return nil
+		return nil, nil
 	}
 
 	// Unknown token errors should be filtered out explicitly to ensure we don't break on bad requests
 	if httpErr, ok := err.(gomatrix.HTTPError); ok {
 		if respErr, ok := httpErr.WrappedError.(gomatrix.RespError); ok {
 			if respErr.ErrCode == "M_UNKNOWN_TOKEN" {
-				replyError = &err // we still want to send the error to the caller though
-				return nil
+				// We send back our own version of UNKNOWN_TOKEN to ensure we can filter it out elsewhere
+				return nil, ErrNoToken
 			}
 		}
 	}
 
-	replyError = &err
-	return err
+	return err, err
 }

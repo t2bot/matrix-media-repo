@@ -8,7 +8,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/client"
 	"github.com/turt2live/matrix-media-repo/config"
-	"github.com/turt2live/matrix-media-repo/matrix"
 	"github.com/turt2live/matrix-media-repo/services/url_service"
 	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/errs"
@@ -27,19 +26,9 @@ type MatrixOpenGraph struct {
 	ImageHeight int    `json:"og:image:height,omitempty"`
 }
 
-func PreviewUrl(w http.ResponseWriter, r *http.Request, log *logrus.Entry) interface{} {
+func PreviewUrl(r *http.Request, log *logrus.Entry, user userInfo) interface{} {
 	if !config.Get().UrlPreviews.Enabled {
 		return client.NotFoundError()
-	}
-
-	accessToken := util.GetAccessTokenFromRequest(r)
-	appserviceUserId := util.GetAppserviceUserIdFromRequest(r)
-	userId, err := matrix.GetUserIdFromToken(r.Context(), r.Host, accessToken, appserviceUserId)
-	if err != nil || userId == "" {
-		if err != nil {
-			log.Error("Error verifying token: " + err.Error())
-		}
-		return client.AuthFailed()
 	}
 
 	params := r.URL.Query()
@@ -48,6 +37,7 @@ func PreviewUrl(w http.ResponseWriter, r *http.Request, log *logrus.Entry) inter
 	urlStr := params.Get("url")
 	tsStr := params.Get("ts")
 	ts := util.NowMillis()
+	var err error
 	if tsStr != "" {
 		ts, err = strconv.ParseInt(tsStr, 10, 64)
 		if err != nil {
@@ -65,7 +55,7 @@ func PreviewUrl(w http.ResponseWriter, r *http.Request, log *logrus.Entry) inter
 	}
 
 	svc := url_service.New(r.Context(), log)
-	preview, err := svc.GetPreview(urlStr, r.Host, userId, ts)
+	preview, err := svc.GetPreview(urlStr, r.Host, user.userId, ts)
 	if err != nil {
 		if err == errs.ErrMediaNotFound || err == errs.ErrHostNotFound {
 			return client.NotFoundError()

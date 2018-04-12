@@ -16,14 +16,16 @@ func IsUserAdmin(ctx context.Context, serverName string, accessToken string) (bo
 	cb.CallContext(ctx, func() error {
 		mtxClient, err := gomatrix.NewClient(hs.ClientServerApi, "", accessToken)
 		if err != nil {
-			return filterError(err, &replyError)
+			err, replyError = filterError(err)
+			return err
 		}
 
 		response := &whoisResponse{}
 		url := mtxClient.BuildURL("/admin/whois/", fakeUser)
 		_, err = mtxClient.MakeRequest("GET", url, nil, response)
 		if err != nil {
-			return filterError(err, &replyError)
+			err, replyError = filterError(err)
+			return err
 		}
 
 		isAdmin = true // if we made it this far, that is
@@ -41,13 +43,15 @@ func ListMedia(ctx context.Context, serverName string, accessToken string, roomI
 	cb.CallContext(ctx, func() error {
 		mtxClient, err := gomatrix.NewClient(hs.ClientServerApi, "", accessToken)
 		if err != nil {
-			return filterError(err, &replyError)
+			err, replyError = filterError(err)
+			return err
 		}
 
 		url := mtxClient.BuildURL("/admin/room/", roomId, "/media")
 		_, err = mtxClient.MakeRequest("GET", url, nil, response)
 		if err != nil {
-			return filterError(err, &replyError)
+			err, replyError = filterError(err)
+			return err
 		}
 
 		return nil
