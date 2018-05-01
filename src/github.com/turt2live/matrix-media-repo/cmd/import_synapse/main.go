@@ -81,10 +81,7 @@ func main() {
 
 	logrus.Info(fmt.Sprintf("Downloading %d media records", len(records)))
 
-	pool, err := tunny.CreatePool(*numWorkers, fetchMedia).Open()
-	if err != nil {
-		panic(err)
-	}
+	pool := tunny.NewFunc(*numWorkers, fetchMedia)
 
 	numCompleted := 0
 	lock := &sync.RWMutex{}
@@ -101,7 +98,10 @@ func main() {
 		record := records[i]
 
 		logrus.Info(fmt.Sprintf("Queuing %s (%d/%d %d%%)", record.MediaId, i+1, len(records), percent))
-		pool.SendWorkAsync(&fetchRequest{media: record, serverName: *serverName, csApiUrl: csApiUrl}, onComplete)
+		go func() {
+			result := pool.Process(&fetchRequest{media: record, serverName: *serverName, csApiUrl: csApiUrl})
+			onComplete(result, nil)
+		}()
 	}
 
 	for numCompleted < len(records) {
