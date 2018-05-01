@@ -10,7 +10,7 @@ import (
 )
 
 type ResourceHandler struct {
-	pool      *tunny.WorkPool
+	pool      *tunny.Pool
 	eventBus  *emitter.Emitter
 	itemCache *cache.Cache
 }
@@ -27,10 +27,7 @@ type WorkRequest struct {
 
 func New(workers int, fetchFn func(object *WorkRequest) interface{}) (*ResourceHandler, error) {
 	workFn := func(i interface{}) interface{} { return fetchFn(i.(*WorkRequest)) }
-	pool, err := tunny.CreatePool(workers, workFn).Open()
-	if err != nil {
-		return nil, err
-	}
+	pool := tunny.NewFunc(workers, workFn)
 
 	bus := &emitter.Emitter{}
 	itemCache := cache.New(30*time.Second, 1*time.Minute) // cache work for 30ish seconds
@@ -75,7 +72,7 @@ func (h *ResourceHandler) GetResource(id string, metadata interface{}) (chan int
 
 	go func() {
 		// Queue the work (ignore errors)
-		result, _ := h.pool.SendWork(&WorkRequest{id, metadata})
+		result := h.pool.Process(&WorkRequest{id, metadata})
 		h.eventBus.Emit("complete_"+id, result)
 
 		// Cache the result for future callers
