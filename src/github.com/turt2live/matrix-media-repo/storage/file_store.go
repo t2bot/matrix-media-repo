@@ -16,17 +16,21 @@ import (
 
 func PersistFile(file io.Reader, ctx context.Context, log *logrus.Entry) (string, error) {
 	var basePath string
-	var pathSize int64
-	for i := 0; i < len(config.Get().Uploads.StoragePaths); i++ {
-		currPath := config.Get().Uploads.StoragePaths[i]
-		size, err := GetDatabase().GetSizeOfFolderBytes(ctx, currPath)
-		if err != nil {
-			continue
+	if len(config.Get().Uploads.StoragePaths) != 1 {
+		var pathSize int64
+		for i := 0; i < len(config.Get().Uploads.StoragePaths); i++ {
+			currPath := config.Get().Uploads.StoragePaths[i]
+			size, err := GetDatabase().GetSizeOfFolderBytes(ctx, currPath)
+			if err != nil {
+				continue
+			}
+			if basePath == "" || size < pathSize {
+				basePath = currPath
+				pathSize = size
+			}
 		}
-		if basePath == "" || size < pathSize {
-			basePath = currPath
-			pathSize = size
-		}
+	} else {
+		basePath = config.Get().Uploads.StoragePaths[0]
 	}
 
 	if basePath == "" {
