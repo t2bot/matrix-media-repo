@@ -202,21 +202,13 @@ func (s *mediaService) StoreMedia(contents io.Reader, contentType string, filena
 		for i := 0; i < len(records); i++ {
 			media = records[i]
 
-			if media.Origin == host && (media.MediaId == mediaId || isGeneratedId) {
-				if media.ContentType != contentType || media.UserId != userId || media.UploadName != filename {
-					// The unique constraint in the database prevents us from storing a duplicate, and we can't generate a new
-					// media ID because then we'd be discarding the caller's media ID. In practice, this particular branch would
-					// only be executed if a file over federation got changed and we, for some reason, re-downloaded it.
-					log.Warn("Match found for media based on host and media ID. Filename, content type, or user ID may not match. Returning unaltered media record")
-				} else {
-					log.Info("Match found for media based on host and media ID. Returning unaltered media record.")
-				}
-
+			if media.Origin == host && (media.MediaId == mediaId || isGeneratedId) && media.ContentType == contentType && media.UserId == userId {
+				log.Info("User has uploaded this media before - returning unaltered media record")
 				overwriteExistingOrDeleteTempFile(fileLocation, media)
 				return media, nil
 			}
 
-			// The last media object will be used to create a new pointer (normally there should only be one anyways)
+			// The last media object will be used to create a new pointer
 		}
 
 		log.Info("Duplicate media hash found, generating a new record using the existing file")
