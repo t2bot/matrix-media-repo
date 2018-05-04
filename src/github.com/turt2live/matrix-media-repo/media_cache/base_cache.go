@@ -52,6 +52,15 @@ func Create(ctx context.Context, log *logrus.Entry) (*mediaCache) {
 	}
 }
 
+func (c *mediaCache) Reset() {
+	logrus.Warn("Resetting media cache")
+	baseCache := getBaseCache()
+	baseCache.cache.Flush()
+	baseCache.cooldownCache.Flush()
+	baseCache.size = 0
+	baseCache.tracker.Reset()
+}
+
 func (c *mediaCache) updateItemInCache(cacheKey string, recordId string, mediaSize int64, cacheFn func() (*cachedFile, error), log *logrus.Entry) (*cachedFile, error) {
 	downloads := c.tracker.NumDownloads(recordId)
 	enoughDownloads := downloads >= config.Get().Downloads.Cache.MinDownloads

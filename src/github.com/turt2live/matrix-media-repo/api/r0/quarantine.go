@@ -10,6 +10,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/config"
 	"github.com/turt2live/matrix-media-repo/matrix"
+	"github.com/turt2live/matrix-media-repo/media_cache"
 	"github.com/turt2live/matrix-media-repo/services/media_service"
 	"github.com/turt2live/matrix-media-repo/util"
 )
@@ -105,6 +106,11 @@ func doQuarantine(ctx context.Context, log *logrus.Entry, server string, mediaId
 		log.Error("Error fetching media: " + err.Error())
 		return api.InternalServerError("error quarantining media"), false
 	}
+
+	// We reset the entire cache to avoid any lingering links floating around, such as thumbnails or other media.
+	// The reset is done before actually quarantining the media because that could fail for some reason
+	mediaCache := media_cache.Create(ctx, log)
+	mediaCache.Reset()
 
 	num, err := mediaSvc.SetMediaQuarantined(media, true, allowOtherHosts)
 	if err != nil {

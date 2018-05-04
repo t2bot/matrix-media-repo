@@ -45,6 +45,10 @@ func New(maxAgeMinutes int) (*DownloadTracker) {
 	}
 }
 
+func (d *DownloadTracker) Reset() {
+	d.cache.Flush()
+}
+
 func (d *DownloadTracker) NumDownloads(recordId string) (int) {
 	item, found := d.cache.Get(recordId)
 	if !found {
