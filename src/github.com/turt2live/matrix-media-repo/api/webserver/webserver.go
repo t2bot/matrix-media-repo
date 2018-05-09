@@ -34,6 +34,7 @@ func Init() {
 	quarantineRoomHandler := handler{api.AccessTokenRequiredRoute(r0.QuarantineRoomMedia), counter}
 	localCopyHandler := handler{api.AccessTokenRequiredRoute(r0.LocalCopy), counter}
 	infoHandler := handler{api.AccessTokenRequiredRoute(r0.MediaInfo), counter}
+	limitsHandler := handler{api.AccessTokenRequiredRoute(r0.Limits), counter}
 
 	routes := make(map[string]route)
 	versions := []string{"r0", "v1"} // r0 is typically clients and v1 is typically servers. v1 is deprecated.
@@ -46,6 +47,7 @@ func Init() {
 		routes["/_matrix/media/"+version+"/thumbnail/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"GET", thumbnailHandler}
 		routes["/_matrix/media/"+version+"/preview_url"] = route{"GET", previewUrlHandler}
 		routes["/_matrix/media/"+version+"/identicon/{seed:.*}"] = route{"GET", identiconHandler}
+		routes["/_matrix/media/"+version+"/limits"] = route{"GET", limitsHandler}
 
 		// Routes that we define but are not part of the spec
 		routes["/_matrix/media/"+version+"/admin/purge_remote"] = route{"POST", purgeHandler}

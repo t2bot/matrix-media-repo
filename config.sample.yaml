@@ -31,6 +31,13 @@ admins:
 uploads:
   maxBytes: 104857600 # 100MB default, 0 to disable
 
+  # The number of bytes to claim as the maximum size for uploads for the limits API. If this
+  # is not provided then the maxBytes setting will be used instead. This is useful to provide
+  # if the media repo's settings and the reverse proxy do not match for maximum request size.
+  # This is purely for informational reasons and does not actually limit any functionality.
+  # Set this to -1 to indicate that there is no limit. Zero will force the use of maxBytes.
+  #reportedMaxBytes: 104857600
+
   # This is intended for larger deployments where media should be distributed among other
   # directories, drives, servers, etc. For smaller deployments, a single entry in this list
   # is recommended.

@@ -33,9 +33,10 @@ type DatabaseConfig struct {
 }
 
 type UploadsConfig struct {
-	StoragePaths []string `yaml:"storagePaths,flow"`
-	MaxSizeBytes int64    `yaml:"maxBytes"`
-	AllowedTypes []string `yaml:"allowedTypes,flow"`
+	StoragePaths         []string `yaml:"storagePaths,flow"`
+	MaxSizeBytes         int64    `yaml:"maxBytes"`
+	AllowedTypes         []string `yaml:"allowedTypes,flow"`
+	ReportedMaxSizeBytes int64    `yaml:"reportedMaxBytes"`
 }
 
 type DownloadsConfig struct {
@@ -187,9 +188,10 @@ func NewDefaultConfig() *MediaRepoConfig {
 		Homeservers: []*HomeserverConfig{},
 		Admins:      []string{},
 		Uploads: &UploadsConfig{
-			MaxSizeBytes: 104857600, // 100mb
-			StoragePaths: []string{},
-			AllowedTypes: []string{"*/*"},
+			MaxSizeBytes:         104857600, // 100mb
+			ReportedMaxSizeBytes: 0,
+			StoragePaths:         []string{},
+			AllowedTypes:         []string{"*/*"},
 		},
 		Downloads: &DownloadsConfig{
 			MaxSizeBytes:        104857600, // 100mb
