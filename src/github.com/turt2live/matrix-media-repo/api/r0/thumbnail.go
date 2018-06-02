@@ -24,10 +24,21 @@ func ThumbnailMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) inter
 
 	server := params["server"]
 	mediaId := params["mediaId"]
+	allowRemote := r.URL.Query().Get("allow_remote")
+
+	downloadRemote := true
+	if allowRemote != "" {
+		parsedFlag, err := strconv.ParseBool(allowRemote)
+		if err != nil {
+			return api.InternalServerError("allow_remote flag does not appear to be a boolean")
+		}
+		downloadRemote = parsedFlag
+	}
 
 	log = log.WithFields(logrus.Fields{
-		"mediaId": mediaId,
-		"server":  server,
+		"mediaId":     mediaId,
+		"server":      server,
+		"allowRemote": downloadRemote,
 	})
 
 	widthStr := r.URL.Query().Get("width")
@@ -73,7 +84,7 @@ func ThumbnailMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) inter
 
 	mediaCache := media_cache.Create(r.Context(), log)
 
-	streamedThumbnail, err := mediaCache.GetThumbnail(server, mediaId, width, height, method, animated)
+	streamedThumbnail, err := mediaCache.GetThumbnail(server, mediaId, width, height, method, animated, downloadRemote)
 	if err != nil {
 		if err == common.ErrMediaNotFound {
 			return api.NotFoundError()

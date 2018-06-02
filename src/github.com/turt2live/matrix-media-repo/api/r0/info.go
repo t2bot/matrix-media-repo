@@ -2,6 +2,7 @@ package r0
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/disintegration/imaging"
 	"github.com/gorilla/mux"
@@ -24,15 +25,26 @@ func MediaInfo(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{
 
 	server := params["server"]
 	mediaId := params["mediaId"]
+	allowRemote := r.URL.Query().Get("allow_remote")
+
+	downloadRemote := true
+	if allowRemote != "" {
+		parsedFlag, err := strconv.ParseBool(allowRemote)
+		if err != nil {
+			return api.InternalServerError("allow_remote flag does not appear to be a boolean")
+		}
+		downloadRemote = parsedFlag
+	}
 
 	log = log.WithFields(logrus.Fields{
-		"mediaId": mediaId,
-		"server":  server,
+		"mediaId":     mediaId,
+		"server":      server,
+		"allowRemote": downloadRemote,
 	})
 
 	mediaCache := media_cache.Create(r.Context(), log)
 
-	streamedMedia, err := mediaCache.GetMedia(server, mediaId)
+	streamedMedia, err := mediaCache.GetMedia(server, mediaId, downloadRemote)
 	if err != nil {
 		if err == common.ErrMediaNotFound {
 			return api.NotFoundError()

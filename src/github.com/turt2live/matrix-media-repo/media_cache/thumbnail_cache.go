@@ -29,13 +29,13 @@ func (c *mediaCache) getThumbnailRecordId(thumbnail *types.Thumbnail) string {
 	return fmt.Sprintf("thumbnail:%s_%s_%d_%d_%s_%t", thumbnail.Origin, thumbnail.MediaId, thumbnail.Width, thumbnail.Height, thumbnail.Method, thumbnail.Animated)
 }
 
-func (c *mediaCache) GetThumbnail(server string, mediaId string, width int, height int, method string, animated bool) (*types.StreamedThumbnail, error) {
+func (c *mediaCache) GetThumbnail(server string, mediaId string, width int, height int, method string, animated bool, downloadRemote bool) (*types.StreamedThumbnail, error) {
 	width, height, method, err := c.pickThumbnailDimensions(width, height, method)
 	if err != nil {
 		return nil, err
 	}
 
-	thumbnail, err := c.GetRawThumbnail(server, mediaId, width, height, method, animated)
+	thumbnail, err := c.GetRawThumbnail(server, mediaId, width, height, method, animated, downloadRemote)
 	if err != nil {
 		if err == common.ErrMediaQuarantined {
 			c.log.Warn("Quarantined media accessed")
@@ -99,7 +99,7 @@ func (c *mediaCache) GetThumbnail(server string, mediaId string, width int, heig
 	return &types.StreamedThumbnail{Thumbnail: thumbnail, Stream: stream}, nil
 }
 
-func (c *mediaCache) GetRawThumbnail(server string, mediaId string, width int, height int, method string, animated bool) (*types.Thumbnail, error) {
+func (c *mediaCache) GetRawThumbnail(server string, mediaId string, width int, height int, method string, animated bool, downloadRemote bool) (*types.Thumbnail, error) {
 	width, height, method, err := c.pickThumbnailDimensions(width, height, method)
 	if err != nil {
 		return nil, err
@@ -122,7 +122,7 @@ func (c *mediaCache) GetRawThumbnail(server string, mediaId string, width int, h
 	}
 
 	// We proxy the call for thumbnails, so we'll at least try and get it
-	media, err := c.GetRawMedia(server, mediaId)
+	media, err := c.GetRawMedia(server, mediaId, downloadRemote)
 	if err != nil {
 		return nil, err
 	}

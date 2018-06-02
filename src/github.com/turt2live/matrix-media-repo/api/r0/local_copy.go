@@ -2,6 +2,7 @@ package r0
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
@@ -16,10 +17,21 @@ func LocalCopy(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{
 
 	server := params["server"]
 	mediaId := params["mediaId"]
+	allowRemote := r.URL.Query().Get("allow_remote")
+
+	downloadRemote := true
+	if allowRemote != "" {
+		parsedFlag, err := strconv.ParseBool(allowRemote)
+		if err != nil {
+			return api.InternalServerError("allow_remote flag does not appear to be a boolean")
+		}
+		downloadRemote = parsedFlag
+	}
 
 	log = log.WithFields(logrus.Fields{
-		"mediaId": mediaId,
-		"server":  server,
+		"mediaId":     mediaId,
+		"server":      server,
+		"allowRemote": downloadRemote,
 	})
 
 	// TODO: There's a lot of room for improvement here. Instead of re-uploading media, we should just update the DB.
@@ -27,7 +39,7 @@ func LocalCopy(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{
 	mediaCache := media_cache.Create(r.Context(), log)
 	svc := media_service.New(r.Context(), log)
 
-	streamedMedia, err := mediaCache.GetMedia(server, mediaId)
+	streamedMedia, err := mediaCache.GetMedia(server, mediaId, downloadRemote)
 	if err != nil {
 		if err == common.ErrMediaNotFound {
 			return api.NotFoundError()

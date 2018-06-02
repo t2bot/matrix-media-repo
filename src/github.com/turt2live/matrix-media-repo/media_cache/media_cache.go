@@ -25,8 +25,8 @@ func (c *mediaCache) getMediaRecordId(media *types.Media) string {
 	return fmt.Sprintf("media:%s_%s", media.Origin, media.MediaId)
 }
 
-func (c *mediaCache) GetMedia(server string, mediaId string) (*types.StreamedMedia, error) {
-	media, err := c.GetRawMedia(server, mediaId)
+func (c *mediaCache) GetMedia(server string, mediaId string, downloadRemote bool) (*types.StreamedMedia, error) {
+	media, err := c.GetRawMedia(server, mediaId, downloadRemote)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (c *mediaCache) GetMedia(server string, mediaId string) (*types.StreamedMed
 	return &types.StreamedMedia{Media: media, Stream: stream}, nil
 }
 
-func (c *mediaCache) GetRawMedia(server string, mediaId string) (*types.Media, error) {
+func (c *mediaCache) GetRawMedia(server string, mediaId string, downloadRemote bool) (*types.Media, error) {
 	mediaSvc := media_service.New(c.ctx, c.log)
 
 	// First see if we have the media in cache
@@ -84,6 +84,11 @@ func (c *mediaCache) GetRawMedia(server string, mediaId string) (*types.Media, e
 			}
 		}
 
+		if !downloadRemote {
+			c.log.Warn("Remote media not being downloaded")
+			return nil, common.ErrMediaNotFound
+		}
+
 		media, err = mediaSvc.GetRemoteMediaDirect(server, mediaId)
 		if err != nil {
 			return nil, err
@@ -96,6 +101,11 @@ func (c *mediaCache) GetRawMedia(server string, mediaId string) (*types.Media, e
 			c.log.Error("Media not found in file store when we expected it to")
 			return nil, common.ErrMediaNotFound
 		} else {
+			if !downloadRemote {
+				c.log.Warn("Media appears to have been deleted, however we're not redownloading it")
+				return nil, common.ErrMediaNotFound
+			}
+
 			c.log.Warn("Media appears to have been deleted - redownloading")
 
 			media, err = mediaSvc.GetRemoteMediaDirect(server, mediaId)

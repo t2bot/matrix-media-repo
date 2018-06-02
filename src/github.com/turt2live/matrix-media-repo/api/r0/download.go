@@ -3,6 +3,7 @@ package r0
 import (
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
@@ -31,16 +32,27 @@ func DownloadMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interf
 	server := params["server"]
 	mediaId := params["mediaId"]
 	filename := params["filename"]
+	allowRemote := r.URL.Query().Get("allow_remote")
+
+	downloadRemote := true
+	if allowRemote != "" {
+		parsedFlag, err := strconv.ParseBool(allowRemote)
+		if err != nil {
+			return api.InternalServerError("allow_remote flag does not appear to be a boolean")
+		}
+		downloadRemote = parsedFlag
+	}
 
 	log = log.WithFields(logrus.Fields{
-		"mediaId":  mediaId,
-		"server":   server,
-		"filename": filename,
+		"mediaId":     mediaId,
+		"server":      server,
+		"filename":    filename,
+		"allowRemote": downloadRemote,
 	})
 
 	mediaCache := media_cache.Create(r.Context(), log)
 
-	streamedMedia, err := mediaCache.GetMedia(server, mediaId)
+	streamedMedia, err := mediaCache.GetMedia(server, mediaId, downloadRemote)
 	if err != nil {
 		if err == common.ErrMediaNotFound {
 			return api.NotFoundError()
