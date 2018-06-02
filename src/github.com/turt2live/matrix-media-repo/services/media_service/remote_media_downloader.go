@@ -55,7 +55,7 @@ func (r *remoteMediaDownloader) Download(server string, mediaId string) (*downlo
 		return nil, err
 	}
 
-	downloadUrl := baseUrl + "/_matrix/media/v1/download/" + server + "/" + mediaId
+	downloadUrl := baseUrl + "/_matrix/media/v1/download/" + server + "/" + mediaId + "?allow_remote=false"
 	resp, err := matrix.FederatedGet(downloadUrl, server)
 	if err != nil {
 		downloadErrorsCache.Set(cacheKey, err, cache.DefaultExpiration)
