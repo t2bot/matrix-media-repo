@@ -1,0 +1,74 @@
+repo:
+  bindAddress: '0.0.0.0'
+  port: 8000
+  logDirectory: logs
+homeservers:
+  - name: 'abc.com'
+    downloadRequiresAuth: false
+    csApi: "http://localhost:9000/"
+  - name: 'def.com'
+    downloadRequiresAuth: true
+    csApi: "http://localhost:9000/"
+admins:
+  - "@test2:localhost"
+urlPreviews:
+  enabled: true # If enabled, the preview_url routes will be accessible
+  maxPageSizeBytes: 1024 # 10MB default, 0 to disable
+  numWorkers: 10
+  disallowedNetworks:
+    - "127.0.0.1/8"
+    - "10.0.0.0/8"
+    - "172.16.0.0/12"
+    - "192.168.0.0/16"
+    - "100.64.0.0/10"
+    - "169.254.0.0/16"
+database:
+  postgres: "postgres://postgres@localhost/media_repo?sslmode=disable"
+uploads:
+  storagePaths:
+  - "/tmp"
+  maxBytes: 4096 # 100MB default, 0 to disable
+  allowedTypes: [] # all
+downloads:
+  maxBytes: 4096 # 100MB default, 0 to disable
+  numWorkers: 10
+  cache:
+    enabled: true
+    maxSizeBytes: 10485760
+    maxFileSizeBytes: 10485760
+    trackedMinutes: 30
+    minDownloads: 2
+    minCacheTimeSeconds: 5
+    minEvictedTimeSeconds: 10
+thumbnails:
+  maxSourceBytes: 2048 # 10MB default, 0 to disable
+  numWorkers: 10
+  sizes:
+    - width: 32
+      height: 32
+    - width: 96
+      height: 96
+    - width: 320
+      height: 240
+    - width: 640
+      height: 480
+    - width: 800
+      height: 600
+  types:
+    - "image/jpeg"
+    - "image/jpg"
+    - "image/png"
+    - "image/gif"
+    - "image/svg+xml"
+  allowAnimated: true
+  defaultAnimated: false
+  maxAnimateSizeBytes: 4096 # 10MB default, 0 to disable
+rateLimit:
+  enabled: true
+  requestsPerSecond: 1
+  burst: 10
+identicons:
+  enabled: true
+quarantine:
+  allowLocalAdmins: true
+  replaceThumbnails: true

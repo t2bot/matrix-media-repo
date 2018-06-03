@@ -1,9 +1,21 @@
 language: go
 go:
   - 1.9
+services:
+  - postgresql
+addons:
+  postgresql: "9.5"
+
+# Install gb and get the vendor packages ready
 before_install:
   - go get github.com/constabulary/gb/...
 install:
   - gb vendor restore
+
+# Build and test the thing
+before_script:
+  - psql -c 'create database media_repo;` -U postgres
+  - cp travis-ci.media_repo.yaml media_repo.yaml
 script:
   - gb build all
+  #- go run tests/mock/homeserver.go
