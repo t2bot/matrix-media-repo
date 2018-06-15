@@ -65,6 +65,10 @@ func Init() {
 		logrus.Info("Registering route: " + route.method + " " + routePath)
 		rtr.Handle(routePath, route.handler).Methods(route.method)
 		rtr.Handle(routePath, optionsHandler).Methods("OPTIONS")
+
+		// This is a hack to a ensure that trailing slashes also match the routes correctly
+		rtr.Handle(routePath+"/", route.handler).Methods(route.method)
+		rtr.Handle(routePath+"/", optionsHandler).Methods("OPTIONS")
 	}
 
 	rtr.NotFoundHandler = handler{api.NotFoundHandler, counter}
