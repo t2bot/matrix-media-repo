@@ -17,7 +17,6 @@ var Runtime = &runtimeConfig{}
 
 type HomeserverConfig struct {
 	Name                 string `yaml:"name"`
-	DownloadRequiresAuth bool   `yaml:"downloadRequiresAuth"`
 	ClientServerApi      string `yaml:"csApi"`
 	BackoffAt            int    `yaml:"backoffAt"`
 }
