@@ -1,4 +1,4 @@
-package r0
+package custom
 
 import (
 	"context"
@@ -8,10 +8,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
-	"github.com/turt2live/matrix-media-repo/config"
+	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/matrix"
-	"github.com/turt2live/matrix-media-repo/media_cache"
-	"github.com/turt2live/matrix-media-repo/services/media_service"
+	"github.com/turt2live/matrix-media-repo/old_middle_layer/media_cache"
+	"github.com/turt2live/matrix-media-repo/old_middle_layer/services/media_service"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 

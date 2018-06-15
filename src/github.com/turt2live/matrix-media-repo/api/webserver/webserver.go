@@ -10,8 +10,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
+	"github.com/turt2live/matrix-media-repo/api/custom"
 	"github.com/turt2live/matrix-media-repo/api/r0"
-	"github.com/turt2live/matrix-media-repo/config"
+	"github.com/turt2live/matrix-media-repo/api/unstable"
+	"github.com/turt2live/matrix-media-repo/common/config"
 )
 
 type route struct {
@@ -29,15 +31,15 @@ func Init() {
 	thumbnailHandler := handler{api.AccessTokenOptionalRoute(r0.ThumbnailMedia), counter}
 	previewUrlHandler := handler{api.AccessTokenRequiredRoute(r0.PreviewUrl), counter}
 	identiconHandler := handler{api.AccessTokenOptionalRoute(r0.Identicon), counter}
-	purgeHandler := handler{api.RepoAdminRoute(r0.PurgeRemoteMedia), counter}
-	quarantineHandler := handler{api.AccessTokenRequiredRoute(r0.QuarantineMedia), counter}
-	quarantineRoomHandler := handler{api.AccessTokenRequiredRoute(r0.QuarantineRoomMedia), counter}
-	localCopyHandler := handler{api.AccessTokenRequiredRoute(r0.LocalCopy), counter}
-	infoHandler := handler{api.AccessTokenRequiredRoute(r0.MediaInfo), counter}
-	limitsHandler := handler{api.AccessTokenRequiredRoute(r0.Limits), counter}
+	purgeHandler := handler{api.RepoAdminRoute(custom.PurgeRemoteMedia), counter}
+	quarantineHandler := handler{api.AccessTokenRequiredRoute(custom.QuarantineMedia), counter}
+	quarantineRoomHandler := handler{api.AccessTokenRequiredRoute(custom.QuarantineRoomMedia), counter}
+	localCopyHandler := handler{api.AccessTokenRequiredRoute(unstable.LocalCopy), counter}
+	infoHandler := handler{api.AccessTokenRequiredRoute(unstable.MediaInfo), counter}
+	limitsHandler := handler{api.AccessTokenRequiredRoute(unstable.Limits), counter}
 
 	routes := make(map[string]route)
-	versions := []string{"r0", "v1"} // r0 is typically clients and v1 is typically servers. v1 is deprecated.
+	versions := []string{"r0", "v1", "unstable"} // r0 is typically clients and v1 is typically servers. v1 is deprecated.
 
 	for _, version := range versions {
 		// Standard routes we have to handle
@@ -47,18 +49,21 @@ func Init() {
 		routes["/_matrix/media/"+version+"/thumbnail/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"GET", thumbnailHandler}
 		routes["/_matrix/media/"+version+"/preview_url"] = route{"GET", previewUrlHandler}
 		routes["/_matrix/media/"+version+"/identicon/{seed:.*}"] = route{"GET", identiconHandler}
-		routes["/_matrix/media/"+version+"/limits"] = route{"GET", limitsHandler}
 
 		// Routes that we define but are not part of the spec
 		routes["/_matrix/media/"+version+"/admin/purge_remote"] = route{"POST", purgeHandler}
 		routes["/_matrix/media/"+version+"/admin/quarantine/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"POST", quarantineHandler}
 		routes["/_matrix/media/"+version+"/admin/room/{roomId:[^/]+}/quarantine"] = route{"POST", quarantineRoomHandler}
-		routes["/_matrix/media/"+version+"/local_copy/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"GET", localCopyHandler}
-		routes["/_matrix/media/"+version+"/info/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"GET", infoHandler}
 
 		// Routes that we should handle but aren't in the media namespace
 		routes["/_matrix/client/"+version+"/admin/purge_media_cache"] = route{"POST", purgeHandler}
 		routes["/_matrix/client/"+version+"/admin/quarantine_media/{roomId:[^/]+}"] = route{"POST", quarantineRoomHandler}
+
+		if version == "unstable" {
+			routes["/_matrix/media/"+version+"/limits"] = route{"GET", limitsHandler}
+			routes["/_matrix/media/"+version+"/local_copy/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"GET", localCopyHandler}
+			routes["/_matrix/media/"+version+"/info/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"GET", infoHandler}
+		}
 	}
 
 	for routePath, route := range routes {

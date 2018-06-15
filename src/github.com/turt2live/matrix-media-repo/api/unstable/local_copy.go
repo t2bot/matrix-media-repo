@@ -1,26 +1,19 @@
-package r0
+package unstable
 
 import (
 	"net/http"
 	"strconv"
 
-	"github.com/disintegration/imaging"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
+	"github.com/turt2live/matrix-media-repo/api/r0"
 	"github.com/turt2live/matrix-media-repo/common"
-	"github.com/turt2live/matrix-media-repo/media_cache"
+	"github.com/turt2live/matrix-media-repo/old_middle_layer/media_cache"
+	"github.com/turt2live/matrix-media-repo/old_middle_layer/services/media_service"
 )
 
-type MediaInfoResponse struct {
-	ContentUri  string `json:"content_uri"`
-	ContentType string `json:"content_type"`
-	Width       int    `json:"width,omitempty"`
-	Height      int    `json:"height,omitempty"`
-	Size        int64  `json:"size"`
-}
-
-func MediaInfo(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
+func LocalCopy(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
 	params := mux.Vars(r)
 
 	server := params["server"]
@@ -42,7 +35,10 @@ func MediaInfo(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{
 		"allowRemote": downloadRemote,
 	})
 
+	// TODO: There's a lot of room for improvement here. Instead of re-uploading media, we should just update the DB.
+
 	mediaCache := media_cache.Create(r.Context(), log)
+	svc := media_service.New(r.Context(), log)
 
 	streamedMedia, err := mediaCache.GetMedia(server, mediaId, downloadRemote)
 	if err != nil {
@@ -58,17 +54,20 @@ func MediaInfo(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{
 	}
 	defer streamedMedia.Stream.Close()
 
-	response := &MediaInfoResponse{
-		ContentUri:  streamedMedia.Media.MxcUri(),
-		ContentType: streamedMedia.Media.ContentType,
-		Size:        streamedMedia.Media.SizeBytes,
+	// Don't clone the media if it's already available on this domain
+	if streamedMedia.Media.Origin == r.Host {
+		return &r0.MediaUploadedResponse{streamedMedia.Media.MxcUri()}
 	}
 
-	img, err := imaging.Decode(streamedMedia.Stream)
-	if err == nil {
-		response.Width = img.Bounds().Max.X
-		response.Height = img.Bounds().Max.Y
+	newMedia, err := svc.StoreMedia(streamedMedia.Stream, streamedMedia.Media.ContentType, streamedMedia.Media.UploadName, user.UserId, r.Host, "")
+	if err != nil {
+		if err == common.ErrMediaNotAllowed {
+			return api.BadRequest("Media content type not allowed on this server")
+		}
+
+		log.Error("Unexpected error storing media: " + err.Error())
+		return api.InternalServerError("Unexpected Error")
 	}
 
-	return response
+	return &r0.MediaUploadedResponse{newMedia.MxcUri()}
 }

@@ -1,11 +1,11 @@
-package r0
+package unstable
 
 import (
 	"net/http"
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
-	"github.com/turt2live/matrix-media-repo/config"
+	"github.com/turt2live/matrix-media-repo/common/config"
 )
 
 type LimitsResponse struct {

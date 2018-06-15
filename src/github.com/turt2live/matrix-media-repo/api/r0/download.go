@@ -9,7 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/common"
-	"github.com/turt2live/matrix-media-repo/media_cache"
+	"github.com/turt2live/matrix-media-repo/old_middle_layer/media_cache"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 

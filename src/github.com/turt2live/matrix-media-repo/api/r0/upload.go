@@ -8,7 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/common"
-	"github.com/turt2live/matrix-media-repo/services/media_service"
+	"github.com/turt2live/matrix-media-repo/old_middle_layer/services/media_service"
 )
 
 type MediaUploadedResponse struct {

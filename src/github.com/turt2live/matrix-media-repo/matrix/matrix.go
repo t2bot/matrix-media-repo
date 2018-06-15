@@ -6,7 +6,7 @@ import (
 	"github.com/matrix-org/gomatrix"
 	"github.com/rubyist/circuitbreaker"
 	"github.com/turt2live/matrix-media-repo/common"
-	"github.com/turt2live/matrix-media-repo/config"
+	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
