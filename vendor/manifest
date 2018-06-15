@@ -191,6 +191,20 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "golang.org/x/crypto/bcrypt",
+			"repository": "https://go.googlesource.com/crypto",
+			"revision": "a8fb68e7206f8c78be19b432c58eb52a6aa34462",
+			"branch": "master",
+			"path": "/bcrypt"
+		},
+		{
+			"importpath": "golang.org/x/crypto/blowfish",
+			"repository": "https://go.googlesource.com/crypto",
+			"revision": "a8fb68e7206f8c78be19b432c58eb52a6aa34462",
+			"branch": "master",
+			"path": "/blowfish"
+		},
+		{
 			"importpath": "golang.org/x/crypto/ed25519",
 			"repository": "https://go.googlesource.com/crypto",
 			"revision": "6a293f2d4b14b8e6d3f0539e383f6d0d30fce3fd",

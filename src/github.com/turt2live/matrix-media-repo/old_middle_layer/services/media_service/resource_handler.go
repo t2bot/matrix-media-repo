@@ -15,8 +15,9 @@ type mediaResourceHandler struct {
 }
 
 type downloadRequest struct {
-	origin  string
-	mediaId string
+	origin          string
+	mediaId         string
+	rawContentToken string
 }
 
 type downloadResponse struct {
@@ -62,7 +63,12 @@ func downloadResourceWorkFn(request *resource_handler.WorkRequest) interface{} {
 	svc := New(ctx, log) // media_service (us)
 	defer downloaded.Contents.Close()
 
-	media, err := svc.StoreMedia(downloaded.Contents, downloaded.ContentType, downloaded.DesiredFilename, "", info.origin, info.mediaId)
+	visibility := "public"
+	if info.rawContentToken != "" {
+		visibility = "private"
+	}
+
+	media, _, err := svc.StoreMedia(downloaded.Contents, downloaded.ContentType, downloaded.DesiredFilename, visibility, "", info.origin, info.mediaId, info.rawContentToken)
 	if err != nil {
 		return &downloadResponse{err: err}
 	}
@@ -70,11 +76,11 @@ func downloadResourceWorkFn(request *resource_handler.WorkRequest) interface{} {
 	return &downloadResponse{media, err}
 }
 
-func (h *mediaResourceHandler) DownloadRemoteMedia(origin string, mediaId string) chan *downloadResponse {
+func (h *mediaResourceHandler) DownloadRemoteMedia(origin string, mediaId string, rawContentToken string) chan *downloadResponse {
 	resultChan := make(chan *downloadResponse)
 	go func() {
 		reqId := "remote_download:" + origin + "_" + mediaId
-		result := <-h.resourceHandler.GetResource(reqId, &downloadRequest{origin, mediaId})
+		result := <-h.resourceHandler.GetResource(reqId, &downloadRequest{origin, mediaId, rawContentToken})
 		resultChan <- result.(*downloadResponse)
 	}()
 	return resultChan

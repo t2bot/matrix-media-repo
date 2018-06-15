@@ -1,0 +1,2 @@
+ALTER TABLE media ADD COLUMN visibility TEXT NOT NULL DEFAULT 'public';
+ALTER TABLE media ADD COLUMN content_token_hash TEXT NULL DEFAULT NULL;

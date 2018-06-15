@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/pkg/errors"
 	"github.com/ryanuber/go-glob"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
@@ -32,14 +33,14 @@ func (s *mediaService) GetMediaDirect(server string, mediaId string) (*types.Med
 	return s.store.Get(server, mediaId)
 }
 
-func (s *mediaService) GetRemoteMediaDirect(server string, mediaId string) (*types.Media, error) {
-	return s.downloadRemoteMedia(server, mediaId)
+func (s *mediaService) GetRemoteMediaDirect(server string, mediaId string, rawContentToken string) (*types.Media, error) {
+	return s.downloadRemoteMedia(server, mediaId, rawContentToken)
 }
 
-func (s *mediaService) downloadRemoteMedia(server string, mediaId string) (*types.Media, error) {
+func (s *mediaService) downloadRemoteMedia(server string, mediaId string, rawContentToken string) (*types.Media, error) {
 	s.log.Info("Attempting to download remote media")
 
-	result := <-getResourceHandler().DownloadRemoteMedia(server, mediaId)
+	result := <-getResourceHandler().DownloadRemoteMedia(server, mediaId, rawContentToken)
 	return result.media, result.err
 }
 
@@ -135,7 +136,7 @@ func (s *mediaService) PurgeRemoteMediaBefore(beforeTs int64) (int, error) {
 	return removed, nil
 }
 
-func (s *mediaService) UploadMedia(contents io.ReadCloser, contentType string, filename string, userId string, host string) (*types.Media, error) {
+func (s *mediaService) UploadMedia(contents io.ReadCloser, contentType string, filename string, visibility string, userId string, host string) (*types.Media, string, error) {
 	defer contents.Close()
 	var data io.Reader
 	if config.Get().Uploads.MaxSizeBytes > 0 {
@@ -144,25 +145,41 @@ func (s *mediaService) UploadMedia(contents io.ReadCloser, contentType string, f
 		data = contents
 	}
 
-	return s.StoreMedia(data, contentType, filename, userId, host, "")
+	return s.StoreMedia(data, contentType, filename, visibility, userId, host, "", "")
 }
 
-func (s *mediaService) StoreMedia(contents io.Reader, contentType string, filename string, userId string, host string, mediaId string) (*types.Media, error) {
+func (s *mediaService) StoreMedia(contents io.Reader, contentType string, filename string, visibility string, userId string, host string, mediaId string, unhashedContentToken string) (*types.Media, string, error) {
 	isGeneratedId := false
 	if mediaId == "" {
 		mediaId = generateMediaId()
 		isGeneratedId = true
 	}
+	isGeneratedToken := false
+	if unhashedContentToken == "" && visibility != "public" {
+		unhashedContentToken = generateContentToken()
+		isGeneratedToken = true
+	}
 	log := s.log.WithFields(logrus.Fields{
-		"mediaService_mediaId":            mediaId,
-		"mediaService_host":               host,
-		"mediaService_mediaIdIsGenerated": isGeneratedId,
+		"mediaService_mediaId":                 mediaId,
+		"mediaService_host":                    host,
+		"mediaService_mediaIdIsGenerated":      isGeneratedId,
+		"mediaService_contentTokenIsGenerated": isGeneratedToken,
 	})
+
+	var hashedContentToken *string
+	if visibility != "public" {
+		hashed, err := util.HashString(unhashedContentToken)
+		if err != nil {
+			return nil, unhashedContentToken, err
+		}
+
+		hashedContentToken = &hashed
+	}
 
 	// Store the file in a temporary location
 	fileLocation, err := storage.PersistFile(contents, s.ctx, s.log)
 	if err != nil {
-		return nil, err
+		return nil, unhashedContentToken, err
 	}
 
 	// Check to make sure the file is allowed
@@ -170,7 +187,7 @@ func (s *mediaService) StoreMedia(contents io.Reader, contentType string, filena
 	if err != nil {
 		s.log.Error("Error while checking content type of file: " + err.Error())
 		os.Remove(fileLocation) // attempt cleanup
-		return nil, err
+		return nil, unhashedContentToken, err
 	}
 
 	for _, allowedType := range config.Get().Uploads.AllowedTypes {
@@ -178,34 +195,43 @@ func (s *mediaService) StoreMedia(contents io.Reader, contentType string, filena
 			s.log.Warn("Content type " + fileMime + " (reported as " + contentType + ") is not allowed to be uploaded")
 
 			os.Remove(fileLocation) // attempt cleanup
-			return nil, common.ErrMediaNotAllowed
+			return nil, unhashedContentToken, common.ErrMediaNotAllowed
 		}
 	}
 
 	hash, err := storage.GetFileHash(fileLocation)
 	if err != nil {
 		os.Remove(fileLocation) // attempt cleanup
-		return nil, err
+		return nil, unhashedContentToken, err
 	}
 
 	records, err := s.store.GetByHash(hash)
 	if err != nil {
 		os.Remove(fileLocation) // attempt cleanup
-		return nil, err
+		return nil, unhashedContentToken, err
 	}
 
 	// If there's at least one record, then we have a duplicate hash - try and process it
 	if len(records) > 0 {
 		// See if we one of the duplicate records is a match for the host and media ID. We'll otherwise use
 		// the last duplicate (should only be 1 anyways) as our starting point for a new record.
+
 		var media *types.Media
 		for i := 0; i < len(records); i++ {
 			media = records[i]
 
-			if media.Origin == host && (media.MediaId == mediaId || isGeneratedId) && media.ContentType == contentType && media.UserId == userId {
+			if media.Origin == host && media.MediaId == mediaId && media.ContentType == contentType && media.UserId == userId {
 				log.Info("User has uploaded this media before - returning unaltered media record")
+
+				if media.Visibility != visibility || (visibility != "public" && (media.ContentTokenHash == nil || hashedContentToken == nil || *media.ContentTokenHash != *hashedContentToken)) {
+					log.Warn("Media visibility or content token does not match what is already stored. Refusing to serve media.")
+
+					os.Remove(fileLocation) // attempt cleanup
+					return nil, unhashedContentToken, errors.New("media visibility or content token does not match what is already stored")
+				}
+
 				overwriteExistingOrDeleteTempFile(fileLocation, media)
-				return media, nil
+				return media, unhashedContentToken, nil
 			}
 
 			// The last media object will be used to create a new pointer
@@ -219,14 +245,18 @@ func (s *mediaService) StoreMedia(contents io.Reader, contentType string, filena
 		media.UploadName = filename
 		media.ContentType = contentType
 		media.CreationTs = util.NowMillis()
+		media.Visibility = visibility
+		if visibility != "public" {
+			media.ContentTokenHash = hashedContentToken
+		}
 
 		err = s.store.Insert(media)
 		if err != nil {
-			return nil, err
+			return nil, unhashedContentToken, err
 		}
 
 		overwriteExistingOrDeleteTempFile(fileLocation, media)
-		return media, nil
+		return media, unhashedContentToken, nil
 	}
 
 	// No duplicate hash, so we have to create a new record
@@ -234,7 +264,7 @@ func (s *mediaService) StoreMedia(contents io.Reader, contentType string, filena
 	fileSize, err := util.FileSize(fileLocation)
 	if err != nil {
 		os.Remove(fileLocation) // attempt cleanup
-		return nil, err
+		return nil, unhashedContentToken, err
 	}
 
 	log.Info("Persisting unique media record")
@@ -249,19 +279,32 @@ func (s *mediaService) StoreMedia(contents io.Reader, contentType string, filena
 		SizeBytes:   fileSize,
 		Location:    fileLocation,
 		CreationTs:  util.NowMillis(),
+		Visibility:  visibility,
+	}
+	if visibility != "public" {
+		media.ContentTokenHash = hashedContentToken
 	}
 
 	err = s.store.Insert(media)
 	if err != nil {
 		os.Remove(fileLocation) // attempt cleanup
-		return nil, err
+		return nil, unhashedContentToken, err
 	}
 
-	return media, nil
+	return media, unhashedContentToken, nil
 }
 
 func generateMediaId() string {
 	str, err := util.GenerateRandomString(64)
+	if err != nil {
+		panic(err)
+	}
+
+	return str
+}
+
+func generateContentToken() string {
+	str, err := util.GenerateRandomString(128)
 	if err != nil {
 		panic(err)
 	}
