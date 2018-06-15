@@ -22,6 +22,7 @@ type generatedThumbnail struct {
 	DiskLocation string
 	SizeBytes    int64
 	Animated     bool
+	Sha256Hash   *string
 }
 
 type thumbnailer struct {
@@ -77,6 +78,7 @@ func (t *thumbnailer) GenerateThumbnail(media *types.Media, width int, height in
 			thumb.ContentType = media.ContentType
 			thumb.DiskLocation = media.Location
 			thumb.SizeBytes = media.SizeBytes
+			thumb.Sha256Hash = &media.Sha256Hash
 			t.log.Warn("Image too small, returning raw image")
 			return thumb, nil
 		}
@@ -176,9 +178,16 @@ func (t *thumbnailer) GenerateThumbnail(media *types.Media, width int, height in
 		return nil, err
 	}
 
+	hash, err := storage.GetFileHash(location)
+	if err != nil {
+		t.log.Error("Unexpected error getting the hash for the thumbnail: ", err.Error())
+		return nil, err
+	}
+
 	thumb.DiskLocation = location
 	thumb.ContentType = contentType
 	thumb.SizeBytes = fileSize
+	thumb.Sha256Hash = &hash
 
 	return thumb, nil
 }

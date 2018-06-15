@@ -82,6 +82,7 @@ func thumbnailWorkFn(request *resource_handler.WorkRequest) interface{} {
 		ContentType: generated.ContentType,
 		Location:    generated.DiskLocation,
 		SizeBytes:   generated.SizeBytes,
+		Sha256Hash:  generated.Sha256Hash,
 	}
 
 	err = svc.store.Insert(newThumb)

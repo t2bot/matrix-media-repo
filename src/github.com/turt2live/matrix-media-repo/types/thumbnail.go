@@ -13,6 +13,7 @@ type Thumbnail struct {
 	SizeBytes   int64
 	Location    string
 	CreationTs  int64
+	Sha256Hash  *string // nullable
 }
 
 type StreamedThumbnail struct {
