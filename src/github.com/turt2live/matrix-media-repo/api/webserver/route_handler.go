@@ -78,7 +78,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case *api.ErrorResponse:
 		switch result.InternalCode {
 		case common.ErrCodeUnknownToken:
-			statusCode = http.StatusForbidden
+			statusCode = http.StatusUnauthorized
 			break
 		case common.ErrCodeNotFound:
 			statusCode = http.StatusNotFound
