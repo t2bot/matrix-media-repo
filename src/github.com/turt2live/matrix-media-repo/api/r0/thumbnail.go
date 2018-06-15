@@ -10,16 +10,9 @@ import (
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/old_middle_layer/media_cache"
-	"github.com/turt2live/matrix-media-repo/util"
 )
 
 func ThumbnailMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
-	hs := util.GetHomeserverConfig(r.Host)
-	if hs.DownloadRequiresAuth && user.UserId == "" {
-		log.Warn("Homeserver requires authenticated downloads - denying request")
-		return api.AuthFailed()
-	}
-
 	params := mux.Vars(r)
 
 	server := params["server"]
