@@ -39,7 +39,7 @@ func GetServerApiUrl(hostname string) (string, error) {
 	// Note: we ignore errors because they are parsing errors. Invalid hostnames will fail through elsewhere.
 	h, p, _ := net.SplitHostPort(hostname)
 	if p != "" {
-		url := fmt.Sprintf("https://%s:%d", h, p)
+		url := fmt.Sprintf("https://%s:%s", h, p)
 		apiUrlCacheInstance.Set(hostname, url, cache.DefaultExpiration)
 		logrus.Info("Server API URL for " + hostname + " is " + url + " (explicit port)")
 		return url, nil

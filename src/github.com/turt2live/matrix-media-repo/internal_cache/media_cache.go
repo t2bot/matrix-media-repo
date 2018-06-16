@@ -24,6 +24,17 @@ type MediaCache struct {
 	enabled       bool
 }
 
+type cachedFile struct {
+	media     *types.Media
+	thumbnail *types.Thumbnail
+	Contents  *bytes.Buffer
+}
+
+type cooldown struct {
+	isEviction bool
+	expiresTs  int64
+}
+
 var instance *MediaCache
 var lock = &sync.Once{}
 
@@ -270,4 +281,8 @@ func (c *MediaCache) flagCached(recordId string) {
 	logrus.Info("Flagging " + recordId + " as joining the cache (overwriting any previous cooldowns)")
 	duration := int64(config.Get().Downloads.Cache.MinCacheTimeSeconds) * 1000
 	c.cooldownCache.Set(recordId, &cooldown{isEviction: false, expiresTs: duration}, cache.DefaultExpiration)
+}
+
+func (c *cooldown) IsExpired() bool {
+	return util.NowMillis() >= c.expiresTs
 }
