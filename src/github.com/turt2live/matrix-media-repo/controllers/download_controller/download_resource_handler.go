@@ -255,8 +255,14 @@ func DownloadRemoteMediaDirect(server string, mediaId string, log *logrus.Entry)
 		return nil, err
 	}
 
+	contentType := resp.Header.Get("Content-Type")
+	if contentType == "" {
+		log.Warn("Remote media has no content type; Assuming application/octet-stream")
+		contentType = "application/octet-stream" // binary
+	}
+
 	request := &downloadedMedia{
-		ContentType: resp.Header.Get("Content-Type"),
+		ContentType: contentType,
 		Contents:    resp.Body,
 		// DesiredFilename (calculated below)
 	}
