@@ -9,7 +9,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
-	"github.com/turt2live/matrix-media-repo/old_middle_layer/services/url_service"
+	"github.com/turt2live/matrix-media-repo/controllers/preview_controller"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
@@ -54,8 +54,7 @@ func PreviewUrl(r *http.Request, log *logrus.Entry, user api.UserInfo) interface
 		return api.BadRequest("Scheme not accepted")
 	}
 
-	svc := url_service.New(r.Context(), log)
-	preview, err := svc.GetPreview(urlStr, r.Host, user.UserId, ts)
+	preview, err := preview_controller.GetPreview(urlStr, r.Host, user.UserId, ts, r.Context(), log)
 	if err != nil {
 		if err == common.ErrMediaNotFound || err == common.ErrHostNotFound {
 			return api.NotFoundError()

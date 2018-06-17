@@ -8,7 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/common"
-	"github.com/turt2live/matrix-media-repo/old_middle_layer/services/media_service"
+	"github.com/turt2live/matrix-media-repo/controllers/upload_controller"
 )
 
 type MediaUploadedResponse struct {
@@ -30,15 +30,13 @@ func UploadMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interfac
 		contentType = "application/octet-stream" // binary
 	}
 
-	svc := media_service.New(r.Context(), log)
-
-	if svc.IsTooLarge(r.ContentLength, r.Header.Get("Content-Length")) {
+	if upload_controller.IsRequestTooLarge(r.ContentLength, r.Header.Get("Content-Length")) {
 		io.Copy(ioutil.Discard, r.Body) // Ditch the entire request
 		defer r.Body.Close()
 		return api.RequestTooLarge()
 	}
 
-	media, err := svc.UploadMedia(r.Body, contentType, filename, user.UserId, r.Host)
+	media, err := upload_controller.UploadMedia(r.Body, contentType, filename, user.UserId, r.Host, r.Context(), log)
 	if err != nil {
 		io.Copy(ioutil.Discard, r.Body) // Ditch the entire request
 		defer r.Body.Close()

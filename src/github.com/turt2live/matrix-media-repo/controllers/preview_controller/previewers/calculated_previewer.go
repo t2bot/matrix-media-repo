@@ -1,8 +1,7 @@
-package url_service
+package previewers
 
 import (
 	bytes2 "bytes"
-	"context"
 	"errors"
 	"io"
 	"io/ioutil"
@@ -17,27 +16,18 @@ import (
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
-type filePreviewer struct {
-	ctx context.Context
-	log *logrus.Entry
-}
-
-func NewFilePreviewer(ctx context.Context, log *logrus.Entry) *filePreviewer {
-	return &filePreviewer{ctx, log}
-}
-
-func (p *filePreviewer) GeneratePreview(urlStr string) (previewResult, error) {
-	img, err := downloadFileContent(urlStr, p.log)
+func GenerateCalculatedPreview(urlStr string, log *logrus.Entry) (PreviewResult, error) {
+	img, err := downloadFileContent(urlStr, log)
 	if err != nil {
-		p.log.Error("Error downloading content: " + err.Error())
+		log.Error("Error downloading content: " + err.Error())
 
 		// Make sure the unsupported error gets passed through
 		if err == ErrPreviewUnsupported {
-			return previewResult{}, ErrPreviewUnsupported
+			return PreviewResult{}, ErrPreviewUnsupported
 		}
 
 		// We'll consider it not found for the sake of processing
-		return previewResult{}, common.ErrMediaNotFound
+		return PreviewResult{}, common.ErrMediaNotFound
 	}
 
 	description := ""
@@ -53,7 +43,7 @@ func (p *filePreviewer) GeneratePreview(urlStr string) (previewResult, error) {
 		description = ""
 	}
 
-	result := &previewResult{
+	result := &PreviewResult{
 		Type:        "", // intentionally empty
 		Url:         urlStr,
 		Title:       summarize(filename, config.Get().UrlPreviews.NumTitleWords, config.Get().UrlPreviews.MaxTitleLength),
@@ -68,7 +58,7 @@ func (p *filePreviewer) GeneratePreview(urlStr string) (previewResult, error) {
 	return *result, nil
 }
 
-func downloadFileContent(urlStr string, log *logrus.Entry) (*previewImage, error) {
+func downloadFileContent(urlStr string, log *logrus.Entry) (*PreviewImage, error) {
 	log.Info("Fetching remote content...")
 	resp, err := http.Get(urlStr)
 	if err != nil {
@@ -112,7 +102,7 @@ func downloadFileContent(urlStr string, log *logrus.Entry) (*previewImage, error
 	}
 
 	stream := util.BufferToStream(bytes2.NewBuffer(bytes))
-	return &previewImage{
+	return &PreviewImage{
 		Data:                stream,
 		ContentType:         contentType,
 		Filename:            filename,

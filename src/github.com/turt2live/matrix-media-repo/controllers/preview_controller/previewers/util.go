@@ -1,30 +1,9 @@
-package url_service
+package previewers
 
 import (
-	"errors"
-	"io"
 	"regexp"
 	"strings"
 )
-
-var ErrPreviewUnsupported = errors.New("preview not supported by this previewer")
-
-type previewResult struct {
-	Url         string
-	SiteName    string
-	Type        string
-	Description string
-	Title       string
-	Image       *previewImage
-}
-
-type previewImage struct {
-	ContentType         string
-	Data                io.ReadCloser
-	Filename            string
-	ContentLength       int64
-	ContentLengthHeader string
-}
 
 func summarize(text string, maxWords int, maxLength int) (string) {
 	// Normalize the whitespace to be something useful (crush it to one giant line)

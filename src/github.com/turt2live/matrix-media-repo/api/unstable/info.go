@@ -9,7 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/common"
-	"github.com/turt2live/matrix-media-repo/old_middle_layer/media_cache"
+	"github.com/turt2live/matrix-media-repo/controllers/download_controller"
 )
 
 type MediaInfoResponse struct {
@@ -42,9 +42,7 @@ func MediaInfo(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{
 		"allowRemote": downloadRemote,
 	})
 
-	mediaCache := media_cache.Create(r.Context(), log)
-
-	streamedMedia, err := mediaCache.GetMedia(server, mediaId, downloadRemote)
+	streamedMedia, err := download_controller.GetMedia(server, mediaId, downloadRemote, r.Context(), log)
 	if err != nil {
 		if err == common.ErrMediaNotFound {
 			return api.NotFoundError()

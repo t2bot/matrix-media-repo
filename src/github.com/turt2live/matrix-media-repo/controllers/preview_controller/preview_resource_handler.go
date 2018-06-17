@@ -1,4 +1,4 @@
-package url_service
+package preview_controller
 
 import (
 	"context"
@@ -9,10 +9,12 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
-	"github.com/turt2live/matrix-media-repo/old_middle_layer/resource_handler"
-	"github.com/turt2live/matrix-media-repo/old_middle_layer/services/media_service"
+	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/previewers"
+	"github.com/turt2live/matrix-media-repo/controllers/upload_controller"
+	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/resource_handler"
 )
 
 type urlResourceHandler struct {
@@ -58,27 +60,25 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) interface{} {
 	log.Info("Processing url preview request")
 
 	ctx := context.TODO() // TODO: Should we use a real context?
+	db := storage.GetDatabase().GetUrlStore(ctx, log)
 
-	svc := New(ctx, log) // url_service (us)
-	previewer := NewOpenGraphPreviewer(ctx, log)
-	preview, err := previewer.GeneratePreview(info.urlStr)
-	if err == ErrPreviewUnsupported {
+	preview, err := previewers.GenerateOpenGraphPreview(info.urlStr, log)
+	if err == previewers.ErrPreviewUnsupported {
 		log.Info("OpenGraph preview for this URL is unsupported - treating it as a file")
 		log = log.WithFields(logrus.Fields{"worker_previewer": "File"})
 
-		filePreviewer := NewFilePreviewer(ctx, log)
-		preview, err = filePreviewer.GeneratePreview(info.urlStr)
+		preview, err = previewers.GenerateCalculatedPreview(info.urlStr, log)
 	}
 	if err != nil {
 		// Transparently convert "unsupported" to "not found" for processing
-		if err == ErrPreviewUnsupported {
+		if err == previewers.ErrPreviewUnsupported {
 			err = common.ErrMediaNotFound
 		}
 
 		if err == common.ErrMediaNotFound {
-			svc.store.InsertPreviewError(info.urlStr, common.ErrCodeNotFound)
+			db.InsertPreviewError(info.urlStr, common.ErrCodeNotFound)
 		} else {
-			svc.store.InsertPreviewError(info.urlStr, common.ErrCodeUnknown)
+			db.InsertPreviewError(info.urlStr, common.ErrCodeUnknown)
 		}
 		return &urlPreviewResponse{err: err}
 	}
@@ -92,10 +92,9 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) interface{} {
 	}
 
 	// Store the thumbnail, if there is one
-	mediaSvc := media_service.New(ctx, log)
-	if preview.Image != nil && !mediaSvc.IsTooLarge(preview.Image.ContentLength, preview.Image.ContentLengthHeader) {
+	if preview.Image != nil && !upload_controller.IsRequestTooLarge(preview.Image.ContentLength, preview.Image.ContentLengthHeader) {
 		// UploadMedia will close the read stream for the thumbnail and dedupe the image
-		media, err := mediaSvc.UploadMedia(preview.Image.Data, preview.Image.ContentType, preview.Image.Filename, info.forUserId, info.onHost)
+		media, err := upload_controller.UploadMedia(preview.Image.Data, preview.Image.ContentType, preview.Image.Filename, info.forUserId, info.onHost, ctx, log)
 		if err != nil {
 			log.Warn("Non-fatal error storing preview thumbnail: " + err.Error())
 		} else {
@@ -118,7 +117,7 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) interface{} {
 		ErrorCode: "",
 		FetchedTs: util.NowMillis(),
 	}
-	err = svc.store.InsertPreview(dbRecord)
+	err = db.InsertPreview(dbRecord)
 	if err != nil {
 		log.Warn("Error caching URL preview: " + err.Error())
 		// Non-fatal: Just report it and move on. The worst that happens is we re-cache it.

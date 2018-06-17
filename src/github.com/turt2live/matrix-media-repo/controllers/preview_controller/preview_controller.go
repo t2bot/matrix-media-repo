@@ -1,94 +1,67 @@
-package url_service
+package preview_controller
 
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"net"
 	"net/url"
 
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/storage"
-	"github.com/turt2live/matrix-media-repo/storage/stores"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
-type urlService struct {
-	store *stores.UrlStore
-	ctx   context.Context
-	log   *logrus.Entry
-}
-
-func New(ctx context.Context, log *logrus.Entry) (*urlService) {
-	store := storage.GetDatabase().GetUrlStore(ctx, log)
-	return &urlService{store, ctx, log}
-}
-
-func returnCachedPreview(cached *types.CachedUrlPreview) (*types.UrlPreview, error) {
-	if cached.ErrorCode == common.ErrCodeInvalidHost {
-		return nil, common.ErrInvalidHost
-	} else if cached.ErrorCode == common.ErrCodeHostNotFound {
-		return nil, common.ErrHostNotFound
-	} else if cached.ErrorCode == common.ErrCodeHostBlacklisted {
-		return nil, common.ErrHostBlacklisted
-	} else if cached.ErrorCode == common.ErrCodeNotFound {
-		return nil, common.ErrMediaNotFound
-	} else if cached.ErrorCode == common.ErrCodeUnknown {
-		return nil, errors.New("unknown error")
-	}
-
-	return cached.Preview, nil
-}
-
-func (s *urlService) GetPreview(urlStr string, onHost string, forUserId string, atTs int64) (*types.UrlPreview, error) {
-	s.log = s.log.WithFields(logrus.Fields{
-		"urlService_ts": atTs,
+func GetPreview(urlStr string, onHost string, forUserId string, atTs int64, ctx context.Context, log *logrus.Entry) (*types.UrlPreview, error) {
+	log = log.WithFields(logrus.Fields{
+		"preview_controller_at_ts": atTs,
 	})
 
-	cached, err := s.store.GetPreview(urlStr, atTs)
+	db := storage.GetDatabase().GetUrlStore(ctx, log)
+
+	cached, err := db.GetPreview(urlStr, atTs)
 	if err != nil && err != sql.ErrNoRows {
-		s.log.Error("Error getting cached URL: " + err.Error())
+		log.Error("Error getting cached URL preview: ", err.Error())
 		return nil, err
 	}
 	if err != sql.ErrNoRows {
-		s.log.Info("Returning cached URL preview")
-		return returnCachedPreview(cached)
+		log.Info("Returning cached URL preview")
+		return cachedPreviewToReal(cached)
 	}
 
 	now := util.NowMillis()
-	if (now - atTs) > 60000 { // this is to avoid infinite loops (60s window for slow execution)
-		// Original bucket failed - try getting the preview for "now"
-		return s.GetPreview(urlStr, onHost, forUserId, now)
+	if (now - atTs) > 60000 {
+		// Because we don't have a cached preview, we'll use the current time as the preview time.
+		// We also give a 60 second buffer so we don't cause an infinite loop (considering we're
+		// calling ourselves), and to give a lenient opportunity for slow execution.
+		return GetPreview(urlStr, onHost, forUserId, now, ctx, log)
 	}
 
-	s.log.Info("URL preview not cached - fetching resource")
+	log.Info("Preview not cached - fetching resource")
 
 	parsedUrl, err := url.ParseRequestURI(urlStr)
 	if err != nil {
-		s.log.Error("Error parsing url: " + err.Error())
-		s.store.InsertPreviewError(urlStr, common.ErrCodeInvalidHost)
+		log.Error("Error parsing URL: ", err.Error())
+		db.InsertPreviewError(urlStr, common.ErrCodeInvalidHost)
 		return nil, common.ErrInvalidHost
 	}
 
 	addrs, err := net.LookupIP(parsedUrl.Host)
 	if err != nil {
-		s.log.Error("Error getting host info: " + err.Error())
-		s.store.InsertPreviewError(urlStr, common.ErrCodeInvalidHost)
+		log.Error("Error getting host info: ", err.Error())
+		db.InsertPreviewError(urlStr, common.ErrCodeInvalidHost)
 		return nil, common.ErrInvalidHost
 	}
 	if len(addrs) == 0 {
-		s.store.InsertPreviewError(urlStr, common.ErrCodeHostNotFound)
+		db.InsertPreviewError(urlStr, common.ErrCodeHostNotFound)
 		return nil, common.ErrHostNotFound
 	}
 	addr := addrs[0]
-	addrStr := fmt.Sprintf("%v", addr)[1:]
-	addrStr = addrStr[:len(addrStr)-1]
 
-	// Verify the host is in the allowed range
 	allowedCidrs := config.Get().UrlPreviews.AllowedNetworks
 	if allowedCidrs == nil {
 		allowedCidrs = []string{"0.0.0.0/0"}
@@ -97,8 +70,8 @@ func (s *urlService) GetPreview(urlStr string, onHost string, forUserId string, 
 	if deniedCidrs == nil {
 		deniedCidrs = []string{}
 	}
-	if !isAllowed(addr, allowedCidrs, deniedCidrs, s.log) {
-		s.store.InsertPreviewError(urlStr, common.ErrCodeHostBlacklisted)
+	if !isAllowed(addr, allowedCidrs, deniedCidrs, log) {
+		db.InsertPreviewError(urlStr, common.ErrCodeHostBlacklisted)
 		return nil, common.ErrHostBlacklisted
 	}
 
@@ -146,4 +119,20 @@ func inRange(ip net.IP, cidrs []string, log *logrus.Entry) bool {
 	}
 
 	return false
+}
+
+func cachedPreviewToReal(cached *types.CachedUrlPreview) (*types.UrlPreview, error) {
+	if cached.ErrorCode == common.ErrCodeInvalidHost {
+		return nil, common.ErrInvalidHost
+	} else if cached.ErrorCode == common.ErrCodeHostNotFound {
+		return nil, common.ErrHostNotFound
+	} else if cached.ErrorCode == common.ErrCodeHostBlacklisted {
+		return nil, common.ErrHostBlacklisted
+	} else if cached.ErrorCode == common.ErrCodeNotFound {
+		return nil, common.ErrMediaNotFound
+	} else if cached.ErrorCode == common.ErrCodeUnknown {
+		return nil, errors.New("unknown error")
+	}
+
+	return cached.Preview, nil
 }

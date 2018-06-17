@@ -1,7 +1,6 @@
-package url_service
+package previewers
 
 import (
-	"context"
 	"errors"
 	"io"
 	"io/ioutil"
@@ -21,34 +20,25 @@ import (
 
 var ogSupportedTypes = []string{"text/*"}
 
-type openGraphUrlPreviewer struct {
-	ctx context.Context
-	log *logrus.Entry
-}
-
-func NewOpenGraphPreviewer(ctx context.Context, log *logrus.Entry) *openGraphUrlPreviewer {
-	return &openGraphUrlPreviewer{ctx, log}
-}
-
-func (p *openGraphUrlPreviewer) GeneratePreview(urlStr string) (previewResult, error) {
-	html, err := downloadHtmlContent(urlStr, p.log)
+func GenerateOpenGraphPreview(urlStr string, log *logrus.Entry) (PreviewResult, error) {
+	html, err := downloadHtmlContent(urlStr, log)
 	if err != nil {
-		p.log.Error("Error downloading content: " + err.Error())
+		log.Error("Error downloading content: " + err.Error())
 
 		// Make sure the unsupported error gets passed through
 		if err == ErrPreviewUnsupported {
-			return previewResult{}, ErrPreviewUnsupported
+			return PreviewResult{}, ErrPreviewUnsupported
 		}
 
 		// We'll consider it not found for the sake of processing
-		return previewResult{}, common.ErrMediaNotFound
+		return PreviewResult{}, common.ErrMediaNotFound
 	}
 
 	og := opengraph.NewOpenGraph()
 	err = og.ProcessHTML(strings.NewReader(html))
 	if err != nil {
-		p.log.Error("Error getting OpenGraph: " + err.Error())
-		return previewResult{}, err
+		log.Error("Error getting OpenGraph: " + err.Error())
+		return PreviewResult{}, err
 	}
 
 	if og.Title == "" {
@@ -65,7 +55,7 @@ func (p *openGraphUrlPreviewer) GeneratePreview(urlStr string) (previewResult, e
 	og.Title = summarize(og.Title, config.Get().UrlPreviews.NumTitleWords, config.Get().UrlPreviews.MaxTitleLength)
 	og.Description = summarize(og.Description, config.Get().UrlPreviews.NumWords, config.Get().UrlPreviews.MaxLength)
 
-	graph := &previewResult{
+	graph := &PreviewResult{
 		Type:        og.Type,
 		Url:         og.URL,
 		Title:       og.Title,
@@ -76,20 +66,20 @@ func (p *openGraphUrlPreviewer) GeneratePreview(urlStr string) (previewResult, e
 	if og.Images != nil && len(og.Images) > 0 {
 		baseUrl, err := url.Parse(urlStr)
 		if err != nil {
-			p.log.Error("Non-fatal error getting thumbnail (parsing base url): " + err.Error())
+			log.Error("Non-fatal error getting thumbnail (parsing base url): " + err.Error())
 			return *graph, nil
 		}
 
 		imgUrl, err := url.Parse(og.Images[0].URL)
 		if err != nil {
-			p.log.Error("Non-fatal error getting thumbnail (parsing image url): " + err.Error())
+			log.Error("Non-fatal error getting thumbnail (parsing image url): " + err.Error())
 			return *graph, nil
 		}
 
 		imgAbsUrl := baseUrl.ResolveReference(imgUrl)
-		img, err := downloadImage(imgAbsUrl.String(), p.log)
+		img, err := downloadImage(imgAbsUrl.String(), log)
 		if err != nil {
-			p.log.Error("Non-fatal error getting thumbnail (downloading image): " + err.Error())
+			log.Error("Non-fatal error getting thumbnail (downloading image): " + err.Error())
 			return *graph, nil
 		}
 
@@ -138,7 +128,7 @@ func downloadHtmlContent(urlStr string, log *logrus.Entry) (string, error) {
 	return html, nil
 }
 
-func downloadImage(imageUrl string, log *logrus.Entry) (*previewImage, error) {
+func downloadImage(imageUrl string, log *logrus.Entry) (*PreviewImage, error) {
 	log.Info("Getting image from " + imageUrl)
 	resp, err := http.Get(imageUrl)
 	if err != nil {
@@ -149,7 +139,7 @@ func downloadImage(imageUrl string, log *logrus.Entry) (*previewImage, error) {
 		return nil, errors.New("error during transfer")
 	}
 
-	image := &previewImage{
+	image := &PreviewImage{
 		ContentType:         resp.Header.Get("Content-Type"),
 		Data:                resp.Body,
 		ContentLength:       resp.ContentLength,

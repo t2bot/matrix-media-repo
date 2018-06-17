@@ -9,7 +9,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
-	"github.com/turt2live/matrix-media-repo/old_middle_layer/media_cache"
+	"github.com/turt2live/matrix-media-repo/controllers/thumbnail_controller"
 )
 
 func ThumbnailMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
@@ -75,9 +75,7 @@ func ThumbnailMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) inter
 		"requestedAnimated": animated,
 	})
 
-	mediaCache := media_cache.Create(r.Context(), log)
-
-	streamedThumbnail, err := mediaCache.GetThumbnail(server, mediaId, width, height, method, animated, downloadRemote)
+	streamedThumbnail, err := thumbnail_controller.GetThumbnail(server, mediaId, width, height, animated, method, downloadRemote, r.Context(), log)
 	if err != nil {
 		if err == common.ErrMediaNotFound {
 			return api.NotFoundError()

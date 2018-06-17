@@ -1,13 +1,18 @@
-package thumbnail_service
+package thumbnail_controller
 
 import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"image"
 	"image/draw"
 	"image/gif"
+	"io/ioutil"
 	"os"
+	"os/exec"
+	"path"
+	"sync"
 
 	"github.com/disintegration/imaging"
 	"github.com/sirupsen/logrus"
@@ -15,9 +20,27 @@ import (
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/resource_handler"
 )
 
-type generatedThumbnail struct {
+type thumbnailResourceHandler struct {
+	resourceHandler *resource_handler.ResourceHandler
+}
+
+type thumbnailRequest struct {
+	media    *types.Media
+	width    int
+	height   int
+	method   string
+	animated bool
+}
+
+type thumbnailResponse struct {
+	thumbnail *types.Thumbnail
+	err       error
+}
+
+type GeneratedThumbnail struct {
 	ContentType  string
 	DiskLocation string
 	SizeBytes    int64
@@ -25,26 +48,89 @@ type generatedThumbnail struct {
 	Sha256Hash   *string
 }
 
-type thumbnailer struct {
-	ctx context.Context
-	log *logrus.Entry
-}
+var resHandlerInstance *thumbnailResourceHandler
+var resHandlerSingletonLock = &sync.Once{}
 
-func newThumbnailer(ctx context.Context, log *logrus.Entry) *thumbnailer {
-	return &thumbnailer{ctx, log}
-}
+func getResourceHandler() (*thumbnailResourceHandler) {
+	if resHandlerInstance == nil {
+		resHandlerSingletonLock.Do(func() {
+			handler, err := resource_handler.New(config.Get().Thumbnails.NumWorkers, thumbnailWorkFn)
+			if err != nil {
+				panic(err)
+			}
 
-func (t *thumbnailer) GenerateThumbnail(media *types.Media, width int, height int, method string, animated bool, forceGeneration bool) (*generatedThumbnail, error) {
-	if animated && !util.ArrayContains(AnimatedTypes, media.ContentType) {
-		t.log.Warn("Attempted to animate a media record that isn't an animated type. Assuming animated=false")
-		animated = false
+			resHandlerInstance = &thumbnailResourceHandler{handler}
+		})
 	}
 
+	return resHandlerInstance
+}
+
+func thumbnailWorkFn(request *resource_handler.WorkRequest) interface{} {
+	info := request.Metadata.(*thumbnailRequest)
+	log := logrus.WithFields(logrus.Fields{
+		"worker_requestId": request.Id,
+		"worker_media":     info.media.Origin + "/" + info.media.MediaId,
+		"worker_width":     info.width,
+		"worker_height":    info.height,
+		"worker_method":    info.method,
+		"worker_animated":  info.animated,
+	})
+	log.Info("Processing thumbnail request")
+
+	ctx := context.TODO() // TODO: Should we use a real context?
+
+	generated, err := GenerateThumbnail(info.media, info.width, info.height, info.method, info.animated, ctx, log)
+	if err != nil {
+		return &thumbnailResponse{err: err}
+	}
+
+	newThumb := &types.Thumbnail{
+		Origin:      info.media.Origin,
+		MediaId:     info.media.MediaId,
+		Width:       info.width,
+		Height:      info.height,
+		Method:      info.method,
+		Animated:    generated.Animated,
+		CreationTs:  util.NowMillis(),
+		ContentType: generated.ContentType,
+		Location:    generated.DiskLocation,
+		SizeBytes:   generated.SizeBytes,
+		Sha256Hash:  generated.Sha256Hash,
+	}
+
+	db := storage.GetDatabase().GetThumbnailStore(ctx, log)
+	err = db.Insert(newThumb)
+	if err != nil {
+		log.Error("Unexpected error caching thumbnail: " + err.Error())
+		return &thumbnailResponse{err: err}
+	}
+
+	return &thumbnailResponse{thumbnail: newThumb}
+}
+
+func (h *thumbnailResourceHandler) GenerateThumbnail(media *types.Media, width int, height int, method string, animated bool) chan *thumbnailResponse {
+	resultChan := make(chan *thumbnailResponse)
+	go func() {
+		reqId := fmt.Sprintf("thumbnail_%s_%s_%d_%d_%s_%t", media.Origin, media.MediaId, width, height, method, animated)
+		result := <-h.resourceHandler.GetResource(reqId, &thumbnailRequest{
+			media:    media,
+			width:    width,
+			height:   height,
+			method:   method,
+			animated: animated,
+		})
+		resultChan <- result.(*thumbnailResponse)
+	}()
+	return resultChan
+}
+
+func GenerateThumbnail(media *types.Media, width int, height int, method string, animated bool, ctx context.Context, log *logrus.Entry) (*GeneratedThumbnail, error) {
 	var src image.Image
 	var err error
 
 	if media.ContentType == "image/svg+xml" {
-		src, err = t.svgToImage(media)
+		src, err = svgToImage(media)
 	} else {
 		src, err = imaging.Open(media.Location)
 	}
@@ -61,16 +147,16 @@ func (t *thumbnailer) GenerateThumbnail(media *types.Media, width int, height in
 	if aspectRatio == targetAspectRatio {
 		// Highly unlikely, but if the aspect ratios match then just resize
 		method = "scale"
-		t.log.Info("Aspect ratio is the same, converting method to 'scale'")
+		log.Info("Aspect ratio is the same, converting method to 'scale'")
 	}
 
-	thumb := &generatedThumbnail{
+	thumb := &GeneratedThumbnail{
 		Animated: animated,
 	}
 
 	if srcWidth <= width && srcHeight <= height {
-		if forceGeneration {
-			t.log.Warn("Image is too small but the force flag is set. Adjusting dimensions to fit image exactly.")
+		if animated {
+			log.Warn("Image is too small but the image should be animated. Adjusting dimensions to fit image exactly.")
 			width = srcWidth
 			height = srcHeight
 		} else {
@@ -79,7 +165,7 @@ func (t *thumbnailer) GenerateThumbnail(media *types.Media, width int, height in
 			thumb.DiskLocation = media.Location
 			thumb.SizeBytes = media.SizeBytes
 			thumb.Sha256Hash = &media.Sha256Hash
-			t.log.Warn("Image too small, returning raw image")
+			log.Warn("Image too small, returning raw image")
 			return thumb, nil
 		}
 	}
@@ -88,15 +174,15 @@ func (t *thumbnailer) GenerateThumbnail(media *types.Media, width int, height in
 	if media.ContentType == "image/jpeg" || media.ContentType == "image/jpg" {
 		orientation, err = util.GetExifOrientation(media)
 		if err != nil {
-			t.log.Warn("Non-fatal error getting EXIF orientation: " + err.Error())
+			log.Warn("Non-fatal error getting EXIF orientation: " + err.Error())
 			orientation = nil // just in case
 		}
 	}
 
 	contentType := "image/png"
 	imgData := &bytes.Buffer{}
-	if config.Get().Thumbnails.AllowAnimated && animated && util.ArrayContains(AnimatedTypes, media.ContentType) {
-		t.log.Info("Generating animated thumbnail")
+	if config.Get().Thumbnails.AllowAnimated && animated {
+		log.Info("Generating animated thumbnail")
 		contentType = "image/gif"
 
 		// Animated GIFs are a bit more special because we need to do it frame by frame.
@@ -104,14 +190,14 @@ func (t *thumbnailer) GenerateThumbnail(media *types.Media, width int, height in
 
 		inputFile, err := os.Open(media.Location)
 		if err != nil {
-			t.log.Error("Error generating animated thumbnail: " + err.Error())
+			log.Error("Error generating animated thumbnail: " + err.Error())
 			return nil, err
 		}
 		defer inputFile.Close()
 
 		g, err := gif.DecodeAll(inputFile)
 		if err != nil {
-			t.log.Error("Error generating animated thumbnail: " + err.Error())
+			log.Error("Error generating animated thumbnail: " + err.Error())
 			return nil, err
 		}
 
@@ -130,7 +216,7 @@ func (t *thumbnailer) GenerateThumbnail(media *types.Media, width int, height in
 			// Do the thumbnailing on the copied frame
 			frameThumb, err := thumbnailFrame(frameImg, method, width, height, imaging.Linear, nil)
 			if err != nil {
-				t.log.Error("Error generating animated thumbnail frame: " + err.Error())
+				log.Error("Error generating animated thumbnail frame: " + err.Error())
 				return nil, err
 			}
 
@@ -147,40 +233,40 @@ func (t *thumbnailer) GenerateThumbnail(media *types.Media, width int, height in
 
 		err = gif.EncodeAll(imgData, g)
 		if err != nil {
-			t.log.Error("Error generating animated thumbnail: " + err.Error())
+			log.Error("Error generating animated thumbnail: " + err.Error())
 			return nil, err
 		}
 	} else {
 		src, err = thumbnailFrame(src, method, width, height, imaging.Lanczos, orientation)
 		if err != nil {
-			t.log.Error("Error generating thumbnail: " + err.Error())
+			log.Error("Error generating thumbnail: " + err.Error())
 			return nil, err
 		}
 
 		// Put the image bytes into a memory buffer
 		err = imaging.Encode(imgData, src, imaging.PNG)
 		if err != nil {
-			t.log.Error("Unexpected error encoding thumbnail: " + err.Error())
+			log.Error("Unexpected error encoding thumbnail: " + err.Error())
 			return nil, err
 		}
 	}
 
 	// Reset the buffer pointer and store the file
-	location, err := storage.PersistFile(imgData, t.ctx, t.log)
+	location, err := storage.PersistFile(imgData, ctx, log)
 	if err != nil {
-		t.log.Error("Unexpected error saving thumbnail: " + err.Error())
+		log.Error("Unexpected error saving thumbnail: " + err.Error())
 		return nil, err
 	}
 
 	fileSize, err := util.FileSize(location)
 	if err != nil {
-		t.log.Error("Unexpected error getting the size of the thumbnail: " + err.Error())
+		log.Error("Unexpected error getting the size of the thumbnail: " + err.Error())
 		return nil, err
 	}
 
 	hash, err := storage.GetFileHash(location)
 	if err != nil {
-		t.log.Error("Unexpected error getting the hash for the thumbnail: ", err.Error())
+		log.Error("Unexpected error getting the hash for the thumbnail: ", err.Error())
 		return nil, err
 	}
 
@@ -222,4 +308,23 @@ func thumbnailFrame(src image.Image, method string, width int, height int, filte
 	}
 
 	return result, nil
+}
+
+func svgToImage(media *types.Media) (image.Image, error) {
+	tempFile := path.Join(os.TempDir(), "media_repo."+media.Origin+"."+media.MediaId+".png")
+	defer os.Remove(tempFile)
+
+	// requires imagemagick
+	err := exec.Command("convert", media.Location, tempFile).Run()
+	if err != nil {
+		return nil, err
+	}
+
+	b, err := ioutil.ReadFile(tempFile)
+	if err != nil {
+		return nil, err
+	}
+
+	imgData := bytes.NewBuffer(b)
+	return imaging.Decode(imgData)
 }
