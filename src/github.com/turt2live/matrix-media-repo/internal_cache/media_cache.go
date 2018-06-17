@@ -178,6 +178,7 @@ func (c *MediaCache) updateItemInCache(recordId string, mediaSize int64, cacheFn
 				return nil, err
 			}
 			c.cache.Set(recordId, cachedItem, cache.DefaultExpiration)
+			return cachedItem, nil
 		}
 
 		log.Warn("Unable to clear enough space for file to be cached")
