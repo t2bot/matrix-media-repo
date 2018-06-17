@@ -103,6 +103,23 @@ func (c *MediaCache) GetMedia(media *types.Media, log *logrus.Entry) (*cachedFil
 	return c.updateItemInCache(media.Sha256Hash, media.SizeBytes, cacheFn, log)
 }
 
+func (c *MediaCache) GetThumbnail(thumbnail *types.Thumbnail, log *logrus.Entry) (*cachedFile, error) {
+	if !c.enabled {
+		return nil, nil
+	}
+
+	cacheFn := func() (*cachedFile, error) {
+		data, err := ioutil.ReadFile(thumbnail.Location)
+		if err != nil {
+			return nil, err
+		}
+
+		return &cachedFile{thumbnail: thumbnail, Contents: bytes.NewBuffer(data)}, nil
+	}
+
+	return c.updateItemInCache(*thumbnail.Sha256Hash, thumbnail.SizeBytes, cacheFn, log)
+}
+
 func (c *MediaCache) updateItemInCache(recordId string, mediaSize int64, cacheFn func() (*cachedFile, error), log *logrus.Entry) (*cachedFile, error) {
 	downloads := c.tracker.NumDownloads(recordId)
 	enoughDownloads := downloads >= config.Get().Downloads.Cache.MinDownloads
