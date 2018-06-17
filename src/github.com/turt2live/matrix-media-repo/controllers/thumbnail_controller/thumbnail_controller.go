@@ -139,7 +139,7 @@ func GetThumbnail(origin string, mediaId string, desiredWidth int, desiredHeight
 	}
 
 	localCache.Set(cacheKey, thumbnail, cache.DefaultExpiration)
-	internal_cache.Get().IncrementDownloads(*thumbnail.Sha256Hash)
+	internal_cache.Get().IncrementDownloads(thumbnail.Sha256Hash)
 
 	cached, err := internal_cache.Get().GetThumbnail(thumbnail, log)
 	if err != nil {

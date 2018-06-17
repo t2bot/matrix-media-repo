@@ -22,7 +22,7 @@ func populateThumbnailHashes(db *Database) (error) {
 			return err
 		}
 
-		thumb.Sha256Hash = &hash
+		thumb.Sha256Hash = hash
 		err = svc.UpdateHash(thumb)
 		if err != nil {
 			logrus.Error("Failed to update hash for '", thumb.Location, "': ", err)

@@ -117,7 +117,7 @@ func (c *MediaCache) GetThumbnail(thumbnail *types.Thumbnail, log *logrus.Entry)
 		return &cachedFile{thumbnail: thumbnail, Contents: bytes.NewBuffer(data)}, nil
 	}
 
-	return c.updateItemInCache(*thumbnail.Sha256Hash, thumbnail.SizeBytes, cacheFn, log)
+	return c.updateItemInCache(thumbnail.Sha256Hash, thumbnail.SizeBytes, cacheFn, log)
 }
 
 func (c *MediaCache) updateItemInCache(recordId string, mediaSize int64, cacheFn func() (*cachedFile, error), log *logrus.Entry) (*cachedFile, error) {
@@ -208,7 +208,7 @@ func (c *MediaCache) clearSpace(neededBytes int64, withDownloadsLessThan int, wi
 
 		var recordId string
 		if record.thumbnail != nil {
-			recordId = *record.thumbnail.Sha256Hash
+			recordId = record.thumbnail.Sha256Hash
 		} else {
 			recordId = record.media.Sha256Hash
 		}

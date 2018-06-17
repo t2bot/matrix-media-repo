@@ -45,7 +45,7 @@ type GeneratedThumbnail struct {
 	DiskLocation string
 	SizeBytes    int64
 	Animated     bool
-	Sha256Hash   *string
+	Sha256Hash   string
 }
 
 var resHandlerInstance *thumbnailResourceHandler
@@ -164,7 +164,7 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 			thumb.ContentType = media.ContentType
 			thumb.DiskLocation = media.Location
 			thumb.SizeBytes = media.SizeBytes
-			thumb.Sha256Hash = &media.Sha256Hash
+			thumb.Sha256Hash = media.Sha256Hash
 			log.Warn("Image too small, returning raw image")
 			return thumb, nil
 		}
@@ -273,7 +273,7 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 	thumb.DiskLocation = location
 	thumb.ContentType = contentType
 	thumb.SizeBytes = fileSize
-	thumb.Sha256Hash = &hash
+	thumb.Sha256Hash = hash
 
 	return thumb, nil
 }

@@ -11,7 +11,7 @@ import (
 const selectThumbnail = "SELECT origin, media_id, width, height, method, animated, content_type, size_bytes, location, creation_ts, sha256_hash FROM thumbnails WHERE origin = $1 and media_id = $2 and width = $3 and height = $4 and method = $5 and animated = $6;"
 const insertThumbnail = "INSERT INTO thumbnails (origin, media_id, width, height, method, animated, content_type, size_bytes, location, creation_ts, sha256_hash) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);"
 const updateThumbnailHash = "UPDATE thumbnails SET sha256_hash = $7 WHERE origin = $1 and media_id = $2 and width = $3 and height = $4 and method = $5 and animated = $6;"
-const selectThumbnailsWithoutHash = "SELECT origin, media_id, width, height, method, animated, content_type, size_bytes, location, creation_ts, sha256_hash FROM thumbnails WHERE sha256_hash IS NULL;"
+const selectThumbnailsWithoutHash = "SELECT origin, media_id, width, height, method, animated, content_type, size_bytes, location, creation_ts, sha256_hash FROM thumbnails WHERE sha256_hash IS NULL OR sha256_hash = '';"
 
 type thumbnailStatements struct {
 	selectThumbnail             *sql.Stmt
