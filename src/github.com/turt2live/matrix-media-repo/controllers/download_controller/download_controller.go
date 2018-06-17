@@ -23,6 +23,11 @@ func GetMedia(origin string, mediaId string, downloadRemote bool, ctx context.Co
 		return nil, err
 	}
 
+	if media.Quarantined {
+		log.Warn("Quarantined media accessed")
+		return nil, common.ErrMediaQuarantined
+	}
+
 	localCache.Set(origin+"/"+mediaId, media, cache.DefaultExpiration)
 	internal_cache.Get().IncrementDownloads(media.Sha256Hash)
 
