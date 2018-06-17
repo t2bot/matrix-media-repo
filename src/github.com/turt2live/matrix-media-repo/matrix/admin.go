@@ -2,9 +2,8 @@ package matrix
 
 import (
 	"context"
+	"path"
 	"time"
-
-	"github.com/matrix-org/gomatrix"
 )
 
 func IsUserAdmin(ctx context.Context, serverName string, accessToken string) (bool, error) {
@@ -14,15 +13,10 @@ func IsUserAdmin(ctx context.Context, serverName string, accessToken string) (bo
 	isAdmin := false
 	var replyError error
 	replyError = cb.CallContext(ctx, func() error {
-		mtxClient, err := gomatrix.NewClient(hs.ClientServerApi, "", accessToken)
-		if err != nil {
-			err, replyError = filterError(err)
-			return err
-		}
 
 		response := &whoisResponse{}
-		url := mtxClient.BuildURL("/admin/whois/", fakeUser)
-		_, err = mtxClient.MakeRequest("GET", url, nil, response)
+		url := path.Join(hs.ClientServerApi, "/_matrix/client/r0/admin/whois/", fakeUser)
+		err := doRequest("GET", url, nil, response, accessToken)
 		if err != nil {
 			err, replyError = filterError(err)
 			return err
@@ -41,14 +35,8 @@ func ListMedia(ctx context.Context, serverName string, accessToken string, roomI
 	response := &mediaListResponse{}
 	var replyError error
 	replyError = cb.CallContext(ctx, func() error {
-		mtxClient, err := gomatrix.NewClient(hs.ClientServerApi, "", accessToken)
-		if err != nil {
-			err, replyError = filterError(err)
-			return err
-		}
-
-		url := mtxClient.BuildURL("/admin/room/", roomId, "/media")
-		_, err = mtxClient.MakeRequest("GET", url, nil, response)
+		url := path.Join(hs.ClientServerApi, "/_matrix/client/r0/admin/room/", roomId, "/media")
+		err := doRequest("GET", url, nil, response, accessToken)
 		if err != nil {
 			err, replyError = filterError(err)
 			return err

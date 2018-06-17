@@ -2,9 +2,10 @@ package matrix
 
 import (
 	"context"
+	"net/url"
+	"path"
 	"time"
 
-	"github.com/matrix-org/gomatrix"
 	"github.com/pkg/errors"
 )
 
@@ -20,20 +21,19 @@ func GetUserIdFromToken(ctx context.Context, serverName string, accessToken stri
 	userId := ""
 	var replyError error
 	replyError = cb.CallContext(ctx, func() error {
-		mtxClient, err := gomatrix.NewClient(hs.ClientServerApi, "", accessToken)
-		if err != nil {
-			err, replyError = filterError(err)
-			return err
-		}
-
 		query := map[string]string{}
 		if appserviceUserId != "" {
 			query["user_id"] = appserviceUserId
 		}
 
 		response := &userIdResponse{}
-		url := mtxClient.BuildURLWithQuery([]string{"/account/whoami"}, query)
-		_, err = mtxClient.MakeRequest("GET", url, nil, response)
+		target, _ := url.Parse(path.Join(hs.ClientServerApi, "/_matrix/client/r0/account/whoami"))
+		q := target.Query()
+		for k, v := range query {
+			q.Set(k, v)
+		}
+		target.RawQuery = q.Encode()
+		err := doRequest("GET", target.String(), nil, response, accessToken)
 		if err != nil {
 			err, replyError = filterError(err)
 			return err

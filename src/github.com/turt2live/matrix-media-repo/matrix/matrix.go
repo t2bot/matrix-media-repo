@@ -3,7 +3,6 @@ package matrix
 import (
 	"sync"
 
-	"github.com/matrix-org/gomatrix"
 	"github.com/rubyist/circuitbreaker"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
@@ -37,12 +36,10 @@ func filterError(err error) (error, error) {
 	}
 
 	// Unknown token errors should be filtered out explicitly to ensure we don't break on bad requests
-	if httpErr, ok := err.(gomatrix.HTTPError); ok {
-		if respErr, ok := httpErr.WrappedError.(gomatrix.RespError); ok {
-			if respErr.ErrCode == common.ErrCodeUnknownToken {
-				// We send back our own version of 'unknown token' to ensure we can filter it out elsewhere
-				return nil, ErrNoToken
-			}
+	if httpErr, ok := err.(errorResponse); ok {
+		if httpErr.ErrorCode == common.ErrCodeUnknownToken {
+			// We send back our own version of 'unknown token' to ensure we can filter it out elsewhere
+			return nil, ErrNoToken
 		}
 	}
 

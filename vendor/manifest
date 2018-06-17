@@ -131,12 +131,6 @@
 			"branch": "master"
 		},
 		{
-			"importpath": "github.com/matrix-org/gomatrix",
-			"repository": "https://github.com/matrix-org/gomatrix",
-			"revision": "a7fc80c8060c2544fe5d4dae465b584f8e9b4e27",
-			"branch": "master"
-		},
-		{
 			"importpath": "github.com/olebedev/emitter",
 			"repository": "https://github.com/olebedev/emitter",
 			"revision": "68bb25b251f61cde3824cc316f238f0da1704331",
