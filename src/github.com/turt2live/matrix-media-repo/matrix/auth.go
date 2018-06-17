@@ -3,7 +3,6 @@ package matrix
 import (
 	"context"
 	"net/url"
-	"path"
 	"time"
 
 	"github.com/pkg/errors"
@@ -27,7 +26,7 @@ func GetUserIdFromToken(ctx context.Context, serverName string, accessToken stri
 		}
 
 		response := &userIdResponse{}
-		target, _ := url.Parse(path.Join(hs.ClientServerApi, "/_matrix/client/r0/account/whoami"))
+		target, _ := url.Parse(makeUrl(hs.ClientServerApi, "/_matrix/client/r0/account/whoami"))
 		q := target.Query()
 		for k, v := range query {
 			q.Set(k, v)

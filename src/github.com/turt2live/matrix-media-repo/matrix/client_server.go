@@ -66,3 +66,15 @@ func doRequest(method string, urlStr string, body interface{}, result interface{
 
 	return nil
 }
+
+func makeUrl(parts ... string) string {
+	res := ""
+	for _, p := range parts {
+		if p[len(p)-1:] == "/" {
+			res += p[:len(p)-1]
+		} else {
+			res += p
+		}
+	}
+	return res
+}

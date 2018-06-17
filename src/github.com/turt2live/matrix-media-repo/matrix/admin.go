@@ -2,7 +2,6 @@ package matrix
 
 import (
 	"context"
-	"path"
 	"time"
 )
 
@@ -15,7 +14,7 @@ func IsUserAdmin(ctx context.Context, serverName string, accessToken string) (bo
 	replyError = cb.CallContext(ctx, func() error {
 
 		response := &whoisResponse{}
-		url := path.Join(hs.ClientServerApi, "/_matrix/client/r0/admin/whois/", fakeUser)
+		url := makeUrl(hs.ClientServerApi, "/_matrix/client/r0/admin/whois/", fakeUser)
 		err := doRequest("GET", url, nil, response, accessToken)
 		if err != nil {
 			err, replyError = filterError(err)
@@ -35,7 +34,7 @@ func ListMedia(ctx context.Context, serverName string, accessToken string, roomI
 	response := &mediaListResponse{}
 	var replyError error
 	replyError = cb.CallContext(ctx, func() error {
-		url := path.Join(hs.ClientServerApi, "/_matrix/client/r0/admin/room/", roomId, "/media")
+		url := makeUrl(hs.ClientServerApi, "/_matrix/client/r0/admin/room/", roomId, "/media")
 		err := doRequest("GET", url, nil, response, accessToken)
 		if err != nil {
 			err, replyError = filterError(err)
