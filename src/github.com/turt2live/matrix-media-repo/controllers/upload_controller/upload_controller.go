@@ -37,7 +37,7 @@ func IsRequestTooLarge(contentLength int64, contentLengthHeader string) bool {
 	return false // We can only assume
 }
 
-func UploadMedia(contents io.ReadCloser, contentType string, filename string, userId string, origin string, ctx context.Context, log *logrus.Entry) (*types.Media, error) {
+func UploadMedia(contents io.ReadCloser, contentType string, filename string, userId string, origin string, isPublic bool, ctx context.Context, log *logrus.Entry) (*types.Media, error) {
 	defer contents.Close()
 
 	var data io.Reader
@@ -52,10 +52,25 @@ func UploadMedia(contents io.ReadCloser, contentType string, filename string, us
 		return nil, err
 	}
 
-	return StoreDirect(data, contentType, filename, userId, origin, mediaId, ctx, log)
+	var contentToken *string
+	if !isPublic {
+		generatedToken, err := util.GenerateRandomString(128)
+		if err != nil {
+			return nil, err
+		}
+
+		contentToken = &generatedToken
+	}
+
+	stored, err := StoreDirect(data, contentType, filename, userId, origin, mediaId, contentToken, ctx, log)
+	if err != nil {
+		return nil, err
+	}
+
+	return stored, nil
 }
 
-func StoreDirect(contents io.Reader, contentType string, filename string, userId string, origin string, mediaId string, ctx context.Context, log *logrus.Entry) (*types.Media, error) {
+func StoreDirect(contents io.Reader, contentType string, filename string, userId string, origin string, mediaId string, contentToken *string, ctx context.Context, log *logrus.Entry) (*types.Media, error) {
 	fileLocation, err := storage.PersistFile(contents, ctx, log)
 	if err != nil {
 		return nil, err
@@ -70,7 +85,7 @@ func StoreDirect(contents io.Reader, contentType string, filename string, userId
 
 	for _, allowedType := range config.Get().Uploads.AllowedTypes {
 		if !glob.Glob(allowedType, fileMime) {
-			log.Warn("Content type " + fileMime +" (reported as " + contentType+") is not allowed to be uploaded")
+			log.Warn("Content type " + fileMime + " (reported as " + contentType + ") is not allowed to be uploaded")
 
 			os.Remove(fileLocation) // delete temp file
 			return nil, common.ErrMediaNotAllowed
@@ -93,19 +108,6 @@ func StoreDirect(contents io.Reader, contentType string, filename string, userId
 	if len(records) > 0 {
 		log.Info("Duplicate media for hash ", hash)
 
-		// If the user is a real user (ie: actually uploaded media), then we'll see if there's
-		// an exact duplicate that we can return. Otherwise we'll just pick the first record and
-		// clone that.
-		if userId != NoApplicableUploadUser {
-			for _, record := range records {
-				if record.UserId == userId && record.Origin == origin && record.ContentType == contentType {
-					log.Info("User has already uploaded this media before - returning unaltered media record")
-					os.Remove(fileLocation) // delete temp file
-					return record, nil
-				}
-			}
-		}
-
 		// We'll use the location from the first record
 		media := records[0]
 		media.Origin = origin
@@ -114,6 +116,7 @@ func StoreDirect(contents io.Reader, contentType string, filename string, userId
 		media.UploadName = filename
 		media.ContentType = contentType
 		media.CreationTs = util.NowMillis()
+		media.ContentToken = contentToken
 
 		err = db.Insert(media)
 		if err != nil {
@@ -145,15 +148,16 @@ func StoreDirect(contents io.Reader, contentType string, filename string, userId
 	log.Info("Persisting new media record")
 
 	media := &types.Media{
-		Origin:      origin,
-		MediaId:     mediaId,
-		UploadName:  filename,
-		ContentType: contentType,
-		UserId:      userId,
-		Sha256Hash:  hash,
-		SizeBytes:   fileSize,
-		Location:    fileLocation,
-		CreationTs:  util.NowMillis(),
+		Origin:       origin,
+		MediaId:      mediaId,
+		UploadName:   filename,
+		ContentType:  contentType,
+		UserId:       userId,
+		Sha256Hash:   hash,
+		SizeBytes:    fileSize,
+		Location:     fileLocation,
+		CreationTs:   util.NowMillis(),
+		ContentToken: contentToken,
 	}
 
 	err = db.Insert(media)

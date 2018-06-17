@@ -4,6 +4,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
@@ -12,7 +13,8 @@ import (
 )
 
 type MediaUploadedResponse struct {
-	ContentUri string `json:"content_uri"`
+	ContentUri   string  `json:"content_uri"`
+	ContentToken *string `json:"content_token,omitempty"`
 }
 
 func UploadMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
@@ -21,8 +23,20 @@ func UploadMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interfac
 		filename = "upload.bin"
 	}
 
+	isPublicStr := r.URL.Query().Get("public")
+	isPublic := true
+	if isPublicStr != "" {
+		parsedFlag, err := strconv.ParseBool(isPublicStr)
+		if err != nil {
+			return api.InternalServerError("public flag does not appear to be a boolean")
+		}
+
+		isPublic = parsedFlag
+	}
+
 	log = log.WithFields(logrus.Fields{
 		"filename": filename,
+		"isPublic": isPublic,
 	})
 
 	contentType := r.Header.Get("Content-Type")
@@ -36,7 +50,7 @@ func UploadMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interfac
 		return api.RequestTooLarge()
 	}
 
-	media, err := upload_controller.UploadMedia(r.Body, contentType, filename, user.UserId, r.Host, r.Context(), log)
+	media, err := upload_controller.UploadMedia(r.Body, contentType, filename, user.UserId, r.Host, isPublic, r.Context(), log)
 	if err != nil {
 		io.Copy(ioutil.Discard, r.Body) // Ditch the entire request
 		defer r.Body.Close()
@@ -49,5 +63,5 @@ func UploadMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interfac
 		return api.InternalServerError("Unexpected Error")
 	}
 
-	return &MediaUploadedResponse{media.MxcUri()}
+	return &MediaUploadedResponse{ContentUri: media.MxcUri(), ContentToken: media.ContentToken}
 }

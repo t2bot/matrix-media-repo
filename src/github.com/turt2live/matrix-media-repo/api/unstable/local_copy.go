@@ -11,6 +11,8 @@ import (
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/controllers/download_controller"
 	"github.com/turt2live/matrix-media-repo/controllers/upload_controller"
+	"github.com/turt2live/matrix-media-repo/types"
+	"github.com/turt2live/matrix-media-repo/util"
 )
 
 func LocalCopy(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
@@ -19,6 +21,10 @@ func LocalCopy(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{
 	server := params["server"]
 	mediaId := params["mediaId"]
 	allowRemote := r.URL.Query().Get("allow_remote")
+
+	encryptedToken := util.GetMediaBearerTokenFromRequest(r)
+	appserviceUserId := util.GetAppserviceUserIdFromRequest(r)
+	bearerToken := &types.BearerToken{EncryptedToken: encryptedToken, AppserviceUserId: appserviceUserId}
 
 	downloadRemote := true
 	if allowRemote != "" {
@@ -37,7 +43,7 @@ func LocalCopy(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{
 
 	// TODO: There's a lot of room for improvement here. Instead of re-uploading media, we should just update the DB.
 
-	streamedMedia, err := download_controller.GetMedia(server, mediaId, downloadRemote, r.Context(), log)
+	streamedMedia, err := download_controller.GetMedia(server, mediaId, downloadRemote, bearerToken, r.Context(), log)
 	if err != nil {
 		if err == common.ErrMediaNotFound {
 			return api.NotFoundError()
@@ -45,6 +51,8 @@ func LocalCopy(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{
 			return api.RequestTooLarge()
 		} else if err == common.ErrMediaQuarantined {
 			return api.NotFoundError() // We lie for security
+		} else if err == common.ErrFailedAuthCheck {
+			return api.AuthFailed()
 		}
 		log.Error("Unexpected error locating media: " + err.Error())
 		return api.InternalServerError("Unexpected Error")
@@ -56,7 +64,7 @@ func LocalCopy(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{
 		return &r0.MediaUploadedResponse{ContentUri: streamedMedia.Media.MxcUri()}
 	}
 
-	newMedia, err := upload_controller.UploadMedia(streamedMedia.Stream, streamedMedia.Media.ContentType, streamedMedia.Media.UploadName, user.UserId, r.Host, r.Context(), log)
+	newMedia, err := upload_controller.UploadMedia(streamedMedia.Stream, streamedMedia.Media.ContentType, streamedMedia.Media.UploadName, user.UserId, r.Host, true, r.Context(), log)
 	if err != nil {
 		if err == common.ErrMediaNotAllowed {
 			return api.BadRequest("Media content type not allowed on this server")

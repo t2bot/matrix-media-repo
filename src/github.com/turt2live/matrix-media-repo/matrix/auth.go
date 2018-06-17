@@ -3,10 +3,12 @@ package matrix
 import (
 	"context"
 	"net/url"
-	"path"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/common"
+	"github.com/turt2live/matrix-media-repo/types"
 )
 
 var ErrNoToken = errors.New("Missing access token")
@@ -27,7 +29,7 @@ func GetUserIdFromToken(ctx context.Context, serverName string, accessToken stri
 		}
 
 		response := &userIdResponse{}
-		target, _ := url.Parse(path.Join(hs.ClientServerApi, "/_matrix/client/r0/account/whoami"))
+		target, _ := url.Parse(makeUrl(hs.ClientServerApi, "/_matrix/client/r0/account/whoami"))
 		q := target.Query()
 		for k, v := range query {
 			q.Set(k, v)
@@ -47,4 +49,27 @@ func GetUserIdFromToken(ctx context.Context, serverName string, accessToken stri
 		return userId, nil
 	}
 	return userId, replyError
+}
+
+func GetUserIdFromBearerToken(ctx context.Context, bearerToken *types.BearerToken, contentToken string) (string, error) {
+	// HACK: This is a workaround for the federation problem not being solved.
+	// See also: MSC701 / #103
+	if bearerToken.EncryptedToken == contentToken {
+		logrus.Warn("Server token used for the bearer token payload - accepting as-is")
+		return "REMOTE_SERVER", nil
+	}
+
+	accessToken, err := bearerToken.RetrieveAccessToken(contentToken)
+	if err != nil {
+		logrus.Warn("Failed to get access token from bearer token: ", err.Error())
+		return "", common.ErrFailedAuthCheck
+	}
+
+	userId, err := GetUserIdFromToken(ctx, bearerToken.Host, accessToken, bearerToken.AppserviceUserId)
+	if err != nil {
+		logrus.Warn("Failed to verify access token: ", err.Error())
+		return "", common.ErrFailedAuthCheck
+	}
+
+	return userId, nil
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/internal_cache"
+	"github.com/turt2live/matrix-media-repo/matrix"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
@@ -17,10 +18,20 @@ import (
 
 var localCache = cache.New(30*time.Second, 60*time.Second)
 
-func GetMedia(origin string, mediaId string, downloadRemote bool, ctx context.Context, log *logrus.Entry) (*types.StreamedMedia, error) {
+func GetMedia(origin string, mediaId string, downloadRemote bool, bearerToken *types.BearerToken, ctx context.Context, log *logrus.Entry) (*types.StreamedMedia, error) {
 	media, err := FindMediaRecord(origin, mediaId, downloadRemote, ctx, log)
 	if err != nil {
 		return nil, err
+	}
+
+	if media.ContentToken != nil {
+		log.Info("Media is protected by a content token - verifying request")
+		userId, err := matrix.GetUserIdFromBearerToken(ctx, bearerToken, *media.ContentToken)
+		if err != nil {
+			return nil, err
+		}
+
+		log.Info("Access token belongs to ", userId)
 	}
 
 	if media.Quarantined {

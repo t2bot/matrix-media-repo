@@ -21,6 +21,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/controllers/download_controller"
 	"github.com/turt2live/matrix-media-repo/internal_cache"
+	"github.com/turt2live/matrix-media-repo/matrix"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
@@ -35,10 +36,20 @@ var animatedTypes = []string{"image/gif"}
 
 var localCache = cache.New(30*time.Second, 60*time.Second)
 
-func GetThumbnail(origin string, mediaId string, desiredWidth int, desiredHeight int, animated bool, method string, downloadRemote bool, ctx context.Context, log *logrus.Entry) (*types.StreamedThumbnail, error) {
+func GetThumbnail(origin string, mediaId string, desiredWidth int, desiredHeight int, animated bool, method string, downloadRemote bool, bearerToken *types.BearerToken, ctx context.Context, log *logrus.Entry) (*types.StreamedThumbnail, error) {
 	media, err := download_controller.FindMediaRecord(origin, mediaId, downloadRemote, ctx, log)
 	if err != nil {
 		return nil, err
+	}
+
+	if media.ContentToken != nil {
+		log.Info("Media is protected by a content token - verifying request")
+		userId, err := matrix.GetUserIdFromBearerToken(ctx, bearerToken, *media.ContentToken)
+		if err != nil {
+			return nil, err
+		}
+
+		log.Info("Access token belongs to ", userId)
 	}
 
 	if !util.ArrayContains(supportedThumbnailTypes, media.ContentType) {

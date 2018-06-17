@@ -88,7 +88,7 @@ func downloadResourceWorkFn(request *resource_handler.WorkRequest) interface{} {
 	defer downloaded.Contents.Close()
 
 	userId := upload_controller.NoApplicableUploadUser
-	media, err := upload_controller.StoreDirect(downloaded.Contents, downloaded.ContentType, downloaded.DesiredFilename, userId, info.origin, info.mediaId, ctx, log)
+	media, err := upload_controller.StoreDirect(downloaded.Contents, downloaded.ContentType, downloaded.DesiredFilename, userId, info.origin, info.mediaId, nil, ctx, log)
 	if err != nil {
 		return &downloadResponse{err: err}
 	}

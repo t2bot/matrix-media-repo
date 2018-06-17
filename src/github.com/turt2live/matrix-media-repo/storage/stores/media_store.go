@@ -9,10 +9,10 @@ import (
 	"github.com/turt2live/matrix-media-repo/types"
 )
 
-const selectMedia = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, location, creation_ts, quarantined FROM media WHERE origin = $1 and media_id = $2;"
-const selectMediaByHash = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, location, creation_ts, quarantined FROM media WHERE sha256_hash = $1;"
-const insertMedia = "INSERT INTO media (origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, location, creation_ts, quarantined) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);"
-const selectOldMedia = "SELECT m.origin, m.media_id, m.upload_name, m.content_type, m.user_id, m.sha256_hash, m.size_bytes, m.location, m.creation_ts, quarantined FROM media AS m WHERE NOT(m.origin = ANY($1)) AND m.creation_ts < $2 AND (SELECT COUNT(*) FROM media AS d WHERE d.sha256_hash = m.sha256_hash AND d.creation_ts >= $2) = 0 AND (SELECT COUNT(*) FROM media AS d WHERE d.sha256_hash = m.sha256_hash AND d.origin = ANY($1)) = 0;"
+const selectMedia = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, location, creation_ts, quarantined, content_token FROM media WHERE origin = $1 and media_id = $2;"
+const selectMediaByHash = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, location, creation_ts, quarantined, content_token FROM media WHERE sha256_hash = $1;"
+const insertMedia = "INSERT INTO media (origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, location, creation_ts, quarantined, content_token) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);"
+const selectOldMedia = "SELECT m.origin, m.media_id, m.upload_name, m.content_type, m.user_id, m.sha256_hash, m.size_bytes, m.location, m.creation_ts, quarantined, content_token FROM media AS m WHERE NOT(m.origin = ANY($1)) AND m.creation_ts < $2 AND (SELECT COUNT(*) FROM media AS d WHERE d.sha256_hash = m.sha256_hash AND d.creation_ts >= $2) = 0 AND (SELECT COUNT(*) FROM media AS d WHERE d.sha256_hash = m.sha256_hash AND d.origin = ANY($1)) = 0;"
 const selectOrigins = "SELECT DISTINCT origin FROM media;"
 const deleteMedia = "DELETE FROM media WHERE origin = $1 AND media_id = $2;"
 const updateQuarantined = "UPDATE media SET quarantined = $3 WHERE origin = $1 AND media_id = $2;"
@@ -92,6 +92,7 @@ func (s *MediaStore) Insert(media *types.Media) (error) {
 		media.Location,
 		media.CreationTs,
 		media.Quarantined,
+		media.ContentToken,
 	)
 	return err
 }
@@ -116,6 +117,7 @@ func (s *MediaStore) GetByHash(hash string) ([]*types.Media, error) {
 			&obj.Location,
 			&obj.CreationTs,
 			&obj.Quarantined,
+			&obj.ContentToken,
 		)
 		if err != nil {
 			return nil, err
@@ -139,6 +141,7 @@ func (s *MediaStore) Get(origin string, mediaId string) (*types.Media, error) {
 		&m.Location,
 		&m.CreationTs,
 		&m.Quarantined,
+		&m.ContentToken,
 	)
 	return m, err
 }
@@ -163,6 +166,7 @@ func (s *MediaStore) GetOldMedia(exceptOrigins []string, beforeTs int64) ([]*typ
 			&obj.Location,
 			&obj.CreationTs,
 			&obj.Quarantined,
+			&obj.ContentToken,
 		)
 		if err != nil {
 			return nil, err
