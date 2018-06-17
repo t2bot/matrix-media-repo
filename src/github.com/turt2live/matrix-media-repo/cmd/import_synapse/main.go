@@ -16,7 +16,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/logging"
-	"github.com/turt2live/matrix-media-repo/old_middle_layer/services/media_service"
+	"github.com/turt2live/matrix-media-repo/controllers/upload_controller"
+	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/synapse"
 )
 
@@ -116,9 +117,11 @@ func fetchMedia(req interface{}) interface{} {
 	payload := req.(*fetchRequest)
 	record := payload.media
 	ctx := context.TODO()
+	log := logrus.WithFields(logrus.Fields{})
 
-	svc := media_service.New(ctx, logrus.WithFields(logrus.Fields{}))
-	_, err := svc.GetMediaDirect(payload.serverName, record.MediaId)
+	db := storage.GetDatabase().GetMediaStore(ctx, log)
+
+	_, err := db.Get(payload.serverName, record.MediaId)
 	if err == nil {
 		logrus.Info("Media already downloaded: " + payload.serverName + "/" + record.MediaId)
 		return nil
@@ -130,7 +133,7 @@ func fetchMedia(req interface{}) interface{} {
 		return nil
 	}
 
-	_, err = svc.StoreMedia(body, record.ContentType, record.UploadName, record.UserId, payload.serverName, record.MediaId)
+	_, err = upload_controller.StoreDirect(body, record.ContentType, record.UploadName, record.UserId, payload.serverName, record.MediaId, ctx, log)
 	if err != nil {
 		logrus.Error(err.Error())
 		return nil
@@ -141,7 +144,7 @@ func fetchMedia(req interface{}) interface{} {
 }
 
 func downloadMedia(baseUrl string, serverName string, mediaId string) (io.ReadCloser, error) {
-	downloadUrl := baseUrl + "/_matrix/media/v1/download/" + serverName + "/" + mediaId
+	downloadUrl := baseUrl + "/_matrix/media/r0/download/" + serverName + "/" + mediaId
 	resp, err := http.Get(downloadUrl)
 	if err != nil {
 		return nil, err
