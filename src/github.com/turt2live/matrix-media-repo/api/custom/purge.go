@@ -6,7 +6,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
-	"github.com/turt2live/matrix-media-repo/old_middle_layer/services/media_service"
+	"github.com/turt2live/matrix-media-repo/controllers/maintenance_controller"
 )
 
 type MediaPurgedResponse struct {
@@ -28,8 +28,7 @@ func PurgeRemoteMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) int
 	})
 
 	// We don't bother clearing the cache because it's still probably useful there
-	mediaSvc := media_service.New(r.Context(), log)
-	removed, err := mediaSvc.PurgeRemoteMediaBefore(beforeTs)
+	removed, err := maintenance_controller.PurgeRemoteMediaBefore(beforeTs, r.Context(), log)
 	if err != nil {
 		log.Error("Error purging remote media: " + err.Error())
 		return api.InternalServerError("Error purging remote media")
