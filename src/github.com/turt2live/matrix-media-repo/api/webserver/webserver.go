@@ -36,7 +36,7 @@ func Init() {
 	quarantineRoomHandler := handler{api.AccessTokenRequiredRoute(custom.QuarantineRoomMedia), counter}
 	localCopyHandler := handler{api.AccessTokenRequiredRoute(unstable.LocalCopy), counter}
 	infoHandler := handler{api.AccessTokenRequiredRoute(unstable.MediaInfo), counter}
-	limitsHandler := handler{api.AccessTokenRequiredRoute(unstable.Limits), counter}
+	configHandler := handler{api.AccessTokenRequiredRoute(unstable.PublicConfig), counter}
 
 	routes := make(map[string]route)
 	versions := []string{"r0", "v1", "unstable"} // r0 is typically clients and v1 is typically servers. v1 is deprecated.
@@ -60,7 +60,7 @@ func Init() {
 		routes["/_matrix/client/"+version+"/admin/quarantine_media/{roomId:[^/]+}"] = route{"POST", quarantineRoomHandler}
 
 		if version == "unstable" {
-			routes["/_matrix/media/"+version+"/limits"] = route{"GET", limitsHandler}
+			routes["/_matrix/media/"+version+"/config"] = route{"GET", configHandler}
 			routes["/_matrix/media/"+version+"/local_copy/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"GET", localCopyHandler}
 			routes["/_matrix/media/"+version+"/info/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"GET", infoHandler}
 		}

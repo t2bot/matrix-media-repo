@@ -8,11 +8,11 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/config"
 )
 
-type LimitsResponse struct {
+type PublicConfigResponse struct {
 	UploadMaxSize int64 `json:"m.upload.size,omitempty"`
 }
 
-func Limits(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
+func PublicConfig(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
 	uploadSize := config.Get().Uploads.ReportedMaxSizeBytes
 	if uploadSize == 0 {
 		uploadSize = config.Get().Uploads.MaxSizeBytes
@@ -22,7 +22,7 @@ func Limits(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
 		uploadSize = 0 // invokes the omitEmpty
 	}
 
-	return &LimitsResponse{
+	return &PublicConfigResponse{
 		UploadMaxSize: uploadSize,
 	}
 }
