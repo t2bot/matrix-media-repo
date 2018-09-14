@@ -75,10 +75,23 @@ func StoreDirect(contents io.Reader, contentType string, filename string, userId
 		}
 	}
 	if !allowed {
+		exclusion := false
+		for user, userExcl := range config.Get().Uploads.AllowedExcl {
+			if user == userId {
+				for _, exclType := range userExcl {
+					if glob.Glob(exclType, fileMime){
+						exclusion = true
+						log.Info("Content type " + fileMime +" (reported as " + contentType+") is allowed to be uploaded as exclusion for user "+ userId)
+					}
+				}
+			}
+		}
+		if !exclusion {
 			log.Warn("Content type " + fileMime +" (reported as " + contentType+") is not allowed to be uploaded")
 
 			os.Remove(fileLocation) // delete temp file
 			return nil, common.ErrMediaNotAllowed
+		}
 	}
 
 	hash, err := storage.GetFileHash(fileLocation)

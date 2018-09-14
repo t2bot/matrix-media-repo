@@ -50,6 +50,15 @@ uploads:
   allowedTypes:
    - "*/*"
 
+  # If not all file types are allowed, then you can make an exlusion for some users. So 
+  # that users can upload file types that not allowed to others.
+  #exclusions:
+  #  "@admin1:matrix.org":
+  #     - "application/pdf"
+  #     - "application/vnd.ms-excel"
+  #  "@admin2:matrix.org": [*/*]
+
+
 # Settings related to downloading files from the media repository
 downloads:
   # The maximum number of bytes to download from other servers
