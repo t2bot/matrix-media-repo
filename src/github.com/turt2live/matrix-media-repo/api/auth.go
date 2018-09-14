@@ -16,6 +16,10 @@ type UserInfo struct {
 func AccessTokenRequiredRoute(next func(r *http.Request, log *logrus.Entry, user UserInfo) interface{}) func(*http.Request, *logrus.Entry) interface{} {
 	return func(r *http.Request, log *logrus.Entry) interface{} {
 		accessToken := util.GetAccessTokenFromRequest(r)
+		if accessToken == "" {
+			log.Error("Error: no token provided (required)")
+			return InternalServerError("Error no token provided (required)")
+		}
 		appserviceUserId := util.GetAppserviceUserIdFromRequest(r)
 		userId, err := matrix.GetUserIdFromToken(r.Context(), r.Host, accessToken, appserviceUserId)
 		if err != nil || userId == "" {
@@ -24,7 +28,7 @@ func AccessTokenRequiredRoute(next func(r *http.Request, log *logrus.Entry, user
 				return InternalServerError("Unexpected Error")
 			}
 
-			log.Warn("Failed to verify token (fatal)")
+			log.Warn("Failed to verify token (fatal): ", err)
 			return AuthFailed()
 		}
 
@@ -36,6 +40,9 @@ func AccessTokenRequiredRoute(next func(r *http.Request, log *logrus.Entry, user
 func AccessTokenOptionalRoute(next func(r *http.Request, log *logrus.Entry, user UserInfo) interface{}) func(*http.Request, *logrus.Entry) interface{} {
 	return func(r *http.Request, log *logrus.Entry) interface{} {
 		accessToken := util.GetAccessTokenFromRequest(r)
+		if accessToken == "" {
+			return next(r, log, UserInfo{"", ""})
+		}
 		appserviceUserId := util.GetAppserviceUserIdFromRequest(r)
 		userId, err := matrix.GetUserIdFromToken(r.Context(), r.Host, accessToken, appserviceUserId)
 		if err != nil {
@@ -44,7 +51,7 @@ func AccessTokenOptionalRoute(next func(r *http.Request, log *logrus.Entry, user
 				return InternalServerError("Unexpected Error")
 			}
 
-			log.Warn("Failed to verify token (non-fatal)")
+			log.Warn("Failed to verify token (non-fatal): ", err)
 			userId = ""
 		}
 
