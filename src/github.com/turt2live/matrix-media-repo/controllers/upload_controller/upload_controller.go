@@ -68,13 +68,17 @@ func StoreDirect(contents io.Reader, contentType string, filename string, userId
 		return nil, err
 	}
 
+	allowed := false
 	for _, allowedType := range config.Get().Uploads.AllowedTypes {
-		if !glob.Glob(allowedType, fileMime) {
+		if glob.Glob(allowedType, fileMime) {
+			allowed = true
+		}
+	}
+	if !allowed {
 			log.Warn("Content type " + fileMime +" (reported as " + contentType+") is not allowed to be uploaded")
 
 			os.Remove(fileLocation) // delete temp file
 			return nil, common.ErrMediaNotAllowed
-		}
 	}
 
 	hash, err := storage.GetFileHash(fileLocation)
