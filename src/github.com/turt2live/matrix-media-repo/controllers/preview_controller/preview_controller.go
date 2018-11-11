@@ -49,18 +49,27 @@ func GetPreview(urlStr string, onHost string, forUserId string, atTs int64, ctx 
 		db.InsertPreviewError(urlStr, common.ErrCodeInvalidHost)
 		return nil, common.ErrInvalidHost
 	}
-
-	addrs, err := net.LookupIP(parsedUrl.Host)
+	realHost, _, err := net.SplitHostPort(parsedUrl.Host)
 	if err != nil {
-		log.Error("Error getting host info: ", err.Error())
+		log.Error("Error parsing host and port: ", err.Error())
 		db.InsertPreviewError(urlStr, common.ErrCodeInvalidHost)
 		return nil, common.ErrInvalidHost
 	}
-	if len(addrs) == 0 {
-		db.InsertPreviewError(urlStr, common.ErrCodeHostNotFound)
-		return nil, common.ErrHostNotFound
+
+	addr := net.IPv4(127,0,0,1)
+	if realHost != "localhost" {
+		addrs, err := net.LookupIP(realHost)
+		if err != nil {
+			log.Error("Error getting host info: ", err.Error())
+			db.InsertPreviewError(urlStr, common.ErrCodeInvalidHost)
+			return nil, common.ErrInvalidHost
+		}
+		if len(addrs) == 0 {
+			db.InsertPreviewError(urlStr, common.ErrCodeHostNotFound)
+			return nil, common.ErrHostNotFound
+		}
+		addr = addrs[0]
 	}
-	addr := addrs[0]
 
 	allowedCidrs := config.Get().UrlPreviews.AllowedNetworks
 	if allowedCidrs == nil {
