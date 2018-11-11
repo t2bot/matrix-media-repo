@@ -12,12 +12,17 @@ import (
 	"github.com/turt2live/matrix-media-repo/controllers/download_controller"
 )
 
+type mediaInfoHashes struct {
+	Sha256 string `json:"sha256"`
+}
+
 type MediaInfoResponse struct {
-	ContentUri  string `json:"content_uri"`
-	ContentType string `json:"content_type"`
-	Width       int    `json:"width,omitempty"`
-	Height      int    `json:"height,omitempty"`
-	Size        int64  `json:"size"`
+	ContentUri  string          `json:"content_uri"`
+	ContentType string          `json:"content_type"`
+	Width       int             `json:"width,omitempty"`
+	Height      int             `json:"height,omitempty"`
+	Size        int64           `json:"size"`
+	Hashes      mediaInfoHashes `json:"hashes"`
 }
 
 func MediaInfo(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
@@ -60,6 +65,9 @@ func MediaInfo(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{
 		ContentUri:  streamedMedia.Media.MxcUri(),
 		ContentType: streamedMedia.Media.ContentType,
 		Size:        streamedMedia.Media.SizeBytes,
+		Hashes: mediaInfoHashes{
+			Sha256: streamedMedia.Media.Sha256Hash,
+		},
 	}
 
 	img, err := imaging.Decode(streamedMedia.Stream)
