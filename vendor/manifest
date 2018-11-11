@@ -20,6 +20,12 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/alioygur/is",
+			"repository": "https://github.com/alioygur/is",
+			"revision": "204f48747743cfc9b98e55f3f64b7ff483942140",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/andybalholm/cascadia",
 			"repository": "https://github.com/andybalholm/cascadia",
 			"revision": "349dd0209470eabd9514242c688c403c0926d266",

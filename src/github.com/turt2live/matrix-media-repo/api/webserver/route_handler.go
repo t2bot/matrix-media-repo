@@ -6,8 +6,10 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"strings"
 
+	"github.com/alioygur/is"
 	"github.com/sebest/xff"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
@@ -101,8 +103,14 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		break
 	case *r0.DownloadMediaResponse:
 		w.Header().Set("Content-Type", result.ContentType)
-		w.Header().Set("Content-Disposition", "inline; filename=\""+result.Filename+"\"")
 		w.Header().Set("Content-Length", fmt.Sprint(result.SizeBytes))
+		if result.Filename != "" {
+			if is.ASCII(result.Filename) {
+				w.Header().Set("Content-Disposition", "inline; filename="+url.QueryEscape(result.Filename))
+			} else {
+				w.Header().Set("Content-Disposition", "inline; filename*=utf-8''"+url.QueryEscape(result.Filename))
+			}
+		}
 		defer result.Data.Close()
 		io.Copy(w, result.Data)
 		return // Prevent sending conflicting responses
