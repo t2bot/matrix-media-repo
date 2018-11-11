@@ -45,7 +45,7 @@ func Init() {
 		// Standard routes we have to handle
 		routes["/_matrix/media/"+version+"/upload"] = route{"POST", uploadHandler}
 		routes["/_matrix/media/"+version+"/download/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"GET", downloadHandler}
-		routes["/_matrix/media/"+version+"/download/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}/{filename:[a-zA-Z0-9._\\-]+}"] = route{"GET", downloadHandler}
+		routes["/_matrix/media/"+version+"/download/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}/{filename:.+}"] = route{"GET", downloadHandler}
 		routes["/_matrix/media/"+version+"/thumbnail/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"GET", thumbnailHandler}
 		routes["/_matrix/media/"+version+"/preview_url"] = route{"GET", previewUrlHandler}
 		routes["/_matrix/media/"+version+"/identicon/{seed:.*}"] = route{"GET", identiconHandler}
