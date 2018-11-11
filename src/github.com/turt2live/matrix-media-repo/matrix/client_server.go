@@ -15,7 +15,7 @@ var matrixHttpClient = &http.Client{
 }
 
 // Based in part on https://github.com/matrix-org/gomatrix/blob/072b39f7fa6b40257b4eead8c958d71985c28bdd/client.go#L180-L243
-func doRequest(method string, urlStr string, body interface{}, result interface{}, accessToken string) (error) {
+func doRequest(method string, urlStr string, body interface{}, result interface{}, accessToken string, ipAddr string) (error) {
 	var bodyBytes []byte
 	if body != nil {
 		jsonStr, err := json.Marshal(body)
@@ -34,6 +34,10 @@ func doRequest(method string, urlStr string, body interface{}, result interface{
 	req.Header.Set("Content-Type", "application/json")
 	if accessToken != "" {
 		req.Header.Set("Authorization", "Bearer "+accessToken)
+	}
+	if ipAddr != "" {
+		req.Header.Set("X-Forwarded-For", ipAddr)
+		req.Header.Set("X-Real-IP", ipAddr)
 	}
 
 	res, err := matrixHttpClient.Do(req)

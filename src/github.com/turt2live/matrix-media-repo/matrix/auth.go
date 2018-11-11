@@ -10,7 +10,7 @@ import (
 
 var ErrNoToken = errors.New("Missing access token")
 
-func GetUserIdFromToken(ctx context.Context, serverName string, accessToken string, appserviceUserId string) (string, error) {
+func GetUserIdFromToken(ctx context.Context, serverName string, accessToken string, appserviceUserId string, ipAddr string) (string, error) {
 	if accessToken == "" {
 		return "", ErrNoToken
 	}
@@ -32,7 +32,7 @@ func GetUserIdFromToken(ctx context.Context, serverName string, accessToken stri
 			q.Set(k, v)
 		}
 		target.RawQuery = q.Encode()
-		err := doRequest("GET", target.String(), nil, response, accessToken)
+		err := doRequest("GET", target.String(), nil, response, accessToken, ipAddr)
 		if err != nil {
 			err, replyError = filterError(err)
 			return err

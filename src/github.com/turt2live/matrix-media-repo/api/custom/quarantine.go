@@ -38,7 +38,7 @@ func QuarantineRoomMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) 
 		"localAdmin": isLocalAdmin,
 	})
 
-	allMedia, err := matrix.ListMedia(r.Context(), r.Host, user.AccessToken, roomId)
+	allMedia, err := matrix.ListMedia(r.Context(), r.Host, user.AccessToken, roomId, r.RemoteAddr)
 	if err != nil {
 		log.Error("Error while listing media in the room: " + err.Error())
 		return api.InternalServerError("error retrieving media in room")
@@ -158,7 +158,7 @@ func getQuarantineRequestInfo(r *http.Request, log *logrus.Entry, user api.UserI
 	var err error
 	if !isGlobalAdmin {
 		if config.Get().Quarantine.AllowLocalAdmins {
-			isLocalAdmin, err = matrix.IsUserAdmin(r.Context(), r.Host, user.AccessToken)
+			isLocalAdmin, err = matrix.IsUserAdmin(r.Context(), r.Host, user.AccessToken, r.RemoteAddr)
 			if err != nil {
 				log.Error("Error verifying local admin: " + err.Error())
 				canQuarantine = false

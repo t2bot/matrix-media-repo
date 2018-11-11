@@ -17,7 +17,7 @@ func AccessTokenRequiredRoute(next func(r *http.Request, log *logrus.Entry, user
 	return func(r *http.Request, log *logrus.Entry) interface{} {
 		accessToken := util.GetAccessTokenFromRequest(r)
 		appserviceUserId := util.GetAppserviceUserIdFromRequest(r)
-		userId, err := matrix.GetUserIdFromToken(r.Context(), r.Host, accessToken, appserviceUserId)
+		userId, err := matrix.GetUserIdFromToken(r.Context(), r.Host, accessToken, appserviceUserId, r.RemoteAddr)
 		if err != nil || userId == "" {
 			if err != nil && err != matrix.ErrNoToken {
 				log.Error("Error verifying token: ", err)
@@ -37,7 +37,7 @@ func AccessTokenOptionalRoute(next func(r *http.Request, log *logrus.Entry, user
 	return func(r *http.Request, log *logrus.Entry) interface{} {
 		accessToken := util.GetAccessTokenFromRequest(r)
 		appserviceUserId := util.GetAppserviceUserIdFromRequest(r)
-		userId, err := matrix.GetUserIdFromToken(r.Context(), r.Host, accessToken, appserviceUserId)
+		userId, err := matrix.GetUserIdFromToken(r.Context(), r.Host, accessToken, appserviceUserId, r.RemoteAddr)
 		if err != nil {
 			if err != matrix.ErrNoToken {
 				log.Error("Error verifying token: ", err)
