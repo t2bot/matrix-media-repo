@@ -97,6 +97,10 @@ urlPreviews:
   enabled: true # If enabled, the preview_url routes will be accessible
   maxPageSizeBytes: 10485760 # 10MB default, 0 to disable
 
+  # If true, the media repository will try to provide previews for URLs with invalid or unsafe
+  # certificates. If false (the default), the media repo will fail requests to said URLs.
+  previewUnsafeCertificates: false
+
   # Note: URL previews are limited to a given number of words, which are then limited to a number
   # of characters, taking off the last word if it needs to. This also applies for the title.
 

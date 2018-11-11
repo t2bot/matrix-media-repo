@@ -16,9 +16,9 @@ type runtimeConfig struct {
 var Runtime = &runtimeConfig{}
 
 type HomeserverConfig struct {
-	Name                 string `yaml:"name"`
-	ClientServerApi      string `yaml:"csApi"`
-	BackoffAt            int    `yaml:"backoffAt"`
+	Name            string `yaml:"name"`
+	ClientServerApi string `yaml:"csApi"`
+	BackoffAt       int    `yaml:"backoffAt"`
 }
 
 type GeneralConfig struct {
@@ -71,6 +71,7 @@ type UrlPreviewsConfig struct {
 	FilePreviewTypes   []string `yaml:"filePreviewTypes,flow"`
 	DisallowedNetworks []string `yaml:"disallowedNetworks,flow"`
 	AllowedNetworks    []string `yaml:"allowedNetworks,flow"`
+	UnsafeCertificates bool     `yaml:"previewUnsafeCertificates"`
 }
 
 type RateLimitConfig struct {

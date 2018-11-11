@@ -1,10 +1,12 @@
 package previewers
 
 import (
+	"crypto/tls"
 	"errors"
 	"io"
 	"io/ioutil"
 	"mime"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -89,9 +91,43 @@ func GenerateOpenGraphPreview(urlStr string, log *logrus.Entry) (PreviewResult, 
 	return *graph, nil
 }
 
+func doHttpGet(urlStr string, log *logrus.Entry) (*http.Response, error) {
+	var resp *http.Response
+	var err error
+	if config.Get().UrlPreviews.UnsafeCertificates {
+		log.Warn("Ignoring any certificate errors while making request")
+		tr := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			// Based on https://github.com/matrix-org/gomatrixserverlib/blob/51152a681e69a832efcd934b60080b92bc98b286/client.go#L74-L90
+			DialTLS: func(network, addr string) (net.Conn, error) {
+				rawconn, err := net.Dial(network, addr)
+				if err != nil {
+					return nil, err
+				}
+				// Wrap a raw connection ourselves since tls.Dial defaults the SNI
+				conn := tls.Client(rawconn, &tls.Config{
+					ServerName: "",
+					// TODO: We should be checking that the TLS certificate we see here matches one of the allowed SHA-256 fingerprints for the server.
+					InsecureSkipVerify: true,
+				})
+				if err := conn.Handshake(); err != nil {
+					return nil, err
+				}
+				return conn, nil
+			},
+		}
+		client := &http.Client{Transport: tr}
+		resp, err = client.Get(urlStr)
+	} else {
+		resp, err = http.Get(urlStr)
+	}
+
+	return resp, err
+}
+
 func downloadHtmlContent(urlStr string, log *logrus.Entry) (string, error) {
 	log.Info("Fetching remote content...")
-	resp, err := http.Get(urlStr)
+	resp, err := doHttpGet(urlStr, log)
 	if err != nil {
 		return "", err
 	}
@@ -130,7 +166,7 @@ func downloadHtmlContent(urlStr string, log *logrus.Entry) (string, error) {
 
 func downloadImage(imageUrl string, log *logrus.Entry) (*PreviewImage, error) {
 	log.Info("Getting image from " + imageUrl)
-	resp, err := http.Get(imageUrl)
+	resp, err := doHttpGet(imageUrl, log)
 	if err != nil {
 		return nil, err
 	}
