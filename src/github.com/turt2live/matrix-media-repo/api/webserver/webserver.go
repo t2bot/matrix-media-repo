@@ -49,6 +49,7 @@ func Init() {
 		routes["/_matrix/media/"+version+"/thumbnail/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"GET", thumbnailHandler}
 		routes["/_matrix/media/"+version+"/preview_url"] = route{"GET", previewUrlHandler}
 		routes["/_matrix/media/"+version+"/identicon/{seed:.*}"] = route{"GET", identiconHandler}
+		routes["/_matrix/media/"+version+"/config"] = route{"GET", configHandler}
 
 		// Routes that we define but are not part of the spec
 		routes["/_matrix/media/"+version+"/admin/purge_remote"] = route{"POST", purgeHandler}
@@ -60,7 +61,6 @@ func Init() {
 		routes["/_matrix/client/"+version+"/admin/quarantine_media/{roomId:[^/]+}"] = route{"POST", quarantineRoomHandler}
 
 		if version == "unstable" {
-			routes["/_matrix/media/"+version+"/config"] = route{"GET", configHandler}
 			routes["/_matrix/media/"+version+"/local_copy/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"GET", localCopyHandler}
 			routes["/_matrix/media/"+version+"/info/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"GET", infoHandler}
 		}
