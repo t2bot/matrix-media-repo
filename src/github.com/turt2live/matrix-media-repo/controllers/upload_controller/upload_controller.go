@@ -55,6 +55,13 @@ func UploadMedia(contents io.ReadCloser, contentType string, filename string, us
 	return StoreDirect(data, contentType, filename, userId, origin, mediaId, ctx, log)
 }
 
+func trackUploadAsLastAccess(ctx context.Context, log *logrus.Entry, media *types.Media) {
+	err := storage.GetDatabase().GetMetadataStore(ctx, log).UpsertLastAccess(media.Sha256Hash, util.NowMillis())
+	if err != nil {
+		logrus.Warn("Failed to upsert the last access time: ", err)
+	}
+}
+
 func StoreDirect(contents io.Reader, contentType string, filename string, userId string, origin string, mediaId string, ctx context.Context, log *logrus.Entry) (*types.Media, error) {
 	fileLocation, err := storage.PersistFile(contents, ctx, log)
 	if err != nil {
@@ -70,7 +77,7 @@ func StoreDirect(contents io.Reader, contentType string, filename string, userId
 
 	for _, allowedType := range config.Get().Uploads.AllowedTypes {
 		if !glob.Glob(allowedType, fileMime) {
-			log.Warn("Content type " + fileMime +" (reported as " + contentType+") is not allowed to be uploaded")
+			log.Warn("Content type " + fileMime + " (reported as " + contentType + ") is not allowed to be uploaded")
 
 			os.Remove(fileLocation) // delete temp file
 			return nil, common.ErrMediaNotAllowed
@@ -101,6 +108,7 @@ func StoreDirect(contents io.Reader, contentType string, filename string, userId
 				if record.UserId == userId && record.Origin == origin && record.ContentType == contentType {
 					log.Info("User has already uploaded this media before - returning unaltered media record")
 					os.Remove(fileLocation) // delete temp file
+					trackUploadAsLastAccess(ctx, log, record)
 					return record, nil
 				}
 			}
@@ -131,6 +139,7 @@ func StoreDirect(contents io.Reader, contentType string, filename string, userId
 			os.Remove(fileLocation)
 		}
 
+		trackUploadAsLastAccess(ctx, log, media)
 		return media, nil
 	}
 
@@ -162,5 +171,6 @@ func StoreDirect(contents io.Reader, contentType string, filename string, userId
 		return nil, err
 	}
 
+	trackUploadAsLastAccess(ctx, log, media)
 	return media, nil
 }

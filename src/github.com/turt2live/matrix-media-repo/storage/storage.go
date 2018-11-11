@@ -12,26 +12,16 @@ import (
 	"github.com/turt2live/matrix-media-repo/storage/stores"
 )
 
-const selectSizeOfFolder = "SELECT COALESCE(SUM(size_bytes), 0) + COALESCE((SELECT SUM(size_bytes) FROM thumbnails WHERE location ILIKE $1 || '%'), 0) AS size_total FROM media WHERE location ILIKE $1 || '%';"
-
-type folderSize struct {
-	Size int64
-}
-
 type Database struct {
-	db         *sql.DB
-	statements statements
-	repos      repos
-}
-
-type statements struct {
-	selectSizeOfFolder *sql.Stmt
+	db    *sql.DB
+	repos repos
 }
 
 type repos struct {
 	mediaStore     *stores.MediaStoreFactory
 	thumbnailStore *stores.ThumbnailStoreFactory
 	urlStore       *stores.UrlStoreFactory
+	metadataStore  *stores.MetadataStoreFactory
 }
 
 var dbInstance *Database
@@ -77,9 +67,7 @@ func OpenDatabase(connectionString string) (error) {
 	if d.repos.urlStore, err = stores.InitUrlStore(d.db); err != nil {
 		return err
 	}
-
-	// Prepare the general statements
-	if d.statements.selectSizeOfFolder, err = d.db.Prepare(selectSizeOfFolder); err != nil {
+	if d.repos.metadataStore, err = stores.InitMetadataStore(d.db); err != nil {
 		return err
 	}
 
@@ -104,8 +92,6 @@ func (d *Database) GetUrlStore(ctx context.Context, log *logrus.Entry) (*stores.
 	return d.repos.urlStore.Create(ctx, log)
 }
 
-func (d *Database) GetSizeOfFolderBytes(ctx context.Context, folderPath string) (int64, error) {
-	r := &folderSize{}
-	err := d.statements.selectSizeOfFolder.QueryRowContext(ctx, folderPath).Scan(&r.Size)
-	return r.Size, err
+func (d *Database) GetMetadataStore(ctx context.Context, log *logrus.Entry) (*stores.MetadataStore) {
+	return d.repos.metadataStore.Create(ctx, log)
 }

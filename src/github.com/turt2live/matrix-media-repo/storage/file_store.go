@@ -20,7 +20,7 @@ func PersistFile(file io.Reader, ctx context.Context, log *logrus.Entry) (string
 		var pathSize int64
 		for i := 0; i < len(config.Get().Uploads.StoragePaths); i++ {
 			currPath := config.Get().Uploads.StoragePaths[i]
-			size, err := GetDatabase().GetSizeOfFolderBytes(ctx, currPath)
+			size, err := GetDatabase().GetMetadataStore(ctx, log).GetSizeOfFolderBytes(currPath)
 			if err != nil {
 				continue
 			}

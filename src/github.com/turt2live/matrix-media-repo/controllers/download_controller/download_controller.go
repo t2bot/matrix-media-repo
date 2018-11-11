@@ -28,6 +28,11 @@ func GetMedia(origin string, mediaId string, downloadRemote bool, ctx context.Co
 		return nil, common.ErrMediaQuarantined
 	}
 
+	err = storage.GetDatabase().GetMetadataStore(ctx, log).UpsertLastAccess(media.Sha256Hash, util.NowMillis())
+	if err != nil {
+		logrus.Warn("Failed to upsert the last access time: ", err)
+	}
+
 	localCache.Set(origin+"/"+mediaId, media, cache.DefaultExpiration)
 	internal_cache.Get().IncrementDownloads(media.Sha256Hash)
 

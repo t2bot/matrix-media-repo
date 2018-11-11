@@ -138,6 +138,11 @@ func GetThumbnail(origin string, mediaId string, desiredWidth int, desiredHeight
 		return nil, common.ErrMediaNotFound
 	}
 
+	err = storage.GetDatabase().GetMetadataStore(ctx, log).UpsertLastAccess(thumbnail.Sha256Hash, util.NowMillis())
+	if err != nil {
+		logrus.Warn("Failed to upsert the last access time: ", err)
+	}
+
 	localCache.Set(cacheKey, thumbnail, cache.DefaultExpiration)
 	internal_cache.Get().IncrementDownloads(thumbnail.Sha256Hash)
 
