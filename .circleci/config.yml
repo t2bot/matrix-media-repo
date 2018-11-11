@@ -17,3 +17,25 @@ jobs:
       - store_artifacts:
           path: bin/import_synapse
           destination: import_synapse
+  sytest:
+    docker:
+      - image: asd
+    working_directory: /go/src/github.com/turt2live/matrix-media-repo
+    steps:
+      # Build the project
+      - checkout
+      - run: go get github.com/constabulary/gb/...
+      - run: gb vendor restore
+      - run: gb build all
+      # Install sytest
+      - run: cd /test
+      - run: wget -q https://github.com/matrix-org/sytest/archive/develop.tar.gz -O sytest.tar.gz
+      - run: tar --strip-components=1 -xf sytest.tar.gz
+      # Finally, run the tests
+      - run: ./run-tests.sh
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - build
+      - sytest
