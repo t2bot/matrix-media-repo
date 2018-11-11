@@ -17,9 +17,6 @@ type MediaUploadedResponse struct {
 
 func UploadMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
 	filename := r.URL.Query().Get("filename")
-	if filename == "" {
-		filename = "upload.bin"
-	}
 
 	log = log.WithFields(logrus.Fields{
 		"filename": filename,
