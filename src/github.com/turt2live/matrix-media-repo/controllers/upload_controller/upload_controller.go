@@ -76,29 +76,40 @@ func StoreDirect(contents io.Reader, contentType string, filename string, userId
 	}
 
 	allowed := false
-	for _, allowedType := range config.Get().Uploads.AllowedTypes {
-		if glob.Glob(allowedType, fileMime) {
-			allowed = true
-		}
-	}
-	if !allowed {
-		exclusion := false
-		for user, userExcl := range config.Get().Uploads.AllowedExcl {
-			if user == userId {
-				for _, exclType := range userExcl {
-					if glob.Glob(exclType, fileMime){
-						exclusion = true
-						log.Info("Content type " + fileMime +" (reported as " + contentType+") is allowed to be uploaded as exclusion for user "+ userId)
-					}
+	userMatched := false
+	for user, userExcl := range config.Get().Uploads.PerUserExclusions {
+		if glob.Glob(user, userId) {
+			if !userMatched {
+				log.Info("Per-user allowed types policy found for " + userId)
+				userMatched = true
+			}
+			for _, exclType := range userExcl {
+				if glob.Glob(exclType, fileMime) {
+					allowed = true
+					log.Info("Content type " + fileMime + " (reported as " + contentType + ") is allowed due to a per-user policy for " + userId)
+					break
 				}
 			}
 		}
-		if !exclusion {
-			log.Warn("Content type " + fileMime +" (reported as " + contentType+") is not allowed to be uploaded")
 
-			os.Remove(fileLocation) // delete temp file
-			return nil, common.ErrMediaNotAllowed
+		if allowed {
+			break
 		}
+	}
+	if !userMatched && !allowed {
+		log.Info("Checking general allowed types due to no matching per-user policy")
+		for _, allowedType := range config.Get().Uploads.AllowedTypes {
+			if glob.Glob(allowedType, fileMime) {
+				allowed = true
+				break
+			}
+		}
+	}
+	if !allowed {
+		log.Warn("Content type " + fileMime + " (reported as " + contentType + ") is not allowed to be uploaded")
+
+		os.Remove(fileLocation) // delete temp file
+		return nil, common.ErrMediaNotAllowed
 	}
 
 	hash, err := storage.GetFileHash(fileLocation)

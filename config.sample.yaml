@@ -50,13 +50,18 @@ uploads:
   allowedTypes:
    - "*/*"
 
-  # If not all file types are allowed, then you can make an exlusion for some users. So 
-  # that users can upload file types that not allowed to others.
+  # Specific users can have their own set of allowed file types. These are applied instead
+  # of those listed in the allowedTypes list when a user is found. Much like allowedTypes,
+  # asterisks may be used in the content types and may also be used in the user IDs. This
+  # allows for entire servers to have different allowed types by setting a rule similar to
+  # "@*:example.org". Users will be allowed to upload a file if the type matches any of
+  # the policies that match the user ID.
   #exclusions:
-  #  "@admin1:matrix.org":
+  #  "@someone:example.org":
   #     - "application/pdf"
   #     - "application/vnd.ms-excel"
-  #  "@admin2:matrix.org": [*/*]
+  #  "@*:example.org":
+  #     - "*/*"
 
 
 # Settings related to downloading files from the media repository

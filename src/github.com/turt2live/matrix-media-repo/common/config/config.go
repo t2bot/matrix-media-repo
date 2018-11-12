@@ -35,7 +35,7 @@ type UploadsConfig struct {
 	StoragePaths         []string            `yaml:"storagePaths,flow"`
 	MaxSizeBytes         int64               `yaml:"maxBytes"`
 	AllowedTypes         []string            `yaml:"allowedTypes,flow"`
-	AllowedExcl          map[string][]string `yaml:"exclusions,flow"`
+	PerUserExclusions    map[string][]string `yaml:"exclusions,flow"`
 	ReportedMaxSizeBytes int64               `yaml:"reportedMaxBytes"`
 }
 
