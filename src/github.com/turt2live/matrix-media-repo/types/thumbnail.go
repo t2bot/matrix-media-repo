@@ -11,6 +11,7 @@ type Thumbnail struct {
 	Animated    bool
 	ContentType string
 	SizeBytes   int64
+	DatastoreId string
 	Location    string
 	CreationTs  int64
 	Sha256Hash  string

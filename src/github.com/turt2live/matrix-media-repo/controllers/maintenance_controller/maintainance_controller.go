@@ -40,7 +40,12 @@ func PurgeRemoteMediaBefore(beforeTs int64, ctx context.Context, log *logrus.Ent
 		}
 
 		// Delete the file first
-		err = os.Remove(media.Location)
+		filePath, err := storage.ResolveMediaLocation(context.TODO(), &logrus.Entry{}, media.DatastoreId, media.Location)
+		if err != nil {
+			log.Error("Error resolving datastore path for media " + media.Origin + "/" + media.MediaId + " because: " + err.Error())
+			continue
+		}
+		err = os.Remove(filePath)
 		if err != nil {
 			log.Warn("Cannot remove media " + media.Origin + "/" + media.MediaId + " because: " + err.Error())
 		} else {

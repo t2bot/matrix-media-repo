@@ -63,10 +63,12 @@ func trackUploadAsLastAccess(ctx context.Context, log *logrus.Entry, media *type
 }
 
 func StoreDirect(contents io.Reader, contentType string, filename string, userId string, origin string, mediaId string, ctx context.Context, log *logrus.Entry) (*types.Media, error) {
-	fileLocation, err := storage.PersistFile(contents, ctx, log)
+	datastore, location, err := storage.PersistFile(contents, ctx, log)
 	if err != nil {
 		return nil, err
 	}
+
+	fileLocation := datastore.ResolveFilePath(location)
 
 	fileMime, err := util.GetMimeType(fileLocation)
 	if err != nil {
@@ -159,10 +161,14 @@ func StoreDirect(contents io.Reader, contentType string, filename string, userId
 
 		// If the media's file exists, we'll delete the temp file
 		// If the media's file doesn't exist, we'll move the temp file to where the media expects it to be
-		exists, err := util.FileExists(media.Location)
+		targetPath, err2 := storage.ResolveMediaLocation(ctx, log, media.DatastoreId, media.Location)
+		if err2 != nil {
+			return nil, err2
+		}
+		exists, err := util.FileExists(targetPath)
 		if err != nil || !exists {
 			// We'll assume an error means it doesn't exist
-			os.Rename(fileLocation, media.Location)
+			os.Rename(fileLocation, targetPath)
 		} else {
 			os.Remove(fileLocation)
 		}
@@ -189,7 +195,8 @@ func StoreDirect(contents io.Reader, contentType string, filename string, userId
 		UserId:      userId,
 		Sha256Hash:  hash,
 		SizeBytes:   fileSize,
-		Location:    fileLocation,
+		DatastoreId: datastore.DatastoreId,
+		Location:    location,
 		CreationTs:  util.NowMillis(),
 	}
 

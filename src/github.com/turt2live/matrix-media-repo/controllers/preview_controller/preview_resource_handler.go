@@ -98,15 +98,20 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) interface{} {
 		if err != nil {
 			log.Warn("Non-fatal error storing preview thumbnail: " + err.Error())
 		} else {
-			img, err := imaging.Open(media.Location)
+			filePath, err := storage.ResolveMediaLocation(ctx, log, media.DatastoreId, media.Location)
 			if err != nil {
-				log.Warn("Non-fatal error getting thumbnail dimensions: " + err.Error())
+				log.Warn("Non-fatal error resolving datastore path: " + err.Error())
 			} else {
-				result.ImageMxc = media.MxcUri()
-				result.ImageType = media.ContentType
-				result.ImageSize = media.SizeBytes
-				result.ImageWidth = img.Bounds().Max.X
-				result.ImageHeight = img.Bounds().Max.Y
+				img, err := imaging.Open(filePath)
+				if err != nil {
+					log.Warn("Non-fatal error getting thumbnail dimensions: " + err.Error())
+				} else {
+					result.ImageMxc = media.MxcUri()
+					result.ImageType = media.ContentType
+					result.ImageSize = media.SizeBytes
+					result.ImageWidth = img.Bounds().Max.X
+					result.ImageHeight = img.Bounds().Max.Y
+				}
 			}
 		}
 	}

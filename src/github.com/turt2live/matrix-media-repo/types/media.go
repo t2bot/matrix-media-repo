@@ -10,6 +10,7 @@ type Media struct {
 	UserId      string
 	Sha256Hash  string
 	SizeBytes   int64
+	DatastoreId string
 	Location    string
 	CreationTs  int64
 	Quarantined bool

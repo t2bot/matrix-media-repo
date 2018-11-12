@@ -48,7 +48,11 @@ func GetMedia(origin string, mediaId string, downloadRemote bool, ctx context.Co
 	}
 
 	log.Info("Reading media from disk")
-	stream, err := os.Open(media.Location)
+	filePath, err := storage.ResolveMediaLocation(ctx, log, media.DatastoreId, media.Location)
+	if err != nil {
+		return nil, err
+	}
+	stream, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
 	}

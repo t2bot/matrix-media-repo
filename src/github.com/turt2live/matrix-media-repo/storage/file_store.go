@@ -11,10 +11,11 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
-func PersistFile(file io.Reader, ctx context.Context, log *logrus.Entry) (string, error) {
+func PersistFile(file io.Reader, ctx context.Context, log *logrus.Entry) (*types.Datastore, string, error) {
 	var basePath string
 	if len(config.Get().Uploads.StoragePaths) != 1 {
 		var pathSize int64
@@ -34,7 +35,7 @@ func PersistFile(file io.Reader, ctx context.Context, log *logrus.Entry) (string
 	}
 
 	if basePath == "" {
-		return "", errors.New("could not find a suitable base path")
+		return nil, "", errors.New("could not find a suitable base path")
 	}
 	log.Info("Using the base path: " + basePath)
 
@@ -48,7 +49,7 @@ func PersistFile(file io.Reader, ctx context.Context, log *logrus.Entry) (string
 	for exists {
 		fileId, err := util.GenerateRandomString(64)
 		if err != nil {
-			return "", err
+			return nil, "", err
 		}
 
 		primaryContainer = fileId[0:2]
@@ -68,27 +69,35 @@ func PersistFile(file io.Reader, ctx context.Context, log *logrus.Entry) (string
 
 		// Infinite loop protection
 		if attempts > 5 {
-			return "", errors.New("failed to find a suitable directory")
+			return nil, "", errors.New("failed to find a suitable directory")
 		}
 	}
 
 	err := os.MkdirAll(targetDir, 0755)
 	if err != nil {
-		return "", err
+		return nil, "", err
 	}
 
 	f, err := os.OpenFile(targetFile, os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
-		return "", err
+		return nil, "", err
 	}
 	defer f.Close()
 
 	_, err = io.Copy(f, file)
 	if err != nil {
-		return "", err
+		return nil, "", err
 	}
 
-	return f.Name(), nil
+	locationPath := path.Join(primaryContainer, secondaryContainer, fileName)
+	datastorePath := basePath
+
+	datastore, err := GetOrCreateDatastore(ctx, log, datastorePath)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return datastore, locationPath, nil
 }
 
 func GetFileHash(filePath string) (string, error) {

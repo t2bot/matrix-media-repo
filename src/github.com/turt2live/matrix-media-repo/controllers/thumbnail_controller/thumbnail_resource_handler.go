@@ -21,6 +21,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/resource_handler"
+	"github.com/turt2live/matrix-media-repo/util/util_exif"
 )
 
 type thumbnailResourceHandler struct {
@@ -42,6 +43,7 @@ type thumbnailResponse struct {
 
 type GeneratedThumbnail struct {
 	ContentType  string
+	DatastoreId  string
 	DiskLocation string
 	SizeBytes    int64
 	Animated     bool
@@ -94,6 +96,7 @@ func thumbnailWorkFn(request *resource_handler.WorkRequest) interface{} {
 		Animated:    generated.Animated,
 		CreationTs:  util.NowMillis(),
 		ContentType: generated.ContentType,
+		DatastoreId: generated.DatastoreId,
 		Location:    generated.DiskLocation,
 		SizeBytes:   generated.SizeBytes,
 		Sha256Hash:  generated.Sha256Hash,
@@ -130,9 +133,14 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 	var err error
 
 	if media.ContentType == "image/svg+xml" {
-		src, err = svgToImage(media)
+		src, err = svgToImage(media, ctx, log)
 	} else {
-		src, err = imaging.Open(media.Location)
+		mediaPath, err := storage.ResolveMediaLocation(ctx, log, media.DatastoreId, media.Location)
+		if err != nil {
+			log.Error("Error resolving datastore path: ", err)
+			return nil, err
+		}
+		src, err = imaging.Open(mediaPath)
 	}
 
 	if err != nil {
@@ -162,6 +170,7 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 		} else {
 			// Image is too small - don't upscale
 			thumb.ContentType = media.ContentType
+			thumb.DatastoreId = media.DatastoreId
 			thumb.DiskLocation = media.Location
 			thumb.SizeBytes = media.SizeBytes
 			thumb.Sha256Hash = media.Sha256Hash
@@ -170,9 +179,9 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 		}
 	}
 
-	var orientation *util.ExifOrientation = nil
+	var orientation *util_exif.ExifOrientation = nil
 	if media.ContentType == "image/jpeg" || media.ContentType == "image/jpg" {
-		orientation, err = util.GetExifOrientation(media)
+		orientation, err = util_exif.GetExifOrientation(media)
 		if err != nil {
 			log.Warn("Non-fatal error getting EXIF orientation: " + err.Error())
 			orientation = nil // just in case
@@ -188,7 +197,12 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 		// Animated GIFs are a bit more special because we need to do it frame by frame.
 		// This is fairly resource intensive. The calling code is responsible for limiting this case.
 
-		inputFile, err := os.Open(media.Location)
+		mediaPath, err := storage.ResolveMediaLocation(ctx, log, media.DatastoreId, media.Location)
+		if err != nil {
+			log.Error("Error resolving datastore path: ", err)
+			return nil, err
+		}
+		inputFile, err := os.Open(mediaPath)
 		if err != nil {
 			log.Error("Error generating animated thumbnail: " + err.Error())
 			return nil, err
@@ -252,11 +266,13 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 	}
 
 	// Reset the buffer pointer and store the file
-	location, err := storage.PersistFile(imgData, ctx, log)
+	datastore, relPath, err := storage.PersistFile(imgData, ctx, log)
 	if err != nil {
 		log.Error("Unexpected error saving thumbnail: " + err.Error())
 		return nil, err
 	}
+
+	location := datastore.ResolveFilePath(relPath)
 
 	fileSize, err := util.FileSize(location)
 	if err != nil {
@@ -270,7 +286,8 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 		return nil, err
 	}
 
-	thumb.DiskLocation = location
+	thumb.DiskLocation = relPath
+	thumb.DatastoreId = datastore.DatastoreId
 	thumb.ContentType = contentType
 	thumb.SizeBytes = fileSize
 	thumb.Sha256Hash = hash
@@ -278,7 +295,7 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 	return thumb, nil
 }
 
-func thumbnailFrame(src image.Image, method string, width int, height int, filter imaging.ResampleFilter, orientation *util.ExifOrientation) (image.Image, error) {
+func thumbnailFrame(src image.Image, method string, width int, height int, filter imaging.ResampleFilter, orientation *util_exif.ExifOrientation) (image.Image, error) {
 	var result image.Image
 	if method == "scale" {
 		result = imaging.Fit(src, width, height, filter)
@@ -310,12 +327,17 @@ func thumbnailFrame(src image.Image, method string, width int, height int, filte
 	return result, nil
 }
 
-func svgToImage(media *types.Media) (image.Image, error) {
+func svgToImage(media *types.Media, ctx context.Context, log *logrus.Entry) (image.Image, error) {
 	tempFile := path.Join(os.TempDir(), "media_repo."+media.Origin+"."+media.MediaId+".png")
 	defer os.Remove(tempFile)
 
 	// requires imagemagick
-	err := exec.Command("convert", media.Location, tempFile).Run()
+	mediaPath, err := storage.ResolveMediaLocation(ctx, log, media.DatastoreId, media.Location)
+	if err != nil {
+		log.Error("Error resolving datastore path: ", err)
+		return nil, err
+	}
+	err = exec.Command("convert", mediaPath, tempFile).Run()
 	if err != nil {
 		return nil, err
 	}

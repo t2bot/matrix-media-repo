@@ -1,6 +1,9 @@
 package util
 
-import "os"
+import (
+	"os"
+	"path"
+)
 
 func FileExists(path string) (bool, error) {
 	_, err := os.Stat(path)
@@ -27,4 +30,14 @@ func FileSize(path string) (int64, error) {
 	}
 
 	return fi.Size(), nil
+}
+
+func GetLastSegmentsOfPath(strPath string, segments int) (string) {
+	combined := ""
+	for i := 1; i <= segments; i++ {
+		d, p := path.Split(strPath)
+		strPath = path.Clean(d)
+		combined = path.Join(p, combined)
+	}
+	return combined
 }

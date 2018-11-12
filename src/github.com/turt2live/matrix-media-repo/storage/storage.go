@@ -72,6 +72,9 @@ func OpenDatabase(connectionString string) (error) {
 	}
 
 	// Run some tasks that should always be done on startup
+	if err = populateDatastores(d); err != nil {
+		return err
+	}
 	if err = populateThumbnailHashes(d); err != nil {
 		return err
 	}

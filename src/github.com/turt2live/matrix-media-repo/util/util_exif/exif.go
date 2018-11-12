@@ -1,11 +1,14 @@
-package util
+package util_exif
 
 import (
+	"context"
 	"fmt"
 	"os"
 
 	"github.com/pkg/errors"
 	"github.com/rwcarlsen/goexif/exif"
+	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/types"
 )
 
@@ -20,7 +23,11 @@ func GetExifOrientation(media *types.Media) (*ExifOrientation, error) {
 		return nil, errors.New("image is not a jpeg")
 	}
 
-	file, err := os.Open(media.Location)
+	filePath, err := storage.ResolveMediaLocation(context.TODO(), &logrus.Entry{}, media.DatastoreId, media.Location)
+	if err != nil {
+		return nil, err
+	}
+	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
 	}

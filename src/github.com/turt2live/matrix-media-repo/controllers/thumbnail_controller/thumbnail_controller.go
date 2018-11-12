@@ -158,7 +158,11 @@ func GetThumbnail(origin string, mediaId string, desiredWidth int, desiredHeight
 	}
 
 	log.Info("Reading thumbnail from disk")
-	stream, err := os.Open(thumbnail.Location)
+	filePath, err := storage.ResolveMediaLocation(ctx, log, thumbnail.DatastoreId, thumbnail.Location)
+	if err != nil {
+		return nil, err
+	}
+	stream, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
 	}

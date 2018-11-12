@@ -3,6 +3,7 @@ package internal_cache
 import (
 	"bytes"
 	"container/list"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"sync"
@@ -11,6 +12,7 @@ import (
 	"github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/download_tracker"
@@ -92,7 +94,11 @@ func (c *MediaCache) GetMedia(media *types.Media, log *logrus.Entry) (*cachedFil
 	}
 
 	cacheFn := func() (*cachedFile, error) {
-		data, err := ioutil.ReadFile(media.Location)
+		filePath, err := storage.ResolveMediaLocation(context.TODO(), log, media.DatastoreId, media.Location)
+		if err != nil {
+			return nil, err
+		}
+		data, err := ioutil.ReadFile(filePath)
 		if err != nil {
 			return nil, err
 		}
@@ -109,7 +115,11 @@ func (c *MediaCache) GetThumbnail(thumbnail *types.Thumbnail, log *logrus.Entry)
 	}
 
 	cacheFn := func() (*cachedFile, error) {
-		data, err := ioutil.ReadFile(thumbnail.Location)
+		filePath, err := storage.ResolveMediaLocation(context.TODO(), log, thumbnail.DatastoreId, thumbnail.Location)
+		if err != nil {
+			return nil, err
+		}
+		data, err := ioutil.ReadFile(filePath)
 		if err != nil {
 			return nil, err
 		}
