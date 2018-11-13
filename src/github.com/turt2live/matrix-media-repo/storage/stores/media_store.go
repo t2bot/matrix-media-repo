@@ -22,6 +22,9 @@ const insertDatastore = "INSERT INTO datastores (datastore_id, ds_type, uri) VAL
 const selectMediaWithoutDatastore = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE datastore_id IS NULL OR datastore_id = '';"
 const updateMediaDatastoreAndLocation = "UPDATE media SET location = $4, datastore_id = $3 WHERE origin = $1 AND media_id = $2;"
 
+var dsCacheByPath = make(map[string]*types.Datastore)
+var dsCacheById = make(map[string]*types.Datastore)
+
 type mediaStoreStatements struct {
 	selectMedia                     *sql.Stmt
 	selectMediaByHash               *sql.Stmt
@@ -244,13 +247,30 @@ func (s *MediaStore) UpdateDatastoreAndLocation(media *types.Media) (error) {
 }
 
 func (s *MediaStore) GetDatastore(id string) (*types.Datastore, error) {
+	if v, ok := dsCacheById[id]; ok {
+		return &types.Datastore{
+			DatastoreId: v.DatastoreId,
+			Type:        v.Type,
+			Uri:         v.Uri,
+		}, nil
+	}
+
 	d := &types.Datastore{}
 	err := s.statements.selectDatastore.QueryRowContext(s.ctx, id).Scan(
 		&d.DatastoreId,
 		&d.Type,
 		&d.Uri,
 	)
-	return d, err
+	if err != nil {
+		dsCacheById[d.DatastoreId] = d
+		dsCacheByPath[d.Uri] = d
+	}
+
+	return &types.Datastore{
+		DatastoreId: d.DatastoreId,
+		Type:        d.Type,
+		Uri:         d.Uri,
+	}, err
 }
 
 func (s *MediaStore) InsertDatastore(datastore *types.Datastore) (error) {
@@ -260,17 +280,43 @@ func (s *MediaStore) InsertDatastore(datastore *types.Datastore) (error) {
 		datastore.Type,
 		datastore.Uri,
 	)
+	if err != nil {
+		d := &types.Datastore{
+			DatastoreId: datastore.DatastoreId,
+			Type:        datastore.Type,
+			Uri:         datastore.Uri,
+		}
+		dsCacheById[d.DatastoreId] = d
+		dsCacheByPath[d.Uri] = d
+	}
 	return err
 }
 
 func (s *MediaStore) GetDatastoreByUri(uri string) (*types.Datastore, error) {
+	if v, ok := dsCacheByPath[uri]; ok {
+		return &types.Datastore{
+			DatastoreId: v.DatastoreId,
+			Type:        v.Type,
+			Uri:         v.Uri,
+		}, nil
+	}
+
 	d := &types.Datastore{}
 	err := s.statements.selectDatastoreByUri.QueryRowContext(s.ctx, uri).Scan(
 		&d.DatastoreId,
 		&d.Type,
 		&d.Uri,
 	)
-	return d, err
+	if err != nil {
+		dsCacheById[d.DatastoreId] = d
+		dsCacheByPath[d.Uri] = d
+	}
+
+	return &types.Datastore{
+		DatastoreId: d.DatastoreId,
+		Type:        d.Type,
+		Uri:         d.Uri,
+	}, err
 }
 
 func (s *MediaStore) GetAllWithoutDatastore() ([]*types.Media, error) {

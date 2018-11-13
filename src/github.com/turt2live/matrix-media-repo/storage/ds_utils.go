@@ -12,9 +12,7 @@ import (
 )
 
 func GetOrCreateDatastore(ctx context.Context, log *logrus.Entry, basePath string) (*types.Datastore, error) {
-	logrus.Info("Init DS lookup")
 	mediaService := GetDatabase().GetMediaStore(ctx, log)
-
 	return getOrCreateDatastoreWithMediaService(mediaService, basePath)
 }
 
