@@ -47,7 +47,7 @@ func MediaInfo(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{
 		"allowRemote": downloadRemote,
 	})
 
-	streamedMedia, err := download_controller.GetMedia(server, mediaId, downloadRemote, r.Context(), log)
+	streamedMedia, err := download_controller.GetMedia(server, mediaId, downloadRemote, true, r.Context(), log)
 	if err != nil {
 		if err == common.ErrMediaNotFound {
 			return api.NotFoundError()
@@ -62,11 +62,11 @@ func MediaInfo(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{
 	defer streamedMedia.Stream.Close()
 
 	response := &MediaInfoResponse{
-		ContentUri:  streamedMedia.Media.MxcUri(),
-		ContentType: streamedMedia.Media.ContentType,
-		Size:        streamedMedia.Media.SizeBytes,
+		ContentUri:  streamedMedia.KnownMedia.MxcUri(),
+		ContentType: streamedMedia.KnownMedia.ContentType,
+		Size:        streamedMedia.KnownMedia.SizeBytes,
 		Hashes: mediaInfoHashes{
-			Sha256: streamedMedia.Media.Sha256Hash,
+			Sha256: streamedMedia.KnownMedia.Sha256Hash,
 		},
 	}
 

@@ -43,7 +43,7 @@ func DownloadMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interf
 		"allowRemote": downloadRemote,
 	})
 
-	streamedMedia, err := download_controller.GetMedia(server, mediaId, downloadRemote, r.Context(), log)
+	streamedMedia, err := download_controller.GetMedia(server, mediaId, downloadRemote, false, r.Context(), log)
 	if err != nil {
 		if err == common.ErrMediaNotFound {
 			return api.NotFoundError()
@@ -57,13 +57,13 @@ func DownloadMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interf
 	}
 
 	if filename == "" {
-		filename = streamedMedia.Media.UploadName
+		filename = streamedMedia.UploadName
 	}
 
 	return &DownloadMediaResponse{
-		ContentType: streamedMedia.Media.ContentType,
+		ContentType: streamedMedia.ContentType,
 		Filename:    filename,
-		SizeBytes:   streamedMedia.Media.SizeBytes,
+		SizeBytes:   streamedMedia.SizeBytes,
 		Data:        streamedMedia.Stream,
 	}
 }

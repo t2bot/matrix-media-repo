@@ -37,7 +37,7 @@ func LocalCopy(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{
 
 	// TODO: There's a lot of room for improvement here. Instead of re-uploading media, we should just update the DB.
 
-	streamedMedia, err := download_controller.GetMedia(server, mediaId, downloadRemote, r.Context(), log)
+	streamedMedia, err := download_controller.GetMedia(server, mediaId, downloadRemote, true, r.Context(), log)
 	if err != nil {
 		if err == common.ErrMediaNotFound {
 			return api.NotFoundError()
@@ -52,11 +52,11 @@ func LocalCopy(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{
 	defer streamedMedia.Stream.Close()
 
 	// Don't clone the media if it's already available on this domain
-	if streamedMedia.Media.Origin == r.Host {
-		return &r0.MediaUploadedResponse{ContentUri: streamedMedia.Media.MxcUri()}
+	if streamedMedia.KnownMedia.Origin == r.Host {
+		return &r0.MediaUploadedResponse{ContentUri: streamedMedia.KnownMedia.MxcUri()}
 	}
 
-	newMedia, err := upload_controller.UploadMedia(streamedMedia.Stream, streamedMedia.Media.ContentType, streamedMedia.Media.UploadName, user.UserId, r.Host, r.Context(), log)
+	newMedia, err := upload_controller.UploadMedia(streamedMedia.Stream, streamedMedia.KnownMedia.ContentType, streamedMedia.KnownMedia.UploadName, user.UserId, r.Host, r.Context(), log)
 	if err != nil {
 		if err == common.ErrMediaNotAllowed {
 			return api.BadRequest("Media content type not allowed on this server")

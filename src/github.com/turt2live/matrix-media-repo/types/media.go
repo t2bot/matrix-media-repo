@@ -16,9 +16,14 @@ type Media struct {
 	Quarantined bool
 }
 
-type StreamedMedia struct {
-	Media  *Media
-	Stream io.ReadCloser
+type MinimalMedia struct {
+	Origin      string
+	MediaId     string
+	Stream      io.ReadCloser
+	UploadName  string
+	ContentType string
+	SizeBytes   int64
+	KnownMedia  *Media
 }
 
 func (m *Media) MxcUri() string {

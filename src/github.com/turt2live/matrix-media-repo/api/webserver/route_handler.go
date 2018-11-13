@@ -103,7 +103,9 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		break
 	case *r0.DownloadMediaResponse:
 		w.Header().Set("Content-Type", result.ContentType)
-		w.Header().Set("Content-Length", fmt.Sprint(result.SizeBytes))
+		if result.SizeBytes > 0 {
+			w.Header().Set("Content-Length", fmt.Sprint(result.SizeBytes))
+		}
 		if result.Filename != "" {
 			if is.ASCII(result.Filename) {
 				w.Header().Set("Content-Disposition", "inline; filename="+url.QueryEscape(result.Filename))

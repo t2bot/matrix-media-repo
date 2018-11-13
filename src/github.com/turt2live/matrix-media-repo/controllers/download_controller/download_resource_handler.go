@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/djherbis/stream"
 	"github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
@@ -16,6 +17,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/controllers/upload_controller"
 	"github.com/turt2live/matrix-media-repo/matrix"
 	"github.com/turt2live/matrix-media-repo/types"
+	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/resource_handler"
 )
 
@@ -24,13 +26,33 @@ type mediaResourceHandler struct {
 }
 
 type downloadRequest struct {
-	origin  string
-	mediaId string
+	origin        string
+	mediaId       string
+	blockForMedia bool
 }
 
 type downloadResponse struct {
+	err error
+
+	// This is only populated if the request was blocked pending this object
 	media *types.Media
-	err   error
+
+	// These properties are populated if `media` is nil
+	filename    string
+	contentType string
+	stream      io.ReadCloser
+}
+
+type workerDownloadResponse struct {
+	err error
+
+	// This is only populated if the request was blocked pending this object
+	media *types.Media
+
+	// These properties are populated if `media` is nil
+	filename    string
+	contentType string
+	stream      *stream.Stream
 }
 
 type downloadedMedia struct {
@@ -59,12 +81,31 @@ func getResourceHandler() (*mediaResourceHandler) {
 	return resHandler
 }
 
-func (h *mediaResourceHandler) DownloadRemoteMedia(origin string, mediaId string) chan *downloadResponse {
+func (h *mediaResourceHandler) DownloadRemoteMedia(origin string, mediaId string, blockForMedia bool) chan *downloadResponse {
 	resultChan := make(chan *downloadResponse)
 	go func() {
 		reqId := "remote_download:" + origin + "_" + mediaId
-		result := <-h.resourceHandler.GetResource(reqId, &downloadRequest{origin, mediaId})
-		resultChan <- result.(*downloadResponse)
+		result := <-h.resourceHandler.GetResource(reqId, &downloadRequest{origin, mediaId, blockForMedia})
+
+		// Translate the response stream into something that is safe to support multiple readers
+		resp := result.(*workerDownloadResponse)
+		respValue := &downloadResponse{
+			err:         resp.err,
+			media:       resp.media,
+			contentType: resp.contentType,
+			filename:    resp.filename,
+		}
+		if resp.stream != nil {
+			s, err := resp.stream.NextReader()
+			if err != nil {
+				logrus.Error("Unexpected error in processing response for remote media download: ", err)
+				respValue = &downloadResponse{err: err}
+			} else {
+				respValue.stream = s
+			}
+		}
+
+		resultChan <- respValue
 	}()
 	return resultChan
 }
@@ -75,6 +116,7 @@ func downloadResourceWorkFn(request *resource_handler.WorkRequest) interface{} {
 		"worker_requestId":      request.Id,
 		"worker_requestOrigin":  info.origin,
 		"worker_requestMediaId": info.mediaId,
+		"worker_blockForMedia":  info.blockForMedia,
 	})
 	log.Info("Downloading remote media")
 
@@ -82,18 +124,53 @@ func downloadResourceWorkFn(request *resource_handler.WorkRequest) interface{} {
 
 	downloaded, err := DownloadRemoteMediaDirect(info.origin, info.mediaId, log)
 	if err != nil {
-		return &downloadResponse{err: err}
+		return &workerDownloadResponse{err: err}
 	}
 
-	defer downloaded.Contents.Close()
-
-	userId := upload_controller.NoApplicableUploadUser
-	media, err := upload_controller.StoreDirect(downloaded.Contents, downloaded.ContentType, downloaded.DesiredFilename, userId, info.origin, info.mediaId, ctx, log)
-	if err != nil {
-		return &downloadResponse{err: err}
+	log.Info("Checking to ensure the reported content type is allowed...")
+	if downloaded.ContentType != "" && !upload_controller.IsAllowed(downloaded.ContentType, downloaded.ContentType, upload_controller.NoApplicableUploadUser, log) {
+		log.Error("Remote media failed the preliminary IsAllowed check based on content type (reported as " + downloaded.ContentType + ")")
+		return &workerDownloadResponse{err: common.ErrMediaNotAllowed}
 	}
 
-	return &downloadResponse{media, err}
+	persistFile := func(fileStream io.ReadCloser) (*workerDownloadResponse) {
+		defer fileStream.Close()
+
+		userId := upload_controller.NoApplicableUploadUser
+		media, err := upload_controller.StoreDirect(fileStream, downloaded.ContentType, downloaded.DesiredFilename, userId, info.origin, info.mediaId, ctx, log)
+		if err != nil {
+			log.Error("Error persisting file: ", err)
+			return &workerDownloadResponse{err: err}
+		}
+
+		log.Info("Remote media persisted under datastore ", media.DatastoreId, " at ", media.Location)
+		return &workerDownloadResponse{media: media}
+	}
+
+	if info.blockForMedia {
+		log.Warn("Not streaming remote media download request due to request for a block")
+		return persistFile(downloaded.Contents)
+	}
+
+	log.Info("Streaming remote media to filesystem and requesting party at the same time")
+	readers := util.CloneReader(downloaded.Contents, 2)
+	returnedReader := readers[0]
+	persistReader := readers[1]
+
+	go persistFile(persistReader)
+
+	ms := stream.NewMemStream()
+	go func() {
+		defer ms.Close()
+		io.Copy(ms, returnedReader)
+	}()
+
+	return &workerDownloadResponse{
+		err:         nil,
+		contentType: downloaded.ContentType,
+		filename:    downloaded.DesiredFilename,
+		stream:      ms,
+	}
 }
 
 func DownloadRemoteMediaDirect(server string, mediaId string, log *logrus.Entry) (*downloadedMedia, error) {

@@ -62,6 +62,12 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/djherbis/stream",
+			"repository": "https://github.com/djherbis/stream",
+			"revision": "311bd3bbfe82e47ac63c8c1bbb18f166606a602f",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/dyatlov/go-opengraph/opengraph",
 			"repository": "https://github.com/dyatlov/go-opengraph",
 			"revision": "41a3523719dfbe7e8f853fbd4061867543db5270",

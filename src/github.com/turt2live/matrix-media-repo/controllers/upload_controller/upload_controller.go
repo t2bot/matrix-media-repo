@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/pkg/errors"
 	"github.com/ryanuber/go-glob"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
@@ -62,6 +63,49 @@ func trackUploadAsLastAccess(ctx context.Context, log *logrus.Entry, media *type
 	}
 }
 
+func IsAllowed(contentType string, reportedContentType string, userId string, log *logrus.Entry) (bool) {
+	allowed := false
+	userMatched := false
+
+	if userId != NoApplicableUploadUser {
+		for user, userExcl := range config.Get().Uploads.PerUserExclusions {
+			if glob.Glob(user, userId) {
+				if !userMatched {
+					log.Info("Per-user allowed types policy found for " + userId)
+					userMatched = true
+				}
+				for _, exclType := range userExcl {
+					if glob.Glob(exclType, contentType) {
+						allowed = true
+						log.Info("Content type " + contentType + " (reported as " + reportedContentType + ") is allowed due to a per-user policy for " + userId)
+						break
+					}
+				}
+			}
+
+			if allowed {
+				break
+			}
+		}
+	}
+
+	if !userMatched && !allowed {
+		log.Info("Checking general allowed types due to no matching per-user policy")
+		for _, allowedType := range config.Get().Uploads.AllowedTypes {
+			if glob.Glob(allowedType, contentType) {
+				allowed = true
+				break
+			}
+		}
+
+		if len(config.Get().Uploads.AllowedTypes) == 0 {
+			allowed = true
+		}
+	}
+
+	return allowed
+}
+
 func StoreDirect(contents io.Reader, contentType string, filename string, userId string, origin string, mediaId string, ctx context.Context, log *logrus.Entry) (*types.Media, error) {
 	datastore, location, err := storage.PersistFile(contents, ctx, log)
 	if err != nil {
@@ -77,36 +121,7 @@ func StoreDirect(contents io.Reader, contentType string, filename string, userId
 		return nil, err
 	}
 
-	allowed := false
-	userMatched := false
-	for user, userExcl := range config.Get().Uploads.PerUserExclusions {
-		if glob.Glob(user, userId) {
-			if !userMatched {
-				log.Info("Per-user allowed types policy found for " + userId)
-				userMatched = true
-			}
-			for _, exclType := range userExcl {
-				if glob.Glob(exclType, fileMime) {
-					allowed = true
-					log.Info("Content type " + fileMime + " (reported as " + contentType + ") is allowed due to a per-user policy for " + userId)
-					break
-				}
-			}
-		}
-
-		if allowed {
-			break
-		}
-	}
-	if !userMatched && !allowed {
-		log.Info("Checking general allowed types due to no matching per-user policy")
-		for _, allowedType := range config.Get().Uploads.AllowedTypes {
-			if glob.Glob(allowedType, fileMime) {
-				allowed = true
-				break
-			}
-		}
-	}
+	allowed := IsAllowed(fileMime, contentType, userId, log)
 	if !allowed {
 		log.Warn("Content type " + fileMime + " (reported as " + contentType + ") is not allowed to be uploaded")
 
@@ -183,6 +198,10 @@ func StoreDirect(contents io.Reader, contentType string, filename string, userId
 	if err != nil {
 		os.Remove(fileLocation) // delete temp file
 		return nil, err
+	}
+
+	if fileSize <= 0 {
+		return nil, errors.New("file has no contents")
 	}
 
 	log.Info("Persisting new media record")
