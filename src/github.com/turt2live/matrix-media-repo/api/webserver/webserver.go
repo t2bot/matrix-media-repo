@@ -36,7 +36,7 @@ func Init() {
 	quarantineRoomHandler := handler{api.AccessTokenRequiredRoute(custom.QuarantineRoomMedia), counter}
 	localCopyHandler := handler{api.AccessTokenRequiredRoute(unstable.LocalCopy), counter}
 	infoHandler := handler{api.AccessTokenRequiredRoute(unstable.MediaInfo), counter}
-	configHandler := handler{api.AccessTokenRequiredRoute(unstable.PublicConfig), counter}
+	configHandler := handler{api.AccessTokenRequiredRoute(r0.PublicConfig), counter}
 
 	routes := make(map[string]route)
 	versions := []string{"r0", "v1", "unstable"} // r0 is typically clients and v1 is typically servers. v1 is deprecated.
