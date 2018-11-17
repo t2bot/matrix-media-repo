@@ -12,11 +12,14 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strconv"
 	"sync"
 
 	"github.com/disintegration/imaging"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
@@ -158,6 +161,14 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 		log.Info("Aspect ratio is the same, converting method to 'scale'")
 	}
 
+	metric := metrics.ThumbnailsGenerated.With(prometheus.Labels{
+		"width":    strconv.Itoa(width),
+		"height":   strconv.Itoa(height),
+		"method":   method,
+		"animated": strconv.FormatBool(animated),
+		"origin":   media.Origin,
+	})
+
 	thumb := &GeneratedThumbnail{
 		Animated: animated,
 	}
@@ -175,6 +186,7 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 			thumb.SizeBytes = media.SizeBytes
 			thumb.Sha256Hash = media.Sha256Hash
 			log.Warn("Image too small, returning raw image")
+			metric.Inc()
 			return thumb, nil
 		}
 	}
@@ -292,6 +304,7 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 	thumb.SizeBytes = fileSize
 	thumb.Sha256Hash = hash
 
+	metric.Inc()
 	return thumb, nil
 }
 

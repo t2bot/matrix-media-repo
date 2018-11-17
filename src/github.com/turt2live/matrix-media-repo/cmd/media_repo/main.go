@@ -7,6 +7,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/api/webserver"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/logging"
+	"github.com/turt2live/matrix-media-repo/metrics"
 )
 
 func main() {
@@ -23,5 +24,6 @@ func main() {
 	}
 
 	logrus.Info("Starting media repository...")
+	metrics.Init()
 	webserver.Init() // blocks to listen for requests
 }

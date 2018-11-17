@@ -11,11 +11,13 @@ import (
 
 	"github.com/djherbis/stream"
 	"github.com/patrickmn/go-cache"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/controllers/upload_controller"
 	"github.com/turt2live/matrix-media-repo/matrix"
+	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/resource_handler"
@@ -251,5 +253,6 @@ func DownloadRemoteMediaDirect(server string, mediaId string, log *logrus.Entry)
 	}
 
 	log.Info("Persisting downloaded media")
+	metrics.MediaDownloaded.With(prometheus.Labels{"origin": server}).Inc()
 	return request, nil
 }

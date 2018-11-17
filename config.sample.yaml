@@ -244,3 +244,16 @@ timeouts:
   # The maximum amount of time the media repo will spend talking to your configured homeservers.
   # This is usually used to verify a user's identity.
   clientServerTimeoutSeconds: 30
+
+# Prometheus metrics configuration
+# For an example Grafana dashboard, import the following JSON:
+# https://t2bot.io/_matrix/media/r0/download/t2l.io/b89e3f042ff2057abcc470d4366a7977
+metrics:
+  # If true, the bindAddress and port below will serve GET /metrics for Prometheus to scrape.
+  enabled: false
+
+  # The address to listen on. Typically "127.0.0.1" or "0.0.0.0" for all interfaces.
+  bindAddress: "127.0.0.1"
+
+  # The port to listen on. Cannot be the same as the general web server port.
+  port: 9000

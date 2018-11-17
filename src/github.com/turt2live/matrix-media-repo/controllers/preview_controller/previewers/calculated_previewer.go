@@ -10,10 +10,12 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/ryanuber/go-glob"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
@@ -56,6 +58,7 @@ func GenerateCalculatedPreview(urlStr string, log *logrus.Entry) (PreviewResult,
 		result.Image = img
 	}
 
+	metrics.UrlPreviewsGenerated.With(prometheus.Labels{"type":"calculated"}).Inc()
 	return *result, nil
 }
 

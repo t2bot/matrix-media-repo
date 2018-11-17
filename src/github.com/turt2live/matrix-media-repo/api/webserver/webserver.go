@@ -25,18 +25,18 @@ func Init() {
 	rtr := mux.NewRouter()
 	counter := &requestCounter{}
 
-	optionsHandler := handler{api.EmptyResponseHandler, counter}
-	uploadHandler := handler{api.AccessTokenRequiredRoute(r0.UploadMedia), counter}
-	downloadHandler := handler{api.AccessTokenOptionalRoute(r0.DownloadMedia), counter}
-	thumbnailHandler := handler{api.AccessTokenOptionalRoute(r0.ThumbnailMedia), counter}
-	previewUrlHandler := handler{api.AccessTokenRequiredRoute(r0.PreviewUrl), counter}
-	identiconHandler := handler{api.AccessTokenOptionalRoute(r0.Identicon), counter}
-	purgeHandler := handler{api.RepoAdminRoute(custom.PurgeRemoteMedia), counter}
-	quarantineHandler := handler{api.AccessTokenRequiredRoute(custom.QuarantineMedia), counter}
-	quarantineRoomHandler := handler{api.AccessTokenRequiredRoute(custom.QuarantineRoomMedia), counter}
-	localCopyHandler := handler{api.AccessTokenRequiredRoute(unstable.LocalCopy), counter}
-	infoHandler := handler{api.AccessTokenRequiredRoute(unstable.MediaInfo), counter}
-	configHandler := handler{api.AccessTokenRequiredRoute(r0.PublicConfig), counter}
+	optionsHandler := handler{api.EmptyResponseHandler, "options_request", counter}
+	uploadHandler := handler{api.AccessTokenRequiredRoute(r0.UploadMedia), "upload", counter}
+	downloadHandler := handler{api.AccessTokenOptionalRoute(r0.DownloadMedia), "download", counter}
+	thumbnailHandler := handler{api.AccessTokenOptionalRoute(r0.ThumbnailMedia), "thumbnail", counter}
+	previewUrlHandler := handler{api.AccessTokenRequiredRoute(r0.PreviewUrl), "url_preview", counter}
+	identiconHandler := handler{api.AccessTokenOptionalRoute(r0.Identicon), "identicon", counter}
+	purgeHandler := handler{api.RepoAdminRoute(custom.PurgeRemoteMedia), "purge_remote_media", counter}
+	quarantineHandler := handler{api.AccessTokenRequiredRoute(custom.QuarantineMedia), "quarantine_media", counter}
+	quarantineRoomHandler := handler{api.AccessTokenRequiredRoute(custom.QuarantineRoomMedia), "quarantine_room", counter}
+	localCopyHandler := handler{api.AccessTokenRequiredRoute(unstable.LocalCopy), "local_copy", counter}
+	infoHandler := handler{api.AccessTokenRequiredRoute(unstable.MediaInfo), "info", counter}
+	configHandler := handler{api.AccessTokenRequiredRoute(r0.PublicConfig), "config", counter}
 
 	routes := make(map[string]route)
 	versions := []string{"r0", "v1", "unstable"} // r0 is typically clients and v1 is typically servers. v1 is deprecated.
@@ -76,8 +76,8 @@ func Init() {
 		rtr.Handle(routePath+"/", optionsHandler).Methods("OPTIONS")
 	}
 
-	rtr.NotFoundHandler = handler{api.NotFoundHandler, counter}
-	rtr.MethodNotAllowedHandler = handler{api.MethodNotAllowedHandler, counter}
+	rtr.NotFoundHandler = handler{api.NotFoundHandler, "not_found", counter}
+	rtr.MethodNotAllowedHandler = handler{api.MethodNotAllowedHandler, "method_not_allowed", counter}
 
 	var handler http.Handler = rtr
 	if config.Get().RateLimit.Enabled {
@@ -96,8 +96,9 @@ func Init() {
 	}
 
 	address := config.Get().General.BindAddress + ":" + strconv.Itoa(config.Get().General.Port)
-	http.Handle("/", handler)
+	httpMux := http.NewServeMux()
+	httpMux.Handle("/", handler)
 
 	logrus.WithField("address", address).Info("Started up. Listening at http://" + address)
-	http.ListenAndServe(address, nil)
+	logrus.Fatal(http.ListenAndServe(address, httpMux))
 }

@@ -7,19 +7,23 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/alioygur/is"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sebest/xff"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/api/r0"
 	"github.com/turt2live/matrix-media-repo/common"
+	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
 type handler struct {
 	h          func(r *http.Request, entry *logrus.Entry) interface{}
+	action     string
 	reqCounter *requestCounter
 }
 
@@ -64,11 +68,20 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var res interface{} = api.AuthFailed()
 	if util.IsServerOurs(r.Host) {
 		contextLog.Info("Server is owned by us, processing request")
+		metrics.HttpRequests.With(prometheus.Labels{
+			"host":   r.Host,
+			"action": h.action,
+			"method": r.Method,
+		}).Inc()
 		res = h.h(r, contextLog)
 		if res == nil {
 			res = &api.EmptyResponse{}
 		}
 	} else {
+		metrics.InvalidHttpRequests.With(prometheus.Labels{
+			"action": h.action,
+			"method": r.Method,
+		}).Inc()
 		contextLog.Warn("The server name provided in the Host header is not configured, or the request was made directly to the media repo instead of through your reverse proxy. This request is being rejected.")
 	}
 	if res == nil {
@@ -102,6 +115,12 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		break
 	case *r0.DownloadMediaResponse:
+		metrics.HttpResponses.With(prometheus.Labels{
+			"host":       r.Host,
+			"action":     h.action,
+			"method":     r.Method,
+			"statusCode": strconv.Itoa(http.StatusOK),
+		}).Inc()
 		w.Header().Set("Content-Type", result.ContentType)
 		if result.SizeBytes > 0 {
 			w.Header().Set("Content-Length", fmt.Sprint(result.SizeBytes))
@@ -117,12 +136,25 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		io.Copy(w, result.Data)
 		return // Prevent sending conflicting responses
 	case *r0.IdenticonResponse:
+		metrics.HttpResponses.With(prometheus.Labels{
+			"host":       r.Host,
+			"action":     h.action,
+			"method":     r.Method,
+			"statusCode": strconv.Itoa(http.StatusOK),
+		}).Inc()
 		w.Header().Set("Content-Type", "image/png")
 		io.Copy(w, result.Avatar)
 		return // Prevent sending conflicting responses
 	default:
 		break
 	}
+
+	metrics.HttpResponses.With(prometheus.Labels{
+		"host":       r.Host,
+		"action":     h.action,
+		"method":     r.Method,
+		"statusCode": strconv.Itoa(statusCode),
+	}).Inc()
 
 	// Order is important: Set headers before sending responses
 	w.Header().Set("Content-Type", "application/json")

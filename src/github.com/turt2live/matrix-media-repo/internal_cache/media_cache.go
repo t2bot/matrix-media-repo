@@ -10,8 +10,10 @@ import (
 	"time"
 
 	"github.com/patrickmn/go-cache"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
@@ -90,6 +92,7 @@ func (c *MediaCache) IncrementDownloads(fileHash string) {
 
 func (c *MediaCache) GetMedia(media *types.Media, log *logrus.Entry) (*cachedFile, error) {
 	if !c.enabled {
+		metrics.CacheMisses.With(prometheus.Labels{"cache": "media"}).Inc()
 		return nil, nil
 	}
 
@@ -111,6 +114,7 @@ func (c *MediaCache) GetMedia(media *types.Media, log *logrus.Entry) (*cachedFil
 
 func (c *MediaCache) GetThumbnail(thumbnail *types.Thumbnail, log *logrus.Entry) (*cachedFile, error) {
 	if !c.enabled {
+		metrics.CacheMisses.With(prometheus.Labels{"cache": "media"}).Inc()
 		return nil, nil
 	}
 
@@ -140,6 +144,8 @@ func (c *MediaCache) updateItemInCache(recordId string, mediaSize int64, cacheFn
 	// The cached bytes will leave memory over time
 	if found && !enoughDownloads {
 		log.Info("Removing media from cache because it does not have enough downloads")
+		metrics.CacheMisses.With(prometheus.Labels{"cache": "media"}).Inc()
+		metrics.CacheEvictions.With(prometheus.Labels{"cache": "media", "reason": "not_enough_downloads"}).Inc()
 		c.cache.Delete(recordId)
 		c.flagEvicted(recordId)
 		return nil, nil
@@ -155,6 +161,7 @@ func (c *MediaCache) updateItemInCache(recordId string, mediaSize int64, cacheFn
 		// Don't bother checking for space if it won't fit anyways
 		if mediaSize > maxSpace {
 			log.Warn("Media too large to cache")
+			metrics.CacheMisses.With(prometheus.Labels{"cache": "media"}).Inc()
 			return nil, nil
 		}
 
@@ -168,6 +175,8 @@ func (c *MediaCache) updateItemInCache(recordId string, mediaSize int64, cacheFn
 			if err != nil {
 				return nil, err
 			}
+			metrics.CacheNumItems.With(prometheus.Labels{"cache": "media"}).Inc()
+			metrics.CacheNumBytes.With(prometheus.Labels{"cache": "media"}).Set(float64(c.size))
 			c.cache.Set(recordId, cachedItem, cache.DefaultExpiration)
 		}
 
@@ -187,6 +196,9 @@ func (c *MediaCache) updateItemInCache(recordId string, mediaSize int64, cacheFn
 			if err != nil {
 				return nil, err
 			}
+			metrics.CacheHits.With(prometheus.Labels{"cache": "media"}).Inc()
+			metrics.CacheNumItems.With(prometheus.Labels{"cache": "media"}).Inc()
+			metrics.CacheNumBytes.With(prometheus.Labels{"cache": "media"}).Set(float64(c.size))
 			c.cache.Set(recordId, cachedItem, cache.DefaultExpiration)
 			return cachedItem, nil
 		}
@@ -197,8 +209,10 @@ func (c *MediaCache) updateItemInCache(recordId string, mediaSize int64, cacheFn
 
 	// By now the media should be in the correct state (cached or not)
 	if found {
+		metrics.CacheHits.With(prometheus.Labels{"cache": "media"}).Inc()
 		return item.(*cachedFile), nil
 	}
+	metrics.CacheMisses.With(prometheus.Labels{"cache": "media"}).Inc()
 	return nil, nil
 }
 
@@ -249,8 +263,12 @@ func (c *MediaCache) clearSpace(neededBytes int64, withDownloadsLessThan int, wi
 		toRemove := e.Value.(*removable)
 		c.cache.Delete(toRemove.cacheKey)
 		c.flagEvicted(toRemove.recordId)
+		metrics.CacheEvictions.With(prometheus.Labels{"cache": "media", "reason": "need_space"}).Inc()
+		metrics.CacheNumItems.With(prometheus.Labels{"cache": "media"}).Dec()
 	}
 
+	c.size -= preppedSpace
+	metrics.CacheNumBytes.With(prometheus.Labels{"cache": "media"}).Set(float64(c.size))
 	return preppedSpace
 }
 

@@ -107,6 +107,12 @@ type TimeoutsConfig struct {
 	ClientServer int `yaml:"clientServerTimeoutSeconds"`
 }
 
+type MetricsConfig struct {
+	Enabled     bool   `yaml:"enabled"`
+	BindAddress string `yaml:"bindAddress"`
+	Port        int    `yaml:"port"`
+}
+
 type MediaRepoConfig struct {
 	General        *GeneralConfig      `yaml:"repo"`
 	Homeservers    []*HomeserverConfig `yaml:"homeservers,flow"`
@@ -120,6 +126,7 @@ type MediaRepoConfig struct {
 	Identicons     *IdenticonsConfig   `yaml:"identicons"`
 	Quarantine     *QuarantineConfig   `yaml:"quarantine"`
 	TimeoutSeconds *TimeoutsConfig     `yaml:"timeouts"`
+	Metrics        *MetricsConfig      `yaml:"metrics"`
 }
 
 var instance *MediaRepoConfig
@@ -274,6 +281,11 @@ func NewDefaultConfig() *MediaRepoConfig {
 			UrlPreviews:  10,
 			ClientServer: 30,
 			Federation:   120,
+		},
+		Metrics: &MetricsConfig{
+			Enabled:     false,
+			BindAddress: "localhost",
+			Port:        9000,
 		},
 	}
 }

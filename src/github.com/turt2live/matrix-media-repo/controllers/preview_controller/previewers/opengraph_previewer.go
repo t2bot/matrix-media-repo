@@ -15,10 +15,12 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/dyatlov/go-opengraph/opengraph"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/ryanuber/go-glob"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/metrics"
 )
 
 var ogSupportedTypes = []string{"text/*"}
@@ -89,6 +91,7 @@ func GenerateOpenGraphPreview(urlStr string, log *logrus.Entry) (PreviewResult, 
 		graph.Image = img
 	}
 
+	metrics.UrlPreviewsGenerated.With(prometheus.Labels{"type": "opengraph"}).Inc()
 	return *graph, nil
 }
 
@@ -125,7 +128,7 @@ func doHttpGet(urlStr string, log *logrus.Entry) (*http.Response, error) {
 			Timeout: time.Duration(config.Get().TimeoutSeconds.UrlPreviews) * time.Second,
 		}
 	}
-	
+
 	req, err := http.NewRequest("GET", urlStr, nil)
 	if err != nil {
 		return nil, err
