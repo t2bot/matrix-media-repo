@@ -101,18 +101,25 @@ type QuarantineConfig struct {
 	AllowLocalAdmins  bool   `yaml:"allowLocalAdmins"`
 }
 
+type TimeoutsConfig struct {
+	UrlPreviews  int `yaml:"urlPreviewTimeoutSeconds"`
+	Federation   int `yaml:"federationTimeoutSeconds"`
+	ClientServer int `yaml:"clientServerTimeoutSeconds"`
+}
+
 type MediaRepoConfig struct {
-	General     *GeneralConfig      `yaml:"repo"`
-	Homeservers []*HomeserverConfig `yaml:"homeservers,flow"`
-	Admins      []string            `yaml:"admins,flow"`
-	Database    *DatabaseConfig     `yaml:"database"`
-	Uploads     *UploadsConfig      `yaml:"uploads"`
-	Downloads   *DownloadsConfig    `yaml:"downloads"`
-	Thumbnails  *ThumbnailsConfig   `yaml:"thumbnails"`
-	UrlPreviews *UrlPreviewsConfig  `yaml:"urlPreviews"`
-	RateLimit   *RateLimitConfig    `yaml:"rateLimit"`
-	Identicons  *IdenticonsConfig   `yaml:"identicons"`
-	Quarantine  *QuarantineConfig   `yaml:"quarantine"`
+	General        *GeneralConfig      `yaml:"repo"`
+	Homeservers    []*HomeserverConfig `yaml:"homeservers,flow"`
+	Admins         []string            `yaml:"admins,flow"`
+	Database       *DatabaseConfig     `yaml:"database"`
+	Uploads        *UploadsConfig      `yaml:"uploads"`
+	Downloads      *DownloadsConfig    `yaml:"downloads"`
+	Thumbnails     *ThumbnailsConfig   `yaml:"thumbnails"`
+	UrlPreviews    *UrlPreviewsConfig  `yaml:"urlPreviews"`
+	RateLimit      *RateLimitConfig    `yaml:"rateLimit"`
+	Identicons     *IdenticonsConfig   `yaml:"identicons"`
+	Quarantine     *QuarantineConfig   `yaml:"quarantine"`
+	TimeoutSeconds *TimeoutsConfig     `yaml:"timeouts"`
 }
 
 var instance *MediaRepoConfig
@@ -262,6 +269,11 @@ func NewDefaultConfig() *MediaRepoConfig {
 		Quarantine: &QuarantineConfig{
 			ReplaceThumbnails: true,
 			ThumbnailPath:     "",
+		},
+		TimeoutSeconds: &TimeoutsConfig{
+			UrlPreviews:  10,
+			ClientServer: 30,
+			Federation:   120,
 		},
 	}
 }

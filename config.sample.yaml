@@ -230,3 +230,17 @@ quarantine:
   # only. Global administrators can quarantine any media (local or remote) regardless of this
   # flag.
   allowLocalAdmins: true
+
+# The various timeouts that the media repo will use.
+timeouts:
+  # The maximum amount of time the media repo should spend trying to fetch a resource that is
+  # being previewed.
+  urlPreviewTimeoutSeconds: 10
+
+  # The maximum amount of time the media repo will spend making remote requests to other repos
+  # or homeservers. This is primarily used to download media.
+  federationTimeoutSeconds: 120
+
+  # The maximum amount of time the media repo will spend talking to your configured homeservers.
+  # This is usually used to verify a user's identity.
+  clientServerTimeoutSeconds: 30

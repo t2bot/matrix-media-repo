@@ -8,6 +8,7 @@ import (
 	"mime"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/ryanuber/go-glob"
 	"github.com/sirupsen/logrus"
@@ -60,7 +61,10 @@ func GenerateCalculatedPreview(urlStr string, log *logrus.Entry) (PreviewResult,
 
 func downloadFileContent(urlStr string, log *logrus.Entry) (*PreviewImage, error) {
 	log.Info("Fetching remote content...")
-	resp, err := http.Get(urlStr)
+	client := &http.Client{
+		Timeout: time.Duration(config.Get().TimeoutSeconds.UrlPreviews) * time.Second,
+	}
+	resp, err := client.Get(urlStr)
 	if err != nil {
 		return nil, err
 	}

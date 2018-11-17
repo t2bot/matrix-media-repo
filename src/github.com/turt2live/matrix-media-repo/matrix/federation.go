@@ -10,6 +10,7 @@ import (
 
 	"github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/common/config"
 )
 
 var apiUrlCacheInstance *cache.Cache
@@ -52,7 +53,7 @@ func GetServerApiUrl(hostname string) (string, error) {
 		// Trim off the trailing period if there is one (golang doesn't like this)
 		realAddr := addrs[0].Target
 		if realAddr[len(realAddr)-1:] == "." {
-			realAddr = realAddr[0:len(realAddr)-1]
+			realAddr = realAddr[0 : len(realAddr)-1]
 		}
 		url := fmt.Sprintf("https://%s:%d", realAddr, addrs[0].Port)
 		apiUrlCacheInstance.Set(hostname, url, cache.DefaultExpiration)
@@ -72,7 +73,10 @@ func FederatedGet(url string, realHost string) (*http.Response, error) {
 	transport := &http.Transport{
 		// Based on https://github.com/matrix-org/gomatrixserverlib/blob/51152a681e69a832efcd934b60080b92bc98b286/client.go#L74-L90
 		DialTLS: func(network, addr string) (net.Conn, error) {
-			rawconn, err := net.Dial(network, addr)
+			dialer := &net.Dialer{
+				Timeout: time.Duration(config.Get().TimeoutSeconds.Federation) * time.Second,
+			}
+			rawconn, err := dialer.Dial(network, addr)
 			if err != nil {
 				return nil, err
 			}

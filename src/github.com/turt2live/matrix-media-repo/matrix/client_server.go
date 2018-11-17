@@ -8,11 +8,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/turt2live/matrix-media-repo/common/config"
 )
-
-var matrixHttpClient = &http.Client{
-	Timeout: 30 * time.Second,
-}
 
 // Based in part on https://github.com/matrix-org/gomatrix/blob/072b39f7fa6b40257b4eead8c958d71985c28bdd/client.go#L180-L243
 func doRequest(method string, urlStr string, body interface{}, result interface{}, accessToken string, ipAddr string) (error) {
@@ -40,7 +37,10 @@ func doRequest(method string, urlStr string, body interface{}, result interface{
 		req.Header.Set("X-Real-IP", ipAddr)
 	}
 
-	res, err := matrixHttpClient.Do(req)
+	client := &http.Client{
+		Timeout: time.Duration(config.Get().TimeoutSeconds.ClientServer) * time.Second,
+	}
+	res, err := client.Do(req)
 	if res != nil {
 		defer res.Body.Close()
 	}

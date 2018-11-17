@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/dyatlov/go-opengraph/opengraph"
@@ -116,10 +117,16 @@ func doHttpGet(urlStr string, log *logrus.Entry) (*http.Response, error) {
 				return conn, nil
 			},
 		}
-		client := &http.Client{Transport: tr}
+		client := &http.Client{
+			Transport: tr,
+			Timeout:   time.Duration(config.Get().TimeoutSeconds.UrlPreviews) * time.Second,
+		}
 		resp, err = client.Get(urlStr)
 	} else {
-		resp, err = http.Get(urlStr)
+		client := &http.Client{
+			Timeout: time.Duration(config.Get().TimeoutSeconds.UrlPreviews) * time.Second,
+		}
+		resp, err = client.Get(urlStr)
 	}
 
 	return resp, err
