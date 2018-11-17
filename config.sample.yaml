@@ -4,7 +4,7 @@ repo:
   port: 8000
 
   # Where to store the logs, relative to where the repo is started from. Logs will be automatically
-  # rotated every day and held for 14 days.
+  # rotated every day and held for 14 days. To disable the repo logging to files, set this to "-".
   logDirectory: logs
 
 # The database configuration for the media repository

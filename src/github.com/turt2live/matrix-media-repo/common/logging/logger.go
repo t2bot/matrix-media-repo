@@ -32,7 +32,7 @@ func Setup(dir string) error {
 	})
 	logrus.SetOutput(os.Stdout)
 
-	if dir == "" {
+	if dir == "" || dir == "-" {
 		return nil
 	}
 	_ = os.MkdirAll(dir, os.ModePerm)
