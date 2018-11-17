@@ -135,10 +135,10 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 	if media.ContentType == "image/svg+xml" {
 		src, err = svgToImage(media, ctx, log)
 	} else {
-		mediaPath, err := storage.ResolveMediaLocation(ctx, log, media.DatastoreId, media.Location)
-		if err != nil {
-			log.Error("Error resolving datastore path: ", err)
-			return nil, err
+		mediaPath, err2 := storage.ResolveMediaLocation(ctx, log, media.DatastoreId, media.Location)
+		if err2 != nil {
+			log.Error("Error resolving datastore path: ", err2)
+			return nil, err2
 		}
 		src, err = imaging.Open(mediaPath)
 	}
