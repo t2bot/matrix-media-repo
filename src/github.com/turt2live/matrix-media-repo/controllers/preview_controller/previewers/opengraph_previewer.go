@@ -93,8 +93,7 @@ func GenerateOpenGraphPreview(urlStr string, log *logrus.Entry) (PreviewResult, 
 }
 
 func doHttpGet(urlStr string, log *logrus.Entry) (*http.Response, error) {
-	var resp *http.Response
-	var err error
+	var client *http.Client
 	if config.Get().UrlPreviews.UnsafeCertificates {
 		log.Warn("Ignoring any certificate errors while making request")
 		tr := &http.Transport{
@@ -117,19 +116,22 @@ func doHttpGet(urlStr string, log *logrus.Entry) (*http.Response, error) {
 				return conn, nil
 			},
 		}
-		client := &http.Client{
+		client = &http.Client{
 			Transport: tr,
 			Timeout:   time.Duration(config.Get().TimeoutSeconds.UrlPreviews) * time.Second,
 		}
-		resp, err = client.Get(urlStr)
 	} else {
-		client := &http.Client{
+		client = &http.Client{
 			Timeout: time.Duration(config.Get().TimeoutSeconds.UrlPreviews) * time.Second,
 		}
-		resp, err = client.Get(urlStr)
 	}
-
-	return resp, err
+	
+	req, err := http.NewRequest("GET", urlStr, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", "matrix-media-repo")
+	return client.Do(req)
 }
 
 func downloadHtmlContent(urlStr string, log *logrus.Entry) (string, error) {

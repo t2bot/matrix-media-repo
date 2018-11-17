@@ -28,6 +28,7 @@ func doRequest(method string, urlStr string, body interface{}, result interface{
 		return err
 	}
 
+	req.Header.Set("User-Agent", "matrix-media-repo")
 	req.Header.Set("Content-Type", "application/json")
 	if accessToken != "" {
 		req.Header.Set("Authorization", "Bearer "+accessToken)

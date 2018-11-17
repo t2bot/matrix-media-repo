@@ -64,7 +64,12 @@ func downloadFileContent(urlStr string, log *logrus.Entry) (*PreviewImage, error
 	client := &http.Client{
 		Timeout: time.Duration(config.Get().TimeoutSeconds.UrlPreviews) * time.Second,
 	}
-	resp, err := client.Get(urlStr)
+	req, err := http.NewRequest("GET", urlStr, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", "matrix-media-repo")
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
