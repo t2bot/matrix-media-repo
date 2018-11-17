@@ -52,8 +52,7 @@ func GetPreview(urlStr string, onHost string, forUserId string, atTs int64, ctx 
 	realHost, _, err := net.SplitHostPort(parsedUrl.Host)
 	if err != nil {
 		log.Error("Error parsing host and port: ", err.Error())
-		db.InsertPreviewError(urlStr, common.ErrCodeInvalidHost)
-		return nil, common.ErrInvalidHost
+		realHost = parsedUrl.Host
 	}
 
 	addr := net.IPv4(127,0,0,1)
