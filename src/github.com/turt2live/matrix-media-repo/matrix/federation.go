@@ -81,13 +81,22 @@ func FederatedGet(url string, realHost string) (*http.Response, error) {
 				return nil, err
 			}
 			// Wrap a raw connection ourselves since tls.Dial defaults the SNI
+			// #125: Some servers require SNI, so we should try it first. Most things on the planet support it.
 			conn := tls.Client(rawconn, &tls.Config{
-				ServerName: "",
+				ServerName: realHost,
 				// TODO: We should be checking that the TLS certificate we see here matches one of the allowed SHA-256 fingerprints for the server.
 				InsecureSkipVerify: true,
 			})
 			if err := conn.Handshake(); err != nil {
-				return nil, err
+				// ...however there are reasons for some servers NOT supplying the correct SNI, so fallback to not providing one.
+				conn := tls.Client(rawconn, &tls.Config{
+					ServerName: "", // An empty ServerName means we will not try to verify it.
+					InsecureSkipVerify: true,
+				})
+				if err := conn.Handshake(); err != nil { 
+				 	return nil, err;
+				}
+				return nil, err;
 			}
 			return conn, nil
 		},
