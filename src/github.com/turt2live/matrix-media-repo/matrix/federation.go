@@ -89,7 +89,7 @@ func FederatedGet(url string, realHost string) (*http.Response, error) {
 			})
 			if err := conn.Handshake(); err != nil {
 				logrus.Warn("Handshake failed due to ", err, ". Attempting handshake without SNI.");
-				// ...however there are reasons for some servers NOT supplying the correct SNI, so fallback to not providing one.
+				// ...however there are reasons for some servers NOT supplying the correct ServerName, so fallback to not providing one.
 				conn := tls.Client(rawconn, &tls.Config{
 					ServerName: "", // An empty ServerName means we will not try to verify it.
 					InsecureSkipVerify: true,
