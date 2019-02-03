@@ -136,9 +136,12 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 	var src image.Image
 	var err error
 
+	canAnimate := util.ArrayContains(animatedTypes, media.ContentType)
+	allowAnimated := config.Get().Thumbnails.AllowAnimated
+
 	if media.ContentType == "image/svg+xml" {
 		src, err = svgToImage(media, ctx, log)
-	} else if util.ArrayContains(animatedTypes, media.ContentType) {
+	} else if canAnimate && !animated {
 		src, err = pickImageFrame(media, ctx, log)
 	} else {
 		mediaPath, err2 := storage.ResolveMediaLocation(ctx, log, media.DatastoreId, media.Location)
@@ -181,6 +184,10 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 			log.Warn("Image is too small but the image should be animated. Adjusting dimensions to fit image exactly.")
 			width = srcWidth
 			height = srcHeight
+		} else if canAnimate && !animated {
+			log.Warn("Image is too small, but the request calls for a static image. Adjusting dimensions to fit image exactly.")
+			width = srcWidth
+			height = srcHeight
 		} else {
 			// Image is too small - don't upscale
 			thumb.ContentType = media.ContentType
@@ -205,7 +212,7 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 
 	contentType := "image/png"
 	imgData := &bytes.Buffer{}
-	if config.Get().Thumbnails.AllowAnimated && animated {
+	if allowAnimated && animated {
 		log.Info("Generating animated thumbnail")
 		contentType = "image/gif"
 
@@ -390,17 +397,5 @@ func pickImageFrame(media *types.Media, ctx context.Context, log *logrus.Entry) 
 	frameIndex := int(math.Floor(math.Min(1, math.Max(0, stillFrameRatio)) * float64(len(g.Image))))
 	log.Info("Picking frame ", frameIndex, " for animated file")
 
-	// Prepare a blank frame to use as swap space
-	frameImg := image.NewRGBA(g.Image[0].Bounds())
-
-	for i := range g.Image {
-		if i > frameIndex {
-			break
-		}
-
-		// Copy the frame over the existing frames
-		draw.Draw(frameImg, frameImg.Bounds(), g.Image[i], image.ZP, draw.Over)
-	}
-
-	return frameImg, nil
+	return g.Image[frameIndex], nil
 }

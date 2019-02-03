@@ -200,8 +200,7 @@ thumbnails:
   maxAnimateSizeBytes: 10485760 # 10MB default, 0 to disable
 
   # On a scale of 0 (start of animation) to 1 (end of animation), where should the thumbnailer try
-  # and thumbnail animated content? Defaults to 0.5 (middle of animation). Larger values may cause
-  # performance issues due to how GIF image layering works.
+  # and thumbnail animated content? Defaults to 0.5 (middle of animation).
   stillFrame: 0.5
 
 # Controls for the rate limit functionality
