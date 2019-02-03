@@ -21,6 +21,7 @@ const selectDatastoreByUri = "SELECT datastore_id, ds_type, uri FROM datastores 
 const insertDatastore = "INSERT INTO datastores (datastore_id, ds_type, uri) VALUES ($1, $2, $3);"
 const selectMediaWithoutDatastore = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE datastore_id IS NULL OR datastore_id = '';"
 const updateMediaDatastoreAndLocation = "UPDATE media SET location = $4, datastore_id = $3 WHERE origin = $1 AND media_id = $2;"
+const selectAllDatastores = "SELECT datastore_id, ds_type, uri FROM datastores;";
 
 var dsCacheByPath = make(map[string]*types.Datastore)
 var dsCacheById = make(map[string]*types.Datastore)
@@ -38,6 +39,7 @@ type mediaStoreStatements struct {
 	insertDatastore                 *sql.Stmt
 	selectMediaWithoutDatastore     *sql.Stmt
 	updateMediaDatastoreAndLocation *sql.Stmt
+	selectAllDatastores             *sql.Stmt
 }
 
 type MediaStoreFactory struct {
@@ -92,6 +94,9 @@ func InitMediaStore(sqlDb *sql.DB) (*MediaStoreFactory, error) {
 		return nil, err
 	}
 	if store.stmts.updateMediaDatastoreAndLocation, err = store.sqlDb.Prepare(updateMediaDatastoreAndLocation); err != nil {
+		return nil, err
+	}
+	if store.stmts.selectAllDatastores, err = store.sqlDb.Prepare(selectAllDatastores); err != nil {
 		return nil, err
 	}
 
@@ -340,6 +345,29 @@ func (s *MediaStore) GetAllWithoutDatastore() ([]*types.Media, error) {
 			&obj.Location,
 			&obj.CreationTs,
 			&obj.Quarantined,
+		)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, obj)
+	}
+
+	return results, nil
+}
+
+func (s *MediaStore) GetAllDatastores() ([]*types.Datastore, error) {
+	rows, err := s.statements.selectAllDatastores.QueryContext(s.ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []*types.Datastore
+	for rows.Next() {
+		obj := &types.Datastore{}
+		err = rows.Scan(
+			&obj.DatastoreId,
+			&obj.Type,
+			&obj.Uri,
 		)
 		if err != nil {
 			return nil, err
