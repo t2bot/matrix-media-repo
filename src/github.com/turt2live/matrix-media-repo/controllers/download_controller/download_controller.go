@@ -3,6 +3,7 @@ package download_controller
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"os"
 	"time"
 
@@ -83,6 +84,11 @@ func GetMedia(origin string, mediaId string, downloadRemote bool, blockForMedia 
 	if minMedia.Stream != nil {
 		log.Info("Returning minimal media record with a viable stream")
 		return minMedia, nil
+	}
+
+	if media == nil {
+		log.Error("Failed to locate media")
+		return nil, errors.New("failed to locate media")
 	}
 
 	log.Info("Reading media from disk")
