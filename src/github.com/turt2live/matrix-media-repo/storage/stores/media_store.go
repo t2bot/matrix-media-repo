@@ -3,6 +3,7 @@ package stores
 import (
 	"context"
 	"database/sql"
+	"sync"
 
 	"github.com/lib/pq"
 	"github.com/sirupsen/logrus"
@@ -23,8 +24,8 @@ const selectMediaWithoutDatastore = "SELECT origin, media_id, upload_name, conte
 const updateMediaDatastoreAndLocation = "UPDATE media SET location = $4, datastore_id = $3 WHERE origin = $1 AND media_id = $2;"
 const selectAllDatastores = "SELECT datastore_id, ds_type, uri FROM datastores;";
 
-var dsCacheByPath = make(map[string]*types.Datastore)
-var dsCacheById = make(map[string]*types.Datastore)
+var dsCacheByPath = sync.Map{} // [string] => Datastore
+var dsCacheById = sync.Map{} // [string] => Datastore
 
 type mediaStoreStatements struct {
 	selectMedia                     *sql.Stmt
@@ -252,11 +253,12 @@ func (s *MediaStore) UpdateDatastoreAndLocation(media *types.Media) (error) {
 }
 
 func (s *MediaStore) GetDatastore(id string) (*types.Datastore, error) {
-	if v, ok := dsCacheById[id]; ok {
+	if v, ok := dsCacheById.Load(id); ok {
+		ds := v.(*types.Datastore)
 		return &types.Datastore{
-			DatastoreId: v.DatastoreId,
-			Type:        v.Type,
-			Uri:         v.Uri,
+			DatastoreId: ds.DatastoreId,
+			Type:        ds.Type,
+			Uri:         ds.Uri,
 		}, nil
 	}
 
@@ -267,8 +269,8 @@ func (s *MediaStore) GetDatastore(id string) (*types.Datastore, error) {
 		&d.Uri,
 	)
 	if err != nil {
-		dsCacheById[d.DatastoreId] = d
-		dsCacheByPath[d.Uri] = d
+		dsCacheById.Store(d.Uri, d)
+		dsCacheByPath.Store(d.Uri, d)
 	}
 
 	return &types.Datastore{
@@ -291,18 +293,19 @@ func (s *MediaStore) InsertDatastore(datastore *types.Datastore) (error) {
 			Type:        datastore.Type,
 			Uri:         datastore.Uri,
 		}
-		dsCacheById[d.DatastoreId] = d
-		dsCacheByPath[d.Uri] = d
+		dsCacheById.Store(d.Uri, d)
+		dsCacheByPath.Store(d.Uri, d)
 	}
 	return err
 }
 
 func (s *MediaStore) GetDatastoreByUri(uri string) (*types.Datastore, error) {
-	if v, ok := dsCacheByPath[uri]; ok {
+	if v, ok := dsCacheByPath.Load(uri); ok {
+		ds := v.(*types.Datastore)
 		return &types.Datastore{
-			DatastoreId: v.DatastoreId,
-			Type:        v.Type,
-			Uri:         v.Uri,
+			DatastoreId: ds.DatastoreId,
+			Type:        ds.Type,
+			Uri:         ds.Uri,
 		}, nil
 	}
 
@@ -313,8 +316,8 @@ func (s *MediaStore) GetDatastoreByUri(uri string) (*types.Datastore, error) {
 		&d.Uri,
 	)
 	if err != nil {
-		dsCacheById[d.DatastoreId] = d
-		dsCacheByPath[d.Uri] = d
+		dsCacheById.Store(d.Uri, d)
+		dsCacheByPath.Store(d.Uri, d)
 	}
 
 	return &types.Datastore{
