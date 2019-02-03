@@ -8,6 +8,7 @@ import (
 	"mime"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -97,6 +98,9 @@ func downloadFileContent(urlStr string, log *logrus.Entry) (*PreviewImage, error
 	}
 
 	contentType := resp.Header.Get("Content-Type")
+	if strings.Contains(contentType, ";") {
+		contentType = strings.Split(contentType, ";")[0]
+	}
 	if len(config.Get().UrlPreviews.FilePreviewTypes) > 0 {
 		for _, allowedType := range config.Get().UrlPreviews.FilePreviewTypes {
 			if !glob.Glob(allowedType, contentType) {
