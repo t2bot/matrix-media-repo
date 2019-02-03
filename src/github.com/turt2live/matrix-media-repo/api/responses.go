@@ -27,7 +27,11 @@ func NotFoundError() *ErrorResponse {
 }
 
 func RequestTooLarge() *ErrorResponse {
-	return &ErrorResponse{"M_TOO_LARGE", "Too Large", common.ErrCodeMediaTooLarge}
+	return &ErrorResponse{common.ErrCodeTooLarge, "Too Large", common.ErrCodeMediaTooLarge}
+}
+
+func RequestTooSmall() *ErrorResponse {
+	return &ErrorResponse{common.ErrCodeUnknown, "Body too small or not provided", common.ErrCodeMediaTooSmall}
 }
 
 func AuthFailed() *ErrorResponse {

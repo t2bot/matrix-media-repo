@@ -38,6 +38,26 @@ func IsRequestTooLarge(contentLength int64, contentLengthHeader string) bool {
 	return false // We can only assume
 }
 
+func IsRequestTooSmall(contentLength int64, contentLengthHeader string) bool {
+	if config.Get().Uploads.MinSizeBytes <= 0 {
+		return false
+	}
+	if contentLength >= 0 {
+		return contentLength < config.Get().Uploads.MinSizeBytes
+	}
+	if contentLengthHeader != "" {
+		parsed, err := strconv.ParseInt(contentLengthHeader, 10, 64)
+		if err != nil {
+			logrus.Warn("Invalid content length header given; assuming too small. Value received: " + contentLengthHeader)
+			return true // Invalid header
+		}
+
+		return parsed < config.Get().Uploads.MinSizeBytes
+	}
+
+	return false // We can only assume
+}
+
 func UploadMedia(contents io.ReadCloser, contentType string, filename string, userId string, origin string, ctx context.Context, log *logrus.Entry) (*types.Media, error) {
 	defer contents.Close()
 

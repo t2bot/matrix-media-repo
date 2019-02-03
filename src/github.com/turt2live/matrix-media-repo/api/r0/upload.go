@@ -33,6 +33,12 @@ func UploadMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interfac
 		return api.RequestTooLarge()
 	}
 
+	if upload_controller.IsRequestTooSmall(r.ContentLength, r.Header.Get("Content-Length")) {
+		io.Copy(ioutil.Discard, r.Body) // Ditch the entire request
+		defer r.Body.Close()
+		return api.RequestTooSmall()
+	}
+
 	media, err := upload_controller.UploadMedia(r.Body, contentType, filename, user.UserId, r.Host, r.Context(), log)
 	if err != nil {
 		io.Copy(ioutil.Discard, r.Body) // Ditch the entire request
