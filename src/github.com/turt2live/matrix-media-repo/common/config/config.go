@@ -54,6 +54,7 @@ type ThumbnailsConfig struct {
 	Sizes               []*ThumbnailSize `yaml:"sizes,flow"`
 	AllowAnimated       bool             `yaml:"allowAnimated"`
 	DefaultAnimated     bool             `yaml:"defaultAnimated"`
+	StillFrame          float32          `yaml:"stillFrame"`
 }
 
 type ThumbnailSize struct {
@@ -251,6 +252,7 @@ func NewDefaultConfig() *MediaRepoConfig {
 			NumWorkers:          10,
 			AllowAnimated:       true,
 			DefaultAnimated:     false,
+			StillFrame:          0.5,
 			Sizes: []*ThumbnailSize{
 				{32, 32},
 				{96, 96},

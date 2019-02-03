@@ -9,6 +9,7 @@ import (
 	"image/draw"
 	"image/gif"
 	"io/ioutil"
+	"math"
 	"os"
 	"os/exec"
 	"path"
@@ -137,6 +138,8 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 
 	if media.ContentType == "image/svg+xml" {
 		src, err = svgToImage(media, ctx, log)
+	} else if util.ArrayContains(animatedTypes, media.ContentType) {
+		src, err = pickImageFrame(media, ctx, log)
 	} else {
 		mediaPath, err2 := storage.ResolveMediaLocation(ctx, log, media.DatastoreId, media.Location)
 		if err2 != nil {
@@ -362,4 +365,42 @@ func svgToImage(media *types.Media, ctx context.Context, log *logrus.Entry) (ima
 
 	imgData := bytes.NewBuffer(b)
 	return imaging.Decode(imgData)
+}
+
+func pickImageFrame(media *types.Media, ctx context.Context, log *logrus.Entry) (image.Image, error) {
+	mediaPath, err := storage.ResolveMediaLocation(ctx, log, media.DatastoreId, media.Location)
+	if err != nil {
+		log.Error("Error resolving datastore path: ", err)
+		return nil, err
+	}
+	inputFile, err := os.Open(mediaPath)
+	if err != nil {
+		log.Error("Error picking frame: " + err.Error())
+		return nil, err
+	}
+	defer inputFile.Close()
+
+	g, err := gif.DecodeAll(inputFile)
+	if err != nil {
+		log.Error("Error picking frame: " + err.Error())
+		return nil, err
+	}
+
+	stillFrameRatio := float64(config.Get().Thumbnails.StillFrame)
+	frameIndex := int(math.Floor(math.Min(1, math.Max(0, stillFrameRatio)) * float64(len(g.Image))))
+	log.Info("Picking frame ", frameIndex, " for animated file")
+
+	// Prepare a blank frame to use as swap space
+	frameImg := image.NewRGBA(g.Image[0].Bounds())
+
+	for i := range g.Image {
+		if i > frameIndex {
+			break
+		}
+
+		// Copy the frame over the existing frames
+		draw.Draw(frameImg, frameImg.Bounds(), g.Image[i], image.ZP, draw.Over)
+	}
+
+	return frameImg, nil
 }
