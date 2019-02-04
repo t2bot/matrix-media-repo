@@ -33,11 +33,19 @@ type DatabaseConfig struct {
 
 type UploadsConfig struct {
 	StoragePaths         []string            `yaml:"storagePaths,flow"`
+	DataStores           []DatastoreConfig   `yaml:"datastores"`
 	MaxSizeBytes         int64               `yaml:"maxBytes"`
 	MinSizeBytes         int64               `yaml:"minBytes"`
 	AllowedTypes         []string            `yaml:"allowedTypes,flow"`
 	PerUserExclusions    map[string][]string `yaml:"exclusions,flow"`
 	ReportedMaxSizeBytes int64               `yaml:"reportedMaxBytes"`
+}
+
+type DatastoreConfig struct {
+	Type     string            `yaml:"type"`
+	Enabled  bool              `yaml:"enabled"`
+	Priority int               `yaml:"priority"`
+	Options  map[string]string `yaml:"opts,flow"`
 }
 
 type DownloadsConfig struct {
@@ -209,6 +217,7 @@ func NewDefaultConfig() *MediaRepoConfig {
 			MinSizeBytes:         100,
 			ReportedMaxSizeBytes: 0,
 			StoragePaths:         []string{},
+			DataStores:           []DatastoreConfig{},
 			AllowedTypes:         []string{"*/*"},
 		},
 		Downloads: &DownloadsConfig{

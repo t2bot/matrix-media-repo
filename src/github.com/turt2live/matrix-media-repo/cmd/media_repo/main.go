@@ -26,10 +26,43 @@ func main() {
 		panic(err)
 	}
 
-	logrus.Info("Starting media repository...")
+	mediaStore := storage.GetDatabase().GetMediaStore(context.TODO(), &logrus.Entry{})
+
+	logrus.Info("Initializing datastores...")
+	enabledDatastores := 0
+	for _, ds:=range config.Get().Uploads.DataStores {
+		if !ds.Enabled {
+			continue
+		}
+
+		enabledDatastores++
+
+		uri := ""
+		if ds.Type == "file" {
+			path, pathFound := ds.Options["path"]
+			if !pathFound {
+				logrus.Fatal("Missing 'path' on file datastore")
+			}
+			uri = path
+		} else if ds.Type == "s3" {
+			endpoint, epFound := ds.Options["endpoint"]
+			bucket, bucketFound := ds.Options["bucketName"]
+			if !epFound || !bucketFound {
+				logrus.Fatal("Missing 'endpoint' or 'bucketName' on s3 datastore")
+			}
+			uri = fmt.Sprintf("s3://%s/%s", endpoint, bucket)
+		} else {
+			logrus.Fatal("Unknown datastore type: ", ds.Type)
+		}
+
+		_, err := storage.GetOrCreateDatastoreOfType(context.TODO(), &logrus.Entry{}, ds.Type, uri)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+	}
 
 	// Print all the known datastores at startup. Doubles as a way to initialize the database.
-	datastores, err := storage.GetDatabase().GetMediaStore(context.TODO(), &logrus.Entry{}).GetAllDatastores()
+	datastores, err := mediaStore.GetAllDatastores()
 	if err != nil {
 		logrus.Fatal(err)
 	}
@@ -38,6 +71,9 @@ func main() {
 		logrus.Info(fmt.Sprintf("\t%s (%s): %s", ds.Type, ds.DatastoreId, ds.Uri))
 	}
 
+	// TODO: https://github.com/minio/minio-go support
+
+	logrus.Info("Starting media repository...")
 	metrics.Init()
 	webserver.Init() // blocks to listen for requests
 }
