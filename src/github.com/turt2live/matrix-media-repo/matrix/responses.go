@@ -17,6 +17,10 @@ type mediaListResponse struct {
 	RemoteMxcs []string `json:"remote"`
 }
 
+type wellknownServerResponse struct {
+	ServerAddr string `json:"m.server"`
+}
+
 type errorResponse struct {
 	ErrorCode string `json:"errcode"`
 	Message   string `json:"error"`

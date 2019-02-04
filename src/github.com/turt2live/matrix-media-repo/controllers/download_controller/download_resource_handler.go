@@ -190,14 +190,14 @@ func DownloadRemoteMediaDirect(server string, mediaId string, log *logrus.Entry)
 		return nil, item.(error)
 	}
 
-	baseUrl, err := matrix.GetServerApiUrl(server)
+	baseUrl, realHost, err := matrix.GetServerApiUrl(server)
 	if err != nil {
 		downloadErrorsCache.Set(cacheKey, err, cache.DefaultExpiration)
 		return nil, err
 	}
 
 	downloadUrl := baseUrl + "/_matrix/media/v1/download/" + server + "/" + mediaId + "?allow_remote=false"
-	resp, err := matrix.FederatedGet(downloadUrl, server)
+	resp, err := matrix.FederatedGet(downloadUrl, realHost)
 	if err != nil {
 		downloadErrorsCache.Set(cacheKey, err, cache.DefaultExpiration)
 		return nil, err
