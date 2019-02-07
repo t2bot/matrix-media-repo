@@ -15,8 +15,8 @@ database:
 # The configuration for the homeservers this media repository is known to control. Servers
 # not listed here will not be able to upload media.
 homeservers:
-  - name: t2bot.io # This should match the Host header given to the media repo
-    csApi: "https://t2bot.io/" # The base URL to where the homeserver can actually be reached
+  - name: server.com # This should match the Host header given to the media repo
+    csApi: "https://server.com/" # The base URL to where the homeserver can actually be reached
     backoffAt: 10 # The number of consecutive failures in calling this homeserver before the
                   # media repository will start backing off. This defaults to 10 if not given.
 
@@ -150,6 +150,9 @@ urlPreviews:
     - "192.168.0.0/16"
     - "100.64.0.0/10"
     - "169.254.0.0/16"
+    - '::1/128'
+    - 'fe80::/64'
+    - 'fc00::/7'
   allowedNetworks:
     - "0.0.0.0/0" # "Everything". The blacklist will help limit this.
                   # This is the default value for this field.
