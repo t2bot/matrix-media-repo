@@ -109,7 +109,7 @@ listeners:
     type: http
     tls: true
     x_forwarded: true
-    resoruces:
+    resources:
       - names: [federation]
         compress: false
   - port: 8008
