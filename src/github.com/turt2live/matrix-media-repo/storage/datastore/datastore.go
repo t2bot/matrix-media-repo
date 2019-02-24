@@ -34,16 +34,6 @@ func GetUriForDatastore(dsConf config.DatastoreConfig) string {
 	return ""
 }
 
-func GetDatastoreConfig(ds *types.Datastore) (config.DatastoreConfig, error) {
-	for _, dsConf := range config.Get().DataStores {
-		if dsConf.Type == ds.Type && GetUriForDatastore(dsConf) == ds.Uri {
-			return dsConf, nil
-		}
-	}
-
-	return config.DatastoreConfig{}, errors.New("datastore not found")
-}
-
 func PickDatastore(ctx context.Context, log *logrus.Entry) (*DatastoreRef, error) {
 	// Legacy options first
 	storagePaths := config.Get().Uploads.StoragePaths
@@ -110,7 +100,7 @@ func PickDatastore(ctx context.Context, log *logrus.Entry) (*DatastoreRef, error
 	var targetDsConf config.DatastoreConfig
 	var dsSize int64
 	for _, dsConf := range confDatastores {
-		if !dsConf.Enabled {
+		if !dsConf.Enabled || !dsConf.ForUploads {
 			continue
 		}
 
