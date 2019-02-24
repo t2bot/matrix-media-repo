@@ -53,13 +53,15 @@ func main() {
 	logrus.Info("Datastores:")
 	for _, ds := range datastores {
 		logrus.Info(fmt.Sprintf("\t%s (%s): %s", ds.Type, ds.DatastoreId, ds.Uri))
+
+		if ds.Type == "s3" {
+
+		}
 	}
 
 	if len(config.Get().Uploads.StoragePaths) > 0 {
 		logrus.Warn("You are using `storagePaths` in your configuration - in a future update, this will be removed. Please use datastores instead (see sample config).")
 	}
-
-	// TODO: https://github.com/minio/minio-go support
 
 	logrus.Info("Starting media repository...")
 	metrics.Init()

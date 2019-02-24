@@ -11,7 +11,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/types"
 )
 
-// TODO: Upload to DS
 // TODO: Download (get stream) from DS
 
 func GetUriForDatastore(dsConf config.DatastoreConfig) string {
@@ -56,7 +55,14 @@ func PickDatastore(ctx context.Context, log *logrus.Entry) (*DatastoreRef, error
 			if err != nil {
 				return nil, err
 			}
-			return newDatastoreRef(ds), nil
+
+			fakeConfig := config.DatastoreConfig{
+				Type:       "file",
+				Enabled:    true,
+				ForUploads: true,
+				Options:    map[string]string{"path": ds.Uri},
+			}
+			return newDatastoreRef(ds, fakeConfig), nil
 		}
 
 		var basePath string
@@ -84,7 +90,14 @@ func PickDatastore(ctx context.Context, log *logrus.Entry) (*DatastoreRef, error
 			if err != nil {
 				return nil, err
 			}
-			return newDatastoreRef(ds), nil
+
+			fakeConfig := config.DatastoreConfig{
+				Type:       "file",
+				Enabled:    true,
+				ForUploads: true,
+				Options:    map[string]string{"path": ds.Uri},
+			}
+			return newDatastoreRef(ds, fakeConfig), nil
 		}
 	}
 
@@ -94,6 +107,7 @@ func PickDatastore(ctx context.Context, log *logrus.Entry) (*DatastoreRef, error
 	mediaStore := storage.GetDatabase().GetMediaStore(ctx, log)
 
 	var targetDs *types.Datastore
+	var targetDsConf config.DatastoreConfig
 	var dsSize int64
 	for _, dsConf := range confDatastores {
 		if !dsConf.Enabled {
@@ -111,14 +125,15 @@ func PickDatastore(ctx context.Context, log *logrus.Entry) (*DatastoreRef, error
 		}
 
 		if targetDs == nil || size < dsSize {
-			logrus.Info("Using ", ds.Uri)
 			targetDs = ds
+			targetDsConf = dsConf
 			dsSize = size
 		}
 	}
 
 	if targetDs != nil {
-		return newDatastoreRef(targetDs), nil
+		logrus.Info("Using ", targetDs.Uri)
+		return newDatastoreRef(targetDs, targetDsConf), nil
 	}
 
 	return nil, errors.New("failed to pick a datastore: none available")

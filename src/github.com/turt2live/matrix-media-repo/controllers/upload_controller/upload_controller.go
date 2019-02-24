@@ -13,6 +13,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
+	"github.com/turt2live/matrix-media-repo/storage/datastore/ds_file"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 )
@@ -152,7 +153,7 @@ func StoreDirect(contents io.Reader, contentType string, filename string, userId
 		return nil, common.ErrMediaNotAllowed
 	}
 
-	hash, err := storage.GetFileHash(fileLocation)
+	hash, err := ds_file.GetFileHash(fileLocation)
 	if err != nil {
 		os.Remove(fileLocation) // delete temp file
 		return nil, err

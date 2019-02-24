@@ -5,6 +5,7 @@ import (
 	"path"
 
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/storage/datastore/ds_file"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
@@ -30,7 +31,7 @@ func populateThumbnailHashes(db *Database) (error) {
 		}
 		location := datastore.ResolveFilePath(thumb.Location)
 
-		hash, err := GetFileHash(location)
+		hash, err := ds_file.GetFileHash(location)
 		if err != nil {
 			logrus.Error("Failed to generate hash for location '", location, "': ", err)
 			return err

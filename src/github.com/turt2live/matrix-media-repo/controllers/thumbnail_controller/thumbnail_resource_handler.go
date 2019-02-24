@@ -23,6 +23,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
+	"github.com/turt2live/matrix-media-repo/storage/datastore/ds_file"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/resource_handler"
@@ -307,7 +308,7 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 		return nil, err
 	}
 
-	hash, err := storage.GetFileHash(location)
+	hash, err := ds_file.GetFileHash(location)
 	if err != nil {
 		log.Error("Unexpected error getting the hash for the thumbnail: ", err.Error())
 		return nil, err

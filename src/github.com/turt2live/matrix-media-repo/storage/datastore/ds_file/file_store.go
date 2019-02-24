@@ -1,4 +1,4 @@
-package storage
+package ds_file
 
 import (
 	"context"
@@ -68,6 +68,7 @@ func PersistFile(basePath string, file io.Reader, ctx context.Context, log *logr
 	return locationPath, nil
 }
 
+// TODO: Make this ds-agnostic
 func GetFileHash(filePath string) (string, error) {
 	f, err := os.Open(filePath)
 	if err != nil {

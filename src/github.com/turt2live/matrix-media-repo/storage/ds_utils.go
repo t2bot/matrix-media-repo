@@ -11,11 +11,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
-func GetOrCreateDatastore(ctx context.Context, log *logrus.Entry, basePath string) (*types.Datastore, error) {
-	mediaService := GetDatabase().GetMediaStore(ctx, log)
-	return getOrCreateDatastoreWithMediaService(mediaService, basePath)
-}
-
 func GetOrCreateDatastoreOfType(ctx context.Context, log *logrus.Entry, dsType string, dsUri string) (*types.Datastore, error) {
 	mediaService := GetDatabase().GetMediaStore(ctx, log)
 	datastore, err := mediaService.GetDatastoreByUri(dsUri)
