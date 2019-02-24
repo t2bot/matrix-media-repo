@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"io"
+	"os"
+	"path"
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"
@@ -32,10 +34,6 @@ func newDatastoreRef(ds *types.Datastore, config config.DatastoreConfig) *Datast
 	}
 }
 
-func (d *DatastoreRef) ResolveFilePath(location string) string {
-	return d.datastore.ResolveFilePath(location)
-}
-
 func (d *DatastoreRef) UploadFile(file io.ReadCloser, ctx context.Context, log *logrus.Entry) (*types.ObjectInfo, error) {
 	log = log.WithFields(logrus.Fields{"datastoreId": d.DatastoreId, "datastoreUri": d.Uri})
 
@@ -52,16 +50,30 @@ func (d *DatastoreRef) UploadFile(file io.ReadCloser, ctx context.Context, log *
 	}
 }
 
-func (d *DatastoreRef) DeleteObject(objectInfo *types.ObjectInfo) error {
+func (d *DatastoreRef) DeleteObject(location string) error {
 	if d.Type == "file" {
-		return ds_file.DeletePersistedFile(d.Uri, objectInfo)
+		return ds_file.DeletePersistedFile(d.Uri, location)
 	} else if d.Type == "s3" {
 		s3, err := ds_s3.GetOrCreateS3Datastore(d.DatastoreId, d.config)
 		if err != nil {
 			return err
 		}
-		return s3.DeleteObject(objectInfo)
+		return s3.DeleteObject(location)
 	} else {
 		return errors.New("unknown datastore type")
+	}
+}
+
+func (d *DatastoreRef) DownloadFile(location string) (io.ReadCloser, error) {
+	if d.Type == "file" {
+		return os.Open(path.Join(d.Uri, location))
+	} else if d.Type == "s3" {
+		s3, err := ds_s3.GetOrCreateS3Datastore(d.DatastoreId, d.config)
+		if err != nil {
+			return nil,err
+		}
+		return s3.DownloadObject(location)
+	} else {
+		return nil, errors.New("unknown datastore type")
 	}
 }

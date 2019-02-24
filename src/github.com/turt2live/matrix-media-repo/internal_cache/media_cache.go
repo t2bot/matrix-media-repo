@@ -14,7 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/metrics"
-	"github.com/turt2live/matrix-media-repo/storage"
+	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/download_tracker"
@@ -97,11 +97,11 @@ func (c *MediaCache) GetMedia(media *types.Media, log *logrus.Entry) (*cachedFil
 	}
 
 	cacheFn := func() (*cachedFile, error) {
-		filePath, err := storage.ResolveMediaLocation(context.TODO(), log, media.DatastoreId, media.Location)
+		mediaStream, err := datastore.DownloadStream(context.TODO(), log, media.DatastoreId, media.Location)
 		if err != nil {
 			return nil, err
 		}
-		data, err := ioutil.ReadFile(filePath)
+		data, err := ioutil.ReadAll(mediaStream)
 		if err != nil {
 			return nil, err
 		}
@@ -119,11 +119,11 @@ func (c *MediaCache) GetThumbnail(thumbnail *types.Thumbnail, log *logrus.Entry)
 	}
 
 	cacheFn := func() (*cachedFile, error) {
-		filePath, err := storage.ResolveMediaLocation(context.TODO(), log, thumbnail.DatastoreId, thumbnail.Location)
+		mediaStream, err := datastore.DownloadStream(context.TODO(), log, thumbnail.DatastoreId, thumbnail.Location)
 		if err != nil {
 			return nil, err
 		}
-		data, err := ioutil.ReadFile(filePath)
+		data, err := ioutil.ReadAll(mediaStream)
 		if err != nil {
 			return nil, err
 		}

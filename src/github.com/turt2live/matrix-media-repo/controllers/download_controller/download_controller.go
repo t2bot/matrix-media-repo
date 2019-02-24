@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"os"
 	"time"
 
 	"github.com/patrickmn/go-cache"
@@ -12,6 +11,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/internal_cache"
 	"github.com/turt2live/matrix-media-repo/storage"
+	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 )
@@ -92,16 +92,12 @@ func GetMedia(origin string, mediaId string, downloadRemote bool, blockForMedia 
 	}
 
 	log.Info("Reading media from disk")
-	filePath, err := storage.ResolveMediaLocation(ctx, log, media.DatastoreId, media.Location)
-	if err != nil {
-		return nil, err
-	}
-	stream, err := os.Open(filePath)
+	mediaStream, err := datastore.DownloadStream(ctx, log, media.DatastoreId, media.Location)
 	if err != nil {
 		return nil, err
 	}
 
-	minMedia.Stream = stream
+	minMedia.Stream = mediaStream
 	return minMedia, nil
 }
 
@@ -151,12 +147,7 @@ func FindMinimalMediaRecord(origin string, mediaId string, downloadRemote bool, 
 		return nil, common.ErrMediaNotFound
 	}
 
-	filePath, err := storage.ResolveMediaLocation(ctx, log, media.DatastoreId, media.Location)
-	if err != nil {
-		return nil, err
-	}
-
-	stream, err := os.Open(filePath)
+	mediaStream, err := datastore.DownloadStream(ctx, log, media.DatastoreId, media.Location)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +158,7 @@ func FindMinimalMediaRecord(origin string, mediaId string, downloadRemote bool, 
 		ContentType: media.ContentType,
 		UploadName:  media.UploadName,
 		SizeBytes:   media.SizeBytes,
-		Stream:      stream,
+		Stream:      mediaStream,
 		KnownMedia:  media,
 	}, nil
 }

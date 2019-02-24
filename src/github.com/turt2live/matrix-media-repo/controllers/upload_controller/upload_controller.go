@@ -152,7 +152,7 @@ func StoreDirect(contents io.ReadCloser, contentType string, filename string, us
 	db := storage.GetDatabase().GetMediaStore(ctx, log)
 	records, err := db.GetByHash(info.Sha256Hash)
 	if err != nil {
-		ds.DeleteObject(info) // delete temp object
+		ds.DeleteObject(info.Location) // delete temp object
 		return nil, err
 	}
 
@@ -166,7 +166,7 @@ func StoreDirect(contents io.ReadCloser, contentType string, filename string, us
 			for _, record := range records {
 				if record.UserId == userId && record.Origin == origin && record.ContentType == contentType {
 					log.Info("User has already uploaded this media before - returning unaltered media record")
-					ds.DeleteObject(info) // delete temp object
+					ds.DeleteObject(info.Location) // delete temp object
 					trackUploadAsLastAccess(ctx, log, record)
 					return record, nil
 				}
@@ -184,7 +184,7 @@ func StoreDirect(contents io.ReadCloser, contentType string, filename string, us
 
 		err = db.Insert(media)
 		if err != nil {
-			ds.DeleteObject(info) // delete temp object
+			ds.DeleteObject(info.Location) // delete temp object
 			return nil, err
 		}
 
@@ -200,7 +200,7 @@ func StoreDirect(contents io.ReadCloser, contentType string, filename string, us
 		//	// We'll assume an error means it doesn't exist
 		//	os.Rename(fileLocation, targetPath)
 		//} else {
-		//	ds.DeleteObject(info)
+		//	ds.DeleteObject(info.Location)
 		//}
 
 		trackUploadAsLastAccess(ctx, log, media)
@@ -210,7 +210,7 @@ func StoreDirect(contents io.ReadCloser, contentType string, filename string, us
 	// The media doesn't already exist - save it as new
 
 	if info.SizeBytes <= 0 {
-		ds.DeleteObject(info)
+		ds.DeleteObject(info.Location)
 		return nil, errors.New("file has no contents")
 	}
 
@@ -231,7 +231,7 @@ func StoreDirect(contents io.ReadCloser, contentType string, filename string, us
 
 	err = db.Insert(media)
 	if err != nil {
-		ds.DeleteObject(info) // delete temp object
+		ds.DeleteObject(info.Location) // delete temp object
 		return nil, err
 	}
 

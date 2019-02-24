@@ -8,6 +8,7 @@ import (
 	"image"
 	"image/draw"
 	"image/gif"
+	"io"
 	"io/ioutil"
 	"math"
 	"os"
@@ -145,12 +146,12 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 	} else if canAnimate && !animated {
 		src, err = pickImageFrame(media, ctx, log)
 	} else {
-		mediaPath, err2 := storage.ResolveMediaLocation(ctx, log, media.DatastoreId, media.Location)
+		mediaStream, err2 := datastore.DownloadStream(ctx, log, media.DatastoreId, media.Location)
 		if err2 != nil {
-			log.Error("Error resolving datastore path: ", err2)
+			log.Error("Error getting file: ", err2)
 			return nil, err2
 		}
-		src, err = imaging.Open(mediaPath)
+		src, err = imaging.Decode(mediaStream)
 	}
 
 	if err != nil {
@@ -220,19 +221,13 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 		// Animated GIFs are a bit more special because we need to do it frame by frame.
 		// This is fairly resource intensive. The calling code is responsible for limiting this case.
 
-		mediaPath, err := storage.ResolveMediaLocation(ctx, log, media.DatastoreId, media.Location)
+		mediaStream, err := datastore.DownloadStream(ctx, log, media.DatastoreId, media.Location)
 		if err != nil {
 			log.Error("Error resolving datastore path: ", err)
 			return nil, err
 		}
-		inputFile, err := os.Open(mediaPath)
-		if err != nil {
-			log.Error("Error generating animated thumbnail: " + err.Error())
-			return nil, err
-		}
-		defer inputFile.Close()
 
-		g, err := gif.DecodeAll(inputFile)
+		g, err := gif.DecodeAll(mediaStream)
 		if err != nil {
 			log.Error("Error generating animated thumbnail: " + err.Error())
 			return nil, err
@@ -342,21 +337,32 @@ func thumbnailFrame(src image.Image, method string, width int, height int, filte
 }
 
 func svgToImage(media *types.Media, ctx context.Context, log *logrus.Entry) (image.Image, error) {
-	tempFile := path.Join(os.TempDir(), "media_repo."+media.Origin+"."+media.MediaId+".png")
-	defer os.Remove(tempFile)
+	tempFile1 := path.Join(os.TempDir(), "media_repo."+media.Origin+"."+media.MediaId+".1.png")
+	tempFile2 := path.Join(os.TempDir(), "media_repo."+media.Origin+"."+media.MediaId+".2.png")
+
+	defer os.Remove(tempFile1)
+	defer os.Remove(tempFile2)
 
 	// requires imagemagick
-	mediaPath, err := storage.ResolveMediaLocation(ctx, log, media.DatastoreId, media.Location)
+	mediaStream, err := datastore.DownloadStream(ctx, log, media.DatastoreId, media.Location)
 	if err != nil {
-		log.Error("Error resolving datastore path: ", err)
+		log.Error("Error streaming file: ", err)
 		return nil, err
 	}
-	err = exec.Command("convert", mediaPath, tempFile).Run()
+
+	f, err := os.Open(tempFile1)
+	if err != nil {
+		return nil, err
+	}
+	io.Copy(f, mediaStream)
+	f.Close()
+
+	err = exec.Command("convert", tempFile1, tempFile2).Run()
 	if err != nil {
 		return nil, err
 	}
 
-	b, err := ioutil.ReadFile(tempFile)
+	b, err := ioutil.ReadFile(tempFile2)
 	if err != nil {
 		return nil, err
 	}
@@ -366,19 +372,13 @@ func svgToImage(media *types.Media, ctx context.Context, log *logrus.Entry) (ima
 }
 
 func pickImageFrame(media *types.Media, ctx context.Context, log *logrus.Entry) (image.Image, error) {
-	mediaPath, err := storage.ResolveMediaLocation(ctx, log, media.DatastoreId, media.Location)
+	mediaStream, err := datastore.DownloadStream(ctx, log, media.DatastoreId, media.Location)
 	if err != nil {
 		log.Error("Error resolving datastore path: ", err)
 		return nil, err
 	}
-	inputFile, err := os.Open(mediaPath)
-	if err != nil {
-		log.Error("Error picking frame: " + err.Error())
-		return nil, err
-	}
-	defer inputFile.Close()
 
-	g, err := gif.DecodeAll(inputFile)
+	g, err := gif.DecodeAll(mediaStream)
 	if err != nil {
 		log.Error("Error picking frame: " + err.Error())
 		return nil, err

@@ -106,7 +106,6 @@ func PersistFile(basePath string, file io.ReadCloser, ctx context.Context, log *
 	}, nil
 }
 
-func DeletePersistedFile(basePath string, info *types.ObjectInfo) error {
-	filePath := path.Join(basePath, info.Location)
-	return os.Remove(filePath)
+func DeletePersistedFile(basePath string, location string) error {
+	return os.Remove(path.Join(basePath, location))
 }

@@ -28,7 +28,7 @@ func populateThumbnailHashes(db *Database) error {
 			logrus.Error("Unrecognized datastore type for thumbnail ", thumb.Origin, " ", thumb.MediaId)
 			continue
 		}
-		location := datastore.ResolveFilePath(thumb.Location)
+		location := path.Join(datastore.Uri, thumb.Location)
 
 		hash, err := util.GetFileHash(location)
 		if err != nil {

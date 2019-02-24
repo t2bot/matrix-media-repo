@@ -1,8 +1,8 @@
 package util
 
 import (
-	"crypto/md5"
 	"crypto/rand"
+	"crypto/sha1"
 	"encoding/hex"
 )
 
@@ -21,7 +21,7 @@ func GenerateRandomString(nBytes int) (string, error) {
 		return "", err
 	}
 
-	hasher := md5.New()
+	hasher := sha1.New()
 	hasher.Write(b)
 	return hex.EncodeToString(hasher.Sum(nil)), nil
 }

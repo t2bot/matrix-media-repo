@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"io"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -11,7 +12,37 @@ import (
 	"github.com/turt2live/matrix-media-repo/types"
 )
 
-// TODO: Download (get stream) from DS
+func LocateDatastore(ctx context.Context, log *logrus.Entry, datastoreId string) (*DatastoreRef, error) {
+	ds, err := storage.GetDatabase().GetMediaStore(ctx, log).GetDatastore(datastoreId)
+	if err != nil {
+		return nil, err
+	}
+
+	conf, err := GetDatastoreConfig(ds)
+	if err != nil {
+		return nil, err
+	}
+
+	return newDatastoreRef(ds, conf), nil
+}
+
+func DownloadStream(ctx context.Context, log *logrus.Entry, datastoreId string, location string) (io.ReadCloser, error) {
+	ref, err := LocateDatastore(ctx, log, datastoreId)
+	if err != nil {
+		return nil, err
+	}
+	return ref.DownloadFile(location)
+}
+
+func GetDatastoreConfig(ds *types.Datastore) (config.DatastoreConfig, error) {
+	for _, dsConf := range config.Get().DataStores {
+		if dsConf.Type == ds.Type && GetUriForDatastore(dsConf) == ds.Uri {
+			return dsConf, nil
+		}
+	}
+
+	return config.DatastoreConfig{}, errors.New("datastore not found")
+}
 
 func GetUriForDatastore(dsConf config.DatastoreConfig) string {
 	if dsConf.Type == "file" {

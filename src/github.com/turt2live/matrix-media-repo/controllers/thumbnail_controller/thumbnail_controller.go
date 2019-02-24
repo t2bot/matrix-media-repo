@@ -8,7 +8,6 @@ import (
 	"image"
 	"image/color"
 	"math"
-	"os"
 	"time"
 
 	"github.com/disintegration/imaging"
@@ -22,6 +21,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/controllers/download_controller"
 	"github.com/turt2live/matrix-media-repo/internal_cache"
 	"github.com/turt2live/matrix-media-repo/storage"
+	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 	"golang.org/x/image/font/gofont/gosmallcaps"
@@ -158,16 +158,12 @@ func GetThumbnail(origin string, mediaId string, desiredWidth int, desiredHeight
 	}
 
 	log.Info("Reading thumbnail from disk")
-	filePath, err := storage.ResolveMediaLocation(ctx, log, thumbnail.DatastoreId, thumbnail.Location)
-	if err != nil {
-		return nil, err
-	}
-	stream, err := os.Open(filePath)
+	mediaStream, err := datastore.DownloadStream(ctx, log, thumbnail.DatastoreId, thumbnail.Location)
 	if err != nil {
 		return nil, err
 	}
 
-	return &types.StreamedThumbnail{Thumbnail: thumbnail, Stream: stream}, nil
+	return &types.StreamedThumbnail{Thumbnail: thumbnail, Stream: mediaStream}, nil
 }
 
 func GetOrGenerateThumbnail(media *types.Media, width int, height int, animated bool, method string, ctx context.Context, log *logrus.Entry) (*types.Thumbnail, error) {

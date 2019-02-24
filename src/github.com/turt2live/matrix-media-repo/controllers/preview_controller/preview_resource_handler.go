@@ -12,6 +12,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/previewers"
 	"github.com/turt2live/matrix-media-repo/controllers/upload_controller"
 	"github.com/turt2live/matrix-media-repo/storage"
+	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/resource_handler"
@@ -98,11 +99,11 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) interface{} {
 		if err != nil {
 			log.Warn("Non-fatal error storing preview thumbnail: " + err.Error())
 		} else {
-			filePath, err := storage.ResolveMediaLocation(ctx, log, media.DatastoreId, media.Location)
+			mediaStream, err := datastore.DownloadStream(ctx, log, media.DatastoreId, media.Location)
 			if err != nil {
-				log.Warn("Non-fatal error resolving datastore path: " + err.Error())
+				log.Warn("Non-fatal error streaming datastore file: " + err.Error())
 			} else {
-				img, err := imaging.Open(filePath)
+				img, err := imaging.Decode(mediaStream)
 				if err != nil {
 					log.Warn("Non-fatal error getting thumbnail dimensions: " + err.Error())
 				} else {

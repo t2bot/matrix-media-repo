@@ -3,7 +3,6 @@ package storage
 import (
 	"context"
 	"database/sql"
-	"errors"
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/storage/stores"
@@ -58,18 +57,4 @@ func getOrCreateDatastoreWithMediaService(mediaService *stores.MediaStore, baseP
 	}
 
 	return datastore, nil
-}
-
-func ResolveMediaLocation(ctx context.Context, log *logrus.Entry, datastoreId string, location string) (string, error) {
-	svc := GetDatabase().GetMediaStore(ctx, log)
-	ds, err := svc.GetDatastore(datastoreId)
-	if err != nil {
-		return "", err
-	}
-
-	if ds.Type != "file" {
-		return "", errors.New("unrecognized datastore type: " + ds.Type)
-	}
-
-	return ds.ResolveFilePath(location), nil
 }

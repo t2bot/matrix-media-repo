@@ -100,7 +100,7 @@ func (s *s3Datastore) UploadFile(file io.ReadCloser, ctx context.Context, log *l
 	}
 
 	if hashErr != nil {
-		s.DeleteObject(obj)
+		s.DeleteObject(obj.Location)
 		return nil, hashErr
 	}
 
@@ -111,6 +111,12 @@ func (s *s3Datastore) UploadFile(file io.ReadCloser, ctx context.Context, log *l
 	return obj, nil
 }
 
-func (s *s3Datastore) DeleteObject(objectInfo *types.ObjectInfo) error {
-	return s.client.RemoveObject(s.bucket, objectInfo.Location)
+func (s *s3Datastore) DeleteObject(location string) error {
+	logrus.Info("Deleting object from bucket ", s.bucket, ": ", location)
+	return s.client.RemoveObject(s.bucket, location)
+}
+
+func (s *s3Datastore) DownloadObject(location string) (io.ReadCloser, error) {
+	logrus.Info("Downloading object from bucket ", s.bucket, ": ", location)
+	return s.client.GetObject(s.bucket, location, minio.GetObjectOptions{})
 }
