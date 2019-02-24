@@ -23,7 +23,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
-	"github.com/turt2live/matrix-media-repo/storage/datastore/ds_file"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/resource_handler"
@@ -48,18 +47,18 @@ type thumbnailResponse struct {
 }
 
 type GeneratedThumbnail struct {
-	ContentType  string
-	DatastoreId  string
-	DiskLocation string
-	SizeBytes    int64
-	Animated     bool
-	Sha256Hash   string
+	ContentType       string
+	DatastoreId       string
+	DatastoreLocation string
+	SizeBytes         int64
+	Animated          bool
+	Sha256Hash        string
 }
 
 var resHandlerInstance *thumbnailResourceHandler
 var resHandlerSingletonLock = &sync.Once{}
 
-func getResourceHandler() (*thumbnailResourceHandler) {
+func getResourceHandler() *thumbnailResourceHandler {
 	if resHandlerInstance == nil {
 		resHandlerSingletonLock.Do(func() {
 			handler, err := resource_handler.New(config.Get().Thumbnails.NumWorkers, thumbnailWorkFn)
@@ -103,7 +102,7 @@ func thumbnailWorkFn(request *resource_handler.WorkRequest) interface{} {
 		CreationTs:  util.NowMillis(),
 		ContentType: generated.ContentType,
 		DatastoreId: generated.DatastoreId,
-		Location:    generated.DiskLocation,
+		Location:    generated.DatastoreLocation,
 		SizeBytes:   generated.SizeBytes,
 		Sha256Hash:  generated.Sha256Hash,
 	}
@@ -194,7 +193,7 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 			// Image is too small - don't upscale
 			thumb.ContentType = media.ContentType
 			thumb.DatastoreId = media.DatastoreId
-			thumb.DiskLocation = media.Location
+			thumb.DatastoreLocation = media.Location
 			thumb.SizeBytes = media.SizeBytes
 			thumb.Sha256Hash = media.Sha256Hash
 			log.Warn("Image too small, returning raw image")
@@ -294,31 +293,17 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 	if err != nil {
 		return nil, err
 	}
-	relPath, err := ds.UploadFile(imgData, ctx, log)
+	info, err := ds.UploadFile(util.BufferToStream(imgData), ctx, log)
 	if err != nil {
 		log.Error("Unexpected error saving thumbnail: " + err.Error())
 		return nil, err
 	}
 
-	location := ds.ResolveFilePath(relPath)
-
-	fileSize, err := util.FileSize(location)
-	if err != nil {
-		log.Error("Unexpected error getting the size of the thumbnail: " + err.Error())
-		return nil, err
-	}
-
-	hash, err := ds_file.GetFileHash(location)
-	if err != nil {
-		log.Error("Unexpected error getting the hash for the thumbnail: ", err.Error())
-		return nil, err
-	}
-
-	thumb.DiskLocation = relPath
+	thumb.DatastoreLocation = info.Location
 	thumb.DatastoreId = ds.DatastoreId
 	thumb.ContentType = contentType
-	thumb.SizeBytes = fileSize
-	thumb.Sha256Hash = hash
+	thumb.SizeBytes = info.SizeBytes
+	thumb.Sha256Hash = info.Sha256Hash
 
 	metric.Inc()
 	return thumb, nil

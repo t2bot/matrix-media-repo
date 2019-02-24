@@ -32,20 +32,36 @@ func newDatastoreRef(ds *types.Datastore, config config.DatastoreConfig) *Datast
 	}
 }
 
-func (d *DatastoreRef) ResolveFilePath(location string) (string) {
+func (d *DatastoreRef) ResolveFilePath(location string) string {
 	return d.datastore.ResolveFilePath(location)
 }
 
-func (d *DatastoreRef) UploadFile(file io.Reader, ctx context.Context, log *logrus.Entry) (string, error) {
+func (d *DatastoreRef) UploadFile(file io.ReadCloser, ctx context.Context, log *logrus.Entry) (*types.ObjectInfo, error) {
+	log = log.WithFields(logrus.Fields{"datastoreId": d.DatastoreId, "datastoreUri": d.Uri})
+
 	if d.Type == "file" {
 		return ds_file.PersistFile(d.Uri, file, ctx, log)
 	} else if d.Type == "s3" {
 		s3, err := ds_s3.GetOrCreateS3Datastore(d.DatastoreId, d.config)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 		return s3.UploadFile(file, ctx, log)
 	} else {
-		return "", errors.New("unknown datastore type")
+		return nil, errors.New("unknown datastore type")
+	}
+}
+
+func (d *DatastoreRef) DeleteObject(objectInfo *types.ObjectInfo) error {
+	if d.Type == "file" {
+		return ds_file.DeletePersistedFile(d.Uri, objectInfo)
+	} else if d.Type == "s3" {
+		s3, err := ds_s3.GetOrCreateS3Datastore(d.DatastoreId, d.config)
+		if err != nil {
+			return err
+		}
+		return s3.DeleteObject(objectInfo)
+	} else {
+		return errors.New("unknown datastore type")
 	}
 }

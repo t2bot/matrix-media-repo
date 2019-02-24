@@ -3,12 +3,14 @@ package ds_s3
 import (
 	"context"
 	"io"
+	"io/ioutil"
 	"strconv"
 
 	"github.com/minio/minio-go"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
@@ -55,15 +57,60 @@ func GetOrCreateS3Datastore(dsId string, conf config.DatastoreConfig) (*s3Datast
 	return s3ds, nil
 }
 
-func (s *s3Datastore) UploadFile(file io.Reader, ctx context.Context, log *logrus.Entry) (string, error) {
-	objectName, err := util.GenerateRandomString(128)
+func (s *s3Datastore) UploadFile(file io.ReadCloser, ctx context.Context, log *logrus.Entry) (*types.ObjectInfo, error) {
+	objectName, err := util.GenerateRandomString(512)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	sizeBytes, err := s.client.PutObjectWithContext(ctx, s.bucket, objectName, file, -1, minio.PutObjectOptions{})
-	if err != nil {
-		return "", err
+
+	rs3, ws3 := io.Pipe()
+	tr := io.TeeReader(file, ws3)
+
+	done := make(chan bool)
+	defer close(done)
+
+	var hash string
+	var sizeBytes int64
+	var hashErr error
+	var uploadErr error
+
+	go func() {
+		defer ws3.Close()
+		log.Info("Calculating hash of stream...")
+		hash, hashErr = util.GetSha256HashOfStream(ioutil.NopCloser(tr))
+		log.Info("Hash of file is ", hash)
+		done <- true
+	}()
+
+	go func() {
+		log.Info("Uploading file...")
+		sizeBytes, uploadErr = s.client.PutObjectWithContext(ctx, s.bucket, objectName, rs3, -1, minio.PutObjectOptions{})
+		log.Info("Uploaded ", sizeBytes, " bytes to s3")
+		done <- true
+	}()
+
+	for c := 0; c < 2; c++ {
+		<-done
 	}
-	log.Info("Uploaded ", sizeBytes, " bytes to s3")
-	return objectName, nil
+
+	obj := &types.ObjectInfo{
+		Location:   objectName,
+		Sha256Hash: hash,
+		SizeBytes:  sizeBytes,
+	}
+
+	if hashErr != nil {
+		s.DeleteObject(obj)
+		return nil, hashErr
+	}
+
+	if uploadErr != nil {
+		return nil, uploadErr
+	}
+
+	return obj, nil
+}
+
+func (s *s3Datastore) DeleteObject(objectInfo *types.ObjectInfo) error {
+	return s.client.RemoveObject(s.bucket, objectInfo.Location)
 }

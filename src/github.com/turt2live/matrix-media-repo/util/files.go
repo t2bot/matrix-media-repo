@@ -16,23 +16,7 @@ func FileExists(path string) (bool, error) {
 	return true, err
 }
 
-func FileSize(path string) (int64, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		os.Remove(path)
-		return 0, err
-	}
-
-	defer f.Close()
-	fi, err := f.Stat()
-	if err != nil {
-		return 0, err
-	}
-
-	return fi.Size(), nil
-}
-
-func GetLastSegmentsOfPath(strPath string, segments int) (string) {
+func GetLastSegmentsOfPath(strPath string, segments int) string {
 	combined := ""
 	for i := 1; i <= segments; i++ {
 		d, p := path.Split(strPath)
@@ -40,4 +24,14 @@ func GetLastSegmentsOfPath(strPath string, segments int) (string) {
 		combined = path.Join(p, combined)
 	}
 	return combined
+}
+
+func GetFileHash(filePath string) (string, error) {
+	f, err := os.Open(filePath)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	return GetSha256HashOfStream(f)
 }

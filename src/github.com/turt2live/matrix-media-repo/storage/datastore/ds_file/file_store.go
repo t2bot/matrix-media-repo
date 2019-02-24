@@ -2,18 +2,18 @@ package ds_file
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"io"
+	"io/ioutil"
 	"os"
 	"path"
 
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
-func PersistFile(basePath string, file io.Reader, ctx context.Context, log *logrus.Entry) (string, error) {
+func PersistFile(basePath string, file io.ReadCloser, ctx context.Context, log *logrus.Entry) (*types.ObjectInfo, error) {
 	exists := true
 	var primaryContainer string
 	var secondaryContainer string
@@ -24,7 +24,7 @@ func PersistFile(basePath string, file io.Reader, ctx context.Context, log *logr
 	for exists {
 		fileId, err := util.GenerateRandomString(64)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 
 		primaryContainer = fileId[0:2]
@@ -44,43 +44,69 @@ func PersistFile(basePath string, file io.Reader, ctx context.Context, log *logr
 
 		// Infinite loop protection
 		if attempts > 5 {
-			return "", errors.New("failed to find a suitable directory")
+			return nil, errors.New("failed to find a suitable directory")
 		}
 	}
 
 	err := os.MkdirAll(targetDir, 0755)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	f, err := os.OpenFile(targetFile, os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer f.Close()
 
-	_, err = io.Copy(f, file)
-	if err != nil {
-		return "", err
+	rfile, wfile := io.Pipe()
+	tr := io.TeeReader(file, wfile)
+
+	done := make(chan bool)
+	defer close(done)
+
+	var hash string
+	var sizeBytes int64
+	var hashErr error
+	var writeErr error
+
+	go func() {
+		defer wfile.Close()
+		log.Info("Calculating hash of stream...")
+		hash, hashErr = util.GetSha256HashOfStream(ioutil.NopCloser(tr))
+		log.Info("Hash of file is ", hash)
+		done <- true
+	}()
+
+	go func() {
+		log.Info("Writing file...")
+		sizeBytes, writeErr = io.Copy(f, rfile)
+		log.Info("Wrote ", sizeBytes, " bytes to file")
+		done <- true
+	}()
+
+	for c := 0; c < 2; c++ {
+		<-done
+	}
+
+	if hashErr != nil {
+		defer os.Remove(targetFile)
+		return nil, hashErr
+	}
+
+	if writeErr != nil {
+		return nil, writeErr
 	}
 
 	locationPath := path.Join(primaryContainer, secondaryContainer, fileName)
-	return locationPath, nil
+	return &types.ObjectInfo{
+		Location:   locationPath,
+		Sha256Hash: hash,
+		SizeBytes:  sizeBytes,
+	}, nil
 }
 
-// TODO: Make this ds-agnostic
-func GetFileHash(filePath string) (string, error) {
-	f, err := os.Open(filePath)
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
-
-	hasher := sha256.New()
-
-	if _, err := io.Copy(hasher, f); err != nil {
-		return "", err
-	}
-
-	return hex.EncodeToString(hasher.Sum(nil)), nil
+func DeletePersistedFile(basePath string, info *types.ObjectInfo) error {
+	filePath := path.Join(basePath, info.Location)
+	return os.Remove(filePath)
 }
