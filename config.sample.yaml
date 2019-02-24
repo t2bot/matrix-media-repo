@@ -29,8 +29,7 @@ admins:
 # Datastores are places where media should be persisted. This isn't dedicated for just uploads:
 # thumbnails and other misc data is also stored in these places. When the media repo is looking
 # to store new media (such as user uploads, thumbnails, etc) it will look for a datastore which
-# is flagged as forUploads. It will try to use the smallest datastore first. If you enable an
-# s3 datastore for uploads, it will always be chosen.
+# is flagged as forUploads. It will try to use the smallest datastore first.
 datastores:
   - type: file
     enabled: false # Enable this to set up data storage.

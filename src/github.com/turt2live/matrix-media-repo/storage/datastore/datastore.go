@@ -106,8 +106,6 @@ func PickDatastore(ctx context.Context, log *logrus.Entry) (*DatastoreRef, error
 		}
 
 		size, err := estimatedDatastoreSize(ds, ctx, log)
-		logrus.Info(ds.Uri)
-		logrus.Info(size)
 		if err != nil {
 			continue
 		}
@@ -127,10 +125,5 @@ func PickDatastore(ctx context.Context, log *logrus.Entry) (*DatastoreRef, error
 }
 
 func estimatedDatastoreSize(ds *types.Datastore, ctx context.Context, log *logrus.Entry) (int64, error) {
-	if ds.Type == "file" {
-		return storage.GetDatabase().GetMetadataStore(ctx, log).GetSizeOfFolderBytes(ds.Uri)
-	} else {
-		// We can't estimate the size of other datastores, so don't
-		return 0, nil
-	}
+	return storage.GetDatabase().GetMetadataStore(ctx, log).GetEstimatedSizeOfDatastore(ds.DatastoreId)
 }
