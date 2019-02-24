@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func summarize(text string, maxWords int, maxLength int) (string) {
+func summarize(text string, maxWords int, maxLength int) string {
 	// Normalize the whitespace to be something useful (crush it to one giant line)
 	surroundingWhitespace := regexp.MustCompile(`^[\s\p{Zs}]+|[\s\p{Zs}]+$`)
 	interiorWhitespace := regexp.MustCompile(`[\s\p{Zs}]{2,}`)

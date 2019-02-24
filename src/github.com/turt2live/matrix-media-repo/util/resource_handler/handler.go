@@ -40,7 +40,7 @@ func (h *ResourceHandler) Close() {
 	h.pool.Close()
 }
 
-func (h *ResourceHandler) GetResource(id string, metadata interface{}) (chan interface{}) {
+func (h *ResourceHandler) GetResource(id string, metadata interface{}) chan interface{} {
 	resultChan := make(chan interface{})
 
 	// First see if we have already cached this request

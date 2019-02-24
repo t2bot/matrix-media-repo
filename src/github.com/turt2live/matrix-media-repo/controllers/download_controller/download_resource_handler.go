@@ -68,7 +68,7 @@ var resHandlerLock = &sync.Once{}
 var downloadErrorsCache *cache.Cache
 var downloadErrorCacheSingletonLock = &sync.Once{}
 
-func getResourceHandler() (*mediaResourceHandler) {
+func getResourceHandler() *mediaResourceHandler {
 	if resHandler == nil {
 		resHandlerLock.Do(func() {
 			handler, err := resource_handler.New(config.Get().Downloads.NumWorkers, downloadResourceWorkFn)
@@ -135,7 +135,7 @@ func downloadResourceWorkFn(request *resource_handler.WorkRequest) interface{} {
 		return &workerDownloadResponse{err: common.ErrMediaNotAllowed}
 	}
 
-	persistFile := func(fileStream io.ReadCloser) (*workerDownloadResponse) {
+	persistFile := func(fileStream io.ReadCloser) *workerDownloadResponse {
 		defer fileStream.Close()
 
 		userId := upload_controller.NoApplicableUploadUser

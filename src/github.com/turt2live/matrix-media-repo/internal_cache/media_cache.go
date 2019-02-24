@@ -42,7 +42,7 @@ type cooldown struct {
 var instance *MediaCache
 var lock = &sync.Once{}
 
-func Get() (*MediaCache) {
+func Get() *MediaCache {
 	if instance != nil {
 		return instance
 	}

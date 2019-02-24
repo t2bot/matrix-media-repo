@@ -143,7 +143,7 @@ var instance *MediaRepoConfig
 var singletonLock = &sync.Once{}
 var Path = "media-repo.yaml"
 
-func ReloadConfig() (error) {
+func ReloadConfig() error {
 	c := NewDefaultConfig()
 
 	// Write a default config if the one given doesn't exist
@@ -188,7 +188,7 @@ func ReloadConfig() (error) {
 	return nil
 }
 
-func Get() (*MediaRepoConfig) {
+func Get() *MediaRepoConfig {
 	if instance == nil {
 		singletonLock.Do(func() {
 			err := ReloadConfig()

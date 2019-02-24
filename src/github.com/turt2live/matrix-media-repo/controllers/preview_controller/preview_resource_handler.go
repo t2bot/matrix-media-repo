@@ -35,7 +35,7 @@ type urlPreviewResponse struct {
 var resHandlerInstance *urlResourceHandler
 var resHandlerSingletonLock = &sync.Once{}
 
-func getResourceHandler() (*urlResourceHandler) {
+func getResourceHandler() *urlResourceHandler {
 	if resHandlerInstance == nil {
 		resHandlerSingletonLock.Do(func() {
 			handler, err := resource_handler.New(config.Get().UrlPreviews.NumWorkers, urlPreviewWorkFn)

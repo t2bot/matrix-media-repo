@@ -10,6 +10,6 @@ type Datastore struct {
 	Uri         string
 }
 
-func (d *Datastore) ResolveFilePath(location string) (string) {
+func (d *Datastore) ResolveFilePath(location string) string {
 	return path.Join(d.Uri, location)
 }

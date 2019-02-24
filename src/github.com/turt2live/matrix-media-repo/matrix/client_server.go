@@ -12,7 +12,7 @@ import (
 )
 
 // Based in part on https://github.com/matrix-org/gomatrix/blob/072b39f7fa6b40257b4eead8c958d71985c28bdd/client.go#L180-L243
-func doRequest(method string, urlStr string, body interface{}, result interface{}, accessToken string, ipAddr string) (error) {
+func doRequest(method string, urlStr string, body interface{}, result interface{}, accessToken string, ipAddr string) error {
 	var bodyBytes []byte
 	if body != nil {
 		jsonStr, err := json.Marshal(body)

@@ -7,7 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func GetAccessTokenFromRequest(request *http.Request) (string) {
+func GetAccessTokenFromRequest(request *http.Request) string {
 	token := request.Header.Get("Authorization")
 
 	if token != "" {
@@ -24,11 +24,11 @@ func GetAccessTokenFromRequest(request *http.Request) (string) {
 	return request.URL.Query().Get("access_token")
 }
 
-func GetAppserviceUserIdFromRequest(request *http.Request) (string) {
+func GetAppserviceUserIdFromRequest(request *http.Request) string {
 	return request.URL.Query().Get("user_id")
 }
 
-func GetLogSafeQueryString(r *http.Request) (string) {
+func GetLogSafeQueryString(r *http.Request) string {
 	qs := r.URL.Query()
 
 	if qs.Get("access_token") != "" {

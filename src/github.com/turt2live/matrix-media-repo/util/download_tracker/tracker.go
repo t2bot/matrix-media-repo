@@ -37,7 +37,7 @@ type bucket struct {
 	downloads int
 }
 
-func New(maxAgeMinutes int) (*DownloadTracker) {
+func New(maxAgeMinutes int) *DownloadTracker {
 	maxAge := time.Duration(maxAgeMinutes) * time.Minute
 	return &DownloadTracker{
 		cache:  cache.New(maxAge, maxAge*2),
@@ -49,7 +49,7 @@ func (d *DownloadTracker) Reset() {
 	d.cache.Flush()
 }
 
-func (d *DownloadTracker) NumDownloads(recordId string) (int) {
+func (d *DownloadTracker) NumDownloads(recordId string) int {
 	item, found := d.cache.Get(recordId)
 	if !found {
 		return 0
@@ -58,7 +58,7 @@ func (d *DownloadTracker) NumDownloads(recordId string) (int) {
 	return d.recountDownloads(item.(*mediaRecord), recordId)
 }
 
-func (d *DownloadTracker) Increment(recordId string) (int) {
+func (d *DownloadTracker) Increment(recordId string) int {
 	item, found := d.cache.Get(recordId)
 	var record *mediaRecord
 	if !found {

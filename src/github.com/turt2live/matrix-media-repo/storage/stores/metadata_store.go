@@ -47,7 +47,7 @@ func InitMetadataStore(sqlDb *sql.DB) (*MetadataStoreFactory, error) {
 	return &store, nil
 }
 
-func (f *MetadataStoreFactory) Create(ctx context.Context, entry *logrus.Entry) (*MetadataStore) {
+func (f *MetadataStoreFactory) Create(ctx context.Context, entry *logrus.Entry) *MetadataStore {
 	return &MetadataStore{
 		factory:    f,
 		ctx:        ctx,
@@ -56,7 +56,7 @@ func (f *MetadataStoreFactory) Create(ctx context.Context, entry *logrus.Entry) 
 	}
 }
 
-func (s *MetadataStore) UpsertLastAccess(sha256Hash string, timestamp int64) (error) {
+func (s *MetadataStore) UpsertLastAccess(sha256Hash string, timestamp int64) error {
 	_, err := s.statements.upsertLastAccessed.ExecContext(s.ctx, sha256Hash, timestamp)
 	return err
 }
