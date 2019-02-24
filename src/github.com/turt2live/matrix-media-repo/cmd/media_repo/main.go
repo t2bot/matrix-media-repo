@@ -11,6 +11,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/logging"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/storage"
+	"github.com/turt2live/matrix-media-repo/storage/datastore"
 )
 
 func main() {
@@ -30,30 +31,13 @@ func main() {
 
 	logrus.Info("Initializing datastores...")
 	enabledDatastores := 0
-	for _, ds:=range config.Get().Uploads.DataStores {
+	for _, ds := range config.Get().DataStores {
 		if !ds.Enabled {
 			continue
 		}
 
 		enabledDatastores++
-
-		uri := ""
-		if ds.Type == "file" {
-			path, pathFound := ds.Options["path"]
-			if !pathFound {
-				logrus.Fatal("Missing 'path' on file datastore")
-			}
-			uri = path
-		} else if ds.Type == "s3" {
-			endpoint, epFound := ds.Options["endpoint"]
-			bucket, bucketFound := ds.Options["bucketName"]
-			if !epFound || !bucketFound {
-				logrus.Fatal("Missing 'endpoint' or 'bucketName' on s3 datastore")
-			}
-			uri = fmt.Sprintf("s3://%s/%s", endpoint, bucket)
-		} else {
-			logrus.Fatal("Unknown datastore type: ", ds.Type)
-		}
+		uri := datastore.GetUriForDatastore(ds)
 
 		_, err := storage.GetOrCreateDatastoreOfType(context.TODO(), &logrus.Entry{}, ds.Type, uri)
 		if err != nil {
@@ -69,6 +53,10 @@ func main() {
 	logrus.Info("Datastores:")
 	for _, ds := range datastores {
 		logrus.Info(fmt.Sprintf("\t%s (%s): %s", ds.Type, ds.DatastoreId, ds.Uri))
+	}
+
+	if len(config.Get().Uploads.StoragePaths) > 0 {
+		logrus.Warn("You are using `storagePaths` in your configuration - in a future update, this will be removed. Please use datastores instead (see sample config).")
 	}
 
 	// TODO: https://github.com/minio/minio-go support

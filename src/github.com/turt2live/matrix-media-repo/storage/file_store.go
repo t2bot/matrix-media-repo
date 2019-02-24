@@ -10,35 +10,10 @@ import (
 	"path"
 
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/common/config"
-	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
-func PersistFile(file io.Reader, ctx context.Context, log *logrus.Entry) (*types.Datastore, string, error) {
-	var basePath string
-	if len(config.Get().Uploads.StoragePaths) != 1 {
-		var pathSize int64
-		for i := 0; i < len(config.Get().Uploads.StoragePaths); i++ {
-			currPath := config.Get().Uploads.StoragePaths[i]
-			size, err := GetDatabase().GetMetadataStore(ctx, log).GetSizeOfFolderBytes(currPath)
-			if err != nil {
-				continue
-			}
-			if basePath == "" || size < pathSize {
-				basePath = currPath
-				pathSize = size
-			}
-		}
-	} else {
-		basePath = config.Get().Uploads.StoragePaths[0]
-	}
-
-	if basePath == "" {
-		return nil, "", errors.New("could not find a suitable base path")
-	}
-	log.Info("Using the base path: " + basePath)
-
+func PersistFile(basePath string, file io.Reader, ctx context.Context, log *logrus.Entry) (string, error) {
 	exists := true
 	var primaryContainer string
 	var secondaryContainer string
@@ -49,7 +24,7 @@ func PersistFile(file io.Reader, ctx context.Context, log *logrus.Entry) (*types
 	for exists {
 		fileId, err := util.GenerateRandomString(64)
 		if err != nil {
-			return nil, "", err
+			return "", err
 		}
 
 		primaryContainer = fileId[0:2]
@@ -69,35 +44,28 @@ func PersistFile(file io.Reader, ctx context.Context, log *logrus.Entry) (*types
 
 		// Infinite loop protection
 		if attempts > 5 {
-			return nil, "", errors.New("failed to find a suitable directory")
+			return "", errors.New("failed to find a suitable directory")
 		}
 	}
 
 	err := os.MkdirAll(targetDir, 0755)
 	if err != nil {
-		return nil, "", err
+		return "", err
 	}
 
 	f, err := os.OpenFile(targetFile, os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
-		return nil, "", err
+		return "", err
 	}
 	defer f.Close()
 
 	_, err = io.Copy(f, file)
 	if err != nil {
-		return nil, "", err
+		return "", err
 	}
 
 	locationPath := path.Join(primaryContainer, secondaryContainer, fileName)
-	datastorePath := basePath
-
-	datastore, err := GetOrCreateDatastore(ctx, log, datastorePath)
-	if err != nil {
-		return nil, "", err
-	}
-
-	return datastore, locationPath, nil
+	return locationPath, nil
 }
 
 func GetFileHash(filePath string) (string, error) {

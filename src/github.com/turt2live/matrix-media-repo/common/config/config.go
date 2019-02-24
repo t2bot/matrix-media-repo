@@ -33,7 +33,6 @@ type DatabaseConfig struct {
 
 type UploadsConfig struct {
 	StoragePaths         []string            `yaml:"storagePaths,flow"`
-	DataStores           []DatastoreConfig   `yaml:"datastores"`
 	MaxSizeBytes         int64               `yaml:"maxBytes"`
 	MinSizeBytes         int64               `yaml:"minBytes"`
 	AllowedTypes         []string            `yaml:"allowedTypes,flow"`
@@ -42,10 +41,10 @@ type UploadsConfig struct {
 }
 
 type DatastoreConfig struct {
-	Type     string            `yaml:"type"`
-	Enabled  bool              `yaml:"enabled"`
-	Priority int               `yaml:"priority"`
-	Options  map[string]string `yaml:"opts,flow"`
+	Type       string            `yaml:"type"`
+	Enabled    bool              `yaml:"enabled"`
+	ForUploads bool              `yaml:"forUploads"`
+	Options    map[string]string `yaml:"opts,flow"`
 }
 
 type DownloadsConfig struct {
@@ -128,6 +127,7 @@ type MediaRepoConfig struct {
 	Homeservers    []*HomeserverConfig `yaml:"homeservers,flow"`
 	Admins         []string            `yaml:"admins,flow"`
 	Database       *DatabaseConfig     `yaml:"database"`
+	DataStores     []DatastoreConfig   `yaml:"datastores"`
 	Uploads        *UploadsConfig      `yaml:"uploads"`
 	Downloads      *DownloadsConfig    `yaml:"downloads"`
 	Thumbnails     *ThumbnailsConfig   `yaml:"thumbnails"`
@@ -212,12 +212,12 @@ func NewDefaultConfig() *MediaRepoConfig {
 		},
 		Homeservers: []*HomeserverConfig{},
 		Admins:      []string{},
+		DataStores:  []DatastoreConfig{},
 		Uploads: &UploadsConfig{
 			MaxSizeBytes:         104857600, // 100mb
 			MinSizeBytes:         100,
 			ReportedMaxSizeBytes: 0,
 			StoragePaths:         []string{},
-			DataStores:           []DatastoreConfig{},
 			AllowedTypes:         []string{"*/*"},
 		},
 		Downloads: &DownloadsConfig{

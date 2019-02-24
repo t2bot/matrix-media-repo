@@ -22,6 +22,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/storage"
+	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/resource_handler"
@@ -288,13 +289,17 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 	}
 
 	// Reset the buffer pointer and store the file
-	datastore, relPath, err := storage.PersistFile(imgData, ctx, log)
+	ds, err := datastore.PickDatastore(ctx, log)
+	if err != nil {
+		return nil, err
+	}
+	relPath, err := ds.UploadFile(imgData, ctx, log)
 	if err != nil {
 		log.Error("Unexpected error saving thumbnail: " + err.Error())
 		return nil, err
 	}
 
-	location := datastore.ResolveFilePath(relPath)
+	location := ds.ResolveFilePath(relPath)
 
 	fileSize, err := util.FileSize(location)
 	if err != nil {
@@ -309,7 +314,7 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 	}
 
 	thumb.DiskLocation = relPath
-	thumb.DatastoreId = datastore.DatastoreId
+	thumb.DatastoreId = ds.DatastoreId
 	thumb.ContentType = contentType
 	thumb.SizeBytes = fileSize
 	thumb.Sha256Hash = hash

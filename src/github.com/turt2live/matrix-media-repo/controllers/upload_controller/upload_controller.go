@@ -12,6 +12,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/storage"
+	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 )
@@ -127,12 +128,14 @@ func IsAllowed(contentType string, reportedContentType string, userId string, lo
 }
 
 func StoreDirect(contents io.Reader, contentType string, filename string, userId string, origin string, mediaId string, ctx context.Context, log *logrus.Entry) (*types.Media, error) {
-	datastore, location, err := storage.PersistFile(contents, ctx, log)
+	ds, err := datastore.PickDatastore(ctx, log)
 	if err != nil {
 		return nil, err
 	}
+	location, err := ds.UploadFile(contents, ctx, log)
 
-	fileLocation := datastore.ResolveFilePath(location)
+	// TODO: Support other datastore types by forking all these checks off to the datastore
+	fileLocation := ds.ResolveFilePath(location)
 
 	fileMime, err := util.GetMimeType(fileLocation)
 	if err != nil {
@@ -234,7 +237,7 @@ func StoreDirect(contents io.Reader, contentType string, filename string, userId
 		UserId:      userId,
 		Sha256Hash:  hash,
 		SizeBytes:   fileSize,
-		DatastoreId: datastore.DatastoreId,
+		DatastoreId: ds.DatastoreId,
 		Location:    location,
 		CreationTs:  util.NowMillis(),
 	}

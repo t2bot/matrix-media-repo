@@ -61,6 +61,7 @@ func (s *MetadataStore) UpsertLastAccess(sha256Hash string, timestamp int64) (er
 	return err
 }
 
+// TODO: Handle datastores instead
 func (s *MetadataStore) GetSizeOfFolderBytes(folderPath string) (int64, error) {
 	r := &folderSize{}
 	err := s.statements.selectSizeOfFolder.QueryRowContext(s.ctx, folderPath).Scan(&r.Size)
