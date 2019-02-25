@@ -57,6 +57,17 @@ func GetOrCreateS3Datastore(dsId string, conf config.DatastoreConfig) (*s3Datast
 	return s3ds, nil
 }
 
+func (s *s3Datastore) EnsureBucketExists() error {
+	found, err := s.client.BucketExists(s.bucket)
+	if err != nil {
+		return err
+	}
+	if !found {
+		return errors.New("bucket not found")
+	}
+	return nil
+}
+
 func (s *s3Datastore) UploadFile(file io.ReadCloser, ctx context.Context, log *logrus.Entry) (*types.ObjectInfo, error) {
 	objectName, err := util.GenerateRandomString(512)
 	if err != nil {

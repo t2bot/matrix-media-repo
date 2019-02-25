@@ -12,6 +12,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
+	"github.com/turt2live/matrix-media-repo/storage/datastore/ds_s3"
 )
 
 func main() {
@@ -55,7 +56,20 @@ func main() {
 		logrus.Info(fmt.Sprintf("\t%s (%s): %s", ds.Type, ds.DatastoreId, ds.Uri))
 
 		if ds.Type == "s3" {
+			conf, err := datastore.GetDatastoreConfig(ds)
+			if err != nil {
+				continue
+			}
 
+			s3, err := ds_s3.GetOrCreateS3Datastore(ds.DatastoreId, conf)
+			if err != nil {
+				continue
+			}
+
+			err = s3.EnsureBucketExists()
+			if err != nil {
+				logrus.Warn("\t\tBucket does not exist!")
+			}
 		}
 	}
 
