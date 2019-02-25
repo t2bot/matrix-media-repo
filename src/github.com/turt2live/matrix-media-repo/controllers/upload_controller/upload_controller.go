@@ -196,20 +196,26 @@ func StoreDirect(contents io.ReadCloser, contentType string, filename string, us
 			return nil, err
 		}
 
-		// TODO: Re-enable restore from backup
-		//// If the media's file exists, we'll delete the temp file
-		//// If the media's file doesn't exist, we'll move the temp file to where the media expects it to be
-		//targetPath, err2 := storage.ResolveMediaLocation(ctx, log, media.DatastoreId, media.Location)
-		//if err2 != nil {
-		//	return nil, err2
-		//}
-		//exists, err := util.FileExists(targetPath)
-		//if err != nil || !exists {
-		//	// We'll assume an error means it doesn't exist
-		//	os.Rename(fileLocation, targetPath)
-		//} else {
-		//	ds.DeleteObject(info.Location)
-		//}
+		// If the media's file exists, we'll delete the temp file
+		// If the media's file doesn't exist, we'll move the temp file to where the media expects it to be
+		if media.DatastoreId != ds.DatastoreId && media.Location != info.Location {
+			ds2, err := datastore.LocateDatastore(ctx, log, media.DatastoreId)
+			if err != nil {
+				ds.DeleteObject(info.Location) // delete temp object
+				return nil, err
+			}
+			if !ds2.ObjectExists(media.Location) {
+				stream, err := ds.DownloadFile(info.Location)
+				if err != nil {
+					return nil, err
+				}
+
+				ds2.OverwriteObject(media.Location, stream, ctx, log)
+				ds.DeleteObject(info.Location)
+			} else {
+				ds.DeleteObject(info.Location)
+			}
+		}
 
 		trackUploadAsLastAccess(ctx, log, media)
 		return media, nil

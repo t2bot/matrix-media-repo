@@ -53,9 +53,23 @@ func PersistFile(basePath string, file io.ReadCloser, ctx context.Context, log *
 		return nil, err
 	}
 
-	f, err := os.OpenFile(targetFile, os.O_WRONLY|os.O_CREATE, 0644)
+	sizeBytes, hash, err := PersistFileAtLocation(targetFile, file, ctx, log)
 	if err != nil {
 		return nil, err
+	}
+
+	locationPath := path.Join(primaryContainer, secondaryContainer, fileName)
+	return &types.ObjectInfo{
+		Location:   locationPath,
+		Sha256Hash: hash,
+		SizeBytes:  sizeBytes,
+	}, nil
+}
+
+func PersistFileAtLocation(targetFile string, file io.ReadCloser, ctx context.Context, log *logrus.Entry) (int64, string, error) {
+	f, err := os.OpenFile(targetFile, os.O_WRONLY|os.O_CREATE, 0644)
+	if err != nil {
+		return 0, "", err
 	}
 	defer f.Close()
 
@@ -91,19 +105,14 @@ func PersistFile(basePath string, file io.ReadCloser, ctx context.Context, log *
 
 	if hashErr != nil {
 		defer os.Remove(targetFile)
-		return nil, hashErr
+		return 0, "", hashErr
 	}
 
 	if writeErr != nil {
-		return nil, writeErr
+		return 0, "", writeErr
 	}
 
-	locationPath := path.Join(primaryContainer, secondaryContainer, fileName)
-	return &types.ObjectInfo{
-		Location:   locationPath,
-		Sha256Hash: hash,
-		SizeBytes:  sizeBytes,
-	}, nil
+	return sizeBytes, hash, nil
 }
 
 func DeletePersistedFile(basePath string, location string) error {

@@ -12,6 +12,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/storage/datastore/ds_file"
 	"github.com/turt2live/matrix-media-repo/storage/datastore/ds_s3"
 	"github.com/turt2live/matrix-media-repo/types"
+	"github.com/turt2live/matrix-media-repo/util"
 )
 
 type DatastoreRef struct {
@@ -70,10 +71,43 @@ func (d *DatastoreRef) DownloadFile(location string) (io.ReadCloser, error) {
 	} else if d.Type == "s3" {
 		s3, err := ds_s3.GetOrCreateS3Datastore(d.DatastoreId, d.config)
 		if err != nil {
-			return nil,err
+			return nil, err
 		}
 		return s3.DownloadObject(location)
 	} else {
 		return nil, errors.New("unknown datastore type")
+	}
+}
+
+func (d *DatastoreRef) ObjectExists(location string) bool {
+	if d.Type == "file" {
+		ok, err := util.FileExists(path.Join(d.Uri, location))
+		if err != nil {
+			return false
+		}
+		return ok
+	} else if d.Type == "s3" {
+		s3, err := ds_s3.GetOrCreateS3Datastore(d.DatastoreId, d.config)
+		if err != nil {
+			return false
+		}
+		return s3.ObjectExists(location)
+	} else {
+		panic("unknown datastore type")
+	}
+}
+
+func (d *DatastoreRef) OverwriteObject(location string, stream io.ReadCloser, ctx context.Context, log *logrus.Entry) error {
+	if d.Type == "file" {
+		_, _, err := ds_file.PersistFileAtLocation(path.Join(d.Uri, location), stream, ctx, log)
+		return err
+	} else if d.Type == "s3" {
+		s3, err := ds_s3.GetOrCreateS3Datastore(d.DatastoreId, d.config)
+		if err != nil {
+			return err
+		}
+		return s3.OverwriteObject(location, stream)
+	} else {
+		return errors.New("unknown datastore type")
 	}
 }

@@ -131,3 +131,16 @@ func (s *s3Datastore) DownloadObject(location string) (io.ReadCloser, error) {
 	logrus.Info("Downloading object from bucket ", s.bucket, ": ", location)
 	return s.client.GetObject(s.bucket, location, minio.GetObjectOptions{})
 }
+
+func (s *s3Datastore) ObjectExists(location string) bool {
+	stat, err := s.client.StatObject(s.bucket, location, minio.StatObjectOptions{})
+	if err != nil {
+		return false
+	}
+	return stat.Size > 0
+}
+
+func (s *s3Datastore) OverwriteObject(location string, stream io.ReadCloser) error {
+	_, err := s.client.PutObject(s.bucket, location, stream, -1, minio.PutObjectOptions{})
+	return err
+}
