@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/ryanuber/go-glob"
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
@@ -132,22 +133,29 @@ func StoreDirect(contents io.ReadCloser, contentType string, filename string, us
 		return nil, err
 	}
 	info, err := ds.UploadFile(contents, ctx, log)
+	if err != nil {
+		return nil, err
+	}
 
-	// TODO: Enable mime checking for datastores
-	//fileMime, err := util.GetMimeType(fileLocation)
-	//if err != nil {
-	//	log.Error("Error while checking content type of file: ", err.Error())
-	//	os.Remove(fileLocation) // delete temp file
-	//	return nil, err
-	//}
-	//
-	//allowed := IsAllowed(fileMime, contentType, userId, log)
-	//if !allowed {
-	//	log.Warn("Content type " + fileMime + " (reported as " + contentType + ") is not allowed to be uploaded")
-	//
-	//	os.Remove(fileLocation) // delete temp file
-	//	return nil, common.ErrMediaNotAllowed
-	//}
+	stream, err := ds.DownloadFile(info.Location)
+	if err != nil {
+		return nil, err
+	}
+
+	fileMime, err := util.GetMimeType(stream)
+	if err != nil {
+		log.Error("Error while checking content type of file: ", err.Error())
+		ds.DeleteObject(info.Location) // delete temp object
+		return nil, err
+	}
+
+	allowed := IsAllowed(fileMime, contentType, userId, log)
+	if !allowed {
+		log.Warn("Content type " + fileMime + " (reported as " + contentType + ") is not allowed to be uploaded")
+
+		ds.DeleteObject(info.Location) // delete temp object
+		return nil, common.ErrMediaNotAllowed
+	}
 
 	db := storage.GetDatabase().GetMediaStore(ctx, log)
 	records, err := db.GetByHash(info.Sha256Hash)

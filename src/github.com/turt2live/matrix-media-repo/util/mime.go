@@ -3,22 +3,17 @@ package util
 import (
 	"io"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/h2non/filetype"
 )
 
-func GetMimeType(filePath string) (string, error) {
-	f, err := os.Open(filePath)
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
+func GetMimeType(stream io.ReadCloser) (string, error) {
+	defer stream.Close()
 
 	// We only need the first 512 bytes at most to determine the file type
 	buf := make([]byte, 512)
-	_, err = f.Read(buf)
+	_, err := stream.Read(buf)
 	if err != nil && err != io.EOF {
 		return "", err
 	}
