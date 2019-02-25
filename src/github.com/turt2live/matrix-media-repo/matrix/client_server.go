@@ -72,7 +72,7 @@ func doRequest(method string, urlStr string, body interface{}, result interface{
 	return nil
 }
 
-func makeUrl(parts ... string) string {
+func makeUrl(parts ...string) string {
 	res := ""
 	for _, p := range parts {
 		if p[len(p)-1:] == "/" {

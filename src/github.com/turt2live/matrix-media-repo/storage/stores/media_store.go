@@ -25,7 +25,7 @@ const updateMediaDatastoreAndLocation = "UPDATE media SET location = $4, datasto
 const selectAllDatastores = "SELECT datastore_id, ds_type, uri FROM datastores;";
 
 var dsCacheByPath = sync.Map{} // [string] => Datastore
-var dsCacheById = sync.Map{} // [string] => Datastore
+var dsCacheById = sync.Map{}   // [string] => Datastore
 
 type mediaStoreStatements struct {
 	selectMedia                     *sql.Stmt

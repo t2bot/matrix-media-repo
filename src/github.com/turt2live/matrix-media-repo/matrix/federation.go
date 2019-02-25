@@ -43,7 +43,7 @@ func GetServerApiUrl(hostname string) (string, string, error) {
 	h, p, err := net.SplitHostPort(hostname)
 	defPort := false
 	logrus.Info(err.Error())
-	if err != nil && strings.HasSuffix(err.Error(),"missing port in address") {
+	if err != nil && strings.HasSuffix(err.Error(), "missing port in address") {
 		h, p, err = net.SplitHostPort(hostname + ":8448")
 		defPort = true
 	}
@@ -79,7 +79,7 @@ func GetServerApiUrl(hostname string) (string, string, error) {
 			if err3 == nil && wk.ServerAddr != "" {
 				wkHost, wkPort, err4 := net.SplitHostPort(wk.ServerAddr)
 				wkDefPort := false
-				if err4 != nil && strings.HasSuffix(err4.Error(),"missing port in address") {
+				if err4 != nil && strings.HasSuffix(err4.Error(), "missing port in address") {
 					wkHost, wkPort, err4 = net.SplitHostPort(wk.ServerAddr + ":8448")
 					wkDefPort = true
 				}
