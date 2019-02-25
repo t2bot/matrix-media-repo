@@ -179,7 +179,10 @@ func GetOrGenerateThumbnail(media *types.Media, width int, height int, animated 
 
 	log.Info("Generating thumbnail")
 
-	result := <-getResourceHandler().GenerateThumbnail(media, width, height, method, animated)
+	thumbnailChan := getResourceHandler().GenerateThumbnail(media, width, height, method, animated)
+	defer close(thumbnailChan)
+
+	result := <-thumbnailChan
 	return result.thumbnail, result.err
 }
 

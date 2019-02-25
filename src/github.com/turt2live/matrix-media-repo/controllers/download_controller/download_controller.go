@@ -124,7 +124,10 @@ func FindMinimalMediaRecord(origin string, mediaId string, downloadRemote bool, 
 				return nil, common.ErrMediaNotFound
 			}
 
-			result := <-getResourceHandler().DownloadRemoteMedia(origin, mediaId, false)
+			mediaChan := getResourceHandler().DownloadRemoteMedia(origin, mediaId, true)
+			defer close(mediaChan)
+
+			result := <-mediaChan
 			if result.err != nil {
 				return nil, result.err
 			}
@@ -186,7 +189,10 @@ func FindMediaRecord(origin string, mediaId string, downloadRemote bool, ctx con
 				return nil, common.ErrMediaNotFound
 			}
 
-			result := <-getResourceHandler().DownloadRemoteMedia(origin, mediaId, true)
+			mediaChan := getResourceHandler().DownloadRemoteMedia(origin, mediaId, true)
+			defer close(mediaChan)
+
+			result := <-mediaChan
 			if result.err != nil {
 				return nil, result.err
 			}

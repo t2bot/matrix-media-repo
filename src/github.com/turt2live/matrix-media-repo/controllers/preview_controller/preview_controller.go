@@ -83,7 +83,10 @@ func GetPreview(urlStr string, onHost string, forUserId string, atTs int64, ctx 
 		return nil, common.ErrHostBlacklisted
 	}
 
-	result := <-getResourceHandler().GeneratePreview(urlStr, forUserId, onHost)
+	previewChan := getResourceHandler().GeneratePreview(urlStr, forUserId, onHost)
+	defer close(previewChan)
+
+	result := <-previewChan
 	return result.preview, result.err
 }
 

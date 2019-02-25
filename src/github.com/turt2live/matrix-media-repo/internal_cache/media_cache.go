@@ -105,6 +105,7 @@ func (c *MediaCache) GetMedia(media *types.Media, log *logrus.Entry) (*cachedFil
 		if err != nil {
 			return nil, err
 		}
+		defer mediaStream.Close()
 
 		return &cachedFile{media: media, Contents: bytes.NewBuffer(data)}, nil
 	}
@@ -127,6 +128,7 @@ func (c *MediaCache) GetThumbnail(thumbnail *types.Thumbnail, log *logrus.Entry)
 		if err != nil {
 			return nil, err
 		}
+		defer mediaStream.Close()
 
 		return &cachedFile{thumbnail: thumbnail, Contents: bytes.NewBuffer(data)}, nil
 	}

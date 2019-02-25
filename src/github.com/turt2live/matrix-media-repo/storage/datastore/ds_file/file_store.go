@@ -14,6 +14,8 @@ import (
 )
 
 func PersistFile(basePath string, file io.ReadCloser, ctx context.Context, log *logrus.Entry) (*types.ObjectInfo, error) {
+	defer file.Close()
+
 	exists := true
 	var primaryContainer string
 	var secondaryContainer string
@@ -67,6 +69,8 @@ func PersistFile(basePath string, file io.ReadCloser, ctx context.Context, log *
 }
 
 func PersistFileAtLocation(targetFile string, file io.ReadCloser, ctx context.Context, log *logrus.Entry) (int64, string, error) {
+	defer file.Close()
+
 	f, err := os.OpenFile(targetFile, os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return 0, "", err

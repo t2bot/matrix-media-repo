@@ -69,6 +69,8 @@ func (s *s3Datastore) EnsureBucketExists() error {
 }
 
 func (s *s3Datastore) UploadFile(file io.ReadCloser, ctx context.Context, log *logrus.Entry) (*types.ObjectInfo, error) {
+	defer file.Close()
+
 	objectName, err := util.GenerateRandomString(512)
 	if err != nil {
 		return nil, err
@@ -141,6 +143,7 @@ func (s *s3Datastore) ObjectExists(location string) bool {
 }
 
 func (s *s3Datastore) OverwriteObject(location string, stream io.ReadCloser) error {
+	defer stream.Close()
 	_, err := s.client.PutObject(s.bucket, location, stream, -1, minio.PutObjectOptions{})
 	return err
 }
