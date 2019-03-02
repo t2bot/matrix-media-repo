@@ -131,6 +131,20 @@ func FindMinimalMediaRecord(origin string, mediaId string, downloadRemote bool, 
 			if result.err != nil {
 				return nil, result.err
 			}
+			if result.stream == nil {
+				log.Info("No stream returned from remote download - attempting to create one")
+				if result.media == nil {
+					log.Error("Fatal error: No stream and no media. Cannot acquire a stream for media")
+					return nil, errors.New("no stream available")
+				}
+
+				stream, err := datastore.DownloadStream(ctx, log, result.media.DatastoreId, result.media.Location)
+				if err != nil {
+					return nil, err
+				}
+
+				result.stream = stream
+			}
 			return &types.MinimalMedia{
 				Origin:      origin,
 				MediaId:     mediaId,
