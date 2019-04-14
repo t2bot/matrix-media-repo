@@ -213,6 +213,8 @@ thumbnails:
     - "image/jpg"
     - "image/png"
     - "image/gif"
+    - "image/heif"
+    - "image/webp"
     #- "image/svg+xml" # Be sure to have ImageMagick installed to thumbnail SVG files
 
   # Animated thumbnails can be CPU intensive to generate. To disable the generation of animated
