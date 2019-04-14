@@ -41,6 +41,7 @@ type mediaStoreStatements struct {
 	selectMediaWithoutDatastore     *sql.Stmt
 	updateMediaDatastoreAndLocation *sql.Stmt
 	selectAllDatastores             *sql.Stmt
+	selectMediaInDatastoreOlderThan *sql.Stmt
 }
 
 type MediaStoreFactory struct {

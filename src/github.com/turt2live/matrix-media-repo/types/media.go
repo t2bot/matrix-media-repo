@@ -26,6 +26,15 @@ type MinimalMedia struct {
 	KnownMedia  *Media
 }
 
+type MinimalMediaMetadata struct {
+	SizeBytes    int64
+	Sha256Hash   string
+	Location     string
+	CreationTs   int64
+	LastAccessTs int64
+	DatastoreId  string
+}
+
 func (m *Media) MxcUri() string {
 	return "mxc://" + m.Origin + "/" + m.MediaId
 }
