@@ -89,7 +89,7 @@ func GetDatastoreStorageEstimate(r *http.Request, log *logrus.Entry, user api.Us
 		seenMediaHashes[record.Sha256Hash] = true
 	}
 
-	thumbnails, err := db.GetOldMediaInDatastore(datastoreId, beforeTs)
+	thumbnails, err := db.GetOldThumbnailsInDatastore(datastoreId, beforeTs)
 	for _, record := range thumbnails {
 		estimates.ThumbnailsAffected++
 
