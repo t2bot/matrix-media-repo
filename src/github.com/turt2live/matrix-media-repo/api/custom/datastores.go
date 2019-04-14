@@ -7,20 +7,11 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
+	"github.com/turt2live/matrix-media-repo/controllers/maintenance_controller"
 	"github.com/turt2live/matrix-media-repo/storage"
+	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/util"
 )
-
-type DatastoreMigrationEstimate struct {
-	ThumbnailsAffected      int64 `json:"thumbnails_affected"`
-	ThumbnailHashesAffected int64 `json:"thumbnail_hashes_affected"`
-	ThumbnailBytes          int64 `json:"thumbnail_bytes"`
-	MediaAffected           int64 `json:"media_affected"`
-	MediaHashesAffected     int64 `json:"media_hashes_affected"`
-	MediaBytes              int64 `json:"media_bytes"`
-	TotalHashesAffected     int64 `json:"total_hashes_affected"`
-	TotalBytes              int64 `json:"total_bytes"`
-}
 
 func GetDatastores(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
 	datastores, err := storage.GetDatabase().GetMediaStore(r.Context(), log).GetAllDatastores()
@@ -39,6 +30,56 @@ func GetDatastores(r *http.Request, log *logrus.Entry, user api.UserInfo) interf
 	}
 
 	return response
+}
+
+func MigrateBetweenDatastores(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
+	beforeTsStr := r.URL.Query().Get("before_ts")
+	beforeTs := util.NowMillis()
+	var err error
+	if beforeTsStr != "" {
+		beforeTs, err = strconv.ParseInt(beforeTsStr, 10, 64)
+		if err != nil {
+			return api.BadRequest("Error parsing before_ts: " + err.Error())
+		}
+	}
+
+	params := mux.Vars(r)
+
+	sourceDsId := params["sourceDsId"]
+	targetDsId := params["targetDsId"]
+
+	log = log.WithFields(logrus.Fields{
+		"beforeTs":   beforeTs,
+		"sourceDsId": sourceDsId,
+		"targetDsId": targetDsId,
+	})
+
+	if sourceDsId == targetDsId {
+		return api.BadRequest("Source and target datastore cannot be the same")
+	}
+
+	sourceDatastore, err := datastore.LocateDatastore(r.Context(), log, sourceDsId)
+	if err != nil {
+		log.Error(err)
+		return api.BadRequest("Error getting source datastore. Does it exist?")
+	}
+
+	targetDatastore, err := datastore.LocateDatastore(r.Context(), log, targetDsId)
+	if err != nil {
+		log.Error(err)
+		return api.BadRequest("Error getting target datastore. Does it exist?")
+	}
+
+	log.Info("User ", user.UserId, " has started a datastore media transfer")
+	maintenance_controller.StartStorageMigration(sourceDatastore, targetDatastore, beforeTs, log)
+
+	estimate, err := maintenance_controller.EstimateDatastoreSizeWithAge(beforeTs, sourceDsId, r.Context(), log)
+	if err != nil {
+		log.Error(err)
+		return api.InternalServerError("Unexpected error getting storage estimate")
+	}
+
+	return estimate
 }
 
 func GetDatastoreStorageEstimate(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
@@ -61,50 +102,10 @@ func GetDatastoreStorageEstimate(r *http.Request, log *logrus.Entry, user api.Us
 		"datastoreId": datastoreId,
 	})
 
-	estimates := &DatastoreMigrationEstimate{}
-	seenHashes := make(map[string]bool)
-	seenMediaHashes := make(map[string]bool)
-	seenThumbnailHashes := make(map[string]bool)
-
-	db := storage.GetDatabase().GetMetadataStore(r.Context(), log)
-	media, err := db.GetOldMediaInDatastore(datastoreId, beforeTs)
+	result, err := maintenance_controller.EstimateDatastoreSizeWithAge(beforeTs, datastoreId, r.Context(), log)
 	if err != nil {
 		log.Error(err)
-		return api.InternalServerError("Failed to get media from database")
+		return api.InternalServerError("Unexpected error getting storage estimate")
 	}
-
-	for _, record := range media {
-		estimates.MediaAffected++
-
-		if _, found := seenHashes[record.Sha256Hash]; !found {
-			estimates.TotalBytes += record.SizeBytes
-			estimates.TotalHashesAffected++
-		}
-		if _, found := seenMediaHashes[record.Sha256Hash]; !found {
-			estimates.MediaBytes += record.SizeBytes
-			estimates.MediaHashesAffected++
-		}
-
-		seenHashes[record.Sha256Hash] = true
-		seenMediaHashes[record.Sha256Hash] = true
-	}
-
-	thumbnails, err := db.GetOldThumbnailsInDatastore(datastoreId, beforeTs)
-	for _, record := range thumbnails {
-		estimates.ThumbnailsAffected++
-
-		if _, found := seenHashes[record.Sha256Hash]; !found {
-			estimates.TotalBytes += record.SizeBytes
-			estimates.TotalHashesAffected++
-		}
-		if _, found := seenThumbnailHashes[record.Sha256Hash]; !found {
-			estimates.ThumbnailBytes += record.SizeBytes
-			estimates.ThumbnailHashesAffected++
-		}
-
-		seenHashes[record.Sha256Hash] = true
-		seenThumbnailHashes[record.Sha256Hash] = true
-	}
-
-	return estimates
+	return result
 }
