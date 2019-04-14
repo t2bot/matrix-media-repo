@@ -1,6 +1,7 @@
 package resource_handler
 
 import (
+	"reflect"
 	"time"
 
 	"github.com/jeffail/tunny"
@@ -37,6 +38,7 @@ func New(workers int, fetchFn func(object *WorkRequest) interface{}) (*ResourceH
 }
 
 func (h *ResourceHandler) Close() {
+	logrus.Warn("Closing resource handler: " + reflect.TypeOf(h).Name())
 	h.pool.Close()
 }
 
