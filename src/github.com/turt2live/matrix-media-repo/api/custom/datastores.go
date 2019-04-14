@@ -22,6 +22,25 @@ type DatastoreMigrationEstimate struct {
 	TotalBytes              int64 `json:"total_bytes"`
 }
 
+func GetDatastores(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
+	datastores, err := storage.GetDatabase().GetMediaStore(r.Context(), log).GetAllDatastores()
+	if err != nil {
+		log.Error(err)
+		return api.InternalServerError("Error getting datastores")
+	}
+
+	response := make(map[string]interface{})
+
+	for _, ds := range datastores {
+		dsMap := make(map[string]interface{})
+		dsMap["type"] = ds.Type
+		dsMap["uri"] = ds.Uri
+		response[ds.DatastoreId] = dsMap
+	}
+
+	return response
+}
+
 func GetDatastoreStorageEstimate(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
 	beforeTsStr := r.URL.Query().Get("before_ts")
 	beforeTs := util.NowMillis()

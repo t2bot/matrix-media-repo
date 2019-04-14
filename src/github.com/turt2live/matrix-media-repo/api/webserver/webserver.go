@@ -38,6 +38,7 @@ func Init() {
 	infoHandler := handler{api.AccessTokenRequiredRoute(unstable.MediaInfo), "info", counter}
 	configHandler := handler{api.AccessTokenRequiredRoute(r0.PublicConfig), "config", counter}
 	storageEstimateHandler := handler{api.RepoAdminRoute(custom.GetDatastoreStorageEstimate), "get_storage_estimate", counter}
+	datastoreListHandler := handler{api.RepoAdminRoute(custom.GetDatastores), "list_datastores", counter}
 
 	routes := make(map[string]route)
 	versions := []string{"r0", "v1", "unstable"} // r0 is typically clients and v1 is typically servers. v1 is deprecated.
@@ -56,7 +57,8 @@ func Init() {
 		routes["/_matrix/media/"+version+"/admin/purge_remote"] = route{"POST", purgeHandler}
 		routes["/_matrix/media/"+version+"/admin/quarantine/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"POST", quarantineHandler}
 		routes["/_matrix/media/"+version+"/admin/room/{roomId:[^/]+}/quarantine"] = route{"POST", quarantineRoomHandler}
-		routes["/_matrix/media/"+version+"/admin/datastore/{datastoreId:[^/]+}/size_estimate"] = route{"GET", storageEstimateHandler}
+		routes["/_matrix/media/"+version+"/admin/datastores/{datastoreId:[^/]+}/size_estimate"] = route{"GET", storageEstimateHandler}
+		routes["/_matrix/media/"+version+"/admin/datastores"] = route{"GET", datastoreListHandler}
 
 		// Routes that we should handle but aren't in the media namespace (synapse compat)
 		routes["/_matrix/client/"+version+"/admin/purge_media_cache"] = route{"POST", purgeHandler}
