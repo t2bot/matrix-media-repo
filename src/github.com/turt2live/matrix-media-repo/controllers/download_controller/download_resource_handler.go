@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"io/ioutil"
 	"mime"
 	"strconv"
 	"sync"
@@ -19,7 +20,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/matrix"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/types"
-	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/resource_handler"
 )
 
@@ -68,7 +68,7 @@ var resHandlerLock = &sync.Once{}
 var downloadErrorsCache *cache.Cache
 var downloadErrorCacheSingletonLock = &sync.Once{}
 
-func getResourceHandler() (*mediaResourceHandler) {
+func getResourceHandler() *mediaResourceHandler {
 	if resHandler == nil {
 		resHandlerLock.Do(func() {
 			handler, err := resource_handler.New(config.Get().Downloads.NumWorkers, downloadResourceWorkFn)
@@ -135,7 +135,7 @@ func downloadResourceWorkFn(request *resource_handler.WorkRequest) interface{} {
 		return &workerDownloadResponse{err: common.ErrMediaNotAllowed}
 	}
 
-	persistFile := func(fileStream io.ReadCloser) (*workerDownloadResponse) {
+	persistFile := func(fileStream io.ReadCloser) *workerDownloadResponse {
 		defer fileStream.Close()
 
 		userId := upload_controller.NoApplicableUploadUser
@@ -155,17 +155,15 @@ func downloadResourceWorkFn(request *resource_handler.WorkRequest) interface{} {
 	}
 
 	log.Info("Streaming remote media to filesystem and requesting party at the same time")
-	readers := util.CloneReader(downloaded.Contents, 2)
-	returnedReader := readers[0]
-	persistReader := readers[1]
 
-	go persistFile(persistReader)
+	reader, writer := io.Pipe()
+	tr := io.TeeReader(downloaded.Contents, writer)
+
+	go persistFile(ioutil.NopCloser(tr))
 
 	ms := stream.NewMemStream()
-	go func() {
-		defer ms.Close()
-		io.Copy(ms, returnedReader)
-	}()
+	defer ms.Close()
+	io.Copy(ms, reader)
 
 	return &workerDownloadResponse{
 		err:         nil,

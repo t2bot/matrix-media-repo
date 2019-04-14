@@ -26,6 +26,26 @@ homeservers:
 admins:
   - "@your_username:example.org"
 
+# Datastores are places where media should be persisted. This isn't dedicated for just uploads:
+# thumbnails and other misc data is also stored in these places. When the media repo is looking
+# to store new media (such as user uploads, thumbnails, etc) it will look for a datastore which
+# is flagged as forUploads. It will try to use the smallest datastore first.
+datastores:
+  - type: file
+    enabled: false # Enable this to set up data storage.
+    forUploads: true
+    opts:
+      path: /var/matrix/media
+  - type: s3
+    enabled: false
+    forUploads: false # Enable this to put uploads in s3
+    opts:
+      endpoint: sfo2.digitaloceanspaces.com
+      accessKeyId: ""
+      accessSecret: ""
+      ssl: true
+      bucketName: "your-media-bucket"
+
 # The file upload settings for the media repository
 uploads:
   maxBytes: 104857600 # 100MB default, 0 to disable
@@ -43,8 +63,9 @@ uploads:
   # This is intended for larger deployments where media should be distributed among other
   # directories, drives, servers, etc. For smaller deployments, a single entry in this list
   # is recommended.
-  storagePaths:
-    - /var/matrix/media
+  # DEPRECATED: Use datastores instead.
+  #storagePaths:
+  #  - /var/matrix/media
 
   # An optional list of file types that are allowed to be uploaded. If */* or nothing is
   # supplied here, then all file types are allowed. Asterisks (*) are wildcards and can be

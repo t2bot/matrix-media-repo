@@ -25,7 +25,7 @@ const updateMediaDatastoreAndLocation = "UPDATE media SET location = $4, datasto
 const selectAllDatastores = "SELECT datastore_id, ds_type, uri FROM datastores;";
 
 var dsCacheByPath = sync.Map{} // [string] => Datastore
-var dsCacheById = sync.Map{} // [string] => Datastore
+var dsCacheById = sync.Map{}   // [string] => Datastore
 
 type mediaStoreStatements struct {
 	selectMedia                     *sql.Stmt
@@ -104,7 +104,7 @@ func InitMediaStore(sqlDb *sql.DB) (*MediaStoreFactory, error) {
 	return &store, nil
 }
 
-func (f *MediaStoreFactory) Create(ctx context.Context, entry *logrus.Entry) (*MediaStore) {
+func (f *MediaStoreFactory) Create(ctx context.Context, entry *logrus.Entry) *MediaStore {
 	return &MediaStore{
 		factory:    f,
 		ctx:        ctx,
@@ -113,7 +113,7 @@ func (f *MediaStoreFactory) Create(ctx context.Context, entry *logrus.Entry) (*M
 	}
 }
 
-func (s *MediaStore) Insert(media *types.Media) (error) {
+func (s *MediaStore) Insert(media *types.Media) error {
 	_, err := s.statements.insertMedia.ExecContext(
 		s.ctx,
 		media.Origin,
@@ -230,17 +230,17 @@ func (s *MediaStore) GetOrigins() ([]string, error) {
 	return results, nil
 }
 
-func (s *MediaStore) Delete(origin string, mediaId string) (error) {
+func (s *MediaStore) Delete(origin string, mediaId string) error {
 	_, err := s.statements.deleteMedia.ExecContext(s.ctx, origin, mediaId)
 	return err
 }
 
-func (s *MediaStore) SetQuarantined(origin string, mediaId string, isQuarantined bool) (error) {
+func (s *MediaStore) SetQuarantined(origin string, mediaId string, isQuarantined bool) error {
 	_, err := s.statements.updateQuarantined.ExecContext(s.ctx, origin, mediaId, isQuarantined)
 	return err
 }
 
-func (s *MediaStore) UpdateDatastoreAndLocation(media *types.Media) (error) {
+func (s *MediaStore) UpdateDatastoreAndLocation(media *types.Media) error {
 	_, err := s.statements.updateMediaDatastoreAndLocation.ExecContext(
 		s.ctx,
 		media.Origin,
@@ -280,7 +280,7 @@ func (s *MediaStore) GetDatastore(id string) (*types.Datastore, error) {
 	}, err
 }
 
-func (s *MediaStore) InsertDatastore(datastore *types.Datastore) (error) {
+func (s *MediaStore) InsertDatastore(datastore *types.Datastore) error {
 	_, err := s.statements.insertDatastore.ExecContext(
 		s.ctx,
 		datastore.DatastoreId,

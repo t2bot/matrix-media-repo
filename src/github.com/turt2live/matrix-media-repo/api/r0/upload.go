@@ -17,6 +17,7 @@ type MediaUploadedResponse struct {
 
 func UploadMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
 	filename := r.URL.Query().Get("filename")
+	defer r.Body.Close()
 
 	log = log.WithFields(logrus.Fields{
 		"filename": filename,
@@ -29,20 +30,17 @@ func UploadMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interfac
 
 	if upload_controller.IsRequestTooLarge(r.ContentLength, r.Header.Get("Content-Length")) {
 		io.Copy(ioutil.Discard, r.Body) // Ditch the entire request
-		defer r.Body.Close()
 		return api.RequestTooLarge()
 	}
 
 	if upload_controller.IsRequestTooSmall(r.ContentLength, r.Header.Get("Content-Length")) {
 		io.Copy(ioutil.Discard, r.Body) // Ditch the entire request
-		defer r.Body.Close()
 		return api.RequestTooSmall()
 	}
 
 	media, err := upload_controller.UploadMedia(r.Body, contentType, filename, user.UserId, r.Host, r.Context(), log)
 	if err != nil {
 		io.Copy(ioutil.Discard, r.Body) // Ditch the entire request
-		defer r.Body.Close()
 
 		if err == common.ErrMediaNotAllowed {
 			return api.BadRequest("Media content type not allowed on this server")

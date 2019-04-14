@@ -8,6 +8,7 @@ import (
 	"image"
 	"image/draw"
 	"image/gif"
+	"io"
 	"io/ioutil"
 	"math"
 	"os"
@@ -22,6 +23,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/storage"
+	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/resource_handler"
@@ -46,18 +48,18 @@ type thumbnailResponse struct {
 }
 
 type GeneratedThumbnail struct {
-	ContentType  string
-	DatastoreId  string
-	DiskLocation string
-	SizeBytes    int64
-	Animated     bool
-	Sha256Hash   string
+	ContentType       string
+	DatastoreId       string
+	DatastoreLocation string
+	SizeBytes         int64
+	Animated          bool
+	Sha256Hash        string
 }
 
 var resHandlerInstance *thumbnailResourceHandler
 var resHandlerSingletonLock = &sync.Once{}
 
-func getResourceHandler() (*thumbnailResourceHandler) {
+func getResourceHandler() *thumbnailResourceHandler {
 	if resHandlerInstance == nil {
 		resHandlerSingletonLock.Do(func() {
 			handler, err := resource_handler.New(config.Get().Thumbnails.NumWorkers, thumbnailWorkFn)
@@ -101,7 +103,7 @@ func thumbnailWorkFn(request *resource_handler.WorkRequest) interface{} {
 		CreationTs:  util.NowMillis(),
 		ContentType: generated.ContentType,
 		DatastoreId: generated.DatastoreId,
-		Location:    generated.DiskLocation,
+		Location:    generated.DatastoreLocation,
 		SizeBytes:   generated.SizeBytes,
 		Sha256Hash:  generated.Sha256Hash,
 	}
@@ -144,12 +146,12 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 	} else if canAnimate && !animated {
 		src, err = pickImageFrame(media, ctx, log)
 	} else {
-		mediaPath, err2 := storage.ResolveMediaLocation(ctx, log, media.DatastoreId, media.Location)
+		mediaStream, err2 := datastore.DownloadStream(ctx, log, media.DatastoreId, media.Location)
 		if err2 != nil {
-			log.Error("Error resolving datastore path: ", err2)
+			log.Error("Error getting file: ", err2)
 			return nil, err2
 		}
-		src, err = imaging.Open(mediaPath)
+		src, err = imaging.Decode(mediaStream)
 	}
 
 	if err != nil {
@@ -192,7 +194,7 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 			// Image is too small - don't upscale
 			thumb.ContentType = media.ContentType
 			thumb.DatastoreId = media.DatastoreId
-			thumb.DiskLocation = media.Location
+			thumb.DatastoreLocation = media.Location
 			thumb.SizeBytes = media.SizeBytes
 			thumb.Sha256Hash = media.Sha256Hash
 			log.Warn("Image too small, returning raw image")
@@ -219,19 +221,13 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 		// Animated GIFs are a bit more special because we need to do it frame by frame.
 		// This is fairly resource intensive. The calling code is responsible for limiting this case.
 
-		mediaPath, err := storage.ResolveMediaLocation(ctx, log, media.DatastoreId, media.Location)
+		mediaStream, err := datastore.DownloadStream(ctx, log, media.DatastoreId, media.Location)
 		if err != nil {
 			log.Error("Error resolving datastore path: ", err)
 			return nil, err
 		}
-		inputFile, err := os.Open(mediaPath)
-		if err != nil {
-			log.Error("Error generating animated thumbnail: " + err.Error())
-			return nil, err
-		}
-		defer inputFile.Close()
 
-		g, err := gif.DecodeAll(inputFile)
+		g, err := gif.DecodeAll(mediaStream)
 		if err != nil {
 			log.Error("Error generating animated thumbnail: " + err.Error())
 			return nil, err
@@ -288,31 +284,21 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 	}
 
 	// Reset the buffer pointer and store the file
-	datastore, relPath, err := storage.PersistFile(imgData, ctx, log)
+	ds, err := datastore.PickDatastore(ctx, log)
+	if err != nil {
+		return nil, err
+	}
+	info, err := ds.UploadFile(util.BufferToStream(imgData), ctx, log)
 	if err != nil {
 		log.Error("Unexpected error saving thumbnail: " + err.Error())
 		return nil, err
 	}
 
-	location := datastore.ResolveFilePath(relPath)
-
-	fileSize, err := util.FileSize(location)
-	if err != nil {
-		log.Error("Unexpected error getting the size of the thumbnail: " + err.Error())
-		return nil, err
-	}
-
-	hash, err := storage.GetFileHash(location)
-	if err != nil {
-		log.Error("Unexpected error getting the hash for the thumbnail: ", err.Error())
-		return nil, err
-	}
-
-	thumb.DiskLocation = relPath
-	thumb.DatastoreId = datastore.DatastoreId
+	thumb.DatastoreLocation = info.Location
+	thumb.DatastoreId = ds.DatastoreId
 	thumb.ContentType = contentType
-	thumb.SizeBytes = fileSize
-	thumb.Sha256Hash = hash
+	thumb.SizeBytes = info.SizeBytes
+	thumb.Sha256Hash = info.Sha256Hash
 
 	metric.Inc()
 	return thumb, nil
@@ -351,21 +337,32 @@ func thumbnailFrame(src image.Image, method string, width int, height int, filte
 }
 
 func svgToImage(media *types.Media, ctx context.Context, log *logrus.Entry) (image.Image, error) {
-	tempFile := path.Join(os.TempDir(), "media_repo."+media.Origin+"."+media.MediaId+".png")
-	defer os.Remove(tempFile)
+	tempFile1 := path.Join(os.TempDir(), "media_repo."+media.Origin+"."+media.MediaId+".1.png")
+	tempFile2 := path.Join(os.TempDir(), "media_repo."+media.Origin+"."+media.MediaId+".2.png")
+
+	defer os.Remove(tempFile1)
+	defer os.Remove(tempFile2)
 
 	// requires imagemagick
-	mediaPath, err := storage.ResolveMediaLocation(ctx, log, media.DatastoreId, media.Location)
+	mediaStream, err := datastore.DownloadStream(ctx, log, media.DatastoreId, media.Location)
 	if err != nil {
-		log.Error("Error resolving datastore path: ", err)
+		log.Error("Error streaming file: ", err)
 		return nil, err
 	}
-	err = exec.Command("convert", mediaPath, tempFile).Run()
+
+	f, err := os.Open(tempFile1)
+	if err != nil {
+		return nil, err
+	}
+	io.Copy(f, mediaStream)
+	f.Close()
+
+	err = exec.Command("convert", tempFile1, tempFile2).Run()
 	if err != nil {
 		return nil, err
 	}
 
-	b, err := ioutil.ReadFile(tempFile)
+	b, err := ioutil.ReadFile(tempFile2)
 	if err != nil {
 		return nil, err
 	}
@@ -375,19 +372,13 @@ func svgToImage(media *types.Media, ctx context.Context, log *logrus.Entry) (ima
 }
 
 func pickImageFrame(media *types.Media, ctx context.Context, log *logrus.Entry) (image.Image, error) {
-	mediaPath, err := storage.ResolveMediaLocation(ctx, log, media.DatastoreId, media.Location)
+	mediaStream, err := datastore.DownloadStream(ctx, log, media.DatastoreId, media.Location)
 	if err != nil {
 		log.Error("Error resolving datastore path: ", err)
 		return nil, err
 	}
-	inputFile, err := os.Open(mediaPath)
-	if err != nil {
-		log.Error("Error picking frame: " + err.Error())
-		return nil, err
-	}
-	defer inputFile.Close()
 
-	g, err := gif.DecodeAll(inputFile)
+	g, err := gif.DecodeAll(mediaStream)
 	if err != nil {
 		log.Error("Error picking frame: " + err.Error())
 		return nil, err

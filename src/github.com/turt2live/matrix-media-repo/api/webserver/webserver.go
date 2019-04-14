@@ -51,12 +51,12 @@ func Init() {
 		routes["/_matrix/media/"+version+"/identicon/{seed:.*}"] = route{"GET", identiconHandler}
 		routes["/_matrix/media/"+version+"/config"] = route{"GET", configHandler}
 
-		// Routes that we define but are not part of the spec
+		// Routes that we define but are not part of the spec (management)
 		routes["/_matrix/media/"+version+"/admin/purge_remote"] = route{"POST", purgeHandler}
 		routes["/_matrix/media/"+version+"/admin/quarantine/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"POST", quarantineHandler}
 		routes["/_matrix/media/"+version+"/admin/room/{roomId:[^/]+}/quarantine"] = route{"POST", quarantineRoomHandler}
 
-		// Routes that we should handle but aren't in the media namespace
+		// Routes that we should handle but aren't in the media namespace (synapse compat)
 		routes["/_matrix/client/"+version+"/admin/purge_media_cache"] = route{"POST", purgeHandler}
 		routes["/_matrix/client/"+version+"/admin/quarantine_media/{roomId:[^/]+}"] = route{"POST", quarantineRoomHandler}
 

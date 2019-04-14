@@ -164,6 +164,18 @@
 			"path": "/pbutil"
 		},
 		{
+			"importpath": "github.com/minio/minio-go",
+			"repository": "https://github.com/minio/minio-go",
+			"revision": "c8a261de75c1a9a9ece4dcc0c81ff6db525bcf27",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/mitchellh/go-homedir",
+			"repository": "https://github.com/mitchellh/go-homedir",
+			"revision": "af06845cf3004701891bf4fdb884bfe4920b3727",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/olebedev/emitter",
 			"repository": "https://github.com/olebedev/emitter",
 			"revision": "68bb25b251f61cde3824cc316f238f0da1704331",
@@ -258,6 +270,20 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "golang.org/x/crypto/argon2",
+			"repository": "https://go.googlesource.com/crypto",
+			"revision": "b8fe1690c61389d7d2a8074a507d1d40c5d30448",
+			"branch": "master",
+			"path": "/argon2"
+		},
+		{
+			"importpath": "golang.org/x/crypto/blake2b",
+			"repository": "https://go.googlesource.com/crypto",
+			"revision": "b8fe1690c61389d7d2a8074a507d1d40c5d30448",
+			"branch": "master",
+			"path": "/blake2b"
+		},
+		{
 			"importpath": "golang.org/x/crypto/ed25519",
 			"repository": "https://go.googlesource.com/crypto",
 			"revision": "6a293f2d4b14b8e6d3f0539e383f6d0d30fce3fd",
@@ -328,6 +354,34 @@
 			"path": "/html"
 		},
 		{
+			"importpath": "golang.org/x/net/http/httpguts",
+			"repository": "https://go.googlesource.com/net",
+			"revision": "d26f9f9a57f3fab6a695bec0d84433c2c50f8bbf",
+			"branch": "master",
+			"path": "/http/httpguts"
+		},
+		{
+			"importpath": "golang.org/x/net/idna",
+			"repository": "https://go.googlesource.com/net",
+			"revision": "d26f9f9a57f3fab6a695bec0d84433c2c50f8bbf",
+			"branch": "master",
+			"path": "/idna"
+		},
+		{
+			"importpath": "golang.org/x/net/publicsuffix",
+			"repository": "https://go.googlesource.com/net",
+			"revision": "d26f9f9a57f3fab6a695bec0d84433c2c50f8bbf",
+			"branch": "master",
+			"path": "/publicsuffix"
+		},
+		{
+			"importpath": "golang.org/x/sys/cpu",
+			"repository": "https://go.googlesource.com/sys",
+			"revision": "7ae0202eb74c2b534255c71b5a15fa4115aabbcc",
+			"branch": "master",
+			"path": "/cpu"
+		},
+		{
 			"importpath": "golang.org/x/sys/unix",
 			"repository": "https://go.googlesource.com/sys",
 			"revision": "1e2299c37cc91a509f1b12369872d27be0ce98a6",
@@ -340,6 +394,34 @@
 			"revision": "1e2299c37cc91a509f1b12369872d27be0ce98a6",
 			"branch": "master",
 			"path": "/windows"
+		},
+		{
+			"importpath": "golang.org/x/text/secure/bidirule",
+			"repository": "https://go.googlesource.com/text",
+			"revision": "e6919f6577db79269a6443b9dc46d18f2238fb5d",
+			"branch": "master",
+			"path": "/secure/bidirule"
+		},
+		{
+			"importpath": "golang.org/x/text/transform",
+			"repository": "https://go.googlesource.com/text",
+			"revision": "e6919f6577db79269a6443b9dc46d18f2238fb5d",
+			"branch": "master",
+			"path": "/transform"
+		},
+		{
+			"importpath": "golang.org/x/text/unicode/bidi",
+			"repository": "https://go.googlesource.com/text",
+			"revision": "e6919f6577db79269a6443b9dc46d18f2238fb5d",
+			"branch": "master",
+			"path": "/unicode/bidi"
+		},
+		{
+			"importpath": "golang.org/x/text/unicode/norm",
+			"repository": "https://go.googlesource.com/text",
+			"revision": "e6919f6577db79269a6443b9dc46d18f2238fb5d",
+			"branch": "master",
+			"path": "/unicode/norm"
 		},
 		{
 			"importpath": "golang.org/x/time/rate",
@@ -361,6 +443,12 @@
 			"revision": "cc14fdc9ca0e4c2bafad7458f6ff79fd3947cfbb",
 			"branch": "master",
 			"path": "/types"
+		},
+		{
+			"importpath": "gopkg.in/ini.v1",
+			"repository": "https://gopkg.in/ini.v1",
+			"revision": "6ed8d5f64cd79a498d1f3fab5880cc376ce41bbe",
+			"branch": "master"
 		},
 		{
 			"importpath": "gopkg.in/yaml.v2",

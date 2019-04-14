@@ -40,6 +40,13 @@ type UploadsConfig struct {
 	ReportedMaxSizeBytes int64               `yaml:"reportedMaxBytes"`
 }
 
+type DatastoreConfig struct {
+	Type       string            `yaml:"type"`
+	Enabled    bool              `yaml:"enabled"`
+	ForUploads bool              `yaml:"forUploads"`
+	Options    map[string]string `yaml:"opts,flow"`
+}
+
 type DownloadsConfig struct {
 	MaxSizeBytes        int64        `yaml:"maxBytes"`
 	NumWorkers          int          `yaml:"numWorkers"`
@@ -120,6 +127,7 @@ type MediaRepoConfig struct {
 	Homeservers    []*HomeserverConfig `yaml:"homeservers,flow"`
 	Admins         []string            `yaml:"admins,flow"`
 	Database       *DatabaseConfig     `yaml:"database"`
+	DataStores     []DatastoreConfig   `yaml:"datastores"`
 	Uploads        *UploadsConfig      `yaml:"uploads"`
 	Downloads      *DownloadsConfig    `yaml:"downloads"`
 	Thumbnails     *ThumbnailsConfig   `yaml:"thumbnails"`
@@ -135,7 +143,7 @@ var instance *MediaRepoConfig
 var singletonLock = &sync.Once{}
 var Path = "media-repo.yaml"
 
-func ReloadConfig() (error) {
+func ReloadConfig() error {
 	c := NewDefaultConfig()
 
 	// Write a default config if the one given doesn't exist
@@ -180,7 +188,7 @@ func ReloadConfig() (error) {
 	return nil
 }
 
-func Get() (*MediaRepoConfig) {
+func Get() *MediaRepoConfig {
 	if instance == nil {
 		singletonLock.Do(func() {
 			err := ReloadConfig()
@@ -204,6 +212,7 @@ func NewDefaultConfig() *MediaRepoConfig {
 		},
 		Homeservers: []*HomeserverConfig{},
 		Admins:      []string{},
+		DataStores:  []DatastoreConfig{},
 		Uploads: &UploadsConfig{
 			MaxSizeBytes:         104857600, // 100mb
 			MinSizeBytes:         100,

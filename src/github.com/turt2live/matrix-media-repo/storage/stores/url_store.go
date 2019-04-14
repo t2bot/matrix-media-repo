@@ -45,7 +45,7 @@ func InitUrlStore(sqlDb *sql.DB) (*UrlStoreFactory, error) {
 	return &store, nil
 }
 
-func (f *UrlStoreFactory) Create(ctx context.Context, entry *logrus.Entry) (*UrlStore) {
+func (f *UrlStoreFactory) Create(ctx context.Context, entry *logrus.Entry) *UrlStore {
 	return &UrlStore{
 		factory:    f,
 		ctx:        ctx,
@@ -77,7 +77,7 @@ func (s *UrlStore) GetPreview(url string, ts int64) (*types.CachedUrlPreview, er
 	return r, err
 }
 
-func (s *UrlStore) InsertPreview(record *types.CachedUrlPreview) (error) {
+func (s *UrlStore) InsertPreview(record *types.CachedUrlPreview) error {
 	_, err := s.statements.insertUrlPreview.ExecContext(
 		s.ctx,
 		record.SearchUrl,
@@ -98,7 +98,7 @@ func (s *UrlStore) InsertPreview(record *types.CachedUrlPreview) (error) {
 	return err
 }
 
-func (s *UrlStore) InsertPreviewError(url string, errorCode string) (error) {
+func (s *UrlStore) InsertPreviewError(url string, errorCode string) error {
 	return s.InsertPreview(&types.CachedUrlPreview{
 		Preview:   &types.UrlPreview{},
 		SearchUrl: url,

@@ -59,7 +59,7 @@ func GenerateCalculatedPreview(urlStr string, log *logrus.Entry) (PreviewResult,
 		result.Image = img
 	}
 
-	metrics.UrlPreviewsGenerated.With(prometheus.Labels{"type":"calculated"}).Inc()
+	metrics.UrlPreviewsGenerated.With(prometheus.Labels{"type": "calculated"}).Inc()
 	return *result, nil
 }
 

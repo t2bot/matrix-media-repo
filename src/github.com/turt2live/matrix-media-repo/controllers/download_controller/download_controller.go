@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"os"
 	"time"
 
 	"github.com/patrickmn/go-cache"
@@ -12,6 +11,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/internal_cache"
 	"github.com/turt2live/matrix-media-repo/storage"
+	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 )
@@ -92,16 +92,12 @@ func GetMedia(origin string, mediaId string, downloadRemote bool, blockForMedia 
 	}
 
 	log.Info("Reading media from disk")
-	filePath, err := storage.ResolveMediaLocation(ctx, log, media.DatastoreId, media.Location)
-	if err != nil {
-		return nil, err
-	}
-	stream, err := os.Open(filePath)
+	mediaStream, err := datastore.DownloadStream(ctx, log, media.DatastoreId, media.Location)
 	if err != nil {
 		return nil, err
 	}
 
-	minMedia.Stream = stream
+	minMedia.Stream = mediaStream
 	return minMedia, nil
 }
 
@@ -128,9 +124,26 @@ func FindMinimalMediaRecord(origin string, mediaId string, downloadRemote bool, 
 				return nil, common.ErrMediaNotFound
 			}
 
-			result := <-getResourceHandler().DownloadRemoteMedia(origin, mediaId, false)
+			mediaChan := getResourceHandler().DownloadRemoteMedia(origin, mediaId, true)
+			defer close(mediaChan)
+
+			result := <-mediaChan
 			if result.err != nil {
 				return nil, result.err
+			}
+			if result.stream == nil {
+				log.Info("No stream returned from remote download - attempting to create one")
+				if result.media == nil {
+					log.Error("Fatal error: No stream and no media. Cannot acquire a stream for media")
+					return nil, errors.New("no stream available")
+				}
+
+				stream, err := datastore.DownloadStream(ctx, log, result.media.DatastoreId, result.media.Location)
+				if err != nil {
+					return nil, err
+				}
+
+				result.stream = stream
 			}
 			return &types.MinimalMedia{
 				Origin:      origin,
@@ -151,12 +164,7 @@ func FindMinimalMediaRecord(origin string, mediaId string, downloadRemote bool, 
 		return nil, common.ErrMediaNotFound
 	}
 
-	filePath, err := storage.ResolveMediaLocation(ctx, log, media.DatastoreId, media.Location)
-	if err != nil {
-		return nil, err
-	}
-
-	stream, err := os.Open(filePath)
+	mediaStream, err := datastore.DownloadStream(ctx, log, media.DatastoreId, media.Location)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +175,7 @@ func FindMinimalMediaRecord(origin string, mediaId string, downloadRemote bool, 
 		ContentType: media.ContentType,
 		UploadName:  media.UploadName,
 		SizeBytes:   media.SizeBytes,
-		Stream:      stream,
+		Stream:      mediaStream,
 		KnownMedia:  media,
 	}, nil
 }
@@ -195,7 +203,10 @@ func FindMediaRecord(origin string, mediaId string, downloadRemote bool, ctx con
 				return nil, common.ErrMediaNotFound
 			}
 
-			result := <-getResourceHandler().DownloadRemoteMedia(origin, mediaId, true)
+			mediaChan := getResourceHandler().DownloadRemoteMedia(origin, mediaId, true)
+			defer close(mediaChan)
+
+			result := <-mediaChan
 			if result.err != nil {
 				return nil, result.err
 			}

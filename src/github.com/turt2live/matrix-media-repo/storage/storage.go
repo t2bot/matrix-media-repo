@@ -27,7 +27,7 @@ type repos struct {
 var dbInstance *Database
 var singletonDbLock = &sync.Once{}
 
-func GetDatabase() (*Database) {
+func GetDatabase() *Database {
 	if dbInstance == nil {
 		singletonDbLock.Do(func() {
 			err := OpenDatabase(config.Get().Database.Postgres)
@@ -39,7 +39,7 @@ func GetDatabase() (*Database) {
 	return dbInstance
 }
 
-func OpenDatabase(connectionString string) (error) {
+func OpenDatabase(connectionString string) error {
 	d := &Database{}
 	var err error
 
@@ -83,18 +83,18 @@ func OpenDatabase(connectionString string) (error) {
 	return nil
 }
 
-func (d *Database) GetMediaStore(ctx context.Context, log *logrus.Entry) (*stores.MediaStore) {
+func (d *Database) GetMediaStore(ctx context.Context, log *logrus.Entry) *stores.MediaStore {
 	return d.repos.mediaStore.Create(ctx, log)
 }
 
-func (d *Database) GetThumbnailStore(ctx context.Context, log *logrus.Entry) (*stores.ThumbnailStore) {
+func (d *Database) GetThumbnailStore(ctx context.Context, log *logrus.Entry) *stores.ThumbnailStore {
 	return d.repos.thumbnailStore.New(ctx, log)
 }
 
-func (d *Database) GetUrlStore(ctx context.Context, log *logrus.Entry) (*stores.UrlStore) {
+func (d *Database) GetUrlStore(ctx context.Context, log *logrus.Entry) *stores.UrlStore {
 	return d.repos.urlStore.Create(ctx, log)
 }
 
-func (d *Database) GetMetadataStore(ctx context.Context, log *logrus.Entry) (*stores.MetadataStore) {
+func (d *Database) GetMetadataStore(ctx context.Context, log *logrus.Entry) *stores.MetadataStore {
 	return d.repos.metadataStore.Create(ctx, log)
 }

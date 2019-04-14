@@ -8,7 +8,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
-func populateThumbnailHashes(db *Database) (error) {
+func populateThumbnailHashes(db *Database) error {
 	svc := db.GetThumbnailStore(context.TODO(), &logrus.Entry{})
 	mediaSvc := db.GetMediaStore(context.TODO(), &logrus.Entry{})
 
@@ -28,9 +28,9 @@ func populateThumbnailHashes(db *Database) (error) {
 			logrus.Error("Unrecognized datastore type for thumbnail ", thumb.Origin, " ", thumb.MediaId)
 			continue
 		}
-		location := datastore.ResolveFilePath(thumb.Location)
+		location := path.Join(datastore.Uri, thumb.Location)
 
-		hash, err := GetFileHash(location)
+		hash, err := util.GetFileHash(location)
 		if err != nil {
 			logrus.Error("Failed to generate hash for location '", location, "': ", err)
 			return err
@@ -49,7 +49,7 @@ func populateThumbnailHashes(db *Database) (error) {
 	return nil
 }
 
-func populateDatastores(db *Database) (error) {
+func populateDatastores(db *Database) error {
 	logrus.Info("Starting to populate datastores...")
 
 	thumbService := db.GetThumbnailStore(context.TODO(), &logrus.Entry{})

@@ -64,7 +64,7 @@ func InitThumbnailStore(sqlDb *sql.DB) (*ThumbnailStoreFactory, error) {
 	return &store, nil
 }
 
-func (f *ThumbnailStoreFactory) New(ctx context.Context, entry *logrus.Entry) (*ThumbnailStore) {
+func (f *ThumbnailStoreFactory) New(ctx context.Context, entry *logrus.Entry) *ThumbnailStore {
 	return &ThumbnailStore{
 		factory:    f,
 		ctx:        ctx,
@@ -73,7 +73,7 @@ func (f *ThumbnailStoreFactory) New(ctx context.Context, entry *logrus.Entry) (*
 	}
 }
 
-func (s *ThumbnailStore) Insert(thumbnail *types.Thumbnail) (error) {
+func (s *ThumbnailStore) Insert(thumbnail *types.Thumbnail) error {
 	_, err := s.statements.insertThumbnail.ExecContext(
 		s.ctx,
 		thumbnail.Origin,
@@ -112,7 +112,7 @@ func (s *ThumbnailStore) Get(origin string, mediaId string, width int, height in
 	return t, err
 }
 
-func (s *ThumbnailStore) UpdateHash(thumbnail *types.Thumbnail) (error) {
+func (s *ThumbnailStore) UpdateHash(thumbnail *types.Thumbnail) error {
 	_, err := s.statements.updateThumbnailHash.ExecContext(
 		s.ctx,
 		thumbnail.Origin,
@@ -127,7 +127,7 @@ func (s *ThumbnailStore) UpdateHash(thumbnail *types.Thumbnail) (error) {
 	return err
 }
 
-func (s *ThumbnailStore) UpdateDatastoreAndLocation(thumbnail *types.Thumbnail) (error) {
+func (s *ThumbnailStore) UpdateDatastoreAndLocation(thumbnail *types.Thumbnail) error {
 	_, err := s.statements.updateThumbnailDatastoreAndLocation.ExecContext(
 		s.ctx,
 		thumbnail.Origin,

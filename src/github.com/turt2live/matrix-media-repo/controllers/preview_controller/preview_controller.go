@@ -55,7 +55,7 @@ func GetPreview(urlStr string, onHost string, forUserId string, atTs int64, ctx 
 		realHost = parsedUrl.Host
 	}
 
-	addr := net.IPv4(127,0,0,1)
+	addr := net.IPv4(127, 0, 0, 1)
 	if realHost != "localhost" {
 		addrs, err := net.LookupIP(realHost)
 		if err != nil {
@@ -83,7 +83,10 @@ func GetPreview(urlStr string, onHost string, forUserId string, atTs int64, ctx 
 		return nil, common.ErrHostBlacklisted
 	}
 
-	result := <-getResourceHandler().GeneratePreview(urlStr, forUserId, onHost)
+	previewChan := getResourceHandler().GeneratePreview(urlStr, forUserId, onHost)
+	defer close(previewChan)
+
+	result := <-previewChan
 	return result.preview, result.err
 }
 

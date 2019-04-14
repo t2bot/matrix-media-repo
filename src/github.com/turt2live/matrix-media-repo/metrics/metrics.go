@@ -21,7 +21,7 @@ var CacheMisses = prometheus.NewCounterVec(prometheus.CounterOpts{
 }, []string{"cache"})
 var CacheEvictions = prometheus.NewCounterVec(prometheus.CounterOpts{
 	Name: "media_cache_evictions_total",
-}, []string{"cache","reason"})
+}, []string{"cache", "reason"})
 var CacheNumItems = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Name: "media_cache_num_items",
 }, []string{"cache"})
@@ -30,7 +30,7 @@ var CacheNumBytes = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 }, []string{"cache"})
 var ThumbnailsGenerated = prometheus.NewCounterVec(prometheus.CounterOpts{
 	Name: "media_thumbnails_generated_total",
-}, []string{"width","height","method","animated","origin"})
+}, []string{"width", "height", "method", "animated", "origin"})
 var MediaDownloaded = prometheus.NewCounterVec(prometheus.CounterOpts{
 	Name: "media_downloaded_total",
 }, []string{"origin"})

@@ -3,10 +3,10 @@ package maintenance_controller
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/storage"
+	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
@@ -39,13 +39,14 @@ func PurgeRemoteMediaBefore(beforeTs int64, ctx context.Context, log *logrus.Ent
 			continue
 		}
 
-		// Delete the file first
-		filePath, err := storage.ResolveMediaLocation(context.TODO(), &logrus.Entry{}, media.DatastoreId, media.Location)
+		ds, err := datastore.LocateDatastore(context.TODO(), &logrus.Entry{}, media.DatastoreId)
 		if err != nil {
-			log.Error("Error resolving datastore path for media " + media.Origin + "/" + media.MediaId + " because: " + err.Error())
+			log.Error("Error finding datastore for media " + media.Origin + "/" + media.MediaId + " because: " + err.Error())
 			continue
 		}
-		err = os.Remove(filePath)
+
+		// Delete the file first
+		err = ds.DeleteObject(media.Location)
 		if err != nil {
 			log.Warn("Cannot remove media " + media.Origin + "/" + media.MediaId + " because: " + err.Error())
 		} else {

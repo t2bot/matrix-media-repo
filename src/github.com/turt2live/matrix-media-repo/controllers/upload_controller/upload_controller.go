@@ -3,7 +3,7 @@ package upload_controller
 import (
 	"context"
 	"io"
-	"os"
+	"io/ioutil"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -12,6 +12,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/storage"
+	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 )
@@ -61,9 +62,9 @@ func IsRequestTooSmall(contentLength int64, contentLengthHeader string) bool {
 func UploadMedia(contents io.ReadCloser, contentType string, filename string, userId string, origin string, ctx context.Context, log *logrus.Entry) (*types.Media, error) {
 	defer contents.Close()
 
-	var data io.Reader
+	var data io.ReadCloser
 	if config.Get().Uploads.MaxSizeBytes > 0 {
-		data = io.LimitReader(contents, config.Get().Uploads.MaxSizeBytes)
+		data = ioutil.NopCloser(io.LimitReader(contents, config.Get().Uploads.MaxSizeBytes))
 	} else {
 		data = contents
 	}
@@ -83,7 +84,7 @@ func trackUploadAsLastAccess(ctx context.Context, log *logrus.Entry, media *type
 	}
 }
 
-func IsAllowed(contentType string, reportedContentType string, userId string, log *logrus.Entry) (bool) {
+func IsAllowed(contentType string, reportedContentType string, userId string, log *logrus.Entry) bool {
 	allowed := false
 	userMatched := false
 
@@ -126,18 +127,25 @@ func IsAllowed(contentType string, reportedContentType string, userId string, lo
 	return allowed
 }
 
-func StoreDirect(contents io.Reader, contentType string, filename string, userId string, origin string, mediaId string, ctx context.Context, log *logrus.Entry) (*types.Media, error) {
-	datastore, location, err := storage.PersistFile(contents, ctx, log)
+func StoreDirect(contents io.ReadCloser, contentType string, filename string, userId string, origin string, mediaId string, ctx context.Context, log *logrus.Entry) (*types.Media, error) {
+	ds, err := datastore.PickDatastore(ctx, log)
+	if err != nil {
+		return nil, err
+	}
+	info, err := ds.UploadFile(contents, ctx, log)
 	if err != nil {
 		return nil, err
 	}
 
-	fileLocation := datastore.ResolveFilePath(location)
+	stream, err := ds.DownloadFile(info.Location)
+	if err != nil {
+		return nil, err
+	}
 
-	fileMime, err := util.GetMimeType(fileLocation)
+	fileMime, err := util.GetMimeType(stream)
 	if err != nil {
 		log.Error("Error while checking content type of file: ", err.Error())
-		os.Remove(fileLocation) // delete temp file
+		ds.DeleteObject(info.Location) // delete temp object
 		return nil, err
 	}
 
@@ -145,25 +153,19 @@ func StoreDirect(contents io.Reader, contentType string, filename string, userId
 	if !allowed {
 		log.Warn("Content type " + fileMime + " (reported as " + contentType + ") is not allowed to be uploaded")
 
-		os.Remove(fileLocation) // delete temp file
+		ds.DeleteObject(info.Location) // delete temp object
 		return nil, common.ErrMediaNotAllowed
 	}
 
-	hash, err := storage.GetFileHash(fileLocation)
-	if err != nil {
-		os.Remove(fileLocation) // delete temp file
-		return nil, err
-	}
-
 	db := storage.GetDatabase().GetMediaStore(ctx, log)
-	records, err := db.GetByHash(hash)
+	records, err := db.GetByHash(info.Sha256Hash)
 	if err != nil {
-		os.Remove(fileLocation) // delete temp file
+		ds.DeleteObject(info.Location) // delete temp object
 		return nil, err
 	}
 
 	if len(records) > 0 {
-		log.Info("Duplicate media for hash ", hash)
+		log.Info("Duplicate media for hash ", info.Sha256Hash)
 
 		// If the user is a real user (ie: actually uploaded media), then we'll see if there's
 		// an exact duplicate that we can return. Otherwise we'll just pick the first record and
@@ -172,7 +174,7 @@ func StoreDirect(contents io.Reader, contentType string, filename string, userId
 			for _, record := range records {
 				if record.UserId == userId && record.Origin == origin && record.ContentType == contentType {
 					log.Info("User has already uploaded this media before - returning unaltered media record")
-					os.Remove(fileLocation) // delete temp file
+					ds.DeleteObject(info.Location) // delete temp object
 					trackUploadAsLastAccess(ctx, log, record)
 					return record, nil
 				}
@@ -190,22 +192,29 @@ func StoreDirect(contents io.Reader, contentType string, filename string, userId
 
 		err = db.Insert(media)
 		if err != nil {
-			os.Remove(fileLocation) // delete temp file
+			ds.DeleteObject(info.Location) // delete temp object
 			return nil, err
 		}
 
 		// If the media's file exists, we'll delete the temp file
 		// If the media's file doesn't exist, we'll move the temp file to where the media expects it to be
-		targetPath, err2 := storage.ResolveMediaLocation(ctx, log, media.DatastoreId, media.Location)
-		if err2 != nil {
-			return nil, err2
-		}
-		exists, err := util.FileExists(targetPath)
-		if err != nil || !exists {
-			// We'll assume an error means it doesn't exist
-			os.Rename(fileLocation, targetPath)
-		} else {
-			os.Remove(fileLocation)
+		if media.DatastoreId != ds.DatastoreId && media.Location != info.Location {
+			ds2, err := datastore.LocateDatastore(ctx, log, media.DatastoreId)
+			if err != nil {
+				ds.DeleteObject(info.Location) // delete temp object
+				return nil, err
+			}
+			if !ds2.ObjectExists(media.Location) {
+				stream, err := ds.DownloadFile(info.Location)
+				if err != nil {
+					return nil, err
+				}
+
+				ds2.OverwriteObject(media.Location, stream, ctx, log)
+				ds.DeleteObject(info.Location)
+			} else {
+				ds.DeleteObject(info.Location)
+			}
 		}
 
 		trackUploadAsLastAccess(ctx, log, media)
@@ -214,13 +223,8 @@ func StoreDirect(contents io.Reader, contentType string, filename string, userId
 
 	// The media doesn't already exist - save it as new
 
-	fileSize, err := util.FileSize(fileLocation)
-	if err != nil {
-		os.Remove(fileLocation) // delete temp file
-		return nil, err
-	}
-
-	if fileSize <= 0 {
+	if info.SizeBytes <= 0 {
+		ds.DeleteObject(info.Location)
 		return nil, errors.New("file has no contents")
 	}
 
@@ -232,16 +236,16 @@ func StoreDirect(contents io.Reader, contentType string, filename string, userId
 		UploadName:  filename,
 		ContentType: contentType,
 		UserId:      userId,
-		Sha256Hash:  hash,
-		SizeBytes:   fileSize,
-		DatastoreId: datastore.DatastoreId,
-		Location:    location,
+		Sha256Hash:  info.Sha256Hash,
+		SizeBytes:   info.SizeBytes,
+		DatastoreId: ds.DatastoreId,
+		Location:    info.Location,
 		CreationTs:  util.NowMillis(),
 	}
 
 	err = db.Insert(media)
 	if err != nil {
-		os.Remove(fileLocation) // delete temp file
+		ds.DeleteObject(info.Location) // delete temp object
 		return nil, err
 	}
 
