@@ -28,6 +28,24 @@ func main() {
 		panic(err)
 	}
 
+	if len(config.Get().Uploads.StoragePaths) > 0 {
+		logrus.Warn("storagePaths usage is deprecated - please use datastores instead")
+		for _, p := range config.Get().Uploads.StoragePaths {
+			ds, err := storage.GetOrCreateDatastoreOfType(context.Background(), logrus.WithFields(logrus.Fields{"path": p}), "file", p)
+			if err != nil {
+				logrus.Fatal(err)
+			}
+
+			fakeConfig := config.DatastoreConfig{
+				Type:       "file",
+				Enabled:    true,
+				ForUploads: true,
+				Options:    map[string]string{"path": ds.Uri},
+			}
+			config.Get().DataStores = append(config.Get().DataStores, fakeConfig)
+		}
+	}
+
 	mediaStore := storage.GetDatabase().GetMediaStore(context.TODO(), &logrus.Entry{})
 
 	logrus.Info("Initializing datastores...")
