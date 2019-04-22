@@ -2,6 +2,7 @@ FROM docker.io/alpine
 COPY . /tmp/src
 RUN apk add --no-cache \
       su-exec \
+      ca-certificates \
  && apk add --no-cache \
       -t build-deps \
       go \
