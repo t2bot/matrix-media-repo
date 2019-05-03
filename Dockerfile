@@ -1,6 +1,6 @@
 # ---- Stage 0 ----
 # Builds media_repo and import_synapse
-FROM golang:alpine AS builder
+FROM golang:1.11-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache git musl-dev \
