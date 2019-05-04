@@ -252,6 +252,9 @@ func NewDefaultConfig() *MediaRepoConfig {
 				"192.168.0.0/16",
 				"100.64.0.0/10",
 				"169.254.0.0/16",
+				"::1/128",
+				"fe80::/64",
+				"fc00::/7",
 			},
 			AllowedNetworks: []string{
 				"0.0.0.0/0", // "Everything"

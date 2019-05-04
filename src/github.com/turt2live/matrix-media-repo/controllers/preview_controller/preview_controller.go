@@ -78,6 +78,11 @@ func GetPreview(urlStr string, onHost string, forUserId string, atTs int64, ctx 
 	if deniedCidrs == nil {
 		deniedCidrs = []string{}
 	}
+
+	// Forcefully append 0.0.0.0 and :: because they are unroutable and resolve to localhost
+	deniedCidrs = append(deniedCidrs, "0.0.0.0/32")
+	deniedCidrs = append(deniedCidrs, "::/128")
+
 	if !isAllowed(addr, allowedCidrs, deniedCidrs, log) {
 		db.InsertPreviewError(urlStr, common.ErrCodeHostBlacklisted)
 		return nil, common.ErrHostBlacklisted
