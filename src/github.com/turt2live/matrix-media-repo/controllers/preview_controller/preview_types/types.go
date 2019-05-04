@@ -1,8 +1,10 @@
-package previewers
+package preview_types
 
 import (
 	"errors"
 	"io"
+	"net"
+	"net/url"
 )
 
 type PreviewResult struct {
@@ -20,6 +22,12 @@ type PreviewImage struct {
 	Filename            string
 	ContentLength       int64
 	ContentLengthHeader string
+}
+
+type UrlPayload struct {
+	UrlString string
+	ParsedUrl *url.URL
+	Address   net.IP
 }
 
 var ErrPreviewUnsupported = errors.New("preview not supported by this previewer")
