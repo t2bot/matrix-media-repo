@@ -9,6 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/preview_types"
 	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/previewers"
 	"github.com/turt2live/matrix-media-repo/controllers/upload_controller"
 	"github.com/turt2live/matrix-media-repo/storage"
@@ -23,9 +24,9 @@ type urlResourceHandler struct {
 }
 
 type urlPreviewRequest struct {
-	urlStr    string
-	forUserId string
-	onHost    string
+	urlPayload *preview_types.UrlPayload
+	forUserId  string
+	onHost     string
 }
 
 type urlPreviewResponse struct {
@@ -55,7 +56,7 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) interface{} {
 	info := request.Metadata.(*urlPreviewRequest)
 	log := logrus.WithFields(logrus.Fields{
 		"worker_requestId": request.Id,
-		"worker_url":       info.urlStr,
+		"worker_url":       info.urlPayload.UrlString,
 		"worker_previewer": "OpenGraph",
 	})
 	log.Info("Processing url preview request")
@@ -63,23 +64,23 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) interface{} {
 	ctx := context.TODO() // TODO: Should we use a real context?
 	db := storage.GetDatabase().GetUrlStore(ctx, log)
 
-	preview, err := previewers.GenerateOpenGraphPreview(info.urlStr, log)
-	if err == previewers.ErrPreviewUnsupported {
+	preview, err := previewers.GenerateOpenGraphPreview(info.urlPayload, log)
+	if err == preview_types.ErrPreviewUnsupported {
 		log.Info("OpenGraph preview for this URL is unsupported - treating it as a file")
 		log = log.WithFields(logrus.Fields{"worker_previewer": "File"})
 
-		preview, err = previewers.GenerateCalculatedPreview(info.urlStr, log)
+		preview, err = previewers.GenerateCalculatedPreview(info.urlPayload, log)
 	}
 	if err != nil {
 		// Transparently convert "unsupported" to "not found" for processing
-		if err == previewers.ErrPreviewUnsupported {
+		if err == preview_types.ErrPreviewUnsupported {
 			err = common.ErrMediaNotFound
 		}
 
 		if err == common.ErrMediaNotFound {
-			db.InsertPreviewError(info.urlStr, common.ErrCodeNotFound)
+			db.InsertPreviewError(info.urlPayload.UrlString, common.ErrCodeNotFound)
 		} else {
-			db.InsertPreviewError(info.urlStr, common.ErrCodeUnknown)
+			db.InsertPreviewError(info.urlPayload.UrlString, common.ErrCodeUnknown)
 		}
 		return &urlPreviewResponse{err: err}
 	}
@@ -119,7 +120,7 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) interface{} {
 
 	dbRecord := &types.CachedUrlPreview{
 		Preview:   result,
-		SearchUrl: info.urlStr,
+		SearchUrl: info.urlPayload.UrlString,
 		ErrorCode: "",
 		FetchedTs: util.NowMillis(),
 	}
@@ -132,14 +133,14 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) interface{} {
 	return &urlPreviewResponse{preview: result}
 }
 
-func (h *urlResourceHandler) GeneratePreview(urlStr string, forUserId string, onHost string) chan *urlPreviewResponse {
+func (h *urlResourceHandler) GeneratePreview(urlPayload *preview_types.UrlPayload, forUserId string, onHost string) chan *urlPreviewResponse {
 	resultChan := make(chan *urlPreviewResponse)
 	go func() {
-		reqId := fmt.Sprintf("preview_%s", urlStr) // don't put the user id or host in the ID string
+		reqId := fmt.Sprintf("preview_%s", urlPayload.UrlString) // don't put the user id or host in the ID string
 		result := <-h.resourceHandler.GetResource(reqId, &urlPreviewRequest{
-			urlStr:    urlStr,
-			forUserId: forUserId,
-			onHost:    onHost,
+			urlPayload: urlPayload,
+			forUserId:  forUserId,
+			onHost:     onHost,
 		})
 		resultChan <- result.(*urlPreviewResponse)
 	}()

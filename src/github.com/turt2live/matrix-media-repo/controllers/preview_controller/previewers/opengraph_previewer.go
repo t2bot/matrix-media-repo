@@ -1,8 +1,10 @@
 package previewers
 
 import (
+	"context"
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"mime"
@@ -20,30 +22,32 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/acl"
+	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/preview_types"
 	"github.com/turt2live/matrix-media-repo/metrics"
 )
 
 var ogSupportedTypes = []string{"text/*"}
 
-func GenerateOpenGraphPreview(urlStr string, log *logrus.Entry) (PreviewResult, error) {
-	html, err := downloadHtmlContent(urlStr, log)
+func GenerateOpenGraphPreview(urlPayload *preview_types.UrlPayload, log *logrus.Entry) (preview_types.PreviewResult, error) {
+	html, err := downloadHtmlContent(urlPayload, log)
 	if err != nil {
 		log.Error("Error downloading content: " + err.Error())
 
 		// Make sure the unsupported error gets passed through
-		if err == ErrPreviewUnsupported {
-			return PreviewResult{}, ErrPreviewUnsupported
+		if err == preview_types.ErrPreviewUnsupported {
+			return preview_types.PreviewResult{}, preview_types.ErrPreviewUnsupported
 		}
 
 		// We'll consider it not found for the sake of processing
-		return PreviewResult{}, common.ErrMediaNotFound
+		return preview_types.PreviewResult{}, common.ErrMediaNotFound
 	}
 
 	og := opengraph.NewOpenGraph()
 	err = og.ProcessHTML(strings.NewReader(html))
 	if err != nil {
 		log.Error("Error getting OpenGraph: " + err.Error())
-		return PreviewResult{}, err
+		return preview_types.PreviewResult{}, err
 	}
 
 	if og.Title == "" {
@@ -60,7 +64,7 @@ func GenerateOpenGraphPreview(urlStr string, log *logrus.Entry) (PreviewResult, 
 	og.Title = summarize(og.Title, config.Get().UrlPreviews.NumTitleWords, config.Get().UrlPreviews.MaxTitleLength)
 	og.Description = summarize(og.Description, config.Get().UrlPreviews.NumWords, config.Get().UrlPreviews.MaxLength)
 
-	graph := &PreviewResult{
+	graph := &preview_types.PreviewResult{
 		Type:        og.Type,
 		Url:         og.URL,
 		Title:       og.Title,
@@ -69,7 +73,8 @@ func GenerateOpenGraphPreview(urlStr string, log *logrus.Entry) (PreviewResult, 
 	}
 
 	if og.Images != nil && len(og.Images) > 0 {
-		baseUrl, err := url.Parse(urlStr)
+		baseUrlS := fmt.Sprintf("%s://%s", urlPayload.ParsedUrl.Scheme, urlPayload.Address.String())
+		baseUrl, err := url.Parse(baseUrlS)
 		if err != nil {
 			log.Error("Non-fatal error getting thumbnail (parsing base url): " + err.Error())
 			return *graph, nil
@@ -81,8 +86,15 @@ func GenerateOpenGraphPreview(urlStr string, log *logrus.Entry) (PreviewResult, 
 			return *graph, nil
 		}
 
+		// Ensure images pass through the same validation check
 		imgAbsUrl := baseUrl.ResolveReference(imgUrl)
-		img, err := downloadImage(imgAbsUrl.String(), log)
+		imgUrlPayload, err := acl.ValidateUrlForPreview(imgAbsUrl.String(), context.TODO(), log)
+		if err != nil {
+			log.Error("Non-fatal error getting thumbnail (URL validation): " + err.Error())
+			return *graph, nil
+		}
+
+		img, err := downloadImage(imgUrlPayload, log)
 		if err != nil {
 			log.Error("Non-fatal error getting thumbnail (downloading image): " + err.Error())
 			return *graph, nil
@@ -95,11 +107,61 @@ func GenerateOpenGraphPreview(urlStr string, log *logrus.Entry) (PreviewResult, 
 	return *graph, nil
 }
 
-func doHttpGet(urlStr string, log *logrus.Entry) (*http.Response, error) {
+func doHttpGet(urlPayload *preview_types.UrlPayload, log *logrus.Entry) (*http.Response, error) {
 	var client *http.Client
+
+	dialer := &net.Dialer{
+		Timeout:   time.Duration(config.Get().TimeoutSeconds.UrlPreviews) * time.Second,
+		KeepAlive: time.Duration(config.Get().TimeoutSeconds.UrlPreviews) * time.Second,
+		DualStack: true,
+	}
+
+	dialContext := func(ctx context.Context, network, addr string) (conn net.Conn, e error) {
+		// If we aren't handling any address then return the default behaviour
+		if urlPayload.Address == nil {
+			return dialer.DialContext(ctx, network, addr)
+		}
+
+		// Try and determine which port we're expecting a request to come in on. Because the
+		// http library follows redirects, we should also keep track of the alternate port
+		// so that redirects don't fail previews. We only support the alternate port if the
+		// default port for the scheme is used, however.
+
+		expectedPort := urlPayload.ParsedUrl.Port()
+		altPort := ""
+		if expectedPort == "" {
+			if urlPayload.ParsedUrl.Scheme == "http" {
+				expectedPort = "80"
+				altPort = "443"
+			} else if urlPayload.ParsedUrl.Scheme == "https" {
+				expectedPort = "443"
+				altPort = "80"
+			} else {
+				return nil, errors.New("unexpected scheme: cannot determine port")
+			}
+		}
+
+		expectedAddr := fmt.Sprintf("%s:%s", urlPayload.ParsedUrl.Host, expectedPort)
+		altAddr := fmt.Sprintf("%s:%s", urlPayload.ParsedUrl.Host, altPort)
+
+		returnAddr := ""
+		if addr == expectedAddr {
+			returnAddr = fmt.Sprintf("%s:%s", urlPayload.Address.String(), expectedPort)
+		} else if addr == altAddr && altPort != "" {
+			returnAddr = fmt.Sprintf("%s:%s", urlPayload.Address.String(), altPort)
+		}
+
+		if returnAddr != "" {
+			return dialer.DialContext(ctx, network, returnAddr)
+		}
+
+		return nil, errors.New("unexpected host: not safe to complete request")
+	}
+
 	if config.Get().UrlPreviews.UnsafeCertificates {
 		log.Warn("Ignoring any certificate errors while making request")
 		tr := &http.Transport{
+			DialContext:     dialContext,
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 			// Based on https://github.com/matrix-org/gomatrixserverlib/blob/51152a681e69a832efcd934b60080b92bc98b286/client.go#L74-L90
 			DialTLS: func(network, addr string) (net.Conn, error) {
@@ -109,8 +171,7 @@ func doHttpGet(urlStr string, log *logrus.Entry) (*http.Response, error) {
 				}
 				// Wrap a raw connection ourselves since tls.Dial defaults the SNI
 				conn := tls.Client(rawconn, &tls.Config{
-					ServerName: "",
-					// TODO: We should be checking that the TLS certificate we see here matches one of the allowed SHA-256 fingerprints for the server.
+					ServerName:         "",
 					InsecureSkipVerify: true,
 				})
 				if err := conn.Handshake(); err != nil {
@@ -126,10 +187,13 @@ func doHttpGet(urlStr string, log *logrus.Entry) (*http.Response, error) {
 	} else {
 		client = &http.Client{
 			Timeout: time.Duration(config.Get().TimeoutSeconds.UrlPreviews) * time.Second,
+			Transport: &http.Transport{
+				DialContext: dialContext,
+			},
 		}
 	}
 
-	req, err := http.NewRequest("GET", urlStr, nil)
+	req, err := http.NewRequest("GET", urlPayload.ParsedUrl.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -137,9 +201,9 @@ func doHttpGet(urlStr string, log *logrus.Entry) (*http.Response, error) {
 	return client.Do(req)
 }
 
-func downloadHtmlContent(urlStr string, log *logrus.Entry) (string, error) {
+func downloadHtmlContent(urlPayload *preview_types.UrlPayload, log *logrus.Entry) (string, error) {
 	log.Info("Fetching remote content...")
-	resp, err := doHttpGet(urlStr, log)
+	resp, err := doHttpGet(urlPayload, log)
 	if err != nil {
 		return "", err
 	}
@@ -169,16 +233,16 @@ func downloadHtmlContent(urlStr string, log *logrus.Entry) (string, error) {
 	contentType := resp.Header.Get("Content-Type")
 	for _, supportedType := range ogSupportedTypes {
 		if !glob.Glob(supportedType, contentType) {
-			return "", ErrPreviewUnsupported
+			return "", preview_types.ErrPreviewUnsupported
 		}
 	}
 
 	return html, nil
 }
 
-func downloadImage(imageUrl string, log *logrus.Entry) (*PreviewImage, error) {
-	log.Info("Getting image from " + imageUrl)
-	resp, err := doHttpGet(imageUrl, log)
+func downloadImage(urlPayload *preview_types.UrlPayload, log *logrus.Entry) (*preview_types.PreviewImage, error) {
+	log.Info("Getting image from " + urlPayload.ParsedUrl.String())
+	resp, err := doHttpGet(urlPayload, log)
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +251,7 @@ func downloadImage(imageUrl string, log *logrus.Entry) (*PreviewImage, error) {
 		return nil, errors.New("error during transfer")
 	}
 
-	image := &PreviewImage{
+	image := &preview_types.PreviewImage{
 		ContentType:         resp.Header.Get("Content-Type"),
 		Data:                resp.Body,
 		ContentLength:       resp.ContentLength,
