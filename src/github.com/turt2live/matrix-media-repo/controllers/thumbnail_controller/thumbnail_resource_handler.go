@@ -350,7 +350,7 @@ func svgToImage(media *types.Media, ctx context.Context, log *logrus.Entry) (ima
 		return nil, err
 	}
 
-	f, err := os.Open(tempFile1)
+	f, err := os.OpenFile(tempFile1, os.O_RDWR|os.O_CREATE, 0640)
 	if err != nil {
 		return nil, err
 	}
