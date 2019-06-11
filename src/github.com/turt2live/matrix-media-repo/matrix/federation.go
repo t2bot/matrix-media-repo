@@ -1,7 +1,6 @@
 package matrix
 
 import (
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -14,7 +13,6 @@ import (
 	"github.com/alioygur/is"
 	"github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/common/config"
 )
 
 var apiUrlCacheInstance *cache.Cache
@@ -156,39 +154,7 @@ func GetServerApiUrl(hostname string) (string, string, error) {
 }
 
 func FederatedGet(url string, realHost string) (*http.Response, error) {
-	// TODO: Support MSC1711 by relying on plain HTTPS requests to servers
 	logrus.Info("Doing federated GET to " + url + " with host " + realHost)
-	transport := &http.Transport{
-		// Based on https://github.com/matrix-org/gomatrixserverlib/blob/51152a681e69a832efcd934b60080b92bc98b286/client.go#L74-L90
-		DialTLS: func(network, addr string) (net.Conn, error) {
-			dialer := &net.Dialer{
-				Timeout: time.Duration(config.Get().TimeoutSeconds.Federation) * time.Second,
-			}
-			rawconn, err := dialer.Dial(network, addr)
-			if err != nil {
-				return nil, err
-			}
-			// Wrap a raw connection ourselves since tls.Dial defaults the SNI
-			// #125: Some servers require SNI, so we should try it first. Most things on the planet support it.
-			conn := tls.Client(rawconn, &tls.Config{
-				ServerName:         realHost,
-				InsecureSkipVerify: true,
-			})
-			if err := conn.Handshake(); err != nil {
-				logrus.Warn("Handshake failed due to ", err, ". Attempting handshake without SNI.");
-				// ...however there are reasons for some servers NOT supplying the correct ServerName, so fallback to not providing one.
-				conn := tls.Client(rawconn, &tls.Config{
-					ServerName:         "", // An empty ServerName means we will not try to verify it.
-					InsecureSkipVerify: true,
-				})
-				if err := conn.Handshake(); err != nil {
-					return nil, err;
-				}
-				return nil, err;
-			}
-			return conn, nil
-		},
-	}
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -200,7 +166,7 @@ func FederatedGet(url string, realHost string) (*http.Response, error) {
 	req.Header.Set("User-Agent", "matrix-media-repo")
 	req.Host = realHost
 
-	resp, err := transport.RoundTrip(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
