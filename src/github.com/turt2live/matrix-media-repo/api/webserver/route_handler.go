@@ -25,6 +25,7 @@ type handler struct {
 	h          func(r *http.Request, entry *logrus.Entry) interface{}
 	action     string
 	reqCounter *requestCounter
+	ignoreHost bool
 }
 
 func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -66,7 +67,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Process response
 	var res interface{} = api.AuthFailed()
-	if util.IsServerOurs(r.Host) {
+	if util.IsServerOurs(r.Host) || h.ignoreHost {
 		contextLog.Info("Server is owned by us, processing request")
 		metrics.HttpRequests.With(prometheus.Labels{
 			"host":   r.Host,

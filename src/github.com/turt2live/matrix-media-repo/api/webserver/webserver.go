@@ -25,22 +25,23 @@ func Init() {
 	rtr := mux.NewRouter()
 	counter := &requestCounter{}
 
-	optionsHandler := handler{api.EmptyResponseHandler, "options_request", counter}
-	uploadHandler := handler{api.AccessTokenRequiredRoute(r0.UploadMedia), "upload", counter}
-	downloadHandler := handler{api.AccessTokenOptionalRoute(r0.DownloadMedia), "download", counter}
-	thumbnailHandler := handler{api.AccessTokenOptionalRoute(r0.ThumbnailMedia), "thumbnail", counter}
-	previewUrlHandler := handler{api.AccessTokenRequiredRoute(r0.PreviewUrl), "url_preview", counter}
-	identiconHandler := handler{api.AccessTokenOptionalRoute(r0.Identicon), "identicon", counter}
-	purgeHandler := handler{api.RepoAdminRoute(custom.PurgeRemoteMedia), "purge_remote_media", counter}
-	quarantineHandler := handler{api.AccessTokenRequiredRoute(custom.QuarantineMedia), "quarantine_media", counter}
-	quarantineRoomHandler := handler{api.AccessTokenRequiredRoute(custom.QuarantineRoomMedia), "quarantine_room", counter}
-	localCopyHandler := handler{api.AccessTokenRequiredRoute(unstable.LocalCopy), "local_copy", counter}
-	infoHandler := handler{api.AccessTokenRequiredRoute(unstable.MediaInfo), "info", counter}
-	configHandler := handler{api.AccessTokenRequiredRoute(r0.PublicConfig), "config", counter}
-	storageEstimateHandler := handler{api.RepoAdminRoute(custom.GetDatastoreStorageEstimate), "get_storage_estimate", counter}
-	datastoreListHandler := handler{api.RepoAdminRoute(custom.GetDatastores), "list_datastores", counter}
-	dsTransferHandler := handler{api.RepoAdminRoute(custom.MigrateBetweenDatastores), "datastore_transfer", counter}
-	fedTestHandler := handler{api.RepoAdminRoute(custom.GetFederationInfo), "federation_test", counter}
+	optionsHandler := handler{api.EmptyResponseHandler, "options_request", counter, false}
+	uploadHandler := handler{api.AccessTokenRequiredRoute(r0.UploadMedia), "upload", counter, false}
+	downloadHandler := handler{api.AccessTokenOptionalRoute(r0.DownloadMedia), "download", counter, false}
+	thumbnailHandler := handler{api.AccessTokenOptionalRoute(r0.ThumbnailMedia), "thumbnail", counter, false}
+	previewUrlHandler := handler{api.AccessTokenRequiredRoute(r0.PreviewUrl), "url_preview", counter, false}
+	identiconHandler := handler{api.AccessTokenOptionalRoute(r0.Identicon), "identicon", counter, false}
+	purgeHandler := handler{api.RepoAdminRoute(custom.PurgeRemoteMedia), "purge_remote_media", counter, false}
+	quarantineHandler := handler{api.AccessTokenRequiredRoute(custom.QuarantineMedia), "quarantine_media", counter, false}
+	quarantineRoomHandler := handler{api.AccessTokenRequiredRoute(custom.QuarantineRoomMedia), "quarantine_room", counter, false}
+	localCopyHandler := handler{api.AccessTokenRequiredRoute(unstable.LocalCopy), "local_copy", counter, false}
+	infoHandler := handler{api.AccessTokenRequiredRoute(unstable.MediaInfo), "info", counter, false}
+	configHandler := handler{api.AccessTokenRequiredRoute(r0.PublicConfig), "config", counter, false}
+	storageEstimateHandler := handler{api.RepoAdminRoute(custom.GetDatastoreStorageEstimate), "get_storage_estimate", counter, false}
+	datastoreListHandler := handler{api.RepoAdminRoute(custom.GetDatastores), "list_datastores", counter, false}
+	dsTransferHandler := handler{api.RepoAdminRoute(custom.MigrateBetweenDatastores), "datastore_transfer", counter, false}
+	fedTestHandler := handler{api.RepoAdminRoute(custom.GetFederationInfo), "federation_test", counter, false}
+	healthzHandler := handler{api.AccessTokenOptionalRoute(custom.GetHealthz), "healthz", counter, true}
 
 	routes := make(map[string]route)
 	versions := []string{"r0", "v1", "unstable"} // r0 is typically clients and v1 is typically servers. v1 is deprecated.
@@ -84,8 +85,11 @@ func Init() {
 		rtr.Handle(routePath+"/", optionsHandler).Methods("OPTIONS")
 	}
 
-	rtr.NotFoundHandler = handler{api.NotFoundHandler, "not_found", counter}
-	rtr.MethodNotAllowedHandler = handler{api.MethodNotAllowedHandler, "method_not_allowed", counter}
+	// Health check endpoints
+	rtr.Handle("/healthz", healthzHandler).Methods("OPTIONS", "GET")
+
+	rtr.NotFoundHandler = handler{api.NotFoundHandler, "not_found", counter, true}
+	rtr.MethodNotAllowedHandler = handler{api.MethodNotAllowedHandler, "method_not_allowed", counter, true}
 
 	var handler http.Handler = rtr
 	if config.Get().RateLimit.Enabled {
