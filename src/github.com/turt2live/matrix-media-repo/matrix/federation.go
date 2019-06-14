@@ -165,6 +165,7 @@ func FederatedGet(url string, realHost string) (*http.Response, error) {
 	req.Header.Set("Host", realHost)
 	req.Header.Set("User-Agent", "matrix-media-repo")
 	req.Host = realHost
+	req.URL.Host = realHost // For SNI/TLS to work
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
