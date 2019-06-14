@@ -40,6 +40,7 @@ func Init() {
 	storageEstimateHandler := handler{api.RepoAdminRoute(custom.GetDatastoreStorageEstimate), "get_storage_estimate", counter}
 	datastoreListHandler := handler{api.RepoAdminRoute(custom.GetDatastores), "list_datastores", counter}
 	dsTransferHandler := handler{api.RepoAdminRoute(custom.MigrateBetweenDatastores), "datastore_transfer", counter}
+	fedTestHandler := handler{api.RepoAdminRoute(custom.GetFederationInfo), "federation_test", counter}
 
 	routes := make(map[string]route)
 	versions := []string{"r0", "v1", "unstable"} // r0 is typically clients and v1 is typically servers. v1 is deprecated.
@@ -61,6 +62,7 @@ func Init() {
 		routes["/_matrix/media/"+version+"/admin/datastores/{datastoreId:[^/]+}/size_estimate"] = route{"GET", storageEstimateHandler}
 		routes["/_matrix/media/"+version+"/admin/datastores"] = route{"GET", datastoreListHandler}
 		routes["/_matrix/media/"+version+"/admin/datastores/{sourceDsId:[^/]+}/transfer_to/{targetDsId:[^/]+}"] = route{"POST", dsTransferHandler}
+		routes["/_matrix/media/"+version+"/admin/federation/test/{serverName:[a-zA-Z0-9.:\\-_]+}"] = route{"GET", fedTestHandler}
 
 		// Routes that we should handle but aren't in the media namespace (synapse compat)
 		routes["/_matrix/client/"+version+"/admin/purge_media_cache"] = route{"POST", purgeHandler}
