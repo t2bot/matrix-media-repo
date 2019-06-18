@@ -1,6 +1,7 @@
 package matrix
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -165,9 +166,25 @@ func FederatedGet(url string, realHost string) (*http.Response, error) {
 	req.Header.Set("Host", realHost)
 	req.Header.Set("User-Agent", "matrix-media-repo")
 	req.Host = realHost
-	req.URL.Host = realHost // For SNI/TLS to work
 
-	resp, err := http.DefaultClient.Do(req)
+	logrus.Info(req.URL.String())
+
+	// This is how we verify the certificate is valid for the host we expect.
+	// Previously using `req.URL.Host` we'd end up changing which server we were
+	// connecting to (ie: matrix.org instead of matrix.org.cdn.cloudflare.net),
+	// which obviously doesn't help us. We needed to do that though because the
+	// HTTP client doesn't verify against the req.Host certificate, but it does
+	// handle it off the req.URL.Host. So, we need to tell it which certificate
+	// to verify.
+	client := http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				ServerName: realHost,
+			},
+		},
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
