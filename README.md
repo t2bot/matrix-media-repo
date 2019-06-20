@@ -9,35 +9,20 @@ Designed for environments with multiple homeservers, matrix-media-repo de-duplic
 
 # Installing
 
-Assuming Go 1.9 is already installed on your PATH:
+Assuming Go 1.11+ is already installed on your PATH:
 ```bash
 # Get it
 git clone https://github.com/turt2live/matrix-media-repo
 cd matrix-media-repo
 
-# Set up the build tools
-currentDir=$(pwd)
-export GOPATH="$currentDir/vendor/src:$currentDir/vendor:$currentDir:"$GOPATH
-go get github.com/constabulary/gb/...
-export PATH=$PATH":$currentDir/vendor/bin:$currentDir/vendor/src/bin"
-
 # Build it
-gb vendor restore
-gb build
+./build.sh
 
 # Configure it (edit media-repo.yaml to meet your needs)
 cp config.sample.yaml media-repo.yaml
 
 # Run it
 bin/media_repo
-```
-
-### Installing in Alpine Linux
-
-The steps are almost the same as above. The only difference is that `gb build` will not work, so instead use the following lines:
-```bash
-go build -o bin/media_repo ./src/github.com/turt2live/matrix-media-repo/cmd/media_repo/
-go build -o bin/import_synapse ./src/github.com/turt2live/matrix-media-repo/cmd/import_synapse/
 ```
 
 # Deployment
@@ -128,7 +113,7 @@ listeners:
 
 Media is imported by connecting to your synapse database and downloading all the content from the homeserver. This is so you have a backup of the media repository still with synapse. **Do not point traffic at the media repo until after the import is complete.**
 
-1. Build the media repo
+1. Build the media repo (as stated above)
 2. Configure the `media-repo.yaml`
 3. Run `bin/import_synapse`. The usage is below. 
     ```
