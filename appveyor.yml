@@ -23,6 +23,7 @@ install:
 
 build_script:
   - set GOBIN=%CD%/bin
+  - set GO111MODULE=on
   - go install -v ./cmd/...
 
 artifacts:
