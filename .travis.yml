@@ -1,9 +1,5 @@
 language: go
 go:
-  - 1.9
-before_install:
-  - go get github.com/constabulary/gb/...
-install:
-  - gb vendor restore
+  - 1.11
 script:
-  - gb build all
+  - ./build.sh

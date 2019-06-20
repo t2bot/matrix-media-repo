@@ -4,7 +4,7 @@ clone_folder: c:\gopath\src\github.com\turt2live\matrix-media-repo
 
 environment:
   GOPATH: c:\gopath
-  GOVERSION: 1.9
+  GOVERSION: 1.11
   
 branches:
   only: [master, develop]
@@ -20,11 +20,9 @@ install:
   - set PATH=c:\go\bin;c:\gopath\bin;%PATH%
   - go version
   - go env
-  - go get github.com/constabulary/gb/...
-  - gb vendor restore
 
 build_script:
-  - gb build all
+  - GOBIN=$PWD/`dirname $0`/bin go install -v ./cmd/...
 
 artifacts:
   - path: bin/media_repo.exe

@@ -7,14 +7,8 @@ jobs:
     steps:
       - checkout
       - run: 
-          name: get gb
-          command: 'go get github.com/constabulary/gb/...'
-      - run: 
-          name: restore vendor packages
-          command: 'gb vendor restore'
-      - run: 
-          name: gb build
-          command: 'gb build all'
+          name: build binaries
+          command: 'GOBIN=$PWD/`dirname $0`/bin go install -v ./cmd/...'
       - store_artifacts:
           path: bin/media_repo
           destination: media_repo
@@ -29,14 +23,8 @@ jobs:
 #      # Build the project
 #      - checkout
 #      - run:
-#          name: get gb
-#          command: 'go get github.com/constabulary/gb/...'
-#      - run:
-#          name: restore vendor packages
-#          command: 'gb vendor restore'
-#      - run:
-#          name: gb build
-#          command: 'gb build all'
+#          name: build binaries
+#          command: 'GOBIN=$PWD/`dirname $0`/bin go install -v ./cmd/...'
 #      # Install sytest
 #      - run:
 #          name: go to sytest
