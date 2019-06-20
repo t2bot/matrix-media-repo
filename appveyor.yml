@@ -22,7 +22,8 @@ install:
   - go env
 
 build_script:
-  - GOBIN=$PWD/`dirname $0`/bin go install -v ./cmd/...
+  - set GOBIN=%CD%/bin
+  - go install -v ./cmd/...
 
 artifacts:
   - path: bin/media_repo.exe
