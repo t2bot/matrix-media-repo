@@ -9,7 +9,7 @@ Designed for environments with multiple homeservers, matrix-media-repo de-duplic
 
 # Installing
 
-Assuming Go 1.11+ is already installed on your PATH:
+Assuming Go 1.12+ is already installed on your PATH:
 ```bash
 # Get it
 git clone https://github.com/turt2live/matrix-media-repo

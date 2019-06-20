@@ -4,7 +4,7 @@ clone_folder: c:\gopath\src\github.com\turt2live\matrix-media-repo
 
 environment:
   GOPATH: c:\gopath
-  GOVERSION: 1.11
+  GOVERSION: 1.12
   
 branches:
   only: [master, develop]
