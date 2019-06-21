@@ -12,6 +12,16 @@ database:
   # Currently only "postgres" is supported.
   postgres: "postgres://your_username:your_password@localhost/database_name?sslmode=disable"
 
+  # The database pooling options
+  pool:
+    # The maximum number of connects to hold open. More of these allow for more concurrent
+    # processes to happen.
+    maxConnections: 25
+
+    # The maximum number of connects to leave idle. More of these reduces the time it takes
+    # to serve requests in low-traffic scenarios.
+    maxIdleConnections: 5
+
 # The configuration for the homeservers this media repository is known to control. Servers
 # not listed here will not be able to upload media.
 homeservers:

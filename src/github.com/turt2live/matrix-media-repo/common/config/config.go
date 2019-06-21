@@ -27,8 +27,14 @@ type GeneralConfig struct {
 	LogDirectory string `yaml:"logDirectory"`
 }
 
+type DbPoolConfig struct {
+	MaxConnections int `yaml:"maxConnections"`
+	MaxIdle        int `yaml:"maxIdleConnections"`
+}
+
 type DatabaseConfig struct {
-	Postgres string `yaml:"postgres"`
+	Postgres string        `yaml:"postgres"`
+	Pool     *DbPoolConfig `yaml:"pool"`
 }
 
 type UploadsConfig struct {
@@ -209,6 +215,10 @@ func NewDefaultConfig() *MediaRepoConfig {
 		},
 		Database: &DatabaseConfig{
 			Postgres: "postgres://your_username:your_password@localhost/database_name?sslmode=disable",
+			Pool: &DbPoolConfig{
+				MaxConnections: 25,
+				MaxIdle:        5,
+			},
 		},
 		Homeservers: []*HomeserverConfig{},
 		Admins:      []string{},
