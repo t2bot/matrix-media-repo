@@ -30,7 +30,10 @@ var singletonDbLock = &sync.Once{}
 func GetDatabase() *Database {
 	if dbInstance == nil {
 		singletonDbLock.Do(func() {
-			err := OpenDatabase(config.Get().Database.Postgres)
+			err := OpenDatabase(
+				config.Get().Database.Postgres,
+				config.Get().Database.Pool.MaxConnections,
+				config.Get().Database.Pool.MaxIdle)
 			if err != nil {
 				panic(err)
 			}
@@ -39,13 +42,15 @@ func GetDatabase() *Database {
 	return dbInstance
 }
 
-func OpenDatabase(connectionString string) error {
+func OpenDatabase(connectionString string, maxConns int, maxIdleConns int) error {
 	d := &Database{}
 	var err error
 
 	if d.db, err = sql.Open("postgres", connectionString); err != nil {
 		return err
 	}
+	d.db.SetMaxOpenConns(maxConns)
+	d.db.SetMaxIdleConns(maxIdleConns)
 
 	// Make sure the database is how we want it
 	migrator, err := gomigrate.NewMigratorWithLogger(d.db, gomigrate.Postgres{}, config.Runtime.MigrationsPath, logrus.StandardLogger())
