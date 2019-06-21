@@ -19,6 +19,11 @@ import (
 var apiUrlCacheInstance *cache.Cache
 var apiUrlSingletonLock = &sync.Once{}
 
+type cachedServer struct {
+	url      string
+	hostname string
+}
+
 func setupCache() {
 	if apiUrlCacheInstance == nil {
 		apiUrlSingletonLock.Do(func() {
@@ -34,9 +39,9 @@ func GetServerApiUrl(hostname string) (string, string, error) {
 	setupCache()
 	record, found := apiUrlCacheInstance.Get(hostname)
 	if found {
-		url := record.(string)
-		logrus.Info("Server API URL for " + hostname + " is " + url + " (cache)")
-		return url, hostname, nil
+		server := record.(cachedServer)
+		logrus.Info("Server API URL for " + hostname + " is " + server.url + " (cache)")
+		return server.url, server.hostname, nil
 	}
 
 	h, p, err := net.SplitHostPort(hostname)
@@ -53,7 +58,8 @@ func GetServerApiUrl(hostname string) (string, string, error) {
 	logrus.Debug("Testing if " + h + " is an IP address")
 	if is.IP(h) {
 		url := fmt.Sprintf("https://%s:%s", h, p)
-		apiUrlCacheInstance.Set(hostname, url, cache.DefaultExpiration)
+		server := cachedServer{url, hostname}
+		apiUrlCacheInstance.Set(hostname, server, cache.DefaultExpiration)
 		logrus.Info("Server API URL for " + hostname + " is " + url + " (IP address)")
 		return url, hostname, nil
 	}
@@ -62,7 +68,8 @@ func GetServerApiUrl(hostname string) (string, string, error) {
 	logrus.Debug("Testing if a default port was used. Using default = ", defPort)
 	if !defPort {
 		url := fmt.Sprintf("https://%s:%s", h, p)
-		apiUrlCacheInstance.Set(hostname, url, cache.DefaultExpiration)
+		server := cachedServer{url, h}
+		apiUrlCacheInstance.Set(hostname, server, cache.DefaultExpiration)
 		logrus.Info("Server API URL for " + hostname + " is " + url + " (explicit port)")
 		return url, h, nil
 	}
@@ -89,7 +96,8 @@ func GetServerApiUrl(hostname string) (string, string, error) {
 					logrus.Debug("Checking if WK host is an IP: " + wkHost)
 					if is.IP(wkHost) {
 						url := fmt.Sprintf("https://%s:%s", wkHost, wkPort)
-						apiUrlCacheInstance.Set(hostname, url, cache.DefaultExpiration)
+						server := cachedServer{url, wk.ServerAddr}
+						apiUrlCacheInstance.Set(hostname, server, cache.DefaultExpiration)
 						logrus.Info("Server API URL for " + hostname + " is " + url + " (WK; IP address)")
 						return url, wk.ServerAddr, nil
 					}
@@ -98,7 +106,8 @@ func GetServerApiUrl(hostname string) (string, string, error) {
 					logrus.Debug("Checking if WK is using default port? ", wkDefPort)
 					if !wkDefPort {
 						url := fmt.Sprintf("https://%s:%s", wkHost, wkPort)
-						apiUrlCacheInstance.Set(hostname, url, cache.DefaultExpiration)
+						server := cachedServer{url, wkHost}
+						apiUrlCacheInstance.Set(hostname, server, cache.DefaultExpiration)
 						logrus.Info("Server API URL for " + hostname + " is " + url + " (WK; explicit port)")
 						return url, wkHost, nil
 					}
@@ -114,7 +123,8 @@ func GetServerApiUrl(hostname string) (string, string, error) {
 							realAddr = realAddr[0 : len(realAddr)-1]
 						}
 						url := fmt.Sprintf("https://%s:%d", realAddr, addrs[0].Port)
-						apiUrlCacheInstance.Set(hostname, url, cache.DefaultExpiration)
+						server := cachedServer{url, wkHost}
+						apiUrlCacheInstance.Set(hostname, server, cache.DefaultExpiration)
 						logrus.Info("Server API URL for " + hostname + " is " + url + " (WK; SRV)")
 						return url, wkHost, nil
 					}
@@ -122,7 +132,8 @@ func GetServerApiUrl(hostname string) (string, string, error) {
 					// Step 3d: use the delegated host as-is
 					logrus.Debug("Using .well-known as-is for ", wkHost)
 					url := fmt.Sprintf("https://%s:%s", wkHost, wkPort)
-					apiUrlCacheInstance.Set(hostname, url, cache.DefaultExpiration)
+					server := cachedServer{url, wkHost}
+					apiUrlCacheInstance.Set(hostname, server, cache.DefaultExpiration)
 					logrus.Info("Server API URL for " + hostname + " is " + url + " (WK; fallback)")
 					return url, wkHost, nil
 				}
@@ -141,7 +152,8 @@ func GetServerApiUrl(hostname string) (string, string, error) {
 			realAddr = realAddr[0 : len(realAddr)-1]
 		}
 		url := fmt.Sprintf("https://%s:%d", realAddr, addrs[0].Port)
-		apiUrlCacheInstance.Set(hostname, url, cache.DefaultExpiration)
+		server := cachedServer{url, h}
+		apiUrlCacheInstance.Set(hostname, server, cache.DefaultExpiration)
 		logrus.Info("Server API URL for " + hostname + " is " + url + " (SRV)")
 		return url, h, nil
 	}
@@ -149,7 +161,8 @@ func GetServerApiUrl(hostname string) (string, string, error) {
 	// Step 5: use the target host as-is
 	logrus.Debug("Using host as-is: ", hostname)
 	url := fmt.Sprintf("https://%s:%s", h, p)
-	apiUrlCacheInstance.Set(hostname, url, cache.DefaultExpiration)
+	server := cachedServer{url, h}
+	apiUrlCacheInstance.Set(hostname, server, cache.DefaultExpiration)
 	logrus.Info("Server API URL for " + hostname + " is " + url + " (fallback)")
 	return url, h, nil
 }
