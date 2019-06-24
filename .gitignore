@@ -2,6 +2,7 @@
 /bin
 /pkg
 /logs
+/vendor
 
 media-repo*.yaml
 homeserver.yaml
