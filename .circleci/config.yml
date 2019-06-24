@@ -43,8 +43,8 @@ workflows:
   version: 2
   build_and_test:
     jobs:
+      #- sytest  # https://github.com/turt2live/matrix-media-repo/issues/117
       - build:
           filters:
             branches:
               only: [master, develop]
-#     - sytest
