@@ -7,12 +7,18 @@ const target = "http://localhost:8001";
 
 const requestTimes = [];
 let failed = 0;
+let corrupted = 0;
 
 async function thumbnailDefaults(mxc) {
     const start = (new Date()).getTime();
 
-    // Use default arguments
-    await request(`${target}/_matrix/media/r0/thumbnail/${mxc.substring("mxc://".length)}`);
+    const result = Buffer.from(await request(`${target}/_matrix/media/r0/thumbnail/${mxc.substring("mxc://".length)}?width=800&height=600&method=crop&animated=false`, {encoding: null}));
+    const expectedResult = fs.readFileSync("expected_thumbnails/" + mxc.substring("mxc://".length).replace(/\//, '_') + ".png");
+
+    if (Buffer.compare(result, expectedResult) !== 0) {
+        console.warn("Unexpected corruption!");
+        corrupted++;
+    }
 
     return (new Date()).getTime() - start;
 }
@@ -39,6 +45,7 @@ Promise.all(promises).then(() => {
 
     const obj = {
         failed,
+        corrupted,
         requestTimes,
         min: Math.min(...requestTimes),
         max: Math.max(...requestTimes),
