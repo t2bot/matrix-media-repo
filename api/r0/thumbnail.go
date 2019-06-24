@@ -2,6 +2,7 @@ package r0
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/controllers/thumbnail_controller"
+	"github.com/turt2live/matrix-media-repo/types"
 	"golang.org/x/sync/singleflight"
 )
 
@@ -93,12 +95,7 @@ func ThumbnailMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) inter
 			return api.InternalServerError("Unexpected Error"), nil
 		}
 
-		return &DownloadMediaResponse{
-			ContentType: streamedThumbnail.Thumbnail.ContentType,
-			SizeBytes:   streamedThumbnail.Thumbnail.SizeBytes,
-			Data:        streamedThumbnail.Stream,
-			Filename:    "thumbnail",
-		}, nil
+		return streamedThumbnail, nil
 	})
 
 	if err != nil {
@@ -106,9 +103,16 @@ func ThumbnailMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) inter
 		return api.InternalServerError("Unexpected Error")
 	}
 
+	rv := v.(*types.StreamedThumbnail)
+
 	if shared {
 		log.Info("Request response was shared")
 	}
 
-	return v
+	return &DownloadMediaResponse{
+		ContentType: rv.Thumbnail.ContentType,
+		SizeBytes:   rv.Thumbnail.SizeBytes,
+		Data:        ioutil.NopCloser(rv.Stream.GetReader()),
+		Filename:    "thumbnail",
+	}
 }

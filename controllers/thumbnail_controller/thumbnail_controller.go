@@ -73,7 +73,7 @@ func GetThumbnail(origin string, mediaId string, desiredWidth int, desiredHeight
 			data := &bytes.Buffer{}
 			imaging.Encode(data, img, imaging.PNG)
 			return &types.StreamedThumbnail{
-				Stream: util.BufferToStream(data),
+				Stream: util.NewManyReader(util.BufferToStream(data)),
 				Thumbnail: &types.Thumbnail{
 					// We lie about the details to ensure we keep our contract
 					Width:       img.Bounds().Max.X,
@@ -161,7 +161,7 @@ func GetThumbnail(origin string, mediaId string, desiredWidth int, desiredHeight
 	if cached != nil && cached.Contents != nil {
 		return &types.StreamedThumbnail{
 			Thumbnail: thumbnail,
-			Stream:    util.BufferToStream(cached.Contents),
+			Stream:    util.NewManyReader(util.BufferToStream(cached.Contents)),
 		}, nil
 	}
 
@@ -171,7 +171,7 @@ func GetThumbnail(origin string, mediaId string, desiredWidth int, desiredHeight
 		return nil, err
 	}
 
-	return &types.StreamedThumbnail{Thumbnail: thumbnail, Stream: mediaStream}, nil
+	return &types.StreamedThumbnail{Thumbnail: thumbnail, Stream: util.NewManyReader(mediaStream)}, nil
 }
 
 func GetOrGenerateThumbnail(media *types.Media, width int, height int, animated bool, method string, ctx context.Context, log *logrus.Entry) (*types.Thumbnail, error) {
