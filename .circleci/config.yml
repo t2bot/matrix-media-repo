@@ -2,19 +2,13 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.9
+      - image: circleci/golang:1.12
     working_directory: /go/src/github.com/turt2live/matrix-media-repo
     steps:
       - checkout
       - run: 
-          name: get gb
-          command: 'go get github.com/constabulary/gb/...'
-      - run: 
-          name: restore vendor packages
-          command: 'gb vendor restore'
-      - run: 
-          name: gb build
-          command: 'gb build all'
+          name: build binaries
+          command: 'GOBIN=$PWD/`dirname $0`/bin go install -v ./cmd/...'
       - store_artifacts:
           path: bin/media_repo
           destination: media_repo
@@ -23,20 +17,14 @@ jobs:
           destination: import_synapse
 #  sytest:
 #    docker:
-#      - image: circleci/golang:1.9
+#      - image: circleci/golang:1.12
 #    working_directory: /go/src/github.com/turt2live/matrix-media-repo
 #    steps:
 #      # Build the project
 #      - checkout
 #      - run:
-#          name: get gb
-#          command: 'go get github.com/constabulary/gb/...'
-#      - run:
-#          name: restore vendor packages
-#          command: 'gb vendor restore'
-#      - run:
-#          name: gb build
-#          command: 'gb build all'
+#          name: build binaries
+#          command: 'GOBIN=$PWD/`dirname $0`/bin go install -v ./cmd/...'
 #      # Install sytest
 #      - run:
 #          name: go to sytest
@@ -59,4 +47,4 @@ workflows:
           filters:
             branches:
               only: [master, develop]
-      - sytest
+#     - sytest

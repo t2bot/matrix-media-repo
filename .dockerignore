@@ -6,9 +6,6 @@
 media-repo*.yaml
 homeserver.yaml
 
-vendor/pkg
-vendor/src
-
 # Binaries for programs and plugins
 *.exe
 *.dll
