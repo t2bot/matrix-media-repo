@@ -111,6 +111,14 @@ func Init() {
 	httpMux := http.NewServeMux()
 	httpMux.Handle("/", handler)
 
+	// pprof endpoints
+	//httpMux.HandleFunc("/debug/pprof", pprof.Index)
+	//httpMux.HandleFunc("/debug/pprof/heap", pprof.Index)
+	//httpMux.HandleFunc("/debug/pprof/allocs", pprof.Index)
+	//httpMux.HandleFunc("/debug/pprof/block", pprof.Index)
+	//httpMux.HandleFunc("/debug/pprof/profile", pprof.Index)
+	//httpMux.HandleFunc("/debug/pprof/trace", pprof.Index)
+
 	logrus.WithField("address", address).Info("Started up. Listening at http://" + address)
 	logrus.Fatal(http.ListenAndServe(address, httpMux))
 }
