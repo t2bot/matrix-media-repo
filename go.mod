@@ -46,6 +46,7 @@ require (
 	golang.org/x/crypto v0.0.0-20190131182504-b8fe1690c613
 	golang.org/x/image v0.0.0-20171214225156-12117c17ca67
 	golang.org/x/net v0.0.0-20190125091013-d26f9f9a57f3
+	golang.org/x/sync v0.0.0-20181108010431-42b317875d0f
 	golang.org/x/sys v0.0.0-20190203050204-7ae0202eb74c
 	golang.org/x/text v0.3.0
 	golang.org/x/time v0.0.0-20170927054726-6dc17368e09b
