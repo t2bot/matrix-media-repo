@@ -288,7 +288,7 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 	if err != nil {
 		return nil, err
 	}
-	info, err := ds.UploadFile(util.BufferToStream(imgData), ctx, log)
+	info, err := ds.UploadFile(util.BufferToStream(imgData), int64(len(imgData.Bytes())), ctx, log)
 	if err != nil {
 		log.Error("Unexpected error saving thumbnail: " + err.Error())
 		return nil, err

@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"io/ioutil"
+	"os"
 	"strconv"
 
 	"github.com/minio/minio-go"
@@ -17,10 +18,11 @@ import (
 var stores = make(map[string]*s3Datastore)
 
 type s3Datastore struct {
-	conf   config.DatastoreConfig
-	dsId   string
-	client *minio.Client
-	bucket string
+	conf     config.DatastoreConfig
+	dsId     string
+	client   *minio.Client
+	bucket   string
+	tempPath string
 }
 
 func GetOrCreateS3Datastore(dsId string, conf config.DatastoreConfig) (*s3Datastore, error) {
@@ -32,8 +34,12 @@ func GetOrCreateS3Datastore(dsId string, conf config.DatastoreConfig) (*s3Datast
 	bucket, bucketFound := conf.Options["bucketName"]
 	accessKeyId, keyFound := conf.Options["accessKeyId"]
 	accessSecret, secretFound := conf.Options["accessSecret"]
+	tempPath, tempPathFound := conf.Options["tempPath"]
 	if !epFound || !bucketFound || !keyFound || !secretFound {
 		return nil, errors.New("invalid configuration: missing s3 options")
+	}
+	if !tempPathFound {
+		logrus.Warn("Datastore ", dsId, " (s3) does not have a tempPath set - this could lead to excessive memory usage by the media repo")
 	}
 
 	useSsl := true
@@ -48,10 +54,11 @@ func GetOrCreateS3Datastore(dsId string, conf config.DatastoreConfig) (*s3Datast
 	}
 
 	s3ds := &s3Datastore{
-		conf:   conf,
-		dsId:   dsId,
-		client: s3client,
-		bucket: bucket,
+		conf:     conf,
+		dsId:     dsId,
+		client:   s3client,
+		bucket:   bucket,
+		tempPath: tempPath,
 	}
 	stores[dsId] = s3ds
 	return s3ds, nil
@@ -68,7 +75,7 @@ func (s *s3Datastore) EnsureBucketExists() error {
 	return nil
 }
 
-func (s *s3Datastore) UploadFile(file io.ReadCloser, ctx context.Context, log *logrus.Entry) (*types.ObjectInfo, error) {
+func (s *s3Datastore) UploadFile(file io.ReadCloser, expectedLength int64, ctx context.Context, log *logrus.Entry) (*types.ObjectInfo, error) {
 	defer file.Close()
 
 	objectName, err := util.GenerateRandomString(512)
@@ -76,7 +83,9 @@ func (s *s3Datastore) UploadFile(file io.ReadCloser, ctx context.Context, log *l
 		return nil, err
 	}
 
-	rs3, ws3 := io.Pipe()
+	var rs3 io.ReadCloser
+	var ws3 io.WriteCloser
+	rs3, ws3 = io.Pipe()
 	tr := io.TeeReader(file, ws3)
 
 	done := make(chan bool)
@@ -96,8 +105,26 @@ func (s *s3Datastore) UploadFile(file io.ReadCloser, ctx context.Context, log *l
 	}()
 
 	go func() {
+		if expectedLength <= 0 {
+			if s.tempPath != "" {
+				log.Info("Buffering file to temp path due to unknown file size")
+				var f *os.File
+				f, uploadErr = ioutil.TempFile(s.tempPath, "mr*")
+				if uploadErr != nil {
+					io.Copy(ioutil.Discard, rs3)
+					done <- true
+					return
+				}
+				expectedLength, uploadErr = io.Copy(f, rs3)
+				rs3 = f
+				defer f.Close()
+			} else {
+				log.Warn("Uploading content of unknown length to s3 - this could result in high memory usage")
+				expectedLength = -1
+			}
+		}
 		log.Info("Uploading file...")
-		sizeBytes, uploadErr = s.client.PutObjectWithContext(ctx, s.bucket, objectName, rs3, -1, minio.PutObjectOptions{})
+		sizeBytes, uploadErr = s.client.PutObjectWithContext(ctx, s.bucket, objectName, rs3, expectedLength, minio.PutObjectOptions{})
 		log.Info("Uploaded ", sizeBytes, " bytes to s3")
 		done <- true
 	}()

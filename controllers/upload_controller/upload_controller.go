@@ -59,7 +59,24 @@ func IsRequestTooSmall(contentLength int64, contentLengthHeader string) bool {
 	return false // We can only assume
 }
 
-func UploadMedia(contents io.ReadCloser, contentType string, filename string, userId string, origin string, ctx context.Context, log *logrus.Entry) (*types.Media, error) {
+func EstimateContentLength(contentLength int64, contentLengthHeader string) int64 {
+	if contentLength >= 0 {
+		return contentLength
+	}
+	if contentLengthHeader != "" {
+		parsed, err := strconv.ParseInt(contentLengthHeader, 10, 64)
+		if err != nil {
+			logrus.Warn("Invalid content length header given. Value received: " + contentLengthHeader)
+			return -1 // unknown
+		}
+
+		return parsed
+	}
+
+	return -1 // unknown
+}
+
+func UploadMedia(contents io.ReadCloser, contentLength int64, contentType string, filename string, userId string, origin string, ctx context.Context, log *logrus.Entry) (*types.Media, error) {
 	defer contents.Close()
 
 	var data io.ReadCloser
@@ -74,7 +91,7 @@ func UploadMedia(contents io.ReadCloser, contentType string, filename string, us
 		return nil, err
 	}
 
-	return StoreDirect(data, contentType, filename, userId, origin, mediaId, ctx, log)
+	return StoreDirect(data, contentLength, contentType, filename, userId, origin, mediaId, ctx, log)
 }
 
 func trackUploadAsLastAccess(ctx context.Context, log *logrus.Entry, media *types.Media) {
@@ -127,12 +144,12 @@ func IsAllowed(contentType string, reportedContentType string, userId string, lo
 	return allowed
 }
 
-func StoreDirect(contents io.ReadCloser, contentType string, filename string, userId string, origin string, mediaId string, ctx context.Context, log *logrus.Entry) (*types.Media, error) {
+func StoreDirect(contents io.ReadCloser, expectedSize int64, contentType string, filename string, userId string, origin string, mediaId string, ctx context.Context, log *logrus.Entry) (*types.Media, error) {
 	ds, err := datastore.PickDatastore(ctx, log)
 	if err != nil {
 		return nil, err
 	}
-	info, err := ds.UploadFile(contents, ctx, log)
+	info, err := ds.UploadFile(contents, expectedSize, ctx, log)
 	if err != nil {
 		return nil, err
 	}

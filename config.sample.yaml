@@ -50,6 +50,11 @@ datastores:
     enabled: false
     forUploads: false # Enable this to put uploads in s3
     opts:
+      # The s3 uploader needs a temporary location to buffer files to reduce memory usage on
+      # small file uploads. If the file size is unknown, the file is written to this location
+      # before being uploaded to s3 (then the file is deleted). If you aren't concerned about
+      # memory usage, set this to an empty string.
+      tempPath: "/tmp/mediarepo_s3_upload"
       endpoint: sfo2.digitaloceanspaces.com
       accessKeyId: ""
       accessSecret: ""

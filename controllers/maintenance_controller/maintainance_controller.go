@@ -31,7 +31,7 @@ func StartStorageMigration(sourceDs *datastore.DatastoreRef, targetDs *datastore
 					continue
 				}
 
-				newLocation, err := targetDs.UploadFile(sourceStream, ctx, log)
+				newLocation, err := targetDs.UploadFile(sourceStream, record.SizeBytes, ctx, log)
 				if err != nil {
 					log.Error(err)
 					log.Error("Failed to upload file to target datastore")
