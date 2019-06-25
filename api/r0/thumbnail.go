@@ -2,7 +2,6 @@ package r0
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 
@@ -13,10 +12,11 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/controllers/thumbnail_controller"
 	"github.com/turt2live/matrix-media-repo/types"
-	"golang.org/x/sync/singleflight"
+	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/singleflight-counter"
 )
 
-var thumbnailRequestGroup singleflight.Group
+var thumbnailRequestGroup singleflight_counter.Group
 
 func ThumbnailMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
 	params := mux.Vars(r)
@@ -83,7 +83,7 @@ func ThumbnailMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) inter
 
 	// TODO: Move this to a lower layer (somewhere where the thumbnail dimensions are known, before media is downloaded)
 	requestKey := fmt.Sprintf("thumbnail_%s_%s_%d_%d_%s_%t", server, mediaId, width, height, method, animated)
-	v, err, shared := thumbnailRequestGroup.Do(requestKey, func() (interface{}, error) {
+	v, count, err := thumbnailRequestGroup.Do(requestKey, func() (interface{}, error) {
 		streamedThumbnail, err := thumbnail_controller.GetThumbnail(server, mediaId, width, height, animated, method, downloadRemote, r.Context(), log)
 		if err != nil {
 			if err == common.ErrMediaNotFound {
@@ -96,6 +96,23 @@ func ThumbnailMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) inter
 		}
 
 		return streamedThumbnail, nil
+	}, func(v interface{}, count int, err error) []interface{} {
+		if err != nil {
+			return nil
+		}
+
+		rv := v.(*types.StreamedThumbnail)
+		vals := make([]interface{}, 0)
+		streams := util.CloneReader(rv.Stream, count)
+
+		for i := 0; i < count; i++ {
+			vals = append(vals, &types.StreamedThumbnail{
+				Thumbnail: rv.Thumbnail,
+				Stream:    streams[i],
+			})
+		}
+
+		return vals
 	})
 
 	if err != nil {
@@ -105,14 +122,14 @@ func ThumbnailMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) inter
 
 	rv := v.(*types.StreamedThumbnail)
 
-	if shared {
-		log.Info("Request response was shared")
+	if count > 0 {
+		log.Info("Request response was shared ", count, " times")
 	}
 
 	return &DownloadMediaResponse{
 		ContentType: rv.Thumbnail.ContentType,
 		SizeBytes:   rv.Thumbnail.SizeBytes,
-		Data:        ioutil.NopCloser(rv.Stream.GetReader()),
+		Data:        rv.Stream,
 		Filename:    "thumbnail",
 	}
 }

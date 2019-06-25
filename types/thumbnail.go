@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/turt2live/matrix-media-repo/util"
+	"io"
 )
 
 type Thumbnail struct {
@@ -21,5 +21,5 @@ type Thumbnail struct {
 
 type StreamedThumbnail struct {
 	Thumbnail *Thumbnail
-	Stream    *util.ManyReader
+	Stream    io.ReadCloser
 }
