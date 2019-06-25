@@ -35,7 +35,7 @@ func newDatastoreRef(ds *types.Datastore, config config.DatastoreConfig) *Datast
 	}
 }
 
-func (d *DatastoreRef) UploadFile(file io.ReadCloser, ctx context.Context, log *logrus.Entry) (*types.ObjectInfo, error) {
+func (d *DatastoreRef) UploadFile(file io.ReadCloser, expectedLength int64, ctx context.Context, log *logrus.Entry) (*types.ObjectInfo, error) {
 	log = log.WithFields(logrus.Fields{"datastoreId": d.DatastoreId, "datastoreUri": d.Uri})
 
 	if d.Type == "file" {
@@ -45,7 +45,7 @@ func (d *DatastoreRef) UploadFile(file io.ReadCloser, ctx context.Context, log *
 		if err != nil {
 			return nil, err
 		}
-		return s3.UploadFile(file, ctx, log)
+		return s3.UploadFile(file, expectedLength, ctx, log)
 	} else {
 		return nil, errors.New("unknown datastore type")
 	}
