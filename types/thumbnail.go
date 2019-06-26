@@ -1,6 +1,8 @@
 package types
 
-import "io"
+import (
+	"io"
+)
 
 type Thumbnail struct {
 	Origin      string
