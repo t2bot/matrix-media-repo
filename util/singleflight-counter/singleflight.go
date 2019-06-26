@@ -35,6 +35,12 @@ func (c *call) NextVal() interface{} {
 	return val
 }
 
+func (g *Group) DoWithoutPost(key string, fn func() (interface{}, error)) (interface{}, int, error) {
+	return g.Do(key, fn, func(v interface{}, total int, e error) []interface{} {
+		return nil
+	})
+}
+
 func (g *Group) Do(key string, fn func() (interface{}, error), postprocess func(v interface{}, total int, e error) []interface{}) (interface{}, int, error) {
 	g.mu.Lock()
 	if g.m == nil {

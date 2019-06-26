@@ -18,6 +18,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/common/globals"
 	"github.com/turt2live/matrix-media-repo/controllers/download_controller"
 	"github.com/turt2live/matrix-media-repo/internal_cache"
 	"github.com/turt2live/matrix-media-repo/storage"
@@ -108,8 +109,6 @@ func GetThumbnail(origin string, mediaId string, desiredWidth int, desiredHeight
 		return nil, common.ErrMediaTooLarge
 	}
 
-	db := storage.GetDatabase().GetThumbnailStore(ctx, log)
-
 	width, height, method, err := pickThumbnailDimensions(desiredWidth, desiredHeight, method)
 	if err != nil {
 		return nil, err
@@ -117,61 +116,84 @@ func GetThumbnail(origin string, mediaId string, desiredWidth int, desiredHeight
 
 	cacheKey := fmt.Sprintf("%s/%s?w=%d&h=%d&m=%s&a=%t", media.Origin, media.MediaId, width, height, method, animated)
 
-	var thumbnail *types.Thumbnail
-	item, found := localCache.Get(cacheKey)
-	if found {
-		thumbnail = item.(*types.Thumbnail)
-	} else {
-		log.Info("Getting thumbnail record from database")
-		dbThumb, err := db.Get(media.Origin, media.MediaId, width, height, method, animated)
-		if err != nil {
-			if err == sql.ErrNoRows {
-				log.Info("Thumbnail does not exist, attempting to generate it")
-				genThumb, err2 := GetOrGenerateThumbnail(media, width, height, animated, method, ctx, log)
-				if err2 != nil {
-					return nil, err2
-				}
+	v, _, err := globals.DefaultRequestGroup.Do(cacheKey, func() (interface{}, error) {
+		db := storage.GetDatabase().GetThumbnailStore(ctx, log)
 
-				thumbnail = genThumb
-			} else {
-				return nil, err
-			}
+		var thumbnail *types.Thumbnail
+		item, found := localCache.Get(cacheKey)
+		if found {
+			thumbnail = item.(*types.Thumbnail)
 		} else {
-			thumbnail = dbThumb
+			log.Info("Getting thumbnail record from database")
+			dbThumb, err := db.Get(media.Origin, media.MediaId, width, height, method, animated)
+			if err != nil {
+				if err == sql.ErrNoRows {
+					log.Info("Thumbnail does not exist, attempting to generate it")
+					genThumb, err2 := GetOrGenerateThumbnail(media, width, height, animated, method, ctx, log)
+					if err2 != nil {
+						return nil, err2
+					}
+
+					thumbnail = genThumb
+				} else {
+					return nil, err
+				}
+			} else {
+				thumbnail = dbThumb
+			}
 		}
-	}
 
-	if thumbnail == nil {
-		log.Warn("Despite all efforts, a thumbnail record could not be found or generated")
-		return nil, common.ErrMediaNotFound
-	}
+		if thumbnail == nil {
+			log.Warn("Despite all efforts, a thumbnail record could not be found or generated")
+			return nil, common.ErrMediaNotFound
+		}
 
-	err = storage.GetDatabase().GetMetadataStore(ctx, log).UpsertLastAccess(thumbnail.Sha256Hash, util.NowMillis())
-	if err != nil {
-		logrus.Warn("Failed to upsert the last access time: ", err)
-	}
+		err = storage.GetDatabase().GetMetadataStore(ctx, log).UpsertLastAccess(thumbnail.Sha256Hash, util.NowMillis())
+		if err != nil {
+			logrus.Warn("Failed to upsert the last access time: ", err)
+		}
 
-	localCache.Set(cacheKey, thumbnail, cache.DefaultExpiration)
-	internal_cache.Get().IncrementDownloads(thumbnail.Sha256Hash)
+		localCache.Set(cacheKey, thumbnail, cache.DefaultExpiration)
 
-	cached, err := internal_cache.Get().GetThumbnail(thumbnail, log)
-	if err != nil {
-		return nil, err
-	}
-	if cached != nil && cached.Contents != nil {
-		return &types.StreamedThumbnail{
-			Thumbnail: thumbnail,
-			Stream:    util.BufferToStream(cached.Contents),
-		}, nil
-	}
+		cached, err := internal_cache.Get().GetThumbnail(thumbnail, log)
+		if err != nil {
+			return nil, err
+		}
+		if cached != nil && cached.Contents != nil {
+			return &types.StreamedThumbnail{
+				Thumbnail: thumbnail,
+				Stream:    util.BufferToStream(cached.Contents),
+			}, nil
+		}
 
-	log.Info("Reading thumbnail from disk")
-	mediaStream, err := datastore.DownloadStream(ctx, log, thumbnail.DatastoreId, thumbnail.Location)
-	if err != nil {
-		return nil, err
-	}
+		log.Info("Reading thumbnail from disk")
+		mediaStream, err := datastore.DownloadStream(ctx, log, thumbnail.DatastoreId, thumbnail.Location)
+		if err != nil {
+			return nil, err
+		}
 
-	return &types.StreamedThumbnail{Thumbnail: thumbnail, Stream: mediaStream}, nil
+		return &types.StreamedThumbnail{Thumbnail: thumbnail, Stream: mediaStream}, nil
+	}, func(v interface{}, count int, err error) []interface{} {
+		if err != nil {
+			return nil
+		}
+
+		rv := v.(*types.StreamedThumbnail)
+		vals := make([]interface{}, 0)
+		streams := util.CloneReader(rv.Stream, count)
+
+		for i := 0; i < count; i++ {
+			internal_cache.Get().IncrementDownloads(rv.Thumbnail.Sha256Hash)
+			vals = append(vals, &types.StreamedThumbnail{
+				Thumbnail: rv.Thumbnail,
+				Stream:    streams[i],
+			})
+		}
+
+		return vals
+	})
+
+	return v.(*types.StreamedThumbnail), err
 }
 
 func GetOrGenerateThumbnail(media *types.Media, width int, height int, animated bool, method string, ctx context.Context, log *logrus.Entry) (*types.Thumbnail, error) {

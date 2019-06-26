@@ -58,7 +58,7 @@ func (s *UrlStore) GetPreview(url string, ts int64) (*types.CachedUrlPreview, er
 	r := &types.CachedUrlPreview{
 		Preview: &types.UrlPreview{},
 	}
-	err := s.statements.selectUrlPreview.QueryRowContext(s.ctx, url, getBucketTs(ts)).Scan(
+	err := s.statements.selectUrlPreview.QueryRowContext(s.ctx, url, GetBucketTs(ts)).Scan(
 		&r.SearchUrl,
 		&r.ErrorCode,
 		&r.FetchedTs,
@@ -82,7 +82,7 @@ func (s *UrlStore) InsertPreview(record *types.CachedUrlPreview) error {
 		s.ctx,
 		record.SearchUrl,
 		record.ErrorCode,
-		getBucketTs(record.FetchedTs),
+		GetBucketTs(record.FetchedTs),
 		record.Preview.Url,
 		record.Preview.SiteName,
 		record.Preview.Type,
@@ -107,7 +107,7 @@ func (s *UrlStore) InsertPreviewError(url string, errorCode string) error {
 	})
 }
 
-func getBucketTs(ts int64) int64 {
+func GetBucketTs(ts int64) int64 {
 	// 1 hour buckets
 	return (ts / 3600000) * 3600000
 }

@@ -1,7 +1,6 @@
 package r0
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -11,12 +10,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/controllers/thumbnail_controller"
-	"github.com/turt2live/matrix-media-repo/types"
-	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/singleflight-counter"
 )
-
-var thumbnailRequestGroup singleflight_counter.Group
 
 func ThumbnailMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
 	params := mux.Vars(r)
@@ -81,55 +75,21 @@ func ThumbnailMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) inter
 		"requestedAnimated": animated,
 	})
 
-	// TODO: Move this to a lower layer (somewhere where the thumbnail dimensions are known, before media is downloaded)
-	requestKey := fmt.Sprintf("thumbnail_%s_%s_%d_%d_%s_%t", server, mediaId, width, height, method, animated)
-	v, count, err := thumbnailRequestGroup.Do(requestKey, func() (interface{}, error) {
-		streamedThumbnail, err := thumbnail_controller.GetThumbnail(server, mediaId, width, height, animated, method, downloadRemote, r.Context(), log)
-		if err != nil {
-			if err == common.ErrMediaNotFound {
-				return api.NotFoundError(), nil
-			} else if err == common.ErrMediaTooLarge {
-				return api.RequestTooLarge(), nil
-			}
-			log.Error("Unexpected error locating media: " + err.Error())
-			return api.InternalServerError("Unexpected Error"), nil
-		}
-
-		return streamedThumbnail, nil
-	}, func(v interface{}, count int, err error) []interface{} {
-		if err != nil {
-			return nil
-		}
-
-		rv := v.(*types.StreamedThumbnail)
-		vals := make([]interface{}, 0)
-		streams := util.CloneReader(rv.Stream, count)
-
-		for i := 0; i < count; i++ {
-			vals = append(vals, &types.StreamedThumbnail{
-				Thumbnail: rv.Thumbnail,
-				Stream:    streams[i],
-			})
-		}
-
-		return vals
-	})
-
+	streamedThumbnail, err := thumbnail_controller.GetThumbnail(server, mediaId, width, height, animated, method, downloadRemote, r.Context(), log)
 	if err != nil {
-		log.Error("Unexpected error handling request: " + err.Error())
+		if err == common.ErrMediaNotFound {
+			return api.NotFoundError()
+		} else if err == common.ErrMediaTooLarge {
+			return api.RequestTooLarge()
+		}
+		log.Error("Unexpected error locating media: " + err.Error())
 		return api.InternalServerError("Unexpected Error")
 	}
 
-	rv := v.(*types.StreamedThumbnail)
-
-	if count > 0 {
-		log.Info("Request response was shared ", count, " times")
-	}
-
 	return &DownloadMediaResponse{
-		ContentType: rv.Thumbnail.ContentType,
-		SizeBytes:   rv.Thumbnail.SizeBytes,
-		Data:        rv.Stream,
+		ContentType: streamedThumbnail.Thumbnail.ContentType,
+		SizeBytes:   streamedThumbnail.Thumbnail.SizeBytes,
+		Data:        streamedThumbnail.Stream,
 		Filename:    "thumbnail",
 	}
 }
