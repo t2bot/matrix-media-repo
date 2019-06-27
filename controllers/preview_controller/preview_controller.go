@@ -38,7 +38,9 @@ func GetPreview(urlStr string, onHost string, forUserId string, atTs int64, ctx 
 		}
 
 		now := util.NowMillis()
-		if (now - atTs) > 60000 {
+		atTsBk := stores.GetBucketTs(atTs)
+		nowBk := stores.GetBucketTs(now)
+		if (now - atTs) > 60000 && atTsBk != nowBk {
 			// Because we don't have a cached preview, we'll use the current time as the preview time.
 			// We also give a 60 second buffer so we don't cause an infinite loop (considering we're
 			// calling ourselves), and to give a lenient opportunity for slow execution.
