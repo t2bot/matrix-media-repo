@@ -59,7 +59,12 @@ func GetPreview(urlStr string, onHost string, forUserId string, atTs int64, ctx 
 		return result.preview, result.err
 	})
 
-	return v.(*types.UrlPreview), err
+	var value *types.UrlPreview
+	if v != nil {
+		value = v.(*types.UrlPreview)
+	}
+
+	return value, err
 }
 
 func cachedPreviewToReal(cached *types.CachedUrlPreview) (*types.UrlPreview, error) {

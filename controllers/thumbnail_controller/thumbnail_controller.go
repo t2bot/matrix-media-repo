@@ -193,7 +193,12 @@ func GetThumbnail(origin string, mediaId string, desiredWidth int, desiredHeight
 		return vals
 	})
 
-	return v.(*types.StreamedThumbnail), err
+	var value *types.StreamedThumbnail
+	if v != nil {
+		value = v.(*types.StreamedThumbnail)
+	}
+
+	return value, err
 }
 
 func GetOrGenerateThumbnail(media *types.Media, width int, height int, animated bool, method string, ctx context.Context, log *logrus.Entry) (*types.Thumbnail, error) {

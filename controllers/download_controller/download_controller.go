@@ -130,7 +130,12 @@ func GetMedia(origin string, mediaId string, downloadRemote bool, blockForMedia 
 		return vals
 	})
 
-	return v.(*types.MinimalMedia), err
+	var value *types.MinimalMedia
+	if v != nil {
+		value = v.(*types.MinimalMedia)
+	}
+
+	return value, err
 }
 
 func FindMinimalMediaRecord(origin string, mediaId string, downloadRemote bool, ctx context.Context, log *logrus.Entry) (*types.MinimalMedia, error) {
@@ -258,5 +263,10 @@ func FindMediaRecord(origin string, mediaId string, downloadRemote bool, ctx con
 		return media, nil
 	})
 
-	return v.(*types.Media), err
+	var value *types.Media
+	if v != nil {
+		value = v.(*types.Media)
+	}
+
+	return value, err
 }
