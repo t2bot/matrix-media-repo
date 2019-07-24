@@ -122,6 +122,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			"method":     r.Method,
 			"statusCode": strconv.Itoa(http.StatusOK),
 		}).Inc()
+		w.Header().Set("Cache-Control", "private, max-age=259200") // 3 days
 		w.Header().Set("Content-Type", result.ContentType)
 		if result.SizeBytes > 0 {
 			w.Header().Set("Content-Length", fmt.Sprint(result.SizeBytes))
@@ -143,6 +144,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			"method":     r.Method,
 			"statusCode": strconv.Itoa(http.StatusOK),
 		}).Inc()
+		w.Header().Set("Cache-Control", "private, max-age=604800") // 7 days
 		w.Header().Set("Content-Type", "image/png")
 		io.Copy(w, result.Avatar)
 		return // Prevent sending conflicting responses
