@@ -1,1 +1,35 @@
-/* You can add global styles to this file, and also import other style files */
+@font-face {
+  font-family: 'Assistant-Light';
+  src: url("./assets/fonts/Assistant-Light.ttf") format("truetype");
+}
+@font-face {
+  font-family: 'Assistant-ExtraLight';
+  src: url("./assets/fonts/Assistant-ExtraLight.ttf") format("truetype");
+}
+@font-face {
+  font-family: 'Assistant';
+  src: url("./assets/fonts/Assistant-Regular.ttf") format("truetype");
+}
+@font-face {
+  font-family: 'Assistant-SemiBold';
+  src: url("./assets/fonts/Assistant-SemiBold.ttf") format("truetype");
+}
+@font-face {
+  font-family: 'Assistant-Bold';
+  src: url("./assets/fonts/Assistant-Bold.ttf") format("truetype");
+}
+@font-face {
+  font-family: 'Assistant-ExtraBold';
+  src: url("./assets/fonts/Assistant-ExtraBold.ttf") format("truetype");
+}
+
+body, html {
+  font-family: 'Assistant-Light', sans-serif;
+  margin: 0;
+  padding: 0;
+  font-size: 1.1em;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Assistant-ExtraLight', sans-serif;
+}
