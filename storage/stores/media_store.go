@@ -25,6 +25,7 @@ const updateMediaDatastoreAndLocation = "UPDATE media SET location = $4, datasto
 const selectAllDatastores = "SELECT datastore_id, ds_type, uri FROM datastores;"
 const selectAllMediaForServer = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE origin = $1"
 const selectAllMediaForServerUsers = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE origin = $1 AND user_id = ANY($2)"
+const selectAllMediaForServerIds = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE origin = $1 AND media_id = ANY($2)"
 
 var dsCacheByPath = sync.Map{} // [string] => Datastore
 var dsCacheById = sync.Map{}   // [string] => Datastore
@@ -46,6 +47,7 @@ type mediaStoreStatements struct {
 	selectMediaInDatastoreOlderThan *sql.Stmt
 	selectAllMediaForServer         *sql.Stmt
 	selectAllMediaForServerUsers    *sql.Stmt
+	selectAllMediaForServerIds      *sql.Stmt
 }
 
 type MediaStoreFactory struct {
@@ -109,6 +111,9 @@ func InitMediaStore(sqlDb *sql.DB) (*MediaStoreFactory, error) {
 		return nil, err
 	}
 	if store.stmts.selectAllMediaForServerUsers, err = store.sqlDb.Prepare(selectAllMediaForServerUsers); err != nil {
+		return nil, err
+	}
+	if store.stmts.selectAllMediaForServerIds, err = store.sqlDb.Prepare(selectAllMediaForServerIds); err != nil {
 		return nil, err
 	}
 
@@ -425,6 +430,37 @@ func (s *MediaStore) GetAllMediaForServer(serverName string) ([]*types.Media, er
 
 func (s *MediaStore) GetAllMediaForServerUsers(serverName string, userIds []string) ([]*types.Media, error) {
 	rows, err := s.statements.selectAllMediaForServerUsers.QueryContext(s.ctx, serverName, pq.Array(userIds))
+	if err != nil {
+		return nil, err
+	}
+
+	var results []*types.Media
+	for rows.Next() {
+		obj := &types.Media{}
+		err = rows.Scan(
+			&obj.Origin,
+			&obj.MediaId,
+			&obj.UploadName,
+			&obj.ContentType,
+			&obj.UserId,
+			&obj.Sha256Hash,
+			&obj.SizeBytes,
+			&obj.DatastoreId,
+			&obj.Location,
+			&obj.CreationTs,
+			&obj.Quarantined,
+		)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, obj)
+	}
+
+	return results, nil
+}
+
+func (s *MediaStore) GetAllMediaInIds(serverName string, mediaIds []string) ([]*types.Media, error) {
+	rows, err := s.statements.selectAllMediaForServerIds.QueryContext(s.ctx, serverName, pq.Array(mediaIds))
 	if err != nil {
 		return nil, err
 	}
