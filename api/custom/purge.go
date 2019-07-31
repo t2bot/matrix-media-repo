@@ -34,7 +34,5 @@ func PurgeRemoteMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) int
 		return api.InternalServerError("Error purging remote media")
 	}
 
-	return &MediaPurgedResponse{
-		NumRemoved: removed,
-	}
+	return &api.DoNotCacheResponse{Payload: &MediaPurgedResponse{NumRemoved: removed}}
 }

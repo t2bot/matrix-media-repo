@@ -62,7 +62,6 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Security-Policy", "sandbox; default-src 'none'; script-src 'none'; plugin-types application/pdf; style-src 'unsafe-inline'; media-src 'self'; object-src 'self';")
-	w.Header().Set("Cache-Control", "public,max-age=86400,s-maxage=86400")
 	w.Header().Set("Server", "matrix-media-repo")
 
 	// Process response
@@ -87,6 +86,15 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	if res == nil {
 		res = api.InternalServerError("Error processing response")
+	}
+
+	switch result := res.(type) {
+	case *api.DoNotCacheResponse:
+		res = result.Payload
+		break
+	default:
+		w.Header().Set("Cache-Control", "public,max-age=86400,s-maxage=86400")
+		break
 	}
 
 	contextLog.Info(fmt.Sprintf("Replying with result: %T %+v", res, res))

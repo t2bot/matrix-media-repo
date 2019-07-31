@@ -67,20 +67,22 @@ func GetDomainUsage(r *http.Request, log *logrus.Entry, user api.UserInfo) inter
 		return api.InternalServerError("Failed to get count usage for server")
 	}
 
-	return &CountsUsageResponse{
-		RawBytes: &UsageInfo{
-			MinimalUsageInfo: &MinimalUsageInfo{
-				Total: mediaBytes + thumbBytes,
-				Media: mediaBytes,
+	return &api.DoNotCacheResponse{
+		Payload: &CountsUsageResponse{
+			RawBytes: &UsageInfo{
+				MinimalUsageInfo: &MinimalUsageInfo{
+					Total: mediaBytes + thumbBytes,
+					Media: mediaBytes,
+				},
+				Thumbnails: thumbBytes,
 			},
-			Thumbnails: thumbBytes,
-		},
-		RawCounts: &UsageInfo{
-			MinimalUsageInfo: &MinimalUsageInfo{
-				Total: mediaCount + thumbCount,
-				Media: mediaCount,
+			RawCounts: &UsageInfo{
+				MinimalUsageInfo: &MinimalUsageInfo{
+					Total: mediaCount + thumbCount,
+					Media: mediaCount,
+				},
+				Thumbnails: thumbCount,
 			},
-			Thumbnails: thumbCount,
 		},
 	}
 }
@@ -138,7 +140,7 @@ func GetUserUsage(r *http.Request, log *logrus.Entry, user api.UserInfo) interfa
 		entry.UploadedMxcs = append(entry.UploadedMxcs, media.MxcUri())
 	}
 
-	return parsed
+	return &api.DoNotCacheResponse{Payload: parsed}
 }
 
 func GetUploadsUsage(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
@@ -196,5 +198,5 @@ func GetUploadsUsage(r *http.Request, log *logrus.Entry, user api.UserInfo) inte
 		}
 	}
 
-	return parsed
+	return &api.DoNotCacheResponse{Payload: parsed}
 }
