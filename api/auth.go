@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/matrix"
 	"github.com/turt2live/matrix-media-repo/util"
 )
@@ -61,7 +62,7 @@ func AccessTokenOptionalRoute(next func(r *http.Request, log *logrus.Entry, user
 }
 
 func RepoAdminRoute(next func(r *http.Request, log *logrus.Entry, user UserInfo) interface{}) func(*http.Request, *logrus.Entry) interface{} {
-	return AccessTokenRequiredRoute(func(r *http.Request, log *logrus.Entry, user UserInfo) interface{} {
+	regularFunc := AccessTokenRequiredRoute(func(r *http.Request, log *logrus.Entry, user UserInfo) interface{} {
 		if user.UserId == "" {
 			log.Warn("Could not identify user for this admin route")
 			return AuthFailed()
@@ -74,4 +75,17 @@ func RepoAdminRoute(next func(r *http.Request, log *logrus.Entry, user UserInfo)
 		log = log.WithFields(logrus.Fields{"isRepoAdmin": true})
 		return next(r, log, user)
 	})
+
+	return func(r *http.Request, log *logrus.Entry) interface{} {
+		if config.Get().SharedSecret.Enabled {
+			accessToken := util.GetAccessTokenFromRequest(r)
+			if accessToken == config.Get().SharedSecret.Token {
+				log = log.WithFields(logrus.Fields{"isRepoAdmin": true})
+				log.Info("User authed using shared secret")
+				return next(r, log, UserInfo{UserId: "@sharedsecret", AccessToken: accessToken})
+			}
+		}
+
+		return regularFunc(r, log)
+	}
 }

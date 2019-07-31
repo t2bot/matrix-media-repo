@@ -6,7 +6,7 @@ jobs:
     working_directory: /go/src/github.com/turt2live/matrix-media-repo
     steps:
       - checkout
-      - run: 
+      - run:
           name: build binaries
           command: 'GOBIN=$PWD/`dirname $0`/bin go install -v ./cmd/...'
       - store_artifacts:

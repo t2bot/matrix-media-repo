@@ -83,3 +83,89 @@ The response is the estimated amount of data being transferred:
   "total_bytes": 366601489
 }
 ```
+
+## Data usage for servers/users
+
+Individual servers and users can often hoard data in the media repository. These endpoints will tell you how much. These endpoints can only be called by repository admins - they are not available to admins of the homeservers.
+
+**Caution**: These endpoints may return *lots* of data. Making very specific requests is recommended.
+
+#### Per-server usage
+
+URL: `GET /_matrix/media/unstable/admin/usage/<server name>?access_token=your_access_token`
+
+The response is how much data the server is using:
+```json
+{
+  "raw_bytes": {
+    "total": 1594009,
+    "media": 1392009,
+    "thumbnails": 202000
+  },
+  "raw_counts": {
+    "total": 7,
+    "media": 4,
+    "thumbnails": 3
+  }
+}
+```
+
+**Note**: The endpoint may return values which represent duplicated media across itself and other hosts.
+
+#### Per-user usage (all known users)
+
+URL: `GET /_matrix/media/unstable/admin/usage/<server name>/users?access_token=your_access_token`
+
+The response is how much data the server is using:
+```json
+{
+  "@alice:example.org": {
+    "raw_bytes": {
+      "total": 1392009,
+      "media": 1392009
+    },
+    "raw_counts": {
+      "total": 4,
+      "media": 4
+    },
+    "uploaded": [
+      "mxc://example.org/abc123",
+      "mxc://example.org/abc124",
+      "mxc://example.org/abc125"
+    ]
+  }
+}
+```
+
+**Note**: The endpoint may return values which represent duplicated media across itself and other hosts.
+
+**Note**: Thumbnails are not associated with users and therefore are not included by this endpoint.
+
+#### Per-user usage (batch of users / single user)
+
+Use the same endpoint as above, but specifying one or more `?user_id=@alice:example.org` query parameters. Note that encoding the values may be required (not shown here). Users that are unknown to the media repo will not be returned.
+
+#### Per-upload usage (all uploads)
+
+URL: `GET /_matrix/media/unstable/admin/usage/<server name>/uploads?access_token=your_access_token`
+
+The response is how much data the server is using:
+```json
+{
+  "mxc://example.org/abc123": {
+    "size_bytes": 102400,
+    "uploaded_by": "@alice:example.org",
+    "datastore_id": "def456",
+    "datastore_location": "/var/media-repo/ab/cd/12345",
+    "sha256_hash": "ghi789",
+    "quarantined": false,
+    "upload_name": "info.txt",
+    "content_type": "text/plain",
+    "created_ts": 1561514528225
+  }
+}
+```
+
+#### Per-upload usage (batch of uploads / single upload)
+
+Use the same endpoint as above, but specifying one or more `?mxc=mxc://example.org/abc123` query parameters. Note that encoding the values may be required (not shown here).

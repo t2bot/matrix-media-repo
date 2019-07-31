@@ -18,6 +18,9 @@ const selectMediaLastAccessedBeforeInDatastore = "SELECT m.sha256_hash, m.size_b
 const selectThumbnailsLastAccessedBeforeInDatastore = "SELECT m.sha256_hash, m.size_bytes, m.datastore_id, m.location, m.creation_ts, a.last_access_ts FROM thumbnails AS m JOIN last_access AS a ON m.sha256_hash = a.sha256_hash WHERE a.last_access_ts < $1 AND m.datastore_id = $2"
 const changeDatastoreOfMediaHash = "UPDATE media SET datastore_id = $1, location = $2 WHERE sha256_hash = $3"
 const changeDatastoreOfThumbnailHash = "UPDATE thumbnails SET datastore_id = $1, location = $2 WHERE sha256_hash = $3"
+const selectUploadCountsForServer = "SELECT COALESCE((SELECT COUNT(origin) FROM media WHERE origin = $1), 0) AS media, COALESCE((SELECT COUNT(origin) FROM thumbnails WHERE origin = $1), 0) AS thumbnails"
+const selectUploadSizesForServer = "SELECT COALESCE((SELECT SUM(size_bytes) FROM media WHERE origin = $1), 0) AS media, COALESCE((SELECT SUM(size_bytes) FROM thumbnails WHERE origin = $1), 0) AS thumbnails"
+const selectUsersForServer = "SELECT DISTINCT user_id FROM media WHERE origin = $1 AND user_id IS NOT NULL AND LENGTH(user_id) > 0"
 
 type metadataStoreStatements struct {
 	upsertLastAccessed                            *sql.Stmt
@@ -26,6 +29,9 @@ type metadataStoreStatements struct {
 	selectThumbnailsLastAccessedBeforeInDatastore *sql.Stmt
 	changeDatastoreOfMediaHash                    *sql.Stmt
 	changeDatastoreOfThumbnailHash                *sql.Stmt
+	selectUploadCountsForServer                   *sql.Stmt
+	selectUploadSizesForServer                    *sql.Stmt
+	selectUsersForServer                          *sql.Stmt
 }
 
 type MetadataStoreFactory struct {
@@ -62,6 +68,15 @@ func InitMetadataStore(sqlDb *sql.DB) (*MetadataStoreFactory, error) {
 		return nil, err
 	}
 	if store.stmts.changeDatastoreOfThumbnailHash, err = store.sqlDb.Prepare(changeDatastoreOfThumbnailHash); err != nil {
+		return nil, err
+	}
+	if store.stmts.selectUsersForServer, err = store.sqlDb.Prepare(selectUsersForServer); err != nil {
+		return nil, err
+	}
+	if store.stmts.selectUploadSizesForServer, err = store.sqlDb.Prepare(selectUploadSizesForServer); err != nil {
+		return nil, err
+	}
+	if store.stmts.selectUploadCountsForServer, err = store.sqlDb.Prepare(selectUploadCountsForServer); err != nil {
 		return nil, err
 	}
 
@@ -150,4 +165,49 @@ func (s *MetadataStore) GetOldThumbnailsInDatastore(datastoreId string, beforeTs
 	}
 
 	return results, nil
+}
+
+func (s *MetadataStore) GetUsersForServer(serverName string) ([]string, error) {
+	rows, err := s.statements.selectUsersForServer.QueryContext(s.ctx, serverName)
+	if err != nil {
+		return nil, err
+	}
+
+	results := make([]string, 0)
+	for rows.Next() {
+		v := ""
+		err = rows.Scan(&v)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, v)
+	}
+
+	return results, nil
+}
+
+func (s *MetadataStore) GetByteUsageForServer(serverName string) (int64, int64, error) {
+	row := s.statements.selectUploadSizesForServer.QueryRowContext(s.ctx, serverName)
+
+	media := int64(0)
+	thumbs := int64(0)
+	err := row.Scan(&media, &thumbs)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return media, thumbs, nil
+}
+
+func (s *MetadataStore) GetCountUsageForServer(serverName string) (int64, int64, error) {
+	row := s.statements.selectUploadCountsForServer.QueryRowContext(s.ctx, serverName)
+
+	media := int64(0)
+	thumbs := int64(0)
+	err := row.Scan(&media, &thumbs)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return media, thumbs, nil
 }

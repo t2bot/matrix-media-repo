@@ -4,6 +4,10 @@ import "github.com/turt2live/matrix-media-repo/common"
 
 type EmptyResponse struct{}
 
+type DoNotCacheResponse struct {
+	Payload interface{}
+}
+
 type ErrorResponse struct {
 	Code         string `json:"errcode"`
 	Message      string `json:"error"`

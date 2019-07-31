@@ -128,6 +128,11 @@ type MetricsConfig struct {
 	Port        int    `yaml:"port"`
 }
 
+type SharedSecretConfig struct {
+	Enabled bool   `yaml:"enabled"`
+	Token   string `yaml:"token"`
+}
+
 type MediaRepoConfig struct {
 	General        *GeneralConfig      `yaml:"repo"`
 	Homeservers    []*HomeserverConfig `yaml:"homeservers,flow"`
@@ -143,6 +148,7 @@ type MediaRepoConfig struct {
 	Quarantine     *QuarantineConfig   `yaml:"quarantine"`
 	TimeoutSeconds *TimeoutsConfig     `yaml:"timeouts"`
 	Metrics        *MetricsConfig      `yaml:"metrics"`
+	SharedSecret   *SharedSecretConfig `yaml:"sharedSecretAuth"`
 }
 
 var instance *MediaRepoConfig
@@ -312,6 +318,10 @@ func NewDefaultConfig() *MediaRepoConfig {
 			Enabled:     false,
 			BindAddress: "localhost",
 			Port:        9000,
+		},
+		SharedSecret: &SharedSecretConfig{
+			Enabled: false,
+			Token:   "ReplaceMe",
 		},
 	}
 }

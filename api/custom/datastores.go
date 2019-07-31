@@ -29,7 +29,7 @@ func GetDatastores(r *http.Request, log *logrus.Entry, user api.UserInfo) interf
 		response[ds.DatastoreId] = dsMap
 	}
 
-	return response
+	return &api.DoNotCacheResponse{Payload: response}
 }
 
 func MigrateBetweenDatastores(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
@@ -79,7 +79,7 @@ func MigrateBetweenDatastores(r *http.Request, log *logrus.Entry, user api.UserI
 		return api.InternalServerError("Unexpected error getting storage estimate")
 	}
 
-	return estimate
+	return &api.DoNotCacheResponse{Payload: estimate}
 }
 
 func GetDatastoreStorageEstimate(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
@@ -107,5 +107,5 @@ func GetDatastoreStorageEstimate(r *http.Request, log *logrus.Entry, user api.Us
 		log.Error(err)
 		return api.InternalServerError("Unexpected error getting storage estimate")
 	}
-	return result
+	return &api.DoNotCacheResponse{Payload: result}
 }

@@ -69,7 +69,7 @@ func QuarantineRoomMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) 
 		total += resp.(*MediaQuarantinedResponse).NumQuarantined
 	}
 
-	return &MediaQuarantinedResponse{NumQuarantined: total}
+	return &api.DoNotCacheResponse{Payload: &MediaQuarantinedResponse{NumQuarantined: total}}
 }
 
 func QuarantineMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
@@ -94,7 +94,7 @@ func QuarantineMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) inte
 	}
 
 	resp, _ := doQuarantine(r.Context(), log, server, mediaId, allowOtherHosts)
-	return resp
+	return &api.DoNotCacheResponse{Payload: resp}
 }
 
 func doQuarantine(ctx context.Context, log *logrus.Entry, origin string, mediaId string, allowOtherHosts bool) (interface{}, bool) {

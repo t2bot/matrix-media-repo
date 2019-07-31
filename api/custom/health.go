@@ -13,8 +13,10 @@ type HealthzResponse struct {
 }
 
 func GetHealthz(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
-	return &HealthzResponse{
-		OK:     true,
-		Status: "Probably not dead",
+	return &api.DoNotCacheResponse{
+		Payload: &HealthzResponse{
+			OK:     true,
+			Status: "Probably not dead",
+		},
 	}
 }
