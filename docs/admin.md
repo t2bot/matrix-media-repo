@@ -143,7 +143,7 @@ The response is how much data the server is using:
 
 #### Per-user usage (batch of users / single user)
 
-Use the same endpoint as above, but specifying one or more `?user_id=@alice:example.org` query parameters. Note that encoding the values may be required (not shown here).
+Use the same endpoint as above, but specifying one or more `?user_id=@alice:example.org` query parameters. Note that encoding the values may be required (not shown here). Users that are unknown to the media repo will not be returned.
 
 #### Per-upload usage (all uploads)
 
