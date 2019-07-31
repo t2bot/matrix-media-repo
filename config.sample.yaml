@@ -36,6 +36,18 @@ homeservers:
 admins:
   - "@your_username:example.org"
 
+# Shared secret auth is useful for applications building on top of the media repository, such
+# as a management interface. The `token` provided here is treated as a repository administrator
+# when shared secret auth is enabled: if the `token` is used in place of an access token, the'
+# request will be authorized. This is not limited to any particular domain, giving applications
+# the ability to use it on any configured hostname.
+sharedSecretAuth:
+  # Set this to true to enable shared secret auth.
+  enabled: false
+
+  # Use a secure value here to prevent unauthorized access to the media repository.
+  token: "PutSomeRandomSecureValueHere"
+
 # Datastores are places where media should be persisted. This isn't dedicated for just uploads:
 # thumbnails and other misc data is also stored in these places. When the media repo is looking
 # to store new media (such as user uploads, thumbnails, etc) it will look for a datastore which
