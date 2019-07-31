@@ -50,5 +50,5 @@ func GetFederationInfo(r *http.Request, log *logrus.Entry, user api.UserInfo) in
 	resp["base_url"] = url
 	resp["hostname"] = hostname
 	resp["versions_response"] = out
-	return &api.DoNotCacheResponse{Payload:resp}
+	return &api.DoNotCacheResponse{Payload: resp}
 }

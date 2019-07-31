@@ -99,7 +99,7 @@ uploads:
   # placed anywhere to match everything (eg: "image/*" matches all images). This will also
   # restrict which file types are downloaded from remote servers.
   allowedTypes:
-   - "*/*"
+    - "*/*"
 
   # Specific users can have their own set of allowed file types. These are applied instead
   # of those listed in the allowedTypes list when a user is found. Much like allowedTypes,
