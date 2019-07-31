@@ -16,15 +16,11 @@ type UsageInfo struct {
 }
 
 type DomainUsageResponse struct {
-	NumUsers  int       `json:"user_count"`
-	UserIDs   []string  `json:"known_user_ids"`
 	RawBytes  UsageInfo `json:"raw_bytes"`
 	RawCounts UsageInfo `json:"raw_counts"`
 }
 
 func GetDomainUsage(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
-	// TODO: Auth check on host (allow local admin to query their own domain)
-
 	params := mux.Vars(r)
 
 	serverName := params["serverName"]
@@ -34,12 +30,6 @@ func GetDomainUsage(r *http.Request, log *logrus.Entry, user api.UserInfo) inter
 	})
 
 	db := storage.GetDatabase().GetMetadataStore(r.Context(), log)
-
-	userIds, err := db.GetUsersForServer(serverName)
-	if err != nil {
-		log.Error(err)
-		return api.InternalServerError("Failed to get users belonging to server")
-	}
 
 	mediaBytes, thumbBytes, err := db.GetByteUsageForServer(serverName)
 	if err != nil {
@@ -54,8 +44,6 @@ func GetDomainUsage(r *http.Request, log *logrus.Entry, user api.UserInfo) inter
 	}
 
 	return &DomainUsageResponse{
-		NumUsers: len(userIds),
-		UserIDs:  userIds,
 		RawBytes: UsageInfo{
 			Total:      mediaBytes + thumbBytes,
 			Media:      mediaBytes,
