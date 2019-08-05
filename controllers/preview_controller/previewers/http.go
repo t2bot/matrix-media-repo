@@ -74,8 +74,9 @@ func doHttpGet(urlPayload *preview_types.UrlPayload, log *logrus.Entry) (*http.R
 	if config.Get().UrlPreviews.UnsafeCertificates {
 		log.Warn("Ignoring any certificate errors while making request")
 		tr := &http.Transport{
-			DialContext:     dialContext,
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			DisableKeepAlives: true,
+			DialContext:       dialContext,
+			TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
 			// Based on https://github.com/matrix-org/gomatrixserverlib/blob/51152a681e69a832efcd934b60080b92bc98b286/client.go#L74-L90
 			DialTLS: func(network, addr string) (net.Conn, error) {
 				rawconn, err := net.Dial(network, addr)
@@ -101,7 +102,8 @@ func doHttpGet(urlPayload *preview_types.UrlPayload, log *logrus.Entry) (*http.R
 		client = &http.Client{
 			Timeout: time.Duration(config.Get().TimeoutSeconds.UrlPreviews) * time.Second,
 			Transport: &http.Transport{
-				DialContext: dialContext,
+				DisableKeepAlives: true,
+				DialContext:       dialContext,
 			},
 		}
 	}
