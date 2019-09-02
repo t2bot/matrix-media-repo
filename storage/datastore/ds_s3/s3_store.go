@@ -115,7 +115,18 @@ func (s *s3Datastore) UploadFile(file io.ReadCloser, expectedLength int64, ctx c
 					done <- true
 					return
 				}
+				defer os.Remove(f.Name())
 				expectedLength, uploadErr = io.Copy(f, rs3)
+				uploadErr = f.Close()
+				if uploadErr != nil {
+					done <- true
+					return
+				}
+				f, uploadErr = os.Open(f.Name())
+				if uploadErr != nil {
+					done <- true
+					return
+				}
 				rs3 = f
 				defer f.Close()
 			} else {
