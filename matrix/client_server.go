@@ -8,11 +8,13 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"
 )
 
 // Based in part on https://github.com/matrix-org/gomatrix/blob/072b39f7fa6b40257b4eead8c958d71985c28bdd/client.go#L180-L243
 func doRequest(method string, urlStr string, body interface{}, result interface{}, accessToken string, ipAddr string) error {
+	logrus.Infof("Calling %s %s", method, urlStr)
 	var bodyBytes []byte
 	if body != nil {
 		jsonStr, err := json.Marshal(body)
@@ -74,9 +76,11 @@ func doRequest(method string, urlStr string, body interface{}, result interface{
 
 func makeUrl(parts ...string) string {
 	res := ""
-	for _, p := range parts {
+	for i, p := range parts {
 		if p[len(p)-1:] == "/" {
 			res += p[:len(p)-1]
+		} else if p[0] != '/' && i > 0 {
+			res += "/" + p
 		} else {
 			res += p
 		}

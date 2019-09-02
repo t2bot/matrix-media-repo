@@ -19,6 +19,7 @@ type HomeserverConfig struct {
 	Name            string `yaml:"name"`
 	ClientServerApi string `yaml:"csApi"`
 	BackoffAt       int    `yaml:"backoffAt"`
+	AdminApiKind    string `yaml:"adminApiKind"`
 }
 
 type GeneralConfig struct {

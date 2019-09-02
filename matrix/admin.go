@@ -14,7 +14,11 @@ func IsUserAdmin(ctx context.Context, serverName string, accessToken string, ipA
 	replyError = cb.CallContext(ctx, func() error {
 
 		response := &whoisResponse{}
-		url := makeUrl(hs.ClientServerApi, "/_matrix/client/r0/admin/whois/", fakeUser)
+		path := "/_matrix/client/unstable/admin/whois/"
+		if hs.AdminApiKind == "synapse" {
+			path = "/_synapse/admin/v1/whois/"
+		}
+		url := makeUrl(hs.ClientServerApi, path, fakeUser)
 		err := doRequest("GET", url, nil, response, accessToken, ipAddr)
 		if err != nil {
 			err, replyError = filterError(err)
@@ -34,7 +38,11 @@ func ListMedia(ctx context.Context, serverName string, accessToken string, roomI
 	response := &mediaListResponse{}
 	var replyError error
 	replyError = cb.CallContext(ctx, func() error {
-		url := makeUrl(hs.ClientServerApi, "/_matrix/client/r0/admin/room/", roomId, "/media")
+		path := "/_matrix/client/unstable/admin/room/"
+		if hs.AdminApiKind == "synapse" {
+			path = "/_synapse/admin/v1/room/"
+		}
+		url := makeUrl(hs.ClientServerApi, path, roomId, "/media")
 		err := doRequest("GET", url, nil, response, accessToken, ipAddr)
 		if err != nil {
 			err, replyError = filterError(err)
