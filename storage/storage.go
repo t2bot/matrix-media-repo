@@ -63,15 +63,19 @@ func OpenDatabase(connectionString string, maxConns int, maxIdleConns int) error
 	}
 
 	// New the repo factories
+	logrus.Info("Setting up media DB store...")
 	if d.repos.mediaStore, err = stores.InitMediaStore(d.db); err != nil {
 		return err
 	}
+	logrus.Info("Setting up thumbnails DB store...")
 	if d.repos.thumbnailStore, err = stores.InitThumbnailStore(d.db); err != nil {
 		return err
 	}
+	logrus.Info("Setting up URL previews DB store...")
 	if d.repos.urlStore, err = stores.InitUrlStore(d.db); err != nil {
 		return err
 	}
+	logrus.Info("Setting up metadata DB store...")
 	if d.repos.metadataStore, err = stores.InitMetadataStore(d.db); err != nil {
 		return err
 	}

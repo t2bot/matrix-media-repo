@@ -46,6 +46,7 @@ func main() {
 		}
 	}
 
+	logrus.Info("Preparing database...")
 	mediaStore := storage.GetDatabase().GetMediaStore(context.TODO(), &logrus.Entry{})
 
 	logrus.Info("Initializing datastores...")
