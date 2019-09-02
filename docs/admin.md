@@ -73,6 +73,7 @@ URL: `POST /_matrix/media/unstable/admin/datastores/<source datastore id>/transf
 The response is the estimated amount of data being transferred:
 ```json
 {
+  "task_id": 12,
   "thumbnails_affected": 672,
   "thumbnail_hashes_affected": 598,
   "thumbnail_bytes": 49087657,
@@ -83,6 +84,8 @@ The response is the estimated amount of data being transferred:
   "total_bytes": 366601489
 }
 ```
+
+The `task_id` can be given to the Background Tasks API described below.
 
 ## Data usage for servers/users
 
@@ -169,3 +172,91 @@ The response is how much data the server is using:
 #### Per-upload usage (batch of uploads / single upload)
 
 Use the same endpoint as above, but specifying one or more `?mxc=mxc://example.org/abc123` query parameters. Note that encoding the values may be required (not shown here).
+
+Only repository administrators can use these endpoints.
+
+## Background Tasks API
+
+The media repo keeps track of tasks that were started and did not block the request. For example, transferring media or quarantining large amounts of media may result in a background task. A `task_id` will be returned by those endpoints which can then be used here to get the status of a task.
+
+#### Listing all tasks
+
+URL: `GET /_matrix/media/unstable/admin/tasks/all`
+
+The response is a list of all known tasks:
+```json
+[
+  {
+    "task_id": 1,
+    "task_name": "storage_migration",
+    "params": {
+      "before_ts": 1567460189817,
+      "source_datastore_id": "abc123",
+      "target_datastore_id": "def456"
+    },
+    "start_ts": 1567460189913,
+    "end_ts": 1567460190502,
+    "is_finished": true
+  },
+  {
+    "task_id": 2,
+    "task_name": "storage_migration",
+    "params": {
+      "before_ts": 1567460189817,
+      "source_datastore_id": "ghi789",
+      "target_datastore_id": "123abc"
+    },
+    "start_ts": 1567460189913,
+    "end_ts": 0,
+    "is_finished": false
+  }
+]
+```
+
+**Note**: The `params` vary depending on the task.
+
+#### Listing unfinished tasks
+
+URL: `GET /_matrix/media/unstable/admin/tasks/unfinished`
+
+The response is a list of all unfinished tasks:
+```json
+[
+  {
+    "task_id": 2,
+    "task_name": "storage_migration",
+    "params": {
+      "before_ts": 1567460189817,
+      "source_datastore_id": "ghi789",
+      "target_datastore_id": "123abc"
+    },
+    "start_ts": 1567460189913,
+    "end_ts": 0,
+    "is_finished": false
+  }
+]
+```
+
+**Note**: The `params` vary depending on the task.
+
+#### Getting information on a specific task
+
+URL: `GET /_matrix/media/unstable/admin/tasks/<task ID>`
+
+The response is the status of the task:
+```json
+{
+  "task_id": 1,
+  "task_name": "storage_migration",
+  "params": {
+    "before_ts": 1567460189817,
+    "source_datastore_id": "abc123",
+    "target_datastore_id": "def456"
+  },
+  "start_ts": 1567460189913,
+  "end_ts": 1567460190502,
+  "is_finished": true
+}
+```
+
+**Note**: The `params` vary depending on the task.

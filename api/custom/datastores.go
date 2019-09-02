@@ -10,8 +10,14 @@ import (
 	"github.com/turt2live/matrix-media-repo/controllers/maintenance_controller"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
+	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 )
+
+type DatastoreMigration struct {
+	*types.DatastoreMigrationEstimate
+	TaskID int `json:"task_id"`
+}
 
 func GetDatastores(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
 	datastores, err := storage.GetDatabase().GetMediaStore(r.Context(), log).GetAllDatastores()
@@ -71,7 +77,11 @@ func MigrateBetweenDatastores(r *http.Request, log *logrus.Entry, user api.UserI
 	}
 
 	log.Info("User ", user.UserId, " has started a datastore media transfer")
-	maintenance_controller.StartStorageMigration(sourceDatastore, targetDatastore, beforeTs, log)
+	task, err := maintenance_controller.StartStorageMigration(sourceDatastore, targetDatastore, beforeTs, log)
+	if err != nil {
+		log.Error(err)
+		return api.InternalServerError("Unexpected error starting migration")
+	}
 
 	estimate, err := maintenance_controller.EstimateDatastoreSizeWithAge(beforeTs, sourceDsId, r.Context(), log)
 	if err != nil {
@@ -79,7 +89,12 @@ func MigrateBetweenDatastores(r *http.Request, log *logrus.Entry, user api.UserI
 		return api.InternalServerError("Unexpected error getting storage estimate")
 	}
 
-	return &api.DoNotCacheResponse{Payload: estimate}
+	migration := &DatastoreMigration{
+		DatastoreMigrationEstimate: estimate,
+		TaskID:                     task.ID,
+	}
+
+	return &api.DoNotCacheResponse{Payload: migration}
 }
 
 func GetDatastoreStorageEstimate(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {

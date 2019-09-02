@@ -11,8 +11,20 @@ import (
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
-func StartStorageMigration(sourceDs *datastore.DatastoreRef, targetDs *datastore.DatastoreRef, beforeTs int64, log *logrus.Entry) {
+// Returns an error only if starting up the background task failed.
+func StartStorageMigration(sourceDs *datastore.DatastoreRef, targetDs *datastore.DatastoreRef, beforeTs int64, log *logrus.Entry) (*types.BackgroundTask, error) {
 	ctx := context.Background()
+
+	db := storage.GetDatabase().GetMetadataStore(ctx, log)
+	task, err := db.CreateBackgroundTask("storage_migration", map[string]interface{}{
+		"source_datastore_id": sourceDs.DatastoreId,
+		"target_datastore_id": targetDs.DatastoreId,
+		"before_ts": beforeTs,
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	go func() {
 		log.Info("Starting transfer")
 
@@ -72,8 +84,15 @@ func StartStorageMigration(sourceDs *datastore.DatastoreRef, targetDs *datastore
 		}
 		doUpdate(thumbs)
 
+		err = db.FinishedBackgroundTask(task.ID)
+		if err != nil {
+			log.Error(err)
+			log.Error("Failed to flag task as finished")
+		}
 		log.Info("Finished transfer")
 	}()
+
+	return task, nil
 }
 
 func EstimateDatastoreSizeWithAge(beforeTs int64, datastoreId string, ctx context.Context, log *logrus.Entry) (*types.DatastoreMigrationEstimate, error) {

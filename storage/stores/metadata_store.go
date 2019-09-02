@@ -3,9 +3,11 @@ package stores
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/types"
+	"github.com/turt2live/matrix-media-repo/util"
 )
 
 type folderSize struct {
@@ -21,6 +23,10 @@ const changeDatastoreOfThumbnailHash = "UPDATE thumbnails SET datastore_id = $1,
 const selectUploadCountsForServer = "SELECT COALESCE((SELECT COUNT(origin) FROM media WHERE origin = $1), 0) AS media, COALESCE((SELECT COUNT(origin) FROM thumbnails WHERE origin = $1), 0) AS thumbnails"
 const selectUploadSizesForServer = "SELECT COALESCE((SELECT SUM(size_bytes) FROM media WHERE origin = $1), 0) AS media, COALESCE((SELECT SUM(size_bytes) FROM thumbnails WHERE origin = $1), 0) AS thumbnails"
 const selectUsersForServer = "SELECT DISTINCT user_id FROM media WHERE origin = $1 AND user_id IS NOT NULL AND LENGTH(user_id) > 0"
+const insertNewBackgroundTask = "INSERT INTO background_tasks (task, params, start_ts) VALUES ($1, $2, $3) RETURNING id;"
+const selectBackgroundTask = "SELECT id, task, params, start_ts, end_ts FROM background_tasks WHERE id = $1"
+const updateBackgroundTask = "UPDATE background_tasks SET end_ts = $2 WHERE id = $1"
+const selectAllBackgroundTasks = "SELECT id, task, params, start_ts, end_ts FROM background_tasks"
 
 type metadataStoreStatements struct {
 	upsertLastAccessed                            *sql.Stmt
@@ -32,6 +38,10 @@ type metadataStoreStatements struct {
 	selectUploadCountsForServer                   *sql.Stmt
 	selectUploadSizesForServer                    *sql.Stmt
 	selectUsersForServer                          *sql.Stmt
+	insertNewBackgroundTask                       *sql.Stmt
+	selectBackgroundTask                          *sql.Stmt
+	updateBackgroundTask                          *sql.Stmt
+	selectAllBackgroundTasks                      *sql.Stmt
 }
 
 type MetadataStoreFactory struct {
@@ -77,6 +87,18 @@ func InitMetadataStore(sqlDb *sql.DB) (*MetadataStoreFactory, error) {
 		return nil, err
 	}
 	if store.stmts.selectUploadCountsForServer, err = store.sqlDb.Prepare(selectUploadCountsForServer); err != nil {
+		return nil, err
+	}
+	if store.stmts.insertNewBackgroundTask, err = store.sqlDb.Prepare(insertNewBackgroundTask); err != nil {
+		return nil, err
+	}
+	if store.stmts.selectBackgroundTask, err = store.sqlDb.Prepare(selectBackgroundTask); err != nil {
+		return nil, err
+	}
+	if store.stmts.updateBackgroundTask, err = store.sqlDb.Prepare(updateBackgroundTask); err != nil {
+		return nil, err
+	}
+	if store.stmts.selectAllBackgroundTasks, err = store.sqlDb.Prepare(selectAllBackgroundTasks); err != nil {
 		return nil, err
 	}
 
@@ -210,4 +232,85 @@ func (s *MetadataStore) GetCountUsageForServer(serverName string) (int64, int64,
 	}
 
 	return media, thumbs, nil
+}
+
+func (s *MetadataStore) CreateBackgroundTask(name string, params map[string]interface{}) (*types.BackgroundTask, error) {
+	now := util.NowMillis()
+	b, err := json.Marshal(params)
+	if err != nil {
+		return nil, err
+	}
+	r := s.statements.insertNewBackgroundTask.QueryRowContext(s.ctx, name, string(b), now)
+	var id int
+	err = r.Scan(&id)
+	if err != nil {
+		return nil, err
+	}
+	return &types.BackgroundTask{
+		ID:      id,
+		Name:    name,
+		StartTs: now,
+		EndTs:   0,
+	}, nil
+}
+
+func (s *MetadataStore) FinishedBackgroundTask(id int) error {
+	now := util.NowMillis()
+	_, err := s.statements.updateBackgroundTask.ExecContext(s.ctx, id, now)
+	return err
+}
+
+func (s *MetadataStore) GetBackgroundTask(id int) (*types.BackgroundTask, error) {
+	r := s.statements.selectBackgroundTask.QueryRowContext(s.ctx, id)
+	task := &types.BackgroundTask{}
+	var paramsStr string
+	var endTs sql.NullInt64
+
+	err := r.Scan(&task.ID, &task.Name, &paramsStr, &task.StartTs, &endTs)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal([]byte(paramsStr), &task.Params)
+	if err != nil {
+		return nil, err
+	}
+
+	if endTs.Valid {
+		task.EndTs = endTs.Int64
+	}
+
+	return task, nil
+}
+
+func (s *MetadataStore) GetAllBackgroundTasks() ([]*types.BackgroundTask, error) {
+	rows, err := s.statements.selectAllBackgroundTasks.QueryContext(s.ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	results := make([]*types.BackgroundTask, 0)
+	for rows.Next() {
+		task := &types.BackgroundTask{}
+		var paramsStr string
+		var endTs sql.NullInt64
+
+		err := rows.Scan(&task.ID, &task.Name, &paramsStr, &task.StartTs, &endTs)
+		if err != nil {
+			return nil, err
+		}
+
+		err = json.Unmarshal([]byte(paramsStr), &task.Params)
+		if err != nil {
+			return nil, err
+		}
+
+		if endTs.Valid {
+			task.EndTs = endTs.Int64
+		}
+
+		results = append(results, task)
+	}
+
+	return results, nil
 }
