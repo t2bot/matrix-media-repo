@@ -31,7 +31,9 @@ func Init() {
 	thumbnailHandler := handler{api.AccessTokenOptionalRoute(r0.ThumbnailMedia), "thumbnail", counter, false}
 	previewUrlHandler := handler{api.AccessTokenRequiredRoute(r0.PreviewUrl), "url_preview", counter, false}
 	identiconHandler := handler{api.AccessTokenOptionalRoute(r0.Identicon), "identicon", counter, false}
-	purgeHandler := handler{api.RepoAdminRoute(custom.PurgeRemoteMedia), "purge_remote_media", counter, false}
+	purgeRemote := handler{api.RepoAdminRoute(custom.PurgeRemoteMedia), "purge_remote_media", counter, false}
+	purgeOneHandler := handler{api.RepoAdminRoute(custom.PurgeIndividualRecord), "purge_individual_media", counter, false}
+	purgeQuarantinedHandler := handler{api.RepoAdminRoute(custom.PurgeQurantined), "purge_quarantined", counter, false}
 	quarantineHandler := handler{api.AccessTokenRequiredRoute(custom.QuarantineMedia), "quarantine_media", counter, false}
 	quarantineRoomHandler := handler{api.AccessTokenRequiredRoute(custom.QuarantineRoomMedia), "quarantine_room", counter, false}
 	localCopyHandler := handler{api.AccessTokenRequiredRoute(unstable.LocalCopy), "local_copy", counter, false}
@@ -63,7 +65,10 @@ func Init() {
 		routes["/_matrix/media/"+version+"/config"] = route{"GET", configHandler}
 
 		// Routes that we define but are not part of the spec (management)
-		routes["/_matrix/media/"+version+"/admin/purge_remote"] = route{"POST", purgeHandler}
+		routes["/_matrix/media/"+version+"/admin/purge_remote"] = route{"POST", purgeRemote}
+		routes["/_matrix/media/"+version+"/admin/purge/remote"] = route{"POST", purgeRemote}
+		routes["/_matrix/media/"+version+"/admin/purge/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"POST", purgeOneHandler}
+		routes["/_matrix/media/"+version+"/admin/purge/quarantined"] = route{"POST", purgeQuarantinedHandler}
 		routes["/_matrix/media/"+version+"/admin/quarantine/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"POST", quarantineHandler}
 		routes["/_matrix/media/"+version+"/admin/room/{roomId:[^/]+}/quarantine"] = route{"POST", quarantineRoomHandler}
 		routes["/_matrix/media/"+version+"/admin/datastores/{datastoreId:[^/]+}/size_estimate"] = route{"GET", storageEstimateHandler}
@@ -78,7 +83,7 @@ func Init() {
 		routes["/_matrix/media/"+version+"/admin/tasks/unfinished"] = route{"GET", listUnfinishedBackgroundTasksHandler}
 
 		// Routes that we should handle but aren't in the media namespace (synapse compat)
-		routes["/_matrix/client/"+version+"/admin/purge_media_cache"] = route{"POST", purgeHandler}
+		routes["/_matrix/client/"+version+"/admin/purge_media_cache"] = route{"POST", purgeRemote}
 		routes["/_matrix/client/"+version+"/admin/quarantine_media/{roomId:[^/]+}"] = route{"POST", quarantineRoomHandler}
 
 		if version == "unstable" {

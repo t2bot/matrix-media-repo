@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/controllers/download_controller"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/types"
@@ -19,7 +20,7 @@ func StartStorageMigration(sourceDs *datastore.DatastoreRef, targetDs *datastore
 	task, err := db.CreateBackgroundTask("storage_migration", map[string]interface{}{
 		"source_datastore_id": sourceDs.DatastoreId,
 		"target_datastore_id": targetDs.DatastoreId,
-		"before_ts": beforeTs,
+		"before_ts":           beforeTs,
 	})
 	if err != nil {
 		return nil, err
@@ -149,6 +150,7 @@ func EstimateDatastoreSizeWithAge(beforeTs int64, datastoreId string, ctx contex
 
 func PurgeRemoteMediaBefore(beforeTs int64, ctx context.Context, log *logrus.Entry) (int, error) {
 	db := storage.GetDatabase().GetMediaStore(ctx, log)
+	thumbsDb := storage.GetDatabase().GetThumbnailStore(ctx, log)
 
 	origins, err := db.GetOrigins()
 	if err != nil {
@@ -196,7 +198,101 @@ func PurgeRemoteMediaBefore(beforeTs int64, ctx context.Context, log *logrus.Ent
 		if err != nil {
 			log.Warn("Error removing media " + media.Origin + "/" + media.MediaId + " from database: " + err.Error())
 		}
+
+		// Delete the thumbnails too
+		thumbs, err := thumbsDb.GetAllForMedia(media.Origin, media.MediaId)
+		if err != nil {
+			log.Warn("Error getting thumbnails for media " + media.Origin + "/" + media.MediaId + " from database: " + err.Error())
+			continue
+		}
+		for _, thumb := range thumbs {
+			log.Info("Deleting thumbnail with hash: ", thumb.Sha256Hash)
+			ds, err := datastore.LocateDatastore(ctx, log, thumb.DatastoreId)
+			if err != nil {
+				log.Warn("Error removing thumbnail for media " + media.Origin + "/" + media.MediaId + " from database: " + err.Error())
+				continue
+			}
+
+			err = ds.DeleteObject(thumb.Location)
+			if err != nil {
+				log.Warn("Error removing thumbnail for media " + media.Origin + "/" + media.MediaId + " from database: " + err.Error())
+				continue
+			}
+		}
+		err = thumbsDb.DeleteAllForMedia(media.Origin, media.MediaId)
+		if err != nil {
+			log.Warn("Error removing thumbnails for media " + media.Origin + "/" + media.MediaId + " from database: " + err.Error())
+		}
 	}
 
 	return removed, nil
+}
+
+func PurgeQuarantined(ctx context.Context, log *logrus.Entry) ([]*types.Media, error) {
+	mediaDb := storage.GetDatabase().GetMediaStore(ctx, log)
+	records, err := mediaDb.GetAllQuarantinedMedia()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, r := range records {
+		err = doPurge(r, ctx, log)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return records, nil
+}
+
+func PurgeMedia(origin string, mediaId string, ctx context.Context, log *logrus.Entry) error {
+	media, err := download_controller.FindMediaRecord(origin, mediaId, false, ctx, log)
+	if err != nil {
+		return err
+	}
+
+	return doPurge(media, ctx, log)
+}
+
+func doPurge(media *types.Media, ctx context.Context, log *logrus.Entry) error {
+	// Delete all the thumbnails first
+	thumbsDb := storage.GetDatabase().GetThumbnailStore(ctx, log)
+	thumbs, err := thumbsDb.GetAllForMedia(media.Origin, media.MediaId)
+	if err != nil {
+		return err
+	}
+	for _, thumb := range thumbs {
+		log.Info("Deleting thumbnail with hash: ", thumb.Sha256Hash)
+		ds, err := datastore.LocateDatastore(ctx, log, thumb.DatastoreId)
+		if err != nil {
+			return err
+		}
+
+		err = ds.DeleteObject(thumb.Location)
+		if err != nil {
+			return err
+		}
+	}
+	err = thumbsDb.DeleteAllForMedia(media.Origin, media.MediaId)
+	if err != nil {
+		return err
+	}
+
+	ds, err := datastore.LocateDatastore(ctx, log, media.DatastoreId)
+	if err != nil {
+		return err
+	}
+
+	err = ds.DeleteObject(media.Location)
+	if err != nil {
+		return err
+	}
+
+	mediaDb := storage.GetDatabase().GetMediaStore(ctx, log)
+	err = mediaDb.Delete(media.Origin, media.MediaId)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

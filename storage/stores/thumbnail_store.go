@@ -14,6 +14,8 @@ const updateThumbnailHash = "UPDATE thumbnails SET sha256_hash = $7 WHERE origin
 const selectThumbnailsWithoutHash = "SELECT origin, media_id, width, height, method, animated, content_type, size_bytes, datastore_id, location, creation_ts, sha256_hash FROM thumbnails WHERE sha256_hash IS NULL OR sha256_hash = '';"
 const selectThumbnailsWithoutDatastore = "SELECT origin, media_id, width, height, method, animated, content_type, size_bytes, datastore_id, location, creation_ts, sha256_hash FROM thumbnails WHERE datastore_id IS NULL OR datastore_id = '';"
 const updateThumbnailDatastoreAndLocation = "UPDATE thumbnails SET location = $8, datastore_id = $7 WHERE origin = $1 and media_id = $2 and width = $3 and height = $4 and method = $5 and animated = $6;"
+const selectThumbnailsForMedia = "SELECT origin, media_id, width, height, method, animated, content_type, size_bytes, datastore_id, location, creation_ts, sha256_hash FROM thumbnails WHERE origin = $1 AND media_id = $2;"
+const deleteThumbnailsForMedia = "DELETE FROM thumbnails WHERE origin = $1 AND media_id = $2;"
 
 type thumbnailStatements struct {
 	selectThumbnail                     *sql.Stmt
@@ -22,6 +24,8 @@ type thumbnailStatements struct {
 	selectThumbnailsWithoutHash         *sql.Stmt
 	selectThumbnailsWithoutDatastore    *sql.Stmt
 	updateThumbnailDatastoreAndLocation *sql.Stmt
+	selectThumbnailsForMedia            *sql.Stmt
+	deleteThumbnailsForMedia            *sql.Stmt
 }
 
 type ThumbnailStoreFactory struct {
@@ -58,6 +62,12 @@ func InitThumbnailStore(sqlDb *sql.DB) (*ThumbnailStoreFactory, error) {
 		return nil, err
 	}
 	if store.stmts.updateThumbnailDatastoreAndLocation, err = store.sqlDb.Prepare(updateThumbnailDatastoreAndLocation); err != nil {
+		return nil, err
+	}
+	if store.stmts.selectThumbnailsForMedia, err = store.sqlDb.Prepare(selectThumbnailsForMedia); err != nil {
+		return nil, err
+	}
+	if store.stmts.deleteThumbnailsForMedia, err = store.sqlDb.Prepare(deleteThumbnailsForMedia); err != nil {
 		return nil, err
 	}
 
@@ -205,4 +215,44 @@ func (s *ThumbnailStore) GetAllWithoutDatastore() ([]*types.Thumbnail, error) {
 	}
 
 	return results, nil
+}
+
+func (s *ThumbnailStore) GetAllForMedia(origin string, mediaId string) ([]*types.Thumbnail, error) {
+	rows, err := s.statements.selectThumbnailsForMedia.QueryContext(s.ctx, origin, mediaId)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []*types.Thumbnail
+	for rows.Next() {
+		obj := &types.Thumbnail{}
+		err = rows.Scan(
+			&obj.Origin,
+			&obj.MediaId,
+			&obj.Width,
+			&obj.Height,
+			&obj.Method,
+			&obj.Animated,
+			&obj.ContentType,
+			&obj.SizeBytes,
+			&obj.DatastoreId,
+			&obj.Location,
+			&obj.CreationTs,
+			&obj.Sha256Hash,
+		)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, obj)
+	}
+
+	return results, nil
+}
+
+func (s *ThumbnailStore) DeleteAllForMedia(origin string, mediaId string) error {
+	_, err := s.statements.deleteThumbnailsForMedia.ExecContext(s.ctx, origin, mediaId)
+	if err != nil {
+		return err
+	}
+	return nil
 }
