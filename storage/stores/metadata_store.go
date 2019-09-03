@@ -27,6 +27,8 @@ const insertNewBackgroundTask = "INSERT INTO background_tasks (task, params, sta
 const selectBackgroundTask = "SELECT id, task, params, start_ts, end_ts FROM background_tasks WHERE id = $1"
 const updateBackgroundTask = "UPDATE background_tasks SET end_ts = $2 WHERE id = $1"
 const selectAllBackgroundTasks = "SELECT id, task, params, start_ts, end_ts FROM background_tasks"
+const insertReservation = "INSERT INTO reserved_media (origin, media_id, reason) VALUES ($1, $2, $3);"
+const selectReservation = "SELECT origin, media_id, reason FROM reserved_media WHERE origin = $1 AND media_id = $2;"
 
 type metadataStoreStatements struct {
 	upsertLastAccessed                            *sql.Stmt
@@ -42,6 +44,8 @@ type metadataStoreStatements struct {
 	selectBackgroundTask                          *sql.Stmt
 	updateBackgroundTask                          *sql.Stmt
 	selectAllBackgroundTasks                      *sql.Stmt
+	insertReservation                             *sql.Stmt
+	selectReservation                             *sql.Stmt
 }
 
 type MetadataStoreFactory struct {
@@ -99,6 +103,12 @@ func InitMetadataStore(sqlDb *sql.DB) (*MetadataStoreFactory, error) {
 		return nil, err
 	}
 	if store.stmts.selectAllBackgroundTasks, err = store.sqlDb.Prepare(selectAllBackgroundTasks); err != nil {
+		return nil, err
+	}
+	if store.stmts.insertReservation, err = store.sqlDb.Prepare(insertReservation); err != nil {
+		return nil, err
+	}
+	if store.stmts.selectReservation, err = store.sqlDb.Prepare(selectReservation); err != nil {
 		return nil, err
 	}
 
@@ -313,4 +323,28 @@ func (s *MetadataStore) GetAllBackgroundTasks() ([]*types.BackgroundTask, error)
 	}
 
 	return results, nil
+}
+
+func (s *MetadataStore) ReserveMediaId(origin string, mediaId string, reason string) error {
+	_, err := s.statements.insertReservation.ExecContext(s.ctx, origin, mediaId, reason)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *MetadataStore) IsReserved(origin string, mediaId string) (bool, error) {
+	r := s.statements.selectReservation.QueryRowContext(s.ctx, origin, mediaId)
+	var dbOrigin string
+	var dbMediaId string
+	var dbReason string
+
+	err := r.Scan(&dbOrigin, &dbMediaId, &dbReason)
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
+	if err != nil {
+		return true, err
+	}
+	return true, nil
 }

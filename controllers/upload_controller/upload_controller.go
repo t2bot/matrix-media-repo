@@ -2,6 +2,7 @@ package upload_controller
 
 import (
 	"context"
+	"database/sql"
 	"io"
 	"io/ioutil"
 	"strconv"
@@ -86,9 +87,42 @@ func UploadMedia(contents io.ReadCloser, contentLength int64, contentType string
 		data = contents
 	}
 
-	mediaId, err := util.GenerateRandomString(64)
-	if err != nil {
-		return nil, err
+	metadataDb := storage.GetDatabase().GetMetadataStore(ctx, log)
+	mediaDb := storage.GetDatabase().GetMediaStore(ctx, log)
+
+	mediaTaken := true
+	var mediaId string
+	var err error
+	attempts := 0
+	for mediaTaken {
+		attempts += 1
+		if attempts > 10 {
+			return nil, errors.New("failed to generate a media ID after 10 rounds")
+		}
+
+		mediaId, err = util.GenerateRandomString(64)
+		if err != nil {
+			return nil, err
+		}
+
+		mediaTaken, err = metadataDb.IsReserved(origin, mediaId)
+		if err != nil {
+			return nil, err
+		}
+
+		if !mediaTaken {
+			// Double check it isn't already in use
+			var media *types.Media
+			media, err = mediaDb.Get(origin, mediaId)
+			if err == sql.ErrNoRows {
+				mediaTaken = false
+				continue
+			}
+			if err != nil {
+				return nil, err
+			}
+			mediaTaken = media != nil
+		}
 	}
 
 	return StoreDirect(data, contentLength, contentType, filename, userId, origin, mediaId, ctx, log)

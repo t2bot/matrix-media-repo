@@ -288,6 +288,12 @@ func doPurge(media *types.Media, ctx context.Context, log *logrus.Entry) error {
 		return err
 	}
 
+	metadataDb := storage.GetDatabase().GetMetadataStore(ctx, log)
+	err = metadataDb.ReserveMediaId(media.Origin, media.MediaId, "purged / deleted")
+	if err != nil {
+		return err
+	}
+
 	mediaDb := storage.GetDatabase().GetMediaStore(ctx, log)
 	err = mediaDb.Delete(media.Origin, media.MediaId)
 	if err != nil {
