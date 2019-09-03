@@ -75,6 +75,14 @@ func (s *s3Datastore) EnsureBucketExists() error {
 	return nil
 }
 
+func (s *s3Datastore) EnsureTempPathExists() error {
+	err := os.MkdirAll(s.tempPath, os.ModePerm)
+	if err != os.ErrExist && err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *s3Datastore) UploadFile(file io.ReadCloser, expectedLength int64, ctx context.Context, log *logrus.Entry) (*types.ObjectInfo, error) {
 	defer file.Close()
 

@@ -29,6 +29,8 @@ func main() {
 		panic(err)
 	}
 
+	logrus.Info("Starting up...")
+
 	if len(config.Get().Uploads.StoragePaths) > 0 {
 		logrus.Warn("storagePaths usage is deprecated - please use datastores instead")
 		for _, p := range config.Get().Uploads.StoragePaths {
@@ -89,6 +91,11 @@ func main() {
 			err = s3.EnsureBucketExists()
 			if err != nil {
 				logrus.Warn("\t\tBucket does not exist!")
+			}
+
+			err = s3.EnsureTempPathExists()
+			if err != nil {
+				logrus.Warn("\t\tTemporary path does not exist!")
 			}
 		}
 	}
