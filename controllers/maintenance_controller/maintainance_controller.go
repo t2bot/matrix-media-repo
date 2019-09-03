@@ -289,9 +289,23 @@ func doPurge(media *types.Media, ctx context.Context, log *logrus.Entry) error {
 	}
 
 	metadataDb := storage.GetDatabase().GetMetadataStore(ctx, log)
-	err = metadataDb.ReserveMediaId(media.Origin, media.MediaId, "purged / deleted")
+
+	reserved, err := metadataDb.IsReserved(media.Origin, media.MediaId)
 	if err != nil {
 		return err
+	}
+
+	if !reserved {
+		err = metadataDb.ReserveMediaId(media.Origin, media.MediaId, "purged / deleted")
+		if err != nil {
+			return err
+		}
+	}
+
+	// Don't delete the media record itself if it is quarantined. If we delete it, the media
+	// becomes not-quarantined so we'll leave it and let it 404 in the datastores.
+	if media.Quarantined {
+		return nil
 	}
 
 	mediaDb := storage.GetDatabase().GetMediaStore(ctx, log)
