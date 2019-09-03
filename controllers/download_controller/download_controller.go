@@ -1,16 +1,20 @@
 package download_controller
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
 	"time"
 
+	"github.com/disintegration/imaging"
 	"github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
+	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/globals"
+	"github.com/turt2live/matrix-media-repo/controllers/quarantine_controller"
 	"github.com/turt2live/matrix-media-repo/internal_cache"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
@@ -64,6 +68,29 @@ func GetMedia(origin string, mediaId string, downloadRemote bool, blockForMedia 
 		if media != nil {
 			if media.Quarantined {
 				log.Warn("Quarantined media accessed")
+
+				if config.Get().Quarantine.ReplaceDownloads {
+					log.Info("Replacing thumbnail with a quarantined one")
+
+					img, err := quarantine_controller.GenerateQuarantineThumbnail(512, 512)
+					if err != nil {
+						return nil, err
+					}
+
+					data := &bytes.Buffer{}
+					imaging.Encode(data, img, imaging.PNG)
+					return &types.MinimalMedia{
+						// Lie about all the details
+						Stream:      util.BufferToStream(data),
+						ContentType: "image/png",
+						UploadName:  "quarantine.png",
+						SizeBytes:   int64(data.Len()),
+						MediaId:     mediaId,
+						Origin:      origin,
+						KnownMedia:  media,
+					}, nil
+				}
+
 				return nil, common.ErrMediaQuarantined
 			}
 

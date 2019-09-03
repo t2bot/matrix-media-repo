@@ -288,6 +288,12 @@ quarantine:
   # not affect regular downloads of files.
   replaceThumbnails: true
 
+  # If true, when media which has been quarantined is requested an image will be returned. If
+  # no image is given in the thumbnailPath below then a generated image will be provided. This
+  # will replace media which is not an image (ie: quarantining a PDF will replace the PDF with
+  # an image).
+  replaceDownloads: false
+
   # If provided, the given image will be returned as a thumbnail for media that is quarantined.
   #thumbnailPath: "/path/to/thumbnail.png"
 

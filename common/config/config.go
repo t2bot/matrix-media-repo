@@ -113,6 +113,7 @@ type CacheConfig struct {
 
 type QuarantineConfig struct {
 	ReplaceThumbnails bool   `yaml:"replaceThumbnails"`
+	ReplaceDownloads  bool   `yaml:"replaceDownloads"`
 	ThumbnailPath     string `yaml:"thumbnailPath"`
 	AllowLocalAdmins  bool   `yaml:"allowLocalAdmins"`
 }
@@ -308,7 +309,9 @@ func NewDefaultConfig() *MediaRepoConfig {
 		},
 		Quarantine: &QuarantineConfig{
 			ReplaceThumbnails: true,
+			ReplaceDownloads:  false,
 			ThumbnailPath:     "",
+			AllowLocalAdmins:  true,
 		},
 		TimeoutSeconds: &TimeoutsConfig{
 			UrlPreviews:  10,
