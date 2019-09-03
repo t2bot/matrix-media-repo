@@ -189,6 +189,10 @@ func StoreDirect(contents io.ReadCloser, expectedSize int64, contentType string,
 		// clone that.
 		if userId != NoApplicableUploadUser {
 			for _, record := range records {
+				if record.Quarantined {
+					log.Warn("User attempted to upload quarantined content - rejecting")
+					return nil, common.ErrMediaQuarantined
+				}
 				if record.UserId == userId && record.Origin == origin && record.ContentType == contentType {
 					log.Info("User has already uploaded this media before - returning unaltered media record")
 					ds.DeleteObject(info.Location) // delete temp object
@@ -199,7 +203,13 @@ func StoreDirect(contents io.ReadCloser, expectedSize int64, contentType string,
 		}
 
 		// We'll use the location from the first record
-		media := records[0]
+		record := records[0]
+		if record.Quarantined {
+			log.Warn("User attempted to upload quarantined content - rejecting")
+			return nil, common.ErrMediaQuarantined
+		}
+
+		media := record
 		media.Origin = origin
 		media.MediaId = mediaId
 		media.UserId = userId

@@ -46,6 +46,8 @@ func UploadMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interfac
 
 		if err == common.ErrMediaNotAllowed {
 			return api.BadRequest("Media content type not allowed on this server")
+		} else if err == common.ErrMediaQuarantined {
+			return api.BadRequest("This file is not permitted on this server")
 		}
 
 		log.Error("Unexpected error storing media: " + err.Error())
