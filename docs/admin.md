@@ -6,6 +6,8 @@ All the API calls here require your user ID to be listed in the configuration as
 
 Sometimes you just want your disk space back - purging media is the best way to do that. **Be careful about what you're purging.** The media repo will happily purge a local media object, making it highly unlikely to ever exist in Matrix again. When the media repo deletes remote media, it is only deleting its copy of it - it cannot delete media on the remote server itself. Thumbnails will also be deleted for the media.
 
+If the file is duplicated over many media records, it will not be physically deleted (however the media record that was purged will be counted as deleted). The exception to this is quarantined media: when the record being purged is also quarantined, the media is deleted from the datastore even if it is duplicated in multiple records.
+
 #### Purge remote media
 
 URL: `POST /_matrix/media/unstable/admin/purge/remote?before_ts=1234567890&access_token=your_access_token` (`before_ts` is in milliseconds)

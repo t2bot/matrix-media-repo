@@ -283,9 +283,26 @@ func doPurge(media *types.Media, ctx context.Context, log *logrus.Entry) error {
 		return err
 	}
 
-	err = ds.DeleteObject(media.Location)
+	mediaDb := storage.GetDatabase().GetMediaStore(ctx, log)
+	similarMedia, err := mediaDb.GetByHash(media.Sha256Hash)
 	if err != nil {
 		return err
+	}
+	hasSimilar := false
+	for _, m := range similarMedia {
+		if m.Origin != media.Origin && m.MediaId != media.MediaId {
+			hasSimilar = true
+			break
+		}
+	}
+
+	if !hasSimilar || media.Quarantined {
+		err = ds.DeleteObject(media.Location)
+		if err != nil {
+			return err
+		}
+	} else {
+		log.Warnf("Not deleting media from datastore: media is shared over %d objects", len(similarMedia))
 	}
 
 	metadataDb := storage.GetDatabase().GetMetadataStore(ctx, log)
@@ -308,7 +325,6 @@ func doPurge(media *types.Media, ctx context.Context, log *logrus.Entry) error {
 		return nil
 	}
 
-	mediaDb := storage.GetDatabase().GetMediaStore(ctx, log)
 	err = mediaDb.Delete(media.Origin, media.MediaId)
 	if err != nil {
 		return err
