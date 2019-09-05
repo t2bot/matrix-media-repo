@@ -30,10 +30,6 @@ This will delete the media record, regardless of it being local or remote.
 
 ## Quarantine media
 
-URL: `POST /_matrix/media/unstable/admin/quarantine/<server>/<media id>?access_token=your_access_token`
-
-The `<server>` and `<media id>` can be retrieved from an MXC URI (`mxc://<server>/<media id>`).
-
 The quarantine media API allows administrators to quarantine media that may not be appropriate for their server. Using this API will prevent the media from being downloaded any further. It will *not* delete the file from your storage though: that is a task left for the administrator.
 
 Remote media that has been quarantined will not be purged either. This is so that the media remains flagged as quarantined. It is safe to delete the file on your disk, but not delete the media from the database.
@@ -41,6 +37,20 @@ Remote media that has been quarantined will not be purged either. This is so tha
 Quarantining media will also quarantine any media with the same file hash.
 
 This API is unique in that it can allow administrators of configured homeservers to quarantine media on their homeserver only. This will not allow local administrators to quarantine remote media or media on other homeservers though, just on theirs.
+
+#### Quarantine a specific record
+
+URL: `POST /_matrix/media/unstable/admin/quarantine/<server>/<media id>?access_token=your_access_token`
+
+The `<server>` and `<media id>` can be retrieved from an MXC URI (`mxc://<server>/<media id>`).
+
+#### Quarantine a whole room's worth of media
+
+URL: `POST /_matrix/media/unstable/admin/quarantine/room/<room id>?access_token=your_access_token`
+
+#### Quarantine a whole user's worth of media
+
+URL: `POST /_matrix/media/unstable/admin/quarantine/user/<user id>?access_token=your_access_token`
 
 ## Datastore management
 

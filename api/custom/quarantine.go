@@ -72,6 +72,51 @@ func QuarantineRoomMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) 
 	return &api.DoNotCacheResponse{Payload: &MediaQuarantinedResponse{NumQuarantined: total}}
 }
 
+func QuarantineUserMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
+	canQuarantine, allowOtherHosts, isLocalAdmin := getQuarantineRequestInfo(r, log, user)
+	if !canQuarantine {
+		return api.AuthFailed()
+	}
+
+	params := mux.Vars(r)
+
+	userId := params["userId"]
+
+	log = log.WithFields(logrus.Fields{
+		"userId":     userId,
+		"localAdmin": isLocalAdmin,
+	})
+
+	_, userDomain, err := util.SplitUserId(userId)
+	if err != nil {
+		log.Error("Error parsing user ID (" + userId + "): " + err.Error())
+		return api.InternalServerError("error parsing user ID")
+	}
+
+	if !allowOtherHosts && userDomain != r.Host {
+		return api.AuthFailed()
+	}
+
+	db := storage.GetDatabase().GetMediaStore(r.Context(), log)
+	userMedia, err := db.GetMediaByUser(userId)
+	if err != nil {
+		log.Error("Error while listing media for the user: " + err.Error())
+		return api.InternalServerError("error retrieving media for user")
+	}
+
+	total := 0
+	for _, media := range userMedia {
+		resp, ok := doQuarantineOn(media, allowOtherHosts, log, r.Context())
+		if !ok {
+			return resp
+		}
+
+		total += resp.(*MediaQuarantinedResponse).NumQuarantined
+	}
+
+	return &api.DoNotCacheResponse{Payload: &MediaQuarantinedResponse{NumQuarantined: total}}
+}
+
 func QuarantineMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
 	canQuarantine, allowOtherHosts, isLocalAdmin := getQuarantineRequestInfo(r, log, user)
 	if !canQuarantine {
@@ -110,6 +155,10 @@ func doQuarantine(ctx context.Context, log *logrus.Entry, origin string, mediaId
 		return api.InternalServerError("error quarantining media"), false
 	}
 
+	return doQuarantineOn(media, allowOtherHosts, log, ctx)
+}
+
+func doQuarantineOn(media *types.Media, allowOtherHosts bool, log *logrus.Entry, ctx context.Context) (interface{}, bool) {
 	// We reset the entire cache to avoid any lingering links floating around, such as thumbnails or other media.
 	// The reset is done before actually quarantining the media because that could fail for some reason
 	internal_cache.Get().Reset()

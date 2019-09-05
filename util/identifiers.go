@@ -21,3 +21,21 @@ func SplitMxc(mxc string) (string, string, error) {
 
 	return parts[0], parts[1], nil // origin, media id
 }
+
+func SplitUserId(userId string) (string, string, error) {
+	if strings.Index(userId, "@") != 0 {
+		return "", "", errors.New("not a valid user id: missing symbol")
+	}
+
+	userId = userId[1:] // remove symbol
+	parts := strings.Split(userId, ":")
+
+	if len(parts) < 2 {
+		return "", "", errors.New("not a valid user id: not enough parts")
+	}
+
+	localpart := parts[0]
+	domain := strings.Join(parts[1:], ":")
+
+	return localpart, domain, nil
+}
