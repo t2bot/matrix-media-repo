@@ -89,6 +89,7 @@ func Init() {
 		if version == "unstable" {
 			routes["/_matrix/media/"+version+"/local_copy/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"GET", localCopyHandler}
 			routes["/_matrix/media/"+version+"/info/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"GET", infoHandler}
+			routes["/_matrix/media/"+version+"/download/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"DELETE", purgeOneHandler}
 		}
 	}
 
