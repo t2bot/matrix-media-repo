@@ -16,17 +16,19 @@ This will delete remote media from the file store that was downloaded before the
 
 Any remote media that is deleted and requested by a user will be downloaded again.
 
+This endpoint is only available to repository administrators.
+
 #### Purge quarantined media
 
 URL: `POST /_matrix/media/unstable/admin/purge/quarantined?access_token=your_access_token`
 
-This will delete all media that has previously been quarantined, local or remote.
+This will delete all media that has previously been quarantined, local or remote. If called by a homeserver administrator (who is not a repository administrator), only content quarantined for their domain will be purged.
 
 #### Purge individual record
 
 URL: `POST /_matrix/media/unstable/admin/purge/<server>/<media id>?access_token=your_access_token`
 
-This will delete the media record, regardless of it being local or remote.
+This will delete the media record, regardless of it being local or remote. Can be called by homeserver administrators and the uploader to delete it.
 
 ## Quarantine media
 
