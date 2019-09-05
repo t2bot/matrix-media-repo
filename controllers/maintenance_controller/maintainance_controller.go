@@ -3,6 +3,7 @@ package maintenance_controller
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/controllers/download_controller"
@@ -315,7 +316,7 @@ func doPurge(media *types.Media, ctx context.Context, log *logrus.Entry) error {
 
 	if !hasSimilar || media.Quarantined {
 		err = ds.DeleteObject(media.Location)
-		if err != nil {
+		if err != nil && !os.IsNotExist(err) {
 			return err
 		}
 	} else {
