@@ -70,8 +70,8 @@ func Init() {
 		routes["/_matrix/media/"+version+"/admin/purge/remote"] = route{"POST", purgeRemote}
 		routes["/_matrix/media/"+version+"/admin/purge/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"POST", purgeOneHandler}
 		routes["/_matrix/media/"+version+"/admin/purge/quarantined"] = route{"POST", purgeQuarantinedHandler}
-		routes["/_matrix/media/"+version+"/admin/quarantine/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"POST", quarantineHandler}
 		routes["/_matrix/media/"+version+"/admin/room/{roomId:[^/]+}/quarantine"] = route{"POST", quarantineRoomHandler} // deprecated
+		routes["/_matrix/media/"+version+"/admin/quarantine/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"POST", quarantineHandler}
 		routes["/_matrix/media/"+version+"/admin/quarantine/room/{roomId:[^/]+}"] = route{"POST", quarantineRoomHandler}
 		routes["/_matrix/media/"+version+"/admin/quarantine/user/{userId:[^/]+}"] = route{"POST", quarantineUserHandler}
 		routes["/_matrix/media/"+version+"/admin/datastores/{datastoreId:[^/]+}/size_estimate"] = route{"GET", storageEstimateHandler}
