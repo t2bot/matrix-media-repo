@@ -151,7 +151,7 @@ func setMediaQuarantined(media *types.Media, isQuarantined bool, allowOtherHosts
 }
 
 func getQuarantineRequestInfo(r *http.Request, log *logrus.Entry, user api.UserInfo) (bool, bool, bool) {
-	isGlobalAdmin := util.IsGlobalAdmin(user.UserId)
+	isGlobalAdmin := util.IsGlobalAdmin(user.UserId) || user.IsShared
 	canQuarantine := isGlobalAdmin
 	allowOtherHosts := isGlobalAdmin
 	isLocalAdmin := false

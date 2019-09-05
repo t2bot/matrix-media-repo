@@ -121,7 +121,7 @@ func PurgeQurantined(r *http.Request, log *logrus.Entry, user api.UserInfo) inte
 }
 
 func getPurgeRequestInfo(r *http.Request, log *logrus.Entry, user api.UserInfo) (bool, bool) {
-	isGlobalAdmin := util.IsGlobalAdmin(user.UserId)
+	isGlobalAdmin := util.IsGlobalAdmin(user.UserId) || user.IsShared
 	isLocalAdmin, err := matrix.IsUserAdmin(r.Context(), r.Host, user.AccessToken, r.RemoteAddr)
 	if err != nil {
 		log.Error("Error verifying local admin: " + err.Error())

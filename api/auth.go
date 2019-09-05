@@ -12,6 +12,7 @@ import (
 type UserInfo struct {
 	UserId      string
 	AccessToken string
+	IsShared    bool
 }
 
 func AccessTokenRequiredRoute(next func(r *http.Request, log *logrus.Entry, user UserInfo) interface{}) func(*http.Request, *logrus.Entry) interface{} {
@@ -20,6 +21,11 @@ func AccessTokenRequiredRoute(next func(r *http.Request, log *logrus.Entry, user
 		if accessToken == "" {
 			log.Error("Error: no token provided (required)")
 			return InternalServerError("Error no token provided (required)")
+		}
+		if config.Get().SharedSecret.Enabled && accessToken == config.Get().SharedSecret.Token {
+			log = log.WithFields(logrus.Fields{"isRepoAdmin": true})
+			log.Info("User authed using shared secret")
+			return next(r, log, UserInfo{UserId: "@sharedsecret", AccessToken: accessToken, IsShared: true})
 		}
 		appserviceUserId := util.GetAppserviceUserIdFromRequest(r)
 		userId, err := matrix.GetUserIdFromToken(r.Context(), r.Host, accessToken, appserviceUserId, r.RemoteAddr)
@@ -34,7 +40,7 @@ func AccessTokenRequiredRoute(next func(r *http.Request, log *logrus.Entry, user
 		}
 
 		log = log.WithFields(logrus.Fields{"authUserId": userId})
-		return next(r, log, UserInfo{userId, accessToken})
+		return next(r, log, UserInfo{userId, accessToken, false})
 	}
 }
 
@@ -42,7 +48,12 @@ func AccessTokenOptionalRoute(next func(r *http.Request, log *logrus.Entry, user
 	return func(r *http.Request, log *logrus.Entry) interface{} {
 		accessToken := util.GetAccessTokenFromRequest(r)
 		if accessToken == "" {
-			return next(r, log, UserInfo{"", ""})
+			return next(r, log, UserInfo{"", "", false})
+		}
+		if config.Get().SharedSecret.Enabled && accessToken == config.Get().SharedSecret.Token {
+			log = log.WithFields(logrus.Fields{"isRepoAdmin": true})
+			log.Info("User authed using shared secret")
+			return next(r, log, UserInfo{UserId: "@sharedsecret", AccessToken: accessToken, IsShared: true})
 		}
 		appserviceUserId := util.GetAppserviceUserIdFromRequest(r)
 		userId, err := matrix.GetUserIdFromToken(r.Context(), r.Host, accessToken, appserviceUserId, r.RemoteAddr)
@@ -57,7 +68,7 @@ func AccessTokenOptionalRoute(next func(r *http.Request, log *logrus.Entry, user
 		}
 
 		log = log.WithFields(logrus.Fields{"authUserId": userId})
-		return next(r, log, UserInfo{userId, accessToken})
+		return next(r, log, UserInfo{userId, accessToken, false})
 	}
 }
 
@@ -82,7 +93,7 @@ func RepoAdminRoute(next func(r *http.Request, log *logrus.Entry, user UserInfo)
 			if accessToken == config.Get().SharedSecret.Token {
 				log = log.WithFields(logrus.Fields{"isRepoAdmin": true})
 				log.Info("User authed using shared secret")
-				return next(r, log, UserInfo{UserId: "@sharedsecret", AccessToken: accessToken})
+				return next(r, log, UserInfo{UserId: "@sharedsecret", AccessToken: accessToken, IsShared: true})
 			}
 		}
 
