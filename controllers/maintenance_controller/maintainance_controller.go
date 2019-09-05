@@ -245,6 +245,23 @@ func PurgeQuarantined(ctx context.Context, log *logrus.Entry) ([]*types.Media, e
 	return records, nil
 }
 
+func PurgeQuarantinedFor(serverName string, ctx context.Context, log *logrus.Entry) ([]*types.Media, error) {
+	mediaDb := storage.GetDatabase().GetMediaStore(ctx, log)
+	records, err := mediaDb.GetQuarantinedMediaFor(serverName)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, r := range records {
+		err = doPurge(r, ctx, log)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return records, nil
+}
+
 func PurgeMedia(origin string, mediaId string, ctx context.Context, log *logrus.Entry) error {
 	media, err := download_controller.FindMediaRecord(origin, mediaId, false, ctx, log)
 	if err != nil {

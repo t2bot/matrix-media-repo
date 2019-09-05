@@ -27,6 +27,7 @@ const selectAllMediaForServer = "SELECT origin, media_id, upload_name, content_t
 const selectAllMediaForServerUsers = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE origin = $1 AND user_id = ANY($2)"
 const selectAllMediaForServerIds = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE origin = $1 AND media_id = ANY($2)"
 const selectQuarantinedMedia = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE quarantined = true;"
+const selectServerQuarantinedMedia = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE quarantined = true AND origin = $1;"
 
 var dsCacheByPath = sync.Map{} // [string] => Datastore
 var dsCacheById = sync.Map{}   // [string] => Datastore
@@ -50,6 +51,7 @@ type mediaStoreStatements struct {
 	selectAllMediaForServerUsers    *sql.Stmt
 	selectAllMediaForServerIds      *sql.Stmt
 	selectQuarantinedMedia          *sql.Stmt
+	selectServerQuarantinedMedia    *sql.Stmt
 }
 
 type MediaStoreFactory struct {
@@ -119,6 +121,9 @@ func InitMediaStore(sqlDb *sql.DB) (*MediaStoreFactory, error) {
 		return nil, err
 	}
 	if store.stmts.selectQuarantinedMedia, err = store.sqlDb.Prepare(selectQuarantinedMedia); err != nil {
+		return nil, err
+	}
+	if store.stmts.selectServerQuarantinedMedia, err = store.sqlDb.Prepare(selectServerQuarantinedMedia); err != nil {
 		return nil, err
 	}
 
@@ -497,6 +502,37 @@ func (s *MediaStore) GetAllMediaInIds(serverName string, mediaIds []string) ([]*
 
 func (s *MediaStore) GetAllQuarantinedMedia() ([]*types.Media, error) {
 	rows, err := s.statements.selectQuarantinedMedia.QueryContext(s.ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []*types.Media
+	for rows.Next() {
+		obj := &types.Media{}
+		err = rows.Scan(
+			&obj.Origin,
+			&obj.MediaId,
+			&obj.UploadName,
+			&obj.ContentType,
+			&obj.UserId,
+			&obj.Sha256Hash,
+			&obj.SizeBytes,
+			&obj.DatastoreId,
+			&obj.Location,
+			&obj.CreationTs,
+			&obj.Quarantined,
+		)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, obj)
+	}
+
+	return results, nil
+}
+
+func (s *MediaStore) GetQuarantinedMediaFor(serverName string) ([]*types.Media, error) {
+	rows, err := s.statements.selectServerQuarantinedMedia.QueryContext(s.ctx, serverName)
 	if err != nil {
 		return nil, err
 	}

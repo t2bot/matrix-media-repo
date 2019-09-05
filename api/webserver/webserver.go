@@ -32,8 +32,8 @@ func Init() {
 	previewUrlHandler := handler{api.AccessTokenRequiredRoute(r0.PreviewUrl), "url_preview", counter, false}
 	identiconHandler := handler{api.AccessTokenOptionalRoute(r0.Identicon), "identicon", counter, false}
 	purgeRemote := handler{api.RepoAdminRoute(custom.PurgeRemoteMedia), "purge_remote_media", counter, false}
-	purgeOneHandler := handler{api.RepoAdminRoute(custom.PurgeIndividualRecord), "purge_individual_media", counter, false}
-	purgeQuarantinedHandler := handler{api.RepoAdminRoute(custom.PurgeQurantined), "purge_quarantined", counter, false}
+	purgeOneHandler := handler{api.AccessTokenRequiredRoute(custom.PurgeIndividualRecord), "purge_individual_media", counter, false}
+	purgeQuarantinedHandler := handler{api.AccessTokenRequiredRoute(custom.PurgeQurantined), "purge_quarantined", counter, false}
 	quarantineHandler := handler{api.AccessTokenRequiredRoute(custom.QuarantineMedia), "quarantine_media", counter, false}
 	quarantineRoomHandler := handler{api.AccessTokenRequiredRoute(custom.QuarantineRoomMedia), "quarantine_room", counter, false}
 	localCopyHandler := handler{api.AccessTokenRequiredRoute(unstable.LocalCopy), "local_copy", counter, false}

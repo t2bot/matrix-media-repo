@@ -1,13 +1,19 @@
 package custom
 
 import (
+	"database/sql"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
+	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/controllers/maintenance_controller"
+	"github.com/turt2live/matrix-media-repo/matrix"
+	"github.com/turt2live/matrix-media-repo/storage"
+	"github.com/turt2live/matrix-media-repo/types"
+	"github.com/turt2live/matrix-media-repo/util"
 )
 
 type MediaPurgedResponse struct {
@@ -39,7 +45,8 @@ func PurgeRemoteMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) int
 }
 
 func PurgeIndividualRecord(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
-	// TODO: Allow non-repo-admins to delete things
+	isGlobalAdmin, isLocalAdmin := getPurgeRequestInfo(r, log, user)
+	localServerName := r.Host
 
 	params := mux.Vars(r)
 
@@ -51,7 +58,32 @@ func PurgeIndividualRecord(r *http.Request, log *logrus.Entry, user api.UserInfo
 		"mediaId": mediaId,
 	})
 
+	// If the user is NOT a global admin, ensure they are speaking to the right server
+	if !isGlobalAdmin {
+		if server != localServerName {
+			return api.AuthFailed()
+		}
+		// If the user is NOT a local admin, ensure they uploaded the content in the first place
+		if !isLocalAdmin {
+			db := storage.GetDatabase().GetMediaStore(r.Context(), log)
+			m, err := db.Get(server, mediaId)
+			if err == sql.ErrNoRows {
+				return api.NotFoundError()
+			}
+			if err != nil {
+				log.Error("Error checking ownership of media: " + err.Error())
+				return api.InternalServerError("error checking media ownership")
+			}
+			if m.UserId != user.UserId {
+				return api.AuthFailed()
+			}
+		}
+	}
+
 	err := maintenance_controller.PurgeMedia(server, mediaId, r.Context(), log)
+	if err == sql.ErrNoRows || err == common.ErrMediaNotFound {
+		return api.NotFoundError()
+	}
 	if err != nil {
 		log.Error("Error purging media: " + err.Error())
 		return api.InternalServerError("error purging media")
@@ -61,9 +93,20 @@ func PurgeIndividualRecord(r *http.Request, log *logrus.Entry, user api.UserInfo
 }
 
 func PurgeQurantined(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
-	// TODO: Allow non-repo-admins to delete things
+	isGlobalAdmin, isLocalAdmin := getPurgeRequestInfo(r, log, user)
+	localServerName := r.Host
 
-	affected, err := maintenance_controller.PurgeQuarantined(r.Context(), log)
+	var affected []*types.Media
+	var err error
+
+	if isGlobalAdmin {
+		affected, err = maintenance_controller.PurgeQuarantined(r.Context(), log)
+	} else if isLocalAdmin {
+		affected, err = maintenance_controller.PurgeQuarantinedFor(localServerName, r.Context(), log)
+	} else {
+		return api.AuthFailed()
+	}
+
 	if err != nil {
 		log.Error("Error purging media: " + err.Error())
 		return api.InternalServerError("error purging media")
@@ -75,4 +118,15 @@ func PurgeQurantined(r *http.Request, log *logrus.Entry, user api.UserInfo) inte
 	}
 
 	return &api.DoNotCacheResponse{Payload: map[string]interface{}{"purged": true, "affected": mxcs}}
+}
+
+func getPurgeRequestInfo(r *http.Request, log *logrus.Entry, user api.UserInfo) (bool, bool) {
+	isGlobalAdmin := util.IsGlobalAdmin(user.UserId)
+	isLocalAdmin, err := matrix.IsUserAdmin(r.Context(), r.Host, user.AccessToken, r.RemoteAddr)
+	if err != nil {
+		log.Error("Error verifying local admin: " + err.Error())
+		return isGlobalAdmin, false
+	}
+
+	return isGlobalAdmin, isLocalAdmin
 }
