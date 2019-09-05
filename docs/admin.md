@@ -30,6 +30,18 @@ URL: `POST /_matrix/media/unstable/admin/purge/<server>/<media id>?access_token=
 
 This will delete the media record, regardless of it being local or remote. Can be called by homeserver administrators and the uploader to delete it.
 
+#### Purge media uploaded by user
+
+URL: `POST /_matrix/media/unstable/admin/purge/user/<user id>?before_ts=1234567890&access_token=your_access_token` (`before_ts` is in milliseconds)
+
+This will delete all media uploaded by that user before the timestamp specified. Can be called by homeserver administrators, if they own the user ID being purged.
+
+#### Purge media uploaded in a room
+
+URL: `POST /_matrix/media/unstable/admin/purge/room/<room id>?before_ts=1234567890&access_token=your_access_token` (`before_ts` is in milliseconds)
+
+This will delete all media known to that room, regardless of it being local or remote, before the timestamp specified. If called by a homeserver administrator, only media uploaded to their domain will be deleted.
+
 ## Quarantine media
 
 The quarantine media API allows administrators to quarantine media that may not be appropriate for their server. Using this API will prevent the media from being downloaded any further. It will *not* delete the file from your storage though: that is a task left for the administrator.

@@ -120,6 +120,134 @@ func PurgeQuarantined(r *http.Request, log *logrus.Entry, user api.UserInfo) int
 	return &api.DoNotCacheResponse{Payload: map[string]interface{}{"purged": true, "affected": mxcs}}
 }
 
+func PurgeUserMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
+	isGlobalAdmin, isLocalAdmin := getPurgeRequestInfo(r, log, user)
+	if !isGlobalAdmin && !isLocalAdmin {
+		return api.AuthFailed()
+	}
+
+	var err error
+	beforeTs := util.NowMillis()
+	beforeTsStr := r.URL.Query().Get("before_ts")
+	if beforeTsStr != "" {
+		beforeTs, err = strconv.ParseInt(beforeTsStr, 10, 64)
+		if err != nil {
+			return api.BadRequest("Error parsing before_ts: " + err.Error())
+		}
+	}
+
+	params := mux.Vars(r)
+
+	userId := params["userId"]
+
+	log = log.WithFields(logrus.Fields{
+		"userId":   userId,
+		"beforeTs": beforeTs,
+	})
+
+	_, userDomain, err := util.SplitUserId(userId)
+	if err != nil {
+		log.Error("Error parsing user ID (" + userId + "): " + err.Error())
+		return api.InternalServerError("error parsing user ID")
+	}
+
+	if !isGlobalAdmin && userDomain != r.Host {
+		return api.AuthFailed()
+	}
+
+	affected, err := maintenance_controller.PurgeUserMedia(userId, beforeTs, r.Context(), log)
+
+	if err != nil {
+		log.Error("Error purging media: " + err.Error())
+		return api.InternalServerError("error purging media")
+	}
+
+	mxcs := make([]string, 0)
+	for _, a := range affected {
+		mxcs = append(mxcs, a.MxcUri())
+	}
+
+	return &api.DoNotCacheResponse{Payload: map[string]interface{}{"purged": true, "affected": mxcs}}
+}
+
+func PurgeRoomMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
+	isGlobalAdmin, isLocalAdmin := getPurgeRequestInfo(r, log, user)
+	if !isGlobalAdmin && !isLocalAdmin {
+		return api.AuthFailed()
+	}
+
+	var err error
+	beforeTs := util.NowMillis()
+	beforeTsStr := r.URL.Query().Get("before_ts")
+	if beforeTsStr != "" {
+		beforeTs, err = strconv.ParseInt(beforeTsStr, 10, 64)
+		if err != nil {
+			return api.BadRequest("Error parsing before_ts: " + err.Error())
+		}
+	}
+
+	params := mux.Vars(r)
+
+	roomId := params["roomId"]
+
+	log = log.WithFields(logrus.Fields{
+		"roomId":   roomId,
+		"beforeTs": beforeTs,
+	})
+
+	allMedia, err := matrix.ListMedia(r.Context(), r.Host, user.AccessToken, roomId, r.RemoteAddr)
+	if err != nil {
+		log.Error("Error while listing media in the room: " + err.Error())
+		return api.InternalServerError("error retrieving media in room")
+	}
+
+	mxcs := make([]string, 0)
+	if !isGlobalAdmin {
+		for _, mxc := range allMedia.LocalMxcs {
+			domain, _, err := util.SplitMxc(mxc)
+			if err != nil {
+				continue
+			}
+			if domain != r.Host {
+				continue
+			}
+			mxcs = append(mxcs, mxc)
+		}
+
+		for _, mxc := range allMedia.RemoteMxcs {
+			domain, _, err := util.SplitMxc(mxc)
+			if err != nil {
+				continue
+			}
+			if domain != r.Host {
+				continue
+			}
+			mxcs = append(mxcs, mxc)
+		}
+	} else {
+		for _, mxc := range allMedia.LocalMxcs {
+			mxcs = append(mxcs, mxc)
+		}
+		for _, mxc := range allMedia.RemoteMxcs {
+			mxcs = append(mxcs, mxc)
+		}
+	}
+
+	affected, err := maintenance_controller.PurgeRoomMedia(mxcs, beforeTs, r.Context(), log)
+
+	if err != nil {
+		log.Error("Error purging media: " + err.Error())
+		return api.InternalServerError("error purging media")
+	}
+
+	mxcs = make([]string, 0)
+	for _, a := range affected {
+		mxcs = append(mxcs, a.MxcUri())
+	}
+
+	return &api.DoNotCacheResponse{Payload: map[string]interface{}{"purged": true, "affected": mxcs}}
+}
+
 func getPurgeRequestInfo(r *http.Request, log *logrus.Entry, user api.UserInfo) (bool, bool) {
 	isGlobalAdmin := util.IsGlobalAdmin(user.UserId) || user.IsShared
 	isLocalAdmin, err := matrix.IsUserAdmin(r.Context(), r.Host, user.AccessToken, r.RemoteAddr)

@@ -2,6 +2,7 @@ package maintenance_controller
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"os"
 
@@ -261,6 +262,58 @@ func PurgeQuarantinedFor(serverName string, ctx context.Context, log *logrus.Ent
 	}
 
 	return records, nil
+}
+
+func PurgeUserMedia(userId string, beforeTs int64, ctx context.Context, log *logrus.Entry) ([]*types.Media, error) {
+	mediaDb := storage.GetDatabase().GetMediaStore(ctx, log)
+	records, err := mediaDb.GetMediaByUserBefore(userId, beforeTs)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, r := range records {
+		err = doPurge(r, ctx, log)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return records, nil
+}
+
+func PurgeRoomMedia(mxcs []string, beforeTs int64, ctx context.Context, log *logrus.Entry) ([]*types.Media, error) {
+	mediaDb := storage.GetDatabase().GetMediaStore(ctx, log)
+
+	purged := make([]*types.Media, 0)
+
+	// we have to manually find each record because the SQL query is too complex
+	for _, mxc := range mxcs {
+		domain, mediaId, err := util.SplitMxc(mxc)
+		if err != nil {
+			return nil, err
+		}
+
+		record, err := mediaDb.Get(domain, mediaId)
+		if err == sql.ErrNoRows {
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		if record.CreationTs > beforeTs {
+			continue
+		}
+
+		err = doPurge(record, ctx, log)
+		if err != nil {
+			return nil, err
+		}
+
+		purged = append(purged, record)
+	}
+
+	return purged, nil
 }
 
 func PurgeMedia(origin string, mediaId string, ctx context.Context, log *logrus.Entry) error {
