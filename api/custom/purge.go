@@ -92,7 +92,7 @@ func PurgeIndividualRecord(r *http.Request, log *logrus.Entry, user api.UserInfo
 	return &api.DoNotCacheResponse{Payload: map[string]interface{}{"purged": true}}
 }
 
-func PurgeQurantined(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
+func PurgeQuarantined(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
 	isGlobalAdmin, isLocalAdmin := getPurgeRequestInfo(r, log, user)
 	localServerName := r.Host
 
