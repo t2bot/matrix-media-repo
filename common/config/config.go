@@ -39,7 +39,7 @@ type DatabaseConfig struct {
 }
 
 type UploadsConfig struct {
-	StoragePaths         []string            `yaml:"storagePaths,flow"`
+	StoragePaths         []string            `yaml:"storagePaths,flow"` // deprecated
 	MaxSizeBytes         int64               `yaml:"maxBytes"`
 	MinSizeBytes         int64               `yaml:"minBytes"`
 	AllowedTypes         []string            `yaml:"allowedTypes,flow"`
@@ -50,7 +50,8 @@ type UploadsConfig struct {
 type DatastoreConfig struct {
 	Type       string            `yaml:"type"`
 	Enabled    bool              `yaml:"enabled"`
-	ForUploads bool              `yaml:"forUploads"`
+	ForUploads bool              `yaml:"forUploads"` // deprecated
+	MediaKinds []string          `yaml:"forKinds,flow"`
 	Options    map[string]string `yaml:"opts,flow"`
 }
 

@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/types"
@@ -65,7 +66,7 @@ func GetUriForDatastore(dsConf config.DatastoreConfig) string {
 	return ""
 }
 
-func PickDatastore(ctx context.Context, log *logrus.Entry) (*DatastoreRef, error) {
+func PickDatastore(forKind string, ctx context.Context, log *logrus.Entry) (*DatastoreRef, error) {
 	// If we haven't found a legacy option, pick a datastore
 	log.Info("Finding a suitable datastore to pick for uploads")
 	confDatastores := config.Get().DataStores
@@ -75,7 +76,23 @@ func PickDatastore(ctx context.Context, log *logrus.Entry) (*DatastoreRef, error
 	var targetDsConf config.DatastoreConfig
 	var dsSize int64
 	for _, dsConf := range confDatastores {
-		if !dsConf.Enabled || !dsConf.ForUploads {
+		if !dsConf.Enabled {
+			continue
+		}
+
+		if len(dsConf.MediaKinds) == 0 && dsConf.ForUploads {
+			log.Warnf("Datastore of type %s is using a deprecated flag (forUploads) - please use forKinds instead", dsConf.Type)
+			dsConf.MediaKinds = common.AllKinds
+		}
+
+		allowed := false
+		for _, k := range dsConf.MediaKinds {
+			if k == forKind {
+				allowed = true
+				break
+			}
+		}
+		if !allowed {
 			continue
 		}
 

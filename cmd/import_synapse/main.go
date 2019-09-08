@@ -14,6 +14,7 @@ import (
 	"github.com/howeyc/gopass"
 	"github.com/jeffail/tunny"
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/logging"
 	"github.com/turt2live/matrix-media-repo/controllers/upload_controller"
@@ -133,7 +134,7 @@ func fetchMedia(req interface{}) interface{} {
 		return nil
 	}
 
-	_, err = upload_controller.StoreDirect(body, -1, record.ContentType, record.UploadName, record.UserId, payload.serverName, record.MediaId, ctx, log)
+	_, err = upload_controller.StoreDirect(body, -1, record.ContentType, record.UploadName, record.UserId, payload.serverName, record.MediaId, common.KindLocalMedia, ctx, log)
 	if err != nil {
 		logrus.Error(err.Error())
 		return nil

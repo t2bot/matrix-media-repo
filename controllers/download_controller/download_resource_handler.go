@@ -140,7 +140,7 @@ func downloadResourceWorkFn(request *resource_handler.WorkRequest) interface{} {
 		defer fileStream.Close()
 
 		userId := upload_controller.NoApplicableUploadUser
-		media, err := upload_controller.StoreDirect(fileStream, downloaded.ContentLength, downloaded.ContentType, downloaded.DesiredFilename, userId, info.origin, info.mediaId, ctx, log)
+		media, err := upload_controller.StoreDirect(fileStream, downloaded.ContentLength, downloaded.ContentType, downloaded.DesiredFilename, userId, info.origin, info.mediaId, common.KindRemoteMedia, ctx, log)
 		if err != nil {
 			log.Error("Error persisting file: ", err)
 			return &workerDownloadResponse{err: err}

@@ -7,6 +7,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api/webserver"
+	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/logging"
 	"github.com/turt2live/matrix-media-repo/controllers/maintenance_controller"
@@ -42,7 +43,7 @@ func main() {
 			fakeConfig := config.DatastoreConfig{
 				Type:       "file",
 				Enabled:    true,
-				ForUploads: true,
+				MediaKinds: common.AllKinds,
 				Options:    map[string]string{"path": ds.Uri},
 			}
 			config.Get().DataStores = append(config.Get().DataStores, fakeConfig)

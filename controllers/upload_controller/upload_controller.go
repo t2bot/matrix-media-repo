@@ -125,7 +125,7 @@ func UploadMedia(contents io.ReadCloser, contentLength int64, contentType string
 		}
 	}
 
-	return StoreDirect(data, contentLength, contentType, filename, userId, origin, mediaId, ctx, log)
+	return StoreDirect(data, contentLength, contentType, filename, userId, origin, mediaId, common.KindLocalMedia, ctx, log)
 }
 
 func trackUploadAsLastAccess(ctx context.Context, log *logrus.Entry, media *types.Media) {
@@ -178,8 +178,8 @@ func IsAllowed(contentType string, reportedContentType string, userId string, lo
 	return allowed
 }
 
-func StoreDirect(contents io.ReadCloser, expectedSize int64, contentType string, filename string, userId string, origin string, mediaId string, ctx context.Context, log *logrus.Entry) (*types.Media, error) {
-	ds, err := datastore.PickDatastore(ctx, log)
+func StoreDirect(contents io.ReadCloser, expectedSize int64, contentType string, filename string, userId string, origin string, mediaId string, kind string, ctx context.Context, log *logrus.Entry) (*types.Media, error) {
+	ds, err := datastore.PickDatastore(kind, ctx, log)
 	if err != nil {
 		return nil, err
 	}

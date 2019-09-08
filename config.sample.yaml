@@ -60,12 +60,17 @@ sharedSecretAuth:
 datastores:
   - type: file
     enabled: false # Enable this to set up data storage.
-    forUploads: true
+    # Datastores can be split into three areas when handling uploads: thumbnails, remote_media,
+    # and local_media. Media is still de-duplicated across all datastores (local content which
+    # duplicates remote content will re-use the remote content's location). This option is useful
+    # if your datastore is becoming very large, or if you want faster storage for a particular
+    # kind of media.
+    forKinds: ["thumbnails"]
     opts:
       path: /var/matrix/media
   - type: s3
-    enabled: false
-    forUploads: false # Enable this to put uploads in s3
+    enabled: false # Enable this to set up s3 uploads
+    forKinds: ["thumbnails", "remote_media", "local_media"]
     opts:
       # The s3 uploader needs a temporary location to buffer files to reduce memory usage on
       # small file uploads. If the file size is unknown, the file is written to this location

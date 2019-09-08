@@ -20,6 +20,7 @@ import (
 	"github.com/disintegration/imaging"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/storage"
@@ -284,7 +285,7 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 	}
 
 	// Reset the buffer pointer and store the file
-	ds, err := datastore.PickDatastore(ctx, log)
+	ds, err := datastore.PickDatastore(common.KindThumbnails, ctx, log)
 	if err != nil {
 		return nil, err
 	}
