@@ -4,6 +4,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"path/filepath"
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
@@ -16,7 +17,7 @@ type MediaUploadedResponse struct {
 }
 
 func UploadMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
-	filename := r.URL.Query().Get("filename")
+	filename := filepath.Base(r.URL.Query().Get("filename"))
 	defer r.Body.Close()
 
 	log = log.WithFields(logrus.Fields{
