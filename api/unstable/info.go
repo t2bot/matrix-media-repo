@@ -1,6 +1,7 @@
 package unstable
 
 import (
+	"database/sql"
 	"net/http"
 	"strconv"
 
@@ -10,19 +11,27 @@ import (
 	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/controllers/download_controller"
+	"github.com/turt2live/matrix-media-repo/storage"
 )
 
 type mediaInfoHashes struct {
 	Sha256 string `json:"sha256"`
 }
 
+type mediaInfoThumbnail struct {
+	Width  int  `json:"width"`
+	Height int  `json:"height"`
+	Ready  bool `json:"ready"`
+}
+
 type MediaInfoResponse struct {
-	ContentUri  string          `json:"content_uri"`
-	ContentType string          `json:"content_type"`
-	Width       int             `json:"width,omitempty"`
-	Height      int             `json:"height,omitempty"`
-	Size        int64           `json:"size"`
-	Hashes      mediaInfoHashes `json:"hashes"`
+	ContentUri  string                `json:"content_uri"`
+	ContentType string                `json:"content_type"`
+	Width       int                   `json:"width,omitempty"`
+	Height      int                   `json:"height,omitempty"`
+	Size        int64                 `json:"size"`
+	Hashes      mediaInfoHashes       `json:"hashes"`
+	Thumbnails  []*mediaInfoThumbnail `json:"thumbnails,omitempty"`
 }
 
 func MediaInfo(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
@@ -74,6 +83,25 @@ func MediaInfo(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{
 	if err == nil {
 		response.Width = img.Bounds().Max.X
 		response.Height = img.Bounds().Max.Y
+	}
+
+	thumbsDb := storage.GetDatabase().GetThumbnailStore(r.Context(), log)
+	thumbs, err := thumbsDb.GetAllForMedia(streamedMedia.KnownMedia.Origin, streamedMedia.KnownMedia.MediaId)
+	if err != nil && err != sql.ErrNoRows {
+		log.Error("Unexpected error locating media: " + err.Error())
+		return api.InternalServerError("Unexpected Error")
+	}
+
+	if thumbs != nil && len(thumbs) > 0 {
+		infoThumbs := make([]*mediaInfoThumbnail, 0)
+		for _, thumb := range thumbs {
+			infoThumbs = append(infoThumbs, &mediaInfoThumbnail{
+				Width:  thumb.Width,
+				Height: thumb.Height,
+				Ready:  true,
+			})
+		}
+		response.Thumbnails = infoThumbs
 	}
 
 	return response
