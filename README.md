@@ -113,6 +113,8 @@ listeners:
 
 Media is imported by connecting to your synapse database and downloading all the content from the homeserver. This is so you have a backup of the media repository still with synapse. **Do not point traffic at the media repo until after the import is complete.**
 
+**Note**: the database options provided on the command line are for the Synapse database. The media repo will use the connection string in the media-repo.yaml config when trying to store the Synapse media.
+
 1. Build the media repo (as stated above)
 2. Configure the `media-repo.yaml`
 3. Run `bin/import_synapse`. The usage is below. 
