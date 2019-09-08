@@ -281,6 +281,40 @@ func PurgeUserMedia(userId string, beforeTs int64, ctx context.Context, log *log
 	return records, nil
 }
 
+func PurgeOldMedia(beforeTs int64, includeLocal bool, ctx context.Context, log *logrus.Entry) ([]*types.Media, error) {
+	metadataDb := storage.GetDatabase().GetMetadataStore(ctx, log)
+	mediaDb := storage.GetDatabase().GetMediaStore(ctx, log)
+
+	oldHashes, err := metadataDb.GetOldMedia(beforeTs)
+	if err != nil {
+		return nil, err
+	}
+
+	purged := make([]*types.Media, 0)
+
+	for _, r := range oldHashes {
+		media, err := mediaDb.GetByHash(r.Sha256Hash)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, m := range media {
+			if !includeLocal && util.IsServerOurs(m.Origin) {
+				continue
+			}
+
+			err = doPurge(m, ctx, log)
+			if err != nil {
+				return nil, err
+			}
+
+			purged = append(purged, m)
+		}
+	}
+
+	return purged, nil
+}
+
 func PurgeRoomMedia(mxcs []string, beforeTs int64, ctx context.Context, log *logrus.Entry) ([]*types.Media, error) {
 	mediaDb := storage.GetDatabase().GetMediaStore(ctx, log)
 

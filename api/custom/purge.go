@@ -120,6 +120,46 @@ func PurgeQuarantined(r *http.Request, log *logrus.Entry, user api.UserInfo) int
 	return &api.DoNotCacheResponse{Payload: map[string]interface{}{"purged": true, "affected": mxcs}}
 }
 
+func PurgeOldMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
+	var err error
+	beforeTs := util.NowMillis()
+	beforeTsStr := r.URL.Query().Get("before_ts")
+	if beforeTsStr != "" {
+		beforeTs, err = strconv.ParseInt(beforeTsStr, 10, 64)
+		if err != nil {
+			return api.BadRequest("Error parsing before_ts: " + err.Error())
+		}
+	}
+
+	includeLocal := false
+	includeLocalStr := r.URL.Query().Get("include_local")
+	if includeLocalStr != "" {
+		includeLocal, err = strconv.ParseBool(includeLocalStr)
+		if err != nil {
+			return api.BadRequest("Error parsing include_local: " + err.Error())
+		}
+	}
+
+	log = log.WithFields(logrus.Fields{
+		"before_ts": beforeTs,
+		"include_local": includeLocal,
+	})
+
+	affected, err := maintenance_controller.PurgeOldMedia(beforeTs, includeLocal, r.Context(), log)
+
+	if err != nil {
+		log.Error("Error purging media: " + err.Error())
+		return api.InternalServerError("error purging media")
+	}
+
+	mxcs := make([]string, 0)
+	for _, a := range affected {
+		mxcs = append(mxcs, a.MxcUri())
+	}
+
+	return &api.DoNotCacheResponse{Payload: map[string]interface{}{"purged": true, "affected": mxcs}}
+}
+
 func PurgeUserMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
 	isGlobalAdmin, isLocalAdmin := getPurgeRequestInfo(r, log, user)
 	if !isGlobalAdmin && !isLocalAdmin {

@@ -42,6 +42,14 @@ URL: `POST /_matrix/media/unstable/admin/purge/room/<room id>?before_ts=12345678
 
 This will delete all media known to that room, regardless of it being local or remote, before the timestamp specified. If called by a homeserver administrator, only media uploaded to their domain will be deleted.
 
+#### Purge media that hasn't been accessed in a while
+
+URL: `POST /_matrix/media/unstable/admin/purge/old?before_ts=1234567890&include_local=false&access_token=your_access_token` (`before_ts` is in milliseconds)
+
+This will delete all media that hasn't been accessed since `before_ts` (defaults to 'now'). If `include_local` is `false` (the default), only remote media will be deleted.
+
+This endpoint is only available to repository administrators.
+
 ## Quarantine media
 
 The quarantine media API allows administrators to quarantine media that may not be appropriate for their server. Using this API will prevent the media from being downloaded any further. It will *not* delete the file from your storage though: that is a task left for the administrator.

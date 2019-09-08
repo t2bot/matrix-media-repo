@@ -29,6 +29,7 @@ const updateBackgroundTask = "UPDATE background_tasks SET end_ts = $2 WHERE id =
 const selectAllBackgroundTasks = "SELECT id, task, params, start_ts, end_ts FROM background_tasks"
 const insertReservation = "INSERT INTO reserved_media (origin, media_id, reason) VALUES ($1, $2, $3);"
 const selectReservation = "SELECT origin, media_id, reason FROM reserved_media WHERE origin = $1 AND media_id = $2;"
+const selectMediaLastAccessed = "SELECT m.sha256_hash, m.size_bytes, m.datastore_id, m.location, m.creation_ts, a.last_access_ts FROM media AS m JOIN last_access AS a ON m.sha256_hash = a.sha256_hash WHERE a.last_access_ts < $1;"
 
 type metadataStoreStatements struct {
 	upsertLastAccessed                            *sql.Stmt
@@ -46,6 +47,7 @@ type metadataStoreStatements struct {
 	selectAllBackgroundTasks                      *sql.Stmt
 	insertReservation                             *sql.Stmt
 	selectReservation                             *sql.Stmt
+	selectMediaLastAccessed                       *sql.Stmt
 }
 
 type MetadataStoreFactory struct {
@@ -111,6 +113,9 @@ func InitMetadataStore(sqlDb *sql.DB) (*MetadataStoreFactory, error) {
 	if store.stmts.selectReservation, err = store.sqlDb.Prepare(selectReservation); err != nil {
 		return nil, err
 	}
+	if store.stmts.selectMediaLastAccessed, err = store.sqlDb.Prepare(selectMediaLastAccessed); err != nil {
+		return nil, err
+	}
 
 	return &store, nil
 }
@@ -145,6 +150,32 @@ func (s *MetadataStore) GetEstimatedSizeOfDatastore(datastoreId string) (int64, 
 	r := &folderSize{}
 	err := s.statements.selectSizeOfDatastore.QueryRowContext(s.ctx, datastoreId).Scan(&r.Size)
 	return r.Size, err
+}
+
+func (s *MetadataStore) GetOldMedia(beforeTs int64) ([]*types.MinimalMediaMetadata, error) {
+	rows, err := s.statements.selectMediaLastAccessed.QueryContext(s.ctx, beforeTs)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []*types.MinimalMediaMetadata
+	for rows.Next() {
+		obj := &types.MinimalMediaMetadata{}
+		err = rows.Scan(
+			&obj.Sha256Hash,
+			&obj.SizeBytes,
+			&obj.DatastoreId,
+			&obj.Location,
+			&obj.CreationTs,
+			&obj.LastAccessTs,
+		)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, obj)
+	}
+
+	return results, nil
 }
 
 func (s *MetadataStore) GetOldMediaInDatastore(datastoreId string, beforeTs int64) ([]*types.MinimalMediaMetadata, error) {
