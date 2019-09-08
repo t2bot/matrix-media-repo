@@ -23,9 +23,10 @@ type HomeserverConfig struct {
 }
 
 type GeneralConfig struct {
-	BindAddress  string `yaml:"bindAddress"`
-	Port         int    `yaml:"port"`
-	LogDirectory string `yaml:"logDirectory"`
+	BindAddress     string `yaml:"bindAddress"`
+	Port            int    `yaml:"port"`
+	LogDirectory    string `yaml:"logDirectory"`
+	TrustAnyForward bool   `yaml:"trustAnyForwardedAddress"`
 }
 
 type DbPoolConfig struct {
@@ -218,9 +219,10 @@ func Get() *MediaRepoConfig {
 func NewDefaultConfig() *MediaRepoConfig {
 	return &MediaRepoConfig{
 		General: &GeneralConfig{
-			BindAddress:  "127.0.0.1",
-			Port:         8000,
-			LogDirectory: "logs",
+			BindAddress:     "127.0.0.1",
+			Port:            8000,
+			LogDirectory:    "logs",
+			TrustAnyForward: false,
 		},
 		Database: &DatabaseConfig{
 			Postgres: "postgres://your_username:your_password@localhost/database_name?sslmode=disable",

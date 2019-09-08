@@ -7,6 +7,11 @@ repo:
   # rotated every day and held for 14 days. To disable the repo logging to files, set this to "-".
   logDirectory: logs
 
+  # If true, the media repo will accept any X-Forwarded-For header without validation. In most cases
+  # this option should be left as "false". Note that the media repo already expects an X-Forwarded-For
+  # header, but validates it to ensure the IP being given makes sense.
+  trustAnyForwardedAddress: false
+
 # The database configuration for the media repository
 database:
   # Currently only "postgres" is supported.

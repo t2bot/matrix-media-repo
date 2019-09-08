@@ -17,6 +17,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/api/r0"
 	"github.com/turt2live/matrix-media-repo/common"
+	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/util"
 )
@@ -36,7 +37,16 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	r.Host = strings.Split(r.Host, ":")[0]
 
-	raddr := xff.GetRemoteAddr(r)
+	var raddr string
+	if config.Get().General.TrustAnyForward {
+		raddr = r.Header.Get("X-Forwarded-For")
+	} else {
+		raddr = xff.GetRemoteAddr(r)
+	}
+	if raddr == "" {
+		raddr = r.RemoteAddr
+	}
+
 	host, _, err := net.SplitHostPort(raddr)
 	if err != nil {
 		logrus.Error(err)
