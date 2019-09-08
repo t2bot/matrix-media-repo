@@ -27,47 +27,20 @@ bin/media_repo
 
 # Deployment
 
-This is intended to run behind a load balancer and beside your homeserver deployments. A sample nginx configuration for this is:
+This is intended to run behind a load balancer and beside your homeserver deployments. Assuming your load balancer handles SSL termination, a sample nginx config would be:
 
 ```ini
-# Client-server API
+# Federation / Client-server API
+# Both need to be reverse proxied, so if your federation and client-server API endpoints are on
+# different `server` blocks, you will need to configure that.
 server {
-  listen 80;
-  listen [::]:80;
-  # ssl configuration not shown
+  listen 443 ssl;
+  listen [::]:443 ssl;
 
-  # Redirect all matrix traffic by default to the homeserver
-  location /_matrix {
-      proxy_read_timeout 60s;
-      proxy_set_header Host $host;
-      proxy_set_header X-Real-IP $remote_addr;
-      proxy_set_header X-Forwarded-For $remote_addr;
-      proxy_pass http://localhost:8008; # Point this towards your homeserver
-  }
-  
-  # Redirect all media endpoints to the media-repo
-  location /_matrix/media {
-      proxy_read_timeout 60s;
-      proxy_set_header Host $host; # Make sure this matches your homeserver in media-repo.yaml
-      proxy_set_header X-Real-IP $remote_addr;
-      proxy_set_header X-Forwarded-For $remote_addr;
-      proxy_pass http://localhost:8000; # Point this towards media-repo
-  }
-}
-
-# Federation
-# This also needs to be reverse proxied to capture the remote media fetching from other servers
-server {
-  listen 8448 ssl;
-  listen [::]:8448 ssl;
-
-  # These MUST match the certificates used by synapse!
-  ssl_certificate /home/matrix/.synapse/your.homeserver.com.tls.cert;
-  ssl_certificate_key /home/matrix/.synapse/your.homeserver.com.tls.key;
-  ssl_dhparam /home/matrix/.synapse/your.homeserver.com.tls.dh;
+  # SSL options not shown - ensure the certificates are valid for your homeserver deployment.
 
   # Redirect all traffic by default to the homeserver
-  location / {
+  location /_matrix {
       proxy_read_timeout 60s;
       proxy_set_header Host $host;
       proxy_set_header X-Real-IP $remote_addr;
@@ -89,14 +62,6 @@ server {
 Your synapse listener configuration would look something like this:
 ```yaml
 listeners:
-  - port: 8558
-    bind_addresses: ['127.0.0.1']
-    type: http
-    tls: true
-    x_forwarded: true
-    resources:
-      - names: [federation]
-        compress: false
   - port: 8008
     bind_addresses: ['127.0.0.1']
     type: http
@@ -108,6 +73,8 @@ listeners:
       - names: [federation]
         compress: false
 ```
+
+After importing your media, setting `enable_media_repo: false` in your Synapse configuration will disable the media repository.
 
 # Importing media from synapse
 
