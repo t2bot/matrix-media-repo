@@ -31,7 +31,7 @@ type handler struct {
 
 func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	isUsingForwardedHost := false
-	if r.Header.Get("X-Forwarded-Host") != "" {
+	if r.Header.Get("X-Forwarded-Host") != "" && !config.Get().General.IgnoreForwardedHost  {
 		r.Host = r.Header.Get("X-Forwarded-Host")
 		isUsingForwardedHost = true
 	}
