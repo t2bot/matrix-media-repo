@@ -39,6 +39,12 @@ type DatabaseConfig struct {
 	Pool     *DbPoolConfig `yaml:"pool"`
 }
 
+type ArchivingConfig struct {
+	Enabled            bool  `yaml:"enabled"`
+	SelfService        bool  `yaml:"selfService"`
+	TargetBytesPerPart int64 `yaml:"targetBytesPerPart"`
+}
+
 type UploadsConfig struct {
 	StoragePaths         []string            `yaml:"storagePaths,flow"` // deprecated
 	MaxSizeBytes         int64               `yaml:"maxBytes"`
@@ -143,6 +149,7 @@ type MediaRepoConfig struct {
 	Admins         []string            `yaml:"admins,flow"`
 	Database       *DatabaseConfig     `yaml:"database"`
 	DataStores     []DatastoreConfig   `yaml:"datastores"`
+	Archiving      *ArchivingConfig    `yaml:"archiving"`
 	Uploads        *UploadsConfig      `yaml:"uploads"`
 	Downloads      *DownloadsConfig    `yaml:"downloads"`
 	Thumbnails     *ThumbnailsConfig   `yaml:"thumbnails"`
@@ -234,6 +241,11 @@ func NewDefaultConfig() *MediaRepoConfig {
 		Homeservers: []*HomeserverConfig{},
 		Admins:      []string{},
 		DataStores:  []DatastoreConfig{},
+		Archiving: &ArchivingConfig{
+			Enabled:            true,
+			SelfService:        false,
+			TargetBytesPerPart: 209715200, // 200mb
+		},
 		Uploads: &UploadsConfig{
 			MaxSizeBytes:         104857600, // 100mb
 			MinSizeBytes:         100,

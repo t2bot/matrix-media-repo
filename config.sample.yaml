@@ -65,17 +65,22 @@ sharedSecretAuth:
 datastores:
   - type: file
     enabled: false # Enable this to set up data storage.
-    # Datastores can be split into three areas when handling uploads: thumbnails, remote_media,
-    # and local_media. Media is still de-duplicated across all datastores (local content which
-    # duplicates remote content will re-use the remote content's location). This option is useful
-    # if your datastore is becoming very large, or if you want faster storage for a particular
-    # kind of media.
+    # Datastores can be split into many areas when handling uploads. Media is still de-duplicated
+    # across all datastores (local content which duplicates remote content will re-use the remote
+    # content's location). This option is useful if your datastore is becoming very large, or if
+    # you want faster storage for a particular kind of media.
+    #
+    # The kinds available are:
+    #   thumbnails    - Used to store thumbnails of media (local and remote).
+    #   remote_media  - Original copies of remote media (servers not configured by this repo).
+    #   local_media   - Original uploads for local media.
+    #   archives      - Archives of content (GDPR and similar requests).
     forKinds: ["thumbnails"]
     opts:
       path: /var/matrix/media
   - type: s3
     enabled: false # Enable this to set up s3 uploads
-    forKinds: ["thumbnails", "remote_media", "local_media"]
+    forKinds: ["thumbnails", "remote_media", "local_media", "archives"]
     opts:
       # The s3 uploader needs a temporary location to buffer files to reduce memory usage on
       # small file uploads. If the file size is unknown, the file is written to this location
@@ -87,6 +92,21 @@ datastores:
       accessSecret: ""
       ssl: true
       bucketName: "your-media-bucket"
+
+# Options for controlling archives. Archives are exports of a particular user's content for
+# the purpose of GDPR or moving media to a different server.
+archiving:
+  # Whether archiving is enabled or not. Default enabled.
+  enabled: true
+  # If true, users can request a copy of their own data. By default, only repository administrators
+  # can request a copy.
+  selfService: false
+  # The number of bytes to target per archive before breaking up the files. This is independent
+  # of any file upload limits and will require a similar amount of memory when performing an export.
+  # The file size is also a target, not a guarantee - it is possible to have files that are smaller
+  # or larger than the target. This is recommended to be approximately double the size of your
+  # file upload limit, provided there is enough memory available for the demand of exporting.
+  targetBytesPerPart: 209715200 # 200mb default
 
 # The file upload settings for the media repository
 uploads:
