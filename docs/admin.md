@@ -317,17 +317,9 @@ Exports (and therefore imports) are currently done on a per-user basis. This is 
 
 #### Exporting data for a user
 
-URL: `POST /_matrix/media/unstable/admin/user/<user ID>/export`
+URL: `POST /_matrix/media/unstable/admin/user/<user ID>/export?include_data=true&s3_urls=true`
 
-The request body is:
-```json
-{
-  "include_data": true,
-  "s3_urls": true
-}
-```
-
-Both fields are optional, and their default values are shown. If `include_data` is false, only metadata will be returned by the export. `s3_urls`, when true, includes the s3 URL to the media in the metadata if one is available.
+Both query params are optional, and their default values are shown. If `include_data` is false, only metadata will be returned by the export. `s3_urls`, when true, includes the s3 URL to the media in the metadata if one is available.
 
 The response is a task ID and export ID to put into the 'view export' URL:
 
