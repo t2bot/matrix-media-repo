@@ -72,6 +72,13 @@ func StartUserExport(userId string, s3urls bool, includeData bool, log *logrus.E
 			return
 		}
 
+		exportDb := storage.GetDatabase().GetExportStore(ctx, log)
+		err = exportDb.InsertExport(exportId, userId)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+
 		var currentTar *tar.Writer
 		var currentTarBytes bytes.Buffer
 		part := 0
@@ -94,11 +101,18 @@ func StartUserExport(userId string, s3urls bool, includeData bool, log *logrus.E
 
 			log.Info("Uploading compressed tar file")
 			buf := bytes.NewBuffer(gzipBytes.Bytes())
-			obj, err := ds.UploadFile(util.BufferToStream(buf), int64(buf.Len()), ctx, log)
+			size := int64(buf.Len())
+			obj, err := ds.UploadFile(util.BufferToStream(buf), size, ctx, log)
 			if err != nil {
 				return err
 			}
 			parts = append(parts, obj)
+
+			fname := fmt.Sprintf("export-part-%d.tgz", part)
+			err = exportDb.InsertExportPart(exportId, part, size, fname, ds.DatastoreId, obj.Location)
+			if err != nil {
+				return err
+			}
 
 			return nil
 		}
