@@ -227,25 +227,25 @@ func StartUserExport(userId string, s3urls bool, includeData bool, log *logrus.E
 			return
 		}
 
-		log.Info("Building and writing index")
-		t, err := templating.GetTemplate("export_index")
-		if err != nil {
-			log.Error(err)
-			return
-		}
-		html := bytes.Buffer{}
-		err = t.Execute(&html, indexModel)
-		if err != nil {
-			log.Error(err)
-			return
-		}
-		err = putFile("index.html", int64(html.Len()), time.Now(), util.BufferToStream(bytes.NewBuffer(html.Bytes())))
-		if err != nil {
-			log.Error(err)
-			return
-		}
-
 		if includeData {
+			log.Info("Building and writing index")
+			t, err := templating.GetTemplate("export_index")
+			if err != nil {
+				log.Error(err)
+				return
+			}
+			html := bytes.Buffer{}
+			err = t.Execute(&html, indexModel)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+			err = putFile("index.html", int64(html.Len()), time.Now(), util.BufferToStream(bytes.NewBuffer(html.Bytes())))
+			if err != nil {
+				log.Error(err)
+				return
+			}
+
 			log.Info("Including data in the archive")
 			for _, m := range media {
 				log.Info("Downloading ", m.MxcUri())
