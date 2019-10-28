@@ -184,9 +184,12 @@ func StartUserExport(userId string, s3urls bool, includeData bool, log *logrus.E
 		}
 		mediaManifest := make(map[string]*manifestRecord)
 		for _, m := range media {
-			s3url, err := ds_s3.GetS3URL(m.DatastoreId, m.Location)
-			if err != nil {
-				log.Warn(err)
+			var s3url string
+			if s3urls {
+				s3url, err = ds_s3.GetS3URL(m.DatastoreId, m.Location)
+				if err != nil {
+					log.Warn(err)
+				}
 			}
 			mediaManifest[m.MxcUri()] = &manifestRecord{
 				ArchivedName: archivedName(m),
