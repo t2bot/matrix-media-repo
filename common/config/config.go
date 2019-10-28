@@ -11,6 +11,7 @@ import (
 
 type runtimeConfig struct {
 	MigrationsPath string
+	TemplatesPath  string
 }
 
 var Runtime = &runtimeConfig{}

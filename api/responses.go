@@ -8,6 +8,10 @@ type DoNotCacheResponse struct {
 	Payload interface{}
 }
 
+type HtmlResponse struct {
+	HTML string
+}
+
 type ErrorResponse struct {
 	Code         string `json:"errcode"`
 	Message      string `json:"error"`

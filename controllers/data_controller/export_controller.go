@@ -10,11 +10,13 @@ import (
 	"io"
 	"time"
 
+	"github.com/dustin/go-humanize"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
+	"github.com/turt2live/matrix-media-repo/templating"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 )
@@ -174,6 +176,11 @@ func StartUserExport(userId string, s3urls bool, includeData bool, log *logrus.E
 
 		// Build a manifest first (JSON)
 		log.Info("Building manifest")
+		indexModel := &templating.ExportIndexModel{
+			Entity:   userId,
+			ExportID: exportId,
+			Media:    make([]*templating.ExportIndexMediaModel, 0),
+		}
 		mediaManifest := make(map[string]*manifestRecord)
 		for _, m := range media {
 			mediaManifest[m.MxcUri()] = &manifestRecord{
@@ -187,6 +194,19 @@ func StartUserExport(userId string, s3urls bool, includeData bool, log *logrus.E
 				MediaId:      m.MediaId,
 				CreatedTs:    m.CreationTs,
 			}
+			indexModel.Media = append(indexModel.Media, &templating.ExportIndexMediaModel{
+				ExportID:        exportId,
+				ArchivedName:    archivedName(m),
+				FileName:        m.UploadName,
+				SizeBytes:       m.SizeBytes,
+				SizeBytesHuman:  humanize.Bytes(uint64(m.SizeBytes)),
+				Origin:          m.Origin,
+				MediaID:         m.MediaId,
+				Sha256Hash:      m.Sha256Hash,
+				ContentType:     m.ContentType,
+				UploadTs:        m.CreationTs,
+				UploadDateHuman: util.FromMillis(m.CreationTs).Format(time.UnixDate),
+			})
 		}
 		manifest := &manifest{
 			Version:   1,
@@ -202,6 +222,24 @@ func StartUserExport(userId string, s3urls bool, includeData bool, log *logrus.E
 
 		log.Info("Writing manifest")
 		err = putFile("manifest.json", int64(len(b)), time.Now(), util.BufferToStream(bytes.NewBuffer(b)))
+		if err != nil {
+			log.Error(err)
+			return
+		}
+
+		log.Info("Building and writing index")
+		t, err := templating.GetTemplate("export_index")
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		html := bytes.Buffer{}
+		err = t.Execute(&html, indexModel)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		err = putFile("index.html", int64(html.Len()), time.Now(), util.BufferToStream(bytes.NewBuffer(html.Bytes())))
 		if err != nil {
 			log.Error(err)
 			return
