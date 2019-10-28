@@ -16,6 +16,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
+	"github.com/turt2live/matrix-media-repo/storage/datastore/ds_s3"
 	"github.com/turt2live/matrix-media-repo/templating"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
@@ -183,12 +184,16 @@ func StartUserExport(userId string, s3urls bool, includeData bool, log *logrus.E
 		}
 		mediaManifest := make(map[string]*manifestRecord)
 		for _, m := range media {
+			s3url, err := ds_s3.GetS3URL(m.DatastoreId, m.Location)
+			if err != nil {
+				log.Warn(err)
+			}
 			mediaManifest[m.MxcUri()] = &manifestRecord{
 				ArchivedName: archivedName(m),
 				FileName:     m.UploadName,
 				SizeBytes:    m.SizeBytes,
 				ContentType:  m.ContentType,
-				S3Url:        "TODO",
+				S3Url:        s3url,
 				Sha256:       m.Sha256Hash,
 				Origin:       m.Origin,
 				MediaId:      m.MediaId,
