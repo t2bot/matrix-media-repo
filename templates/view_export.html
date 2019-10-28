@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>{{.Entity}} media export</title>
+    <style type="text/css">
+        body, html {
+            margin: 0;
+            padding: 0;
+            background-color: #eaeaea;
+            color: #111;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        }
+        .container {
+            width: 500px;
+            margin: 50px auto auto;
+            background-color: #fff;
+            border-radius: 5px;
+            padding: 20px;
+            border: 1px solid rgba(143,45,86,.2);
+            box-shadow: 0 20px 40px 20px rgba(206,222,235,.34);
+        }
+    </style>
+    <noscript>
+        <style type="text/css">
+            #delete-option {
+                display: none;
+            }
+        </style>
+    </noscript>
+    <script type="text/javascript">
+        <!--
+        function deleteExport() {
+            var url = "/_matrix/media/unstable/admin/export/{{.ExportID}}/delete";
+            var xhr = new XMLHttpRequest();
+            xhr.open("DELETE", url, true);
+            xhr.onreadystatechange = function() {
+                if (this.readyState !== 4) return;
+                var element = document.getElementById("main");
+                if (!element) return;
+
+                if (this.status === 200) {
+                    element.innerHTML = "<h1>{{.Entity}} media export</h1><p>Your export has been deleted.</p>";
+                } else {
+                    element.innerHTML = "<h1>{{.Entity}} media export</h1><p>There was a problem deleting your export. Please reload the page and try again.</p>";
+                }
+            };
+            xhr.send();
+        }
+        //-->
+    </script>
+</head>
+<body>
+    <div class="container" id="main">
+        <h1>{{.Entity}} media export</h1>
+        <p>
+            Your media can be downloaded in parts below. Each part is a portion of your data and can be extracted using
+            free software like <a href="https://www.7-zip.org/" target="_blank">7-Zip</a>. To see all of your data, download
+            and extract each part then open the <code>index.html</code> file.
+        </p>
+        <ul>
+            {{range .ExportParts}}
+                <li><a href="/_matrix/media/unstable/admin/export/{{.ExportID}}/part/{{.Index}}" download>{{.FileName}}</a> ({{.SizeBytesHuman}})</li>
+            {{end}}
+        </ul>
+        <p id="delete-option">Downloaded all your data? <a href="javascript:deleteExport()">Delete your export</a></p>
+        <noscript>
+            <p>To delete your export, please enable JavaScript</p>
+        </noscript>
+    </div>
+</body>
+</html>

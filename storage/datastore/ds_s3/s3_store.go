@@ -2,6 +2,7 @@ package ds_s3
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -62,6 +63,17 @@ func GetOrCreateS3Datastore(dsId string, conf config.DatastoreConfig) (*s3Datast
 	}
 	stores[dsId] = s3ds
 	return s3ds, nil
+}
+
+func GetS3URL(datastoreId string, location string) (string, error) {
+	var store *s3Datastore
+	var ok bool
+	if store, ok = stores[datastoreId]; !ok {
+		return "", errors.New("s3 datastore not found")
+	}
+
+	// HACK: Surely there's a better way...
+	return fmt.Sprintf("https://%s/%s/%s", store.conf.Options["endpoint"], store.bucket, location), nil
 }
 
 func (s *s3Datastore) EnsureBucketExists() error {

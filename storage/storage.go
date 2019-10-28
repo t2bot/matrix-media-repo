@@ -22,6 +22,7 @@ type repos struct {
 	thumbnailStore *stores.ThumbnailStoreFactory
 	urlStore       *stores.UrlStoreFactory
 	metadataStore  *stores.MetadataStoreFactory
+	exportStore    *stores.ExportStoreFactory
 }
 
 var dbInstance *Database
@@ -79,6 +80,10 @@ func OpenDatabase(connectionString string, maxConns int, maxIdleConns int) error
 	if d.repos.metadataStore, err = stores.InitMetadataStore(d.db); err != nil {
 		return err
 	}
+	logrus.Info("Setting up export DB store...")
+	if d.repos.exportStore, err = stores.InitExportStore(d.db); err != nil {
+		return err
+	}
 
 	// Run some tasks that should always be done on startup
 	if err = populateDatastores(d); err != nil {
@@ -106,4 +111,8 @@ func (d *Database) GetUrlStore(ctx context.Context, log *logrus.Entry) *stores.U
 
 func (d *Database) GetMetadataStore(ctx context.Context, log *logrus.Entry) *stores.MetadataStore {
 	return d.repos.metadataStore.Create(ctx, log)
+}
+
+func (d *Database) GetExportStore(ctx context.Context, log *logrus.Entry) *stores.ExportStore {
+	return d.repos.exportStore.Create(ctx, log)
 }

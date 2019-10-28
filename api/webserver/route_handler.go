@@ -1,6 +1,7 @@
 package webserver
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -166,6 +167,17 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "image/png")
 		io.Copy(w, result.Avatar)
 		return // Prevent sending conflicting responses
+	case *api.HtmlResponse:
+		metrics.HttpResponses.With(prometheus.Labels{
+			"host":       r.Host,
+			"action":     h.action,
+			"method":     r.Method,
+			"statusCode": strconv.Itoa(http.StatusOK),
+		}).Inc()
+		w.Header().Set("Content-Type", "text/html")
+		w.Header().Set("Content-Security-Policy", "") // We're serving HTML, so take away the CSP
+		io.Copy(w, bytes.NewBuffer([]byte(result.HTML)))
+		return
 	default:
 		break
 	}

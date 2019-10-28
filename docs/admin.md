@@ -310,3 +310,80 @@ The response is the status of the task:
 ```
 
 **Note**: The `params` vary depending on the task.
+
+## Exporting/Importing data
+
+Exports (and therefore imports) are currently done on a per-user basis. This is primarily useful when moving users to new hosts or doing GDPR exports of user data.
+
+#### Exporting data for a user
+
+URL: `POST /_matrix/media/unstable/admin/user/<user ID>/export?include_data=true&s3_urls=true`
+
+Both query params are optional, and their default values are shown. If `include_data` is false, only metadata will be returned by the export. `s3_urls`, when true, includes the s3 URL to the media in the metadata if one is available.
+
+The response is a task ID and export ID to put into the 'view export' URL:
+
+```json
+{
+  "export_id": "abcdef",
+  "task_id": 12
+}
+```
+
+**Note**: the `export_id` will be included in the task's `params`.
+
+**Note**: the `export_id` should be treated as a secret/authentication token as it allows someone to download other people's data.
+
+#### Viewing an export
+
+After the task has been completed, the `export_id` can be used to download the content.
+
+URL: `GET /_matrix/media/unstable/admin/export/<export ID>/view`
+
+The response will be a webpage for the user to interact with. From this page, the user can say they've downloaded the export and delete it.
+
+#### Downloading an export (for scripts)
+
+Similar to viewing an export, an export may be downloaded to later be imported.
+
+Exports are split into several tar (gzipped) files and need to be downloaded individually. To get the list of files, call:
+
+`GET /_matrix/media/unstable/admin/export/<export ID>/metadata`
+
+which returns:
+
+```json
+{
+  "entity": "@travis:t2l.io",
+  "parts": [
+    {
+      "index": 1,
+      "size": 1024000,
+      "name": "TravisR-part-1.tgz"
+    },
+    {
+      "index": 2,
+      "size": 1024000,
+      "name": "TravisR-part-2.tgz"
+    }
+  ]
+}
+```
+
+**Note**: the `name` demonstrated may be different and should not be parsed. The `size` is in bytes.
+
+Then one can call the following to download each part:
+
+`GET /_matrix/media/unstable/admin/export/<export ID>/part/<index>`
+
+#### Deleting an export
+
+After the export has been downloaded, it can be deleted. Note that this endpoint can be called by the user from the "view export" page.
+
+`DELETE /_matrix/media/unstable/admin/export/<export ID>`
+
+The response is an empty JSON object if successful.
+
+#### Importing a previous export
+
+Not yet implemented.

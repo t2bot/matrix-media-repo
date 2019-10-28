@@ -19,11 +19,13 @@ import (
 
 func main() {
 	configPath := flag.String("config", "media-repo.yaml", "The path to the configuration")
-	migrationsPath := flag.String("migrations", "./migrations", "The absolute path the migrations folder")
+	migrationsPath := flag.String("migrations", "./migrations", "The absolute path for the migrations folder")
+	templatesPath := flag.String("templates", "./templates", "The absolute path for the templates folder")
 	flag.Parse()
 
 	config.Path = *configPath
 	config.Runtime.MigrationsPath = *migrationsPath
+	config.Runtime.TemplatesPath = *templatesPath
 
 	err := logging.Setup(config.Get().General.LogDirectory)
 	if err != nil {

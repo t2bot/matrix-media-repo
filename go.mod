@@ -13,6 +13,7 @@ require (
 	github.com/didip/tollbooth v4.0.0+incompatible
 	github.com/disintegration/imaging v1.2.4
 	github.com/djherbis/stream v0.0.0-20180113022625-311bd3bbfe82
+	github.com/dustin/go-humanize v1.0.0
 	github.com/dyatlov/go-opengraph v0.0.0-20160203134303-41a3523719df
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
 	github.com/fastly/go-utils v0.0.0-20180712184237-d95a45783239 // indirect

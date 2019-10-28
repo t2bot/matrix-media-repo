@@ -22,6 +22,8 @@ github.com/disintegration/imaging v1.2.4 h1:eJRPGef+mQ4WZ8cED/pqElxW4+79zBjJYTjY
 github.com/disintegration/imaging v1.2.4/go.mod h1:9B/deIUIrliYkyMTuXJd6OUFLcrZ2tf+3Qlwnaf/CjU=
 github.com/djherbis/stream v0.0.0-20180113022625-311bd3bbfe82 h1:RIpwzqf44uzYuaK6yfIp9m985kwVR82yvV77T7Cvkjk=
 github.com/djherbis/stream v0.0.0-20180113022625-311bd3bbfe82/go.mod h1:ZNVKPVRCmrwhCwQHZUpVHHrq2rtGLrG1t3T/TThYLP8=
+github.com/dustin/go-humanize v1.0.0 h1:VSnTsYCnlFHaM2/igO1h6X3HA71jcobQuxemgkq4zYo=
+github.com/dustin/go-humanize v1.0.0/go.mod h1:HtrtbFcZ19U5GC7JDqmcUSB87Iq5E25KnS6fMYU6eOk=
 github.com/dyatlov/go-opengraph v0.0.0-20160203134303-41a3523719df h1:/XZvBjuoyXsk7DRR9vI8JSRTqRS8f163L9bRdY5Sfw0=
 github.com/dyatlov/go-opengraph v0.0.0-20160203134303-41a3523719df/go.mod h1:nYia/MIs9OyvXXYboPmNOj0gVWo97Wx0sde+ZuKkoM4=
 github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a h1:yDWHCSQ40h88yih2JAcL6Ls/kVkSE8GFACTGVnMPruw=
