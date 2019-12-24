@@ -41,6 +41,54 @@ type manifest struct {
 	Media     map[string]*manifestRecord `json:"media"`
 }
 
+func StartServerExport(serverName string, s3urls bool, includeData bool, log *logrus.Entry) (*types.BackgroundTask, string, error) {
+	ctx := context.Background()
+
+	exportId, err := util.GenerateRandomString(128)
+	if err != nil {
+		return nil, "", err
+	}
+
+	db := storage.GetDatabase().GetMetadataStore(ctx, log)
+	task, err := db.CreateBackgroundTask("export_data", map[string]interface{}{
+		"server_name":     serverName,
+		"include_s3_urls": s3urls,
+		"include_data":    includeData,
+		"export_id":       exportId,
+	})
+
+	if err != nil {
+		return nil, "", err
+	}
+
+	go func() {
+		ds, err := datastore.PickDatastore(common.KindArchives, ctx, log)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+
+		mediaDb := storage.GetDatabase().GetMediaStore(ctx, log)
+		media, err := mediaDb.GetAllMediaForServer(serverName)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+
+		compileArchive(exportId, serverName, ds, media, s3urls, includeData, ctx, log)
+
+		log.Info("Finishing export task")
+		err = db.FinishedBackgroundTask(task.ID)
+		if err != nil {
+			log.Error(err)
+			log.Error("Failed to flag task as finished")
+		}
+		log.Info("Finished export")
+	}()
+
+	return task, exportId, nil
+}
+
 func StartUserExport(userId string, s3urls bool, includeData bool, log *logrus.Entry) (*types.BackgroundTask, string, error) {
 	ctx := context.Background()
 
@@ -75,230 +123,7 @@ func StartUserExport(userId string, s3urls bool, includeData bool, log *logrus.E
 			return
 		}
 
-		exportDb := storage.GetDatabase().GetExportStore(ctx, log)
-		err = exportDb.InsertExport(exportId, userId)
-		if err != nil {
-			log.Error(err)
-			return
-		}
-
-		var currentTar *tar.Writer
-		var currentTarBytes bytes.Buffer
-		part := 0
-		parts := make([]*types.ObjectInfo, 0)
-		currentSize := int64(0)
-
-		persistTar := func() error {
-			currentTar.Close()
-
-			// compress
-			log.Info("Compressing tar file")
-			gzipBytes := bytes.Buffer{}
-			archiver := gzip.NewWriter(&gzipBytes)
-			archiver.Name = fmt.Sprintf("export-part-%d.tar", part)
-			_, err := io.Copy(archiver, util.BufferToStream(bytes.NewBuffer(currentTarBytes.Bytes())))
-			if err != nil {
-				return err
-			}
-			archiver.Close()
-
-			log.Info("Uploading compressed tar file")
-			buf := bytes.NewBuffer(gzipBytes.Bytes())
-			size := int64(buf.Len())
-			obj, err := ds.UploadFile(util.BufferToStream(buf), size, ctx, log)
-			if err != nil {
-				return err
-			}
-			parts = append(parts, obj)
-
-			fname := fmt.Sprintf("export-part-%d.tgz", part)
-			err = exportDb.InsertExportPart(exportId, part, size, fname, ds.DatastoreId, obj.Location)
-			if err != nil {
-				return err
-			}
-
-			return nil
-		}
-
-		newTar := func() error {
-			if part > 0 {
-				log.Info("Persisting complete tar file")
-				err := persistTar()
-				if err != nil {
-					return err
-				}
-			}
-
-			log.Info("Starting new tar file")
-			currentTarBytes = bytes.Buffer{}
-			currentTar = tar.NewWriter(&currentTarBytes)
-			part = part + 1
-			currentSize = 0
-
-			return nil
-		}
-
-		// Start the first tar file
-		log.Info("Creating first tar file")
-		err = newTar()
-		if err != nil {
-			log.Error(err)
-			return
-		}
-
-		putFile := func(name string, size int64, creationTime time.Time, file io.Reader) error {
-			header := &tar.Header{
-				Name:    name,
-				Size:    size,
-				Mode:    int64(0644),
-				ModTime: creationTime,
-			}
-			err := currentTar.WriteHeader(header)
-			if err != nil {
-				log.Error("error writing header")
-				return err
-			}
-
-			i, err := io.Copy(currentTar, file)
-			if err != nil {
-				log.Error("error writing file")
-				return err
-			}
-
-			currentSize += i
-
-			return nil
-		}
-
-		archivedName := func(m *types.Media) string {
-			// TODO: Pick the right extension for the file type
-			return fmt.Sprintf("%s__%s.obj", m.Origin, m.MediaId)
-		}
-
-		// Build a manifest first (JSON)
-		log.Info("Building manifest")
-		indexModel := &templating.ExportIndexModel{
-			Entity:   userId,
-			ExportID: exportId,
-			Media:    make([]*templating.ExportIndexMediaModel, 0),
-		}
-		mediaManifest := make(map[string]*manifestRecord)
-		for _, m := range media {
-			var s3url string
-			if s3urls {
-				s3url, err = ds_s3.GetS3URL(m.DatastoreId, m.Location)
-				if err != nil {
-					log.Warn(err)
-				}
-			}
-			mediaManifest[m.MxcUri()] = &manifestRecord{
-				ArchivedName: archivedName(m),
-				FileName:     m.UploadName,
-				SizeBytes:    m.SizeBytes,
-				ContentType:  m.ContentType,
-				S3Url:        s3url,
-				Sha256:       m.Sha256Hash,
-				Origin:       m.Origin,
-				MediaId:      m.MediaId,
-				CreatedTs:    m.CreationTs,
-			}
-			indexModel.Media = append(indexModel.Media, &templating.ExportIndexMediaModel{
-				ExportID:        exportId,
-				ArchivedName:    archivedName(m),
-				FileName:        m.UploadName,
-				SizeBytes:       m.SizeBytes,
-				SizeBytesHuman:  humanize.Bytes(uint64(m.SizeBytes)),
-				Origin:          m.Origin,
-				MediaID:         m.MediaId,
-				Sha256Hash:      m.Sha256Hash,
-				ContentType:     m.ContentType,
-				UploadTs:        m.CreationTs,
-				UploadDateHuman: util.FromMillis(m.CreationTs).Format(time.UnixDate),
-			})
-		}
-		manifest := &manifest{
-			Version:   1,
-			UserId:    userId,
-			CreatedTs: util.NowMillis(),
-			Media:     mediaManifest,
-		}
-		b, err := json.Marshal(manifest)
-		if err != nil {
-			log.Error(err)
-			return
-		}
-
-		log.Info("Writing manifest")
-		err = putFile("manifest.json", int64(len(b)), time.Now(), util.BufferToStream(bytes.NewBuffer(b)))
-		if err != nil {
-			log.Error(err)
-			return
-		}
-
-		if includeData {
-			log.Info("Building and writing index")
-			t, err := templating.GetTemplate("export_index")
-			if err != nil {
-				log.Error(err)
-				return
-			}
-			html := bytes.Buffer{}
-			err = t.Execute(&html, indexModel)
-			if err != nil {
-				log.Error(err)
-				return
-			}
-			err = putFile("index.html", int64(html.Len()), time.Now(), util.BufferToStream(bytes.NewBuffer(html.Bytes())))
-			if err != nil {
-				log.Error(err)
-				return
-			}
-
-			log.Info("Including data in the archive")
-			for _, m := range media {
-				log.Info("Downloading ", m.MxcUri())
-				s, err := datastore.DownloadStream(ctx, log, m.DatastoreId, m.Location)
-				if err != nil {
-					log.Error(err)
-					continue
-				}
-
-				log.Infof("Copying %s to memory", m.MxcUri())
-				b := bytes.Buffer{}
-				_, err = io.Copy(&b, s)
-				if err != nil {
-					log.Error(err)
-					continue
-				}
-				s.Close()
-				s = util.BufferToStream(bytes.NewBuffer(b.Bytes()))
-
-				log.Info("Archiving ", m.MxcUri())
-				err = putFile(archivedName(m), m.SizeBytes, time.Unix(0, m.CreationTs*int64(time.Millisecond)), s)
-				if err != nil {
-					log.Error(err)
-					return
-				}
-
-				if currentSize >= config.Get().Archiving.TargetBytesPerPart {
-					log.Info("Rotating tar")
-					err = newTar()
-					if err != nil {
-						log.Error(err)
-						return
-					}
-				}
-			}
-		}
-
-		if currentSize > 0 {
-			log.Info("Persisting last tar")
-			err = persistTar()
-			if err != nil {
-				log.Error(err)
-				return
-			}
-		}
+		compileArchive(exportId, userId, ds, media, s3urls, includeData, ctx, log)
 
 		log.Info("Finishing export task")
 		err = db.FinishedBackgroundTask(task.ID)
@@ -310,4 +135,231 @@ func StartUserExport(userId string, s3urls bool, includeData bool, log *logrus.E
 	}()
 
 	return task, exportId, nil
+}
+
+func compileArchive(exportId string, entityId string, archiveDs *datastore.DatastoreRef, media []*types.Media, s3urls bool, includeData bool, ctx context.Context, log *logrus.Entry) {
+	exportDb := storage.GetDatabase().GetExportStore(ctx, log)
+	err := exportDb.InsertExport(exportId, entityId)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	var currentTar *tar.Writer
+	var currentTarBytes bytes.Buffer
+	part := 0
+	parts := make([]*types.ObjectInfo, 0)
+	currentSize := int64(0)
+
+	persistTar := func() error {
+		currentTar.Close()
+
+		// compress
+		log.Info("Compressing tar file")
+		gzipBytes := bytes.Buffer{}
+		archiver := gzip.NewWriter(&gzipBytes)
+		archiver.Name = fmt.Sprintf("export-part-%d.tar", part)
+		_, err := io.Copy(archiver, util.BufferToStream(bytes.NewBuffer(currentTarBytes.Bytes())))
+		if err != nil {
+			return err
+		}
+		archiver.Close()
+
+		log.Info("Uploading compressed tar file")
+		buf := bytes.NewBuffer(gzipBytes.Bytes())
+		size := int64(buf.Len())
+		obj, err := archiveDs.UploadFile(util.BufferToStream(buf), size, ctx, log)
+		if err != nil {
+			return err
+		}
+		parts = append(parts, obj)
+
+		fname := fmt.Sprintf("export-part-%d.tgz", part)
+		err = exportDb.InsertExportPart(exportId, part, size, fname, archiveDs.DatastoreId, obj.Location)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	newTar := func() error {
+		if part > 0 {
+			log.Info("Persisting complete tar file")
+			err := persistTar()
+			if err != nil {
+				return err
+			}
+		}
+
+		log.Info("Starting new tar file")
+		currentTarBytes = bytes.Buffer{}
+		currentTar = tar.NewWriter(&currentTarBytes)
+		part = part + 1
+		currentSize = 0
+
+		return nil
+	}
+
+	// Start the first tar file
+	log.Info("Creating first tar file")
+	err = newTar()
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	putFile := func(name string, size int64, creationTime time.Time, file io.Reader) error {
+		header := &tar.Header{
+			Name:    name,
+			Size:    size,
+			Mode:    int64(0644),
+			ModTime: creationTime,
+		}
+		err := currentTar.WriteHeader(header)
+		if err != nil {
+			log.Error("error writing header")
+			return err
+		}
+
+		i, err := io.Copy(currentTar, file)
+		if err != nil {
+			log.Error("error writing file")
+			return err
+		}
+
+		currentSize += i
+
+		return nil
+	}
+
+	archivedName := func(m *types.Media) string {
+		// TODO: Pick the right extension for the file type
+		return fmt.Sprintf("%s__%s.obj", m.Origin, m.MediaId)
+	}
+
+	// Build a manifest first (JSON)
+	log.Info("Building manifest")
+	indexModel := &templating.ExportIndexModel{
+		Entity:   entityId,
+		ExportID: exportId,
+		Media:    make([]*templating.ExportIndexMediaModel, 0),
+	}
+	mediaManifest := make(map[string]*manifestRecord)
+	for _, m := range media {
+		var s3url string
+		if s3urls {
+			s3url, err = ds_s3.GetS3URL(m.DatastoreId, m.Location)
+			if err != nil {
+				log.Warn(err)
+			}
+		}
+		mediaManifest[m.MxcUri()] = &manifestRecord{
+			ArchivedName: archivedName(m),
+			FileName:     m.UploadName,
+			SizeBytes:    m.SizeBytes,
+			ContentType:  m.ContentType,
+			S3Url:        s3url,
+			Sha256:       m.Sha256Hash,
+			Origin:       m.Origin,
+			MediaId:      m.MediaId,
+			CreatedTs:    m.CreationTs,
+		}
+		indexModel.Media = append(indexModel.Media, &templating.ExportIndexMediaModel{
+			ExportID:        exportId,
+			ArchivedName:    archivedName(m),
+			FileName:        m.UploadName,
+			SizeBytes:       m.SizeBytes,
+			SizeBytesHuman:  humanize.Bytes(uint64(m.SizeBytes)),
+			Origin:          m.Origin,
+			MediaID:         m.MediaId,
+			Sha256Hash:      m.Sha256Hash,
+			ContentType:     m.ContentType,
+			UploadTs:        m.CreationTs,
+			UploadDateHuman: util.FromMillis(m.CreationTs).Format(time.UnixDate),
+		})
+	}
+	manifest := &manifest{
+		Version:   1,
+		UserId:    entityId,
+		CreatedTs: util.NowMillis(),
+		Media:     mediaManifest,
+	}
+	b, err := json.Marshal(manifest)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	log.Info("Writing manifest")
+	err = putFile("manifest.json", int64(len(b)), time.Now(), util.BufferToStream(bytes.NewBuffer(b)))
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	if includeData {
+		log.Info("Building and writing index")
+		t, err := templating.GetTemplate("export_index")
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		html := bytes.Buffer{}
+		err = t.Execute(&html, indexModel)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		err = putFile("index.html", int64(html.Len()), time.Now(), util.BufferToStream(bytes.NewBuffer(html.Bytes())))
+		if err != nil {
+			log.Error(err)
+			return
+		}
+
+		log.Info("Including data in the archive")
+		for _, m := range media {
+			log.Info("Downloading ", m.MxcUri())
+			s, err := datastore.DownloadStream(ctx, log, m.DatastoreId, m.Location)
+			if err != nil {
+				log.Error(err)
+				continue
+			}
+
+			log.Infof("Copying %s to memory", m.MxcUri())
+			b := bytes.Buffer{}
+			_, err = io.Copy(&b, s)
+			if err != nil {
+				log.Error(err)
+				continue
+			}
+			s.Close()
+			s = util.BufferToStream(bytes.NewBuffer(b.Bytes()))
+
+			log.Info("Archiving ", m.MxcUri())
+			err = putFile(archivedName(m), m.SizeBytes, time.Unix(0, m.CreationTs*int64(time.Millisecond)), s)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+
+			if currentSize >= config.Get().Archiving.TargetBytesPerPart {
+				log.Info("Rotating tar")
+				err = newTar()
+				if err != nil {
+					log.Error(err)
+					return
+				}
+			}
+		}
+	}
+
+	if currentSize > 0 {
+		log.Info("Persisting last tar")
+		err = persistTar()
+		if err != nil {
+			log.Error(err)
+			return
+		}
+	}
 }

@@ -100,6 +100,8 @@ archiving:
   enabled: true
   # If true, users can request a copy of their own data. By default, only repository administrators
   # can request a copy.
+  # This includes the ability for homeserver admins to request a copy of their own server's
+  # data, as known to the repo.
   selfService: false
   # The number of bytes to target per archive before breaking up the files. This is independent
   # of any file upload limits and will require a similar amount of memory when performing an export.

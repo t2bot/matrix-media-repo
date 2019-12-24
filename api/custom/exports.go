@@ -12,6 +12,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/api/r0"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/controllers/data_controller"
+	"github.com/turt2live/matrix-media-repo/matrix"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/templating"
@@ -61,6 +62,58 @@ func ExportUserData(r *http.Request, log *logrus.Entry, user api.UserInfo) inter
 		"s3urls":       s3urls,
 	})
 	task, exportId, err := data_controller.StartUserExport(userId, s3urls, includeData, log)
+	if err != nil {
+		log.Error(err)
+		return api.InternalServerError("fatal error starting export")
+	}
+
+	return &api.DoNotCacheResponse{Payload: &ExportStarted{
+		TaskID:   task.ID,
+		ExportID: exportId,
+	}}
+}
+
+func ExportServerData(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
+	if !config.Get().Archiving.Enabled {
+		return api.BadRequest("archiving is not enabled")
+	}
+
+	isAdmin := util.IsGlobalAdmin(user.UserId) || user.IsShared
+	if !config.Get().Archiving.SelfService && !isAdmin {
+		return api.AuthFailed()
+	}
+
+	includeData := r.URL.Query().Get("include_data") != "false"
+	s3urls := r.URL.Query().Get("s3_urls") != "false"
+
+	params := mux.Vars(r)
+
+	serverName := params["serverName"]
+
+	if !isAdmin {
+		// They might be a local admin, so check that.
+
+		// We won't be able to check unless we know about the homeserver though
+		if !util.IsServerOurs(serverName) {
+			return api.BadRequest("cannot export data for another server")
+		}
+
+		isLocalAdmin, err := matrix.IsUserAdmin(r.Context(), serverName, user.AccessToken, r.RemoteAddr)
+		if err != nil {
+			log.Error("Error verifying local admin: " + err.Error())
+			isLocalAdmin = false
+		}
+		if !isLocalAdmin {
+			return api.BadRequest("cannot export data for another server")
+		}
+	}
+
+	log = log.WithFields(logrus.Fields{
+		"exportServerName": serverName,
+		"includeData":      includeData,
+		"s3urls":           s3urls,
+	})
+	task, exportId, err := data_controller.StartServerExport(serverName, s3urls, includeData, log)
 	if err != nil {
 		log.Error(err)
 		return api.InternalServerError("fatal error starting export")

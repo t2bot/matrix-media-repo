@@ -334,6 +334,12 @@ The response is a task ID and export ID to put into the 'view export' URL:
 
 **Note**: the `export_id` should be treated as a secret/authentication token as it allows someone to download other people's data.
 
+#### Exporting data for a domain
+
+URL: `POST /_matrix/media/unstable/admin/server/<server name>/export?include_data=true&s3_urls=true`
+
+Response is the same as the user export endpoint above. The `<server name>` does not need to be configured in the repo - it will export data it has on a remote server if you ask it to.
+
 #### Viewing an export
 
 After the task has been completed, the `export_id` can be used to download the content.
