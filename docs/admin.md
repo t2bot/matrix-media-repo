@@ -392,4 +392,42 @@ The response is an empty JSON object if successful.
 
 #### Importing a previous export
 
-Not yet implemented.
+Once an export has been completed it can be imported back into the media repo. Files that are already known to the repo will not be overwritten - it'll use its known copy first.
+
+**Note**: Imports happen in memory, which can balloon quickly depending on how you exported your data. Although you can import data without s3 it is recommended that you only import from archives generated with `include_data=false`.
+
+**Note**: Only repository administrators can perform imports, regardless of who they are for.
+
+URL: `POST /_matrix/media/unstable/admin/import`
+
+The request body is the bytes of the first archive (eg: `TravisR-part-1.tgz` in the above examples).
+
+The response body will be something like the following: 
+```json
+{ 
+  "import_id": "abcdef",
+  "task_id": 13
+}
+```
+
+**Note**: the `import_id` will be included in the task's `params`.
+
+**Note**: the `import_id` should be treated as a secret/authentication token as it could allow for an attacker to change what the user has uploaded.
+
+To import the subsequent parts of an export, use the following endpoint and supply the archive as the request body: `POST /_matrix/media/unstable/admin/import/<import ID>/part`
+
+The parts can be uploaded in any order and will be extracted in memory.
+
+Imports will look for the files included from the archives, though if an S3 URL is available and the file isn't found it will use that instead. If the S3 URL points at a known datastore for the repo, it will assume the file exists and use that location without pulling it into memory.
+
+Imports stay open until all files have been imported (or until the process crashes). This also means you can upload the parts at your leisure instead of trying to push all the data up to the server as fast as possible. If the task is still considered running, the import is still open.
+
+**Note**: When using s3 URLs to do imports it is possible for the media to bypass checks like allowed file types, maximum sizes, and quarantines.
+
+#### Closing an import manually
+
+If you have no intention of continuing an import, use this endpoint.
+
+URL: `POST /_matrix/media/unstable/admin/import/<import ID>/close`
+
+The import will be closed and stop waiting for new files to show up. It will continue importing whatever files it already knows about - to forcefully end this task simply restart the process.

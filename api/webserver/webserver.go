@@ -60,6 +60,9 @@ func Init() {
 	getExportMetadataHandler := handler{api.AccessTokenOptionalRoute(custom.GetExportMetadata), "get_export_metadata", counter, false}
 	downloadExportPartHandler := handler{api.AccessTokenOptionalRoute(custom.DownloadExportPart), "download_export_part", counter, false}
 	deleteExportHandler := handler{api.AccessTokenOptionalRoute(custom.DeleteExport), "delete_export", counter, false}
+	startImportHandler := handler{api.RepoAdminRoute(custom.StartImport), "start_import", counter, false}
+	appendToImportHandler := handler{api.RepoAdminRoute(custom.AppendToImport), "append_to_import", counter, false}
+	stopImportHandler := handler{api.RepoAdminRoute(custom.StopImport), "stop_import", counter, false}
 
 	routes := make(map[string]route)
 	versions := []string{"r0", "v1", "unstable"} // r0 is typically clients and v1 is typically servers. v1 is deprecated.
@@ -102,6 +105,9 @@ func Init() {
 		routes["/_matrix/media/"+version+"/admin/export/{exportId:[a-zA-Z0-9.:\\-_]+}/metadata"] = route{"GET", getExportMetadataHandler}
 		routes["/_matrix/media/"+version+"/admin/export/{exportId:[a-zA-Z0-9.:\\-_]+}/part/{partId:[0-9]+}"] = route{"GET", downloadExportPartHandler}
 		routes["/_matrix/media/"+version+"/admin/export/{exportId:[a-zA-Z0-9.:\\-_]+}/delete"] = route{"DELETE", deleteExportHandler}
+		routes["/_matrix/media/"+version+"/admin/import"] = route{"POST", startImportHandler}
+		routes["/_matrix/media/"+version+"/admin/import/{importId:[a-zA-Z0-9.:\\-_]+}/part"] = route{"POST", appendToImportHandler}
+		routes["/_matrix/media/"+version+"/admin/import/{importId:[a-zA-Z0-9.:\\-_]+}/close"] = route{"POST", stopImportHandler}
 
 		// Routes that we should handle but aren't in the media namespace (synapse compat)
 		routes["/_matrix/client/"+version+"/admin/purge_media_cache"] = route{"POST", purgeRemote}

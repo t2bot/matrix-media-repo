@@ -36,9 +36,12 @@ type manifestRecord struct {
 
 type manifest struct {
 	Version   int                        `json:"version"`
-	UserId    string                     `json:"user_id"`
+	EntityId  string                     `json:"entity_id"`
 	CreatedTs int64                      `json:"created_ts"`
 	Media     map[string]*manifestRecord `json:"media"`
+
+	// Deprecated: for v1 manifests
+	UserId string `json:"user_id,omitempty"`
 }
 
 func StartServerExport(serverName string, s3urls bool, includeData bool, log *logrus.Entry) (*types.BackgroundTask, string, error) {
@@ -280,8 +283,8 @@ func compileArchive(exportId string, entityId string, archiveDs *datastore.Datas
 		})
 	}
 	manifest := &manifest{
-		Version:   1,
-		UserId:    entityId,
+		Version:   2,
+		EntityId:  entityId,
 		CreatedTs: util.NowMillis(),
 		Media:     mediaManifest,
 	}

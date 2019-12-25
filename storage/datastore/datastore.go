@@ -13,6 +13,26 @@ import (
 	"github.com/turt2live/matrix-media-repo/types"
 )
 
+func GetAvailableDatastores() ([]*types.Datastore, error) {
+	datastores := make([]*types.Datastore, 0)
+	for _, ds := range config.Get().DataStores {
+		if !ds.Enabled {
+			continue
+		}
+
+		uri := GetUriForDatastore(ds)
+
+		dsInstance, err := storage.GetOrCreateDatastoreOfType(context.TODO(), &logrus.Entry{}, ds.Type, uri)
+		if err != nil {
+			return nil, err
+		}
+
+		datastores = append(datastores, dsInstance)
+	}
+
+	return datastores, nil
+}
+
 func LocateDatastore(ctx context.Context, log *logrus.Entry, datastoreId string) (*DatastoreRef, error) {
 	ds, err := storage.GetDatabase().GetMediaStore(ctx, log).GetDatastore(datastoreId)
 	if err != nil {

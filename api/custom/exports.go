@@ -52,7 +52,7 @@ func ExportUserData(r *http.Request, log *logrus.Entry, user api.UserInfo) inter
 
 	userId := params["userId"]
 
-	if !isAdmin && user.UserId != userId {
+	if !isAdmin && user.UserId != userId  {
 		return api.BadRequest("cannot export data for another user")
 	}
 

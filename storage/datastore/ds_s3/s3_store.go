@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/minio/minio-go"
 	"github.com/pkg/errors"
@@ -74,6 +75,20 @@ func GetS3URL(datastoreId string, location string) (string, error) {
 
 	// HACK: Surely there's a better way...
 	return fmt.Sprintf("https://%s/%s/%s", store.conf.Options["endpoint"], store.bucket, location), nil
+}
+
+func ParseS3URL(s3url string) (string, string, string, error) {
+	trimmed := s3url[8:] // trim off https
+	parts := strings.Split(trimmed, "/")
+	if len(parts) < 3 {
+		return "", "", "", errors.New("invalid url")
+	}
+
+	endpoint := parts[0]
+	location := parts[len(parts)-1]
+	bucket := strings.Join(parts[1:len(parts)-1], "/")
+
+	return endpoint, bucket, location, nil
 }
 
 func (s *s3Datastore) EnsureBucketExists() error {
