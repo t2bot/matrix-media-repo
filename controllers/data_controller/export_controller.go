@@ -32,6 +32,7 @@ type manifestRecord struct {
 	Origin       string `json:"origin"`
 	MediaId      string `json:"media_id"`
 	CreatedTs    int64  `json:"created_ts"`
+	Uploader     string `json:"uploader"`
 }
 
 type manifest struct {
@@ -267,6 +268,7 @@ func compileArchive(exportId string, entityId string, archiveDs *datastore.Datas
 			Origin:       m.Origin,
 			MediaId:      m.MediaId,
 			CreatedTs:    m.CreationTs,
+			Uploader:     m.UserId,
 		}
 		indexModel.Media = append(indexModel.Media, &templating.ExportIndexMediaModel{
 			ExportID:        exportId,
@@ -280,6 +282,7 @@ func compileArchive(exportId string, entityId string, archiveDs *datastore.Datas
 			ContentType:     m.ContentType,
 			UploadTs:        m.CreationTs,
 			UploadDateHuman: util.FromMillis(m.CreationTs).Format(time.UnixDate),
+			Uploader:        m.UserId,
 		})
 	}
 	manifest := &manifest{

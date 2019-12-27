@@ -271,12 +271,18 @@ func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx
 							break
 						}
 
+						// Use the user ID (if any) as the uploader as a default. If this is an import
+						// for a server then we use the recorded one, if any is available.
+						uploader := userId
+						if userId == "" {
+							uploader = record.Uploader
+						}
 						media := &types.Media{
 							Origin:      record.Origin,
 							MediaId:     record.MediaId,
 							UploadName:  record.FileName,
 							ContentType: record.ContentType,
-							UserId:      userId,
+							UserId:      uploader,
 							Sha256Hash:  record.Sha256,
 							SizeBytes:   record.SizeBytes,
 							DatastoreId: ds.DatastoreId,

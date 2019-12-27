@@ -26,6 +26,7 @@ type ExportIndexMediaModel struct {
 	UploadDateHuman string
 	Sha256Hash      string
 	ContentType     string
+	Uploader        string
 }
 
 type ExportIndexModel struct {
