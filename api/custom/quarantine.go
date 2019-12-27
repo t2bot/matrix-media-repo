@@ -117,6 +117,45 @@ func QuarantineUserMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) 
 	return &api.DoNotCacheResponse{Payload: &MediaQuarantinedResponse{NumQuarantined: total}}
 }
 
+func QuarantineDomainMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
+	canQuarantine, allowOtherHosts, isLocalAdmin := getQuarantineRequestInfo(r, log, user)
+	if !canQuarantine {
+		return api.AuthFailed()
+	}
+
+	params := mux.Vars(r)
+
+	serverName := params["serverName"]
+
+	log = log.WithFields(logrus.Fields{
+		"serverName": serverName,
+		"localAdmin": isLocalAdmin,
+	})
+
+	if !allowOtherHosts && serverName != r.Host {
+		return api.AuthFailed()
+	}
+
+	db := storage.GetDatabase().GetMediaStore(r.Context(), log)
+	userMedia, err := db.GetAllMediaForServer(serverName)
+	if err != nil {
+		log.Error("Error while listing media for the server: " + err.Error())
+		return api.InternalServerError("error retrieving media for server")
+	}
+
+	total := 0
+	for _, media := range userMedia {
+		resp, ok := doQuarantineOn(media, allowOtherHosts, log, r.Context())
+		if !ok {
+			return resp
+		}
+
+		total += resp.(*MediaQuarantinedResponse).NumQuarantined
+	}
+
+	return &api.DoNotCacheResponse{Payload: &MediaQuarantinedResponse{NumQuarantined: total}}
+}
+
 func QuarantineMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
 	canQuarantine, allowOtherHosts, isLocalAdmin := getQuarantineRequestInfo(r, log, user)
 	if !canQuarantine {

@@ -41,6 +41,7 @@ func Init() {
 	quarantineHandler := handler{api.AccessTokenRequiredRoute(custom.QuarantineMedia), "quarantine_media", counter, false}
 	quarantineRoomHandler := handler{api.AccessTokenRequiredRoute(custom.QuarantineRoomMedia), "quarantine_room", counter, false}
 	quarantineUserHandler := handler{api.AccessTokenRequiredRoute(custom.QuarantineUserMedia), "quarantine_user", counter, false}
+	quarantineDomainHandler := handler{api.AccessTokenRequiredRoute(custom.QuarantineDomainMedia), "quarantine_domain", counter, false}
 	localCopyHandler := handler{api.AccessTokenRequiredRoute(unstable.LocalCopy), "local_copy", counter, false}
 	infoHandler := handler{api.AccessTokenRequiredRoute(unstable.MediaInfo), "info", counter, false}
 	configHandler := handler{api.AccessTokenRequiredRoute(r0.PublicConfig), "config", counter, false}
@@ -91,6 +92,7 @@ func Init() {
 		routes["/_matrix/media/"+version+"/admin/quarantine/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"POST", quarantineHandler}
 		routes["/_matrix/media/"+version+"/admin/quarantine/room/{roomId:[^/]+}"] = route{"POST", quarantineRoomHandler}
 		routes["/_matrix/media/"+version+"/admin/quarantine/user/{userId:[^/]+}"] = route{"POST", quarantineUserHandler}
+		routes["/_matrix/media/"+version+"/admin/quarantine/server/{serverName:[^/]+}"] = route{"POST", quarantineDomainHandler}
 		routes["/_matrix/media/"+version+"/admin/datastores/{datastoreId:[^/]+}/size_estimate"] = route{"GET", storageEstimateHandler}
 		routes["/_matrix/media/"+version+"/admin/datastores"] = route{"GET", datastoreListHandler}
 		routes["/_matrix/media/"+version+"/admin/datastores/{sourceDsId:[^/]+}/transfer_to/{targetDsId:[^/]+}"] = route{"POST", dsTransferHandler}

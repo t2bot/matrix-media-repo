@@ -80,6 +80,12 @@ URL: `POST /_matrix/media/unstable/admin/quarantine/room/<room id>?access_token=
 
 URL: `POST /_matrix/media/unstable/admin/quarantine/user/<user id>?access_token=your_access_token`
 
+#### Quarantine a whole server's worth of media
+
+URL: `POST /_matrix/media/unstable/admin/quarantine/server/<server name>?access_token=your_access_token`
+
+Note that this will only quarantine what is currently known to the repo. It will not flag the domain for future quarantines.
+
 ## Datastore management
 
 Datastores are used by the media repository to put files. Typically these match what is configured in the config file, such as s3 and directories. 
