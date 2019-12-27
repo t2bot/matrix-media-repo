@@ -25,6 +25,8 @@ COPY ./config.sample.yaml /etc/media-repo.yaml.sample
 COPY ./migrations /var/lib/media-repo-migrations
 COPY ./docker/run.sh /usr/local/bin/
 
+ENV REPO_CONFIG=/data/media-repo.yaml
+
 CMD /usr/local/bin/run.sh
 VOLUME ["/data", "/media"]
 EXPOSE 8000

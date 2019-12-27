@@ -4,6 +4,7 @@
 /pkg
 /logs
 /vendor
+/config
 
 media-repo*.yaml
 homeserver.yaml

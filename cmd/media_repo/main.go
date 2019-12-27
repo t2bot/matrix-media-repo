@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api/webserver"
@@ -22,6 +23,12 @@ func main() {
 	migrationsPath := flag.String("migrations", "./migrations", "The absolute path for the migrations folder")
 	templatesPath := flag.String("templates", "./templates", "The absolute path for the templates folder")
 	flag.Parse()
+
+	// Override config path with config for Docker users
+	configEnv := os.Getenv("REPO_CONFIG")
+	if configEnv != "" {
+		configPath = &configEnv
+	}
 
 	config.Path = *configPath
 	config.Runtime.MigrationsPath = *migrationsPath
