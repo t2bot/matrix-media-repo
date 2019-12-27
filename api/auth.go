@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/matrix"
 	"github.com/turt2live/matrix-media-repo/util"
@@ -20,7 +21,7 @@ func AccessTokenRequiredRoute(next func(r *http.Request, log *logrus.Entry, user
 		accessToken := util.GetAccessTokenFromRequest(r)
 		if accessToken == "" {
 			log.Error("Error: no token provided (required)")
-			return InternalServerError("Error no token provided (required)")
+			return &ErrorResponse{common.ErrCodeMissingToken, "no token provided (required)", common.ErrCodeUnknownToken}
 		}
 		if config.Get().SharedSecret.Enabled && accessToken == config.Get().SharedSecret.Token {
 			log = log.WithFields(logrus.Fields{"isRepoAdmin": true})
