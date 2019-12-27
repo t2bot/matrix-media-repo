@@ -12,6 +12,11 @@ repo:
   # header, but validates it to ensure the IP being given makes sense.
   trustAnyForwardedAddress: false
 
+  # If false, the media repo will not use the X-Forwarded-Host header commonly added by reverse proxies.
+  # Typically this should remain as true, though in some circumstances it may need to be disabled.
+  # See https://github.com/turt2live/matrix-media-repo/issues/202 for more information.
+  useForwardedHost: true
+
 # The database configuration for the media repository
 database:
   # Currently only "postgres" is supported.

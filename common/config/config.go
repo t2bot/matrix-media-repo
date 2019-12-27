@@ -24,11 +24,11 @@ type HomeserverConfig struct {
 }
 
 type GeneralConfig struct {
-	BindAddress         string `yaml:"bindAddress"`
-	Port                int    `yaml:"port"`
-	LogDirectory        string `yaml:"logDirectory"`
-	TrustAnyForward     bool   `yaml:"trustAnyForwardedAddress"`
-	IgnoreForwardedHost bool   `yaml:"ignoreForwardedHost"`
+	BindAddress      string `yaml:"bindAddress"`
+	Port             int    `yaml:"port"`
+	LogDirectory     string `yaml:"logDirectory"`
+	TrustAnyForward  bool   `yaml:"trustAnyForwardedAddress"`
+	UseForwardedHost bool   `yaml:"useForwardedHost"`
 }
 
 type DbPoolConfig struct {
@@ -228,11 +228,11 @@ func Get() *MediaRepoConfig {
 func NewDefaultConfig() *MediaRepoConfig {
 	return &MediaRepoConfig{
 		General: &GeneralConfig{
-			BindAddress:         "127.0.0.1",
-			Port:                8000,
-			LogDirectory:        "logs",
-			TrustAnyForward:     false,
-			IgnoreForwardedHost: false,
+			BindAddress:      "127.0.0.1",
+			Port:             8000,
+			LogDirectory:     "logs",
+			TrustAnyForward:  false,
+			UseForwardedHost: true,
 		},
 		Database: &DatabaseConfig{
 			Postgres: "postgres://your_username:your_password@localhost/database_name?sslmode=disable",
