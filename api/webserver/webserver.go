@@ -36,6 +36,7 @@ func Init() {
 	purgeQuarantinedHandler := handler{api.AccessTokenRequiredRoute(custom.PurgeQuarantined), "purge_quarantined", counter, false}
 	purgeUserMediaHandler := handler{api.AccessTokenRequiredRoute(custom.PurgeUserMedia), "purge_user_media", counter, false}
 	purgeRoomHandler := handler{api.AccessTokenRequiredRoute(custom.PurgeRoomMedia), "purge_room_media", counter, false}
+	purgeDomainHandler := handler{api.AccessTokenRequiredRoute(custom.PurgeDomainMedia), "purge_domain_media", counter, false}
 	purgeOldHandler := handler{api.RepoAdminRoute(custom.PurgeOldMedia), "purge_old_media", counter, false}
 	quarantineHandler := handler{api.AccessTokenRequiredRoute(custom.QuarantineMedia), "quarantine_media", counter, false}
 	quarantineRoomHandler := handler{api.AccessTokenRequiredRoute(custom.QuarantineRoomMedia), "quarantine_room", counter, false}
@@ -84,6 +85,7 @@ func Init() {
 		routes["/_matrix/media/"+version+"/admin/purge/quarantined"] = route{"POST", purgeQuarantinedHandler}
 		routes["/_matrix/media/"+version+"/admin/purge/user/{userId:[^/]+}"] = route{"POST", purgeUserMediaHandler}
 		routes["/_matrix/media/"+version+"/admin/purge/room/{roomId:[^/]+}"] = route{"POST", purgeRoomHandler}
+		routes["/_matrix/media/"+version+"/admin/purge/server/{serverName:[^/]+}"] = route{"POST", purgeDomainHandler}
 		routes["/_matrix/media/"+version+"/admin/purge/old"] = route{"POST", purgeOldHandler}
 		routes["/_matrix/media/"+version+"/admin/room/{roomId:[^/]+}/quarantine"] = route{"POST", quarantineRoomHandler} // deprecated
 		routes["/_matrix/media/"+version+"/admin/quarantine/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"POST", quarantineHandler}

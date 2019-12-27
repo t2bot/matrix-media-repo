@@ -350,6 +350,23 @@ func PurgeRoomMedia(mxcs []string, beforeTs int64, ctx context.Context, log *log
 	return purged, nil
 }
 
+func PurgeDomainMedia(serverName string, beforeTs int64, ctx context.Context, log *logrus.Entry) ([]*types.Media, error) {
+	mediaDb := storage.GetDatabase().GetMediaStore(ctx, log)
+	records, err := mediaDb.GetMediaByDomainBefore(serverName, beforeTs)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, r := range records {
+		err = doPurge(r, ctx, log)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return records, nil
+}
+
 func PurgeMedia(origin string, mediaId string, ctx context.Context, log *logrus.Entry) error {
 	media, err := download_controller.FindMediaRecord(origin, mediaId, false, ctx, log)
 	if err != nil {

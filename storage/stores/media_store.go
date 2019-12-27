@@ -30,6 +30,7 @@ const selectQuarantinedMedia = "SELECT origin, media_id, upload_name, content_ty
 const selectServerQuarantinedMedia = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE quarantined = true AND origin = $1;"
 const selectMediaByUser = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE user_id = $1"
 const selectMediaByUserBefore = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE user_id = $1 AND creation_ts <= $2"
+const selectMediaByDomainBefore = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE origin = $1 AND creation_ts <= $2"
 
 var dsCacheByPath = sync.Map{} // [string] => Datastore
 var dsCacheById = sync.Map{}   // [string] => Datastore
@@ -56,6 +57,7 @@ type mediaStoreStatements struct {
 	selectServerQuarantinedMedia    *sql.Stmt
 	selectMediaByUser               *sql.Stmt
 	selectMediaByUserBefore         *sql.Stmt
+	selectMediaByDomainBefore       *sql.Stmt
 }
 
 type MediaStoreFactory struct {
@@ -605,6 +607,37 @@ func (s *MediaStore) GetMediaByUser(userId string) ([]*types.Media, error) {
 
 func (s *MediaStore) GetMediaByUserBefore(userId string, beforeTs int64) ([]*types.Media, error) {
 	rows, err := s.statements.selectMediaByUserBefore.QueryContext(s.ctx, userId, beforeTs)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []*types.Media
+	for rows.Next() {
+		obj := &types.Media{}
+		err = rows.Scan(
+			&obj.Origin,
+			&obj.MediaId,
+			&obj.UploadName,
+			&obj.ContentType,
+			&obj.UserId,
+			&obj.Sha256Hash,
+			&obj.SizeBytes,
+			&obj.DatastoreId,
+			&obj.Location,
+			&obj.CreationTs,
+			&obj.Quarantined,
+		)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, obj)
+	}
+
+	return results, nil
+}
+
+func (s *MediaStore) GetMediaByDomainBefore(serverName string, beforeTs int64) ([]*types.Media, error) {
+	rows, err := s.statements.selectMediaByDomainBefore.QueryContext(s.ctx, serverName, beforeTs)
 	if err != nil {
 		return nil, err
 	}
