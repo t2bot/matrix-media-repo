@@ -8,6 +8,7 @@ require (
 	github.com/ajstarks/svgo v0.0.0-20171111115224-f9be02f22f2c // indirect
 	github.com/alioygur/is v0.0.0-20170213121024-204f48747743
 	github.com/andybalholm/cascadia v0.0.0-20161224141413-349dd0209470 // indirect
+	github.com/bep/debounce v1.2.0
 	github.com/cenk/backoff v2.0.0+incompatible // indirect
 	github.com/cupcake/sigil v0.0.0-20131127230922-6bf9722f2ae8
 	github.com/didip/tollbooth v4.0.0+incompatible
@@ -18,6 +19,7 @@ require (
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
 	github.com/fastly/go-utils v0.0.0-20180712184237-d95a45783239 // indirect
 	github.com/fogleman/gg v0.0.0-20170728225521-e611489b8685
+	github.com/fsnotify/fsnotify v1.4.7
 	github.com/go-sql-driver/mysql v1.4.1 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
 	github.com/gorilla/context v1.1.1 // indirect

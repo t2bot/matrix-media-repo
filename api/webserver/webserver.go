@@ -1,9 +1,11 @@
 package webserver
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/didip/tollbooth"
@@ -21,7 +23,11 @@ type route struct {
 	handler handler
 }
 
-func Init() {
+var srv *http.Server
+var waitGroup = &sync.WaitGroup{}
+var reload = false
+
+func Init() *sync.WaitGroup {
 	rtr := mux.NewRouter()
 	counter := &requestCounter{}
 
@@ -168,6 +174,41 @@ func Init() {
 	//httpMux.HandleFunc("/debug/pprof/profile", pprof.Index)
 	//httpMux.HandleFunc("/debug/pprof/trace", pprof.Index)
 
-	logrus.WithField("address", address).Info("Started up. Listening at http://" + address)
-	logrus.Fatal(http.ListenAndServe(address, httpMux))
+	srv = &http.Server{Addr: address, Handler: httpMux}
+	reload = false
+
+	go func() {
+		logrus.WithField("address", address).Info("Started up. Listening at http://" + address)
+		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+			logrus.Fatal(err)
+		}
+
+		// Only notify the main thread that we're done if we're actually done
+		srv = nil
+		if !reload {
+			waitGroup.Done()
+		}
+	}()
+
+	return waitGroup
+}
+
+func Reload() {
+	reload = true
+
+	// Stop the server first
+	Stop()
+
+	// Reload the web server, ignoring the wait group (because we don't care to wait here)
+	Init()
+}
+
+func Stop() {
+	if srv != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
+		defer cancel()
+		if err := srv.Shutdown(ctx); err != nil {
+			panic(err)
+		}
+	}
 }

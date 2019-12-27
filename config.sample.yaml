@@ -5,6 +5,8 @@ repo:
 
   # Where to store the logs, relative to where the repo is started from. Logs will be automatically
   # rotated every day and held for 14 days. To disable the repo logging to files, set this to "-".
+  # Note: to change the log directory you'll have to restart the repository. This setting cannot be
+  # live reloaded.
   logDirectory: logs
 
   # If true, the media repo will accept any X-Forwarded-For header without validation. In most cases

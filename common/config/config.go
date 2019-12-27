@@ -171,7 +171,7 @@ var instance *MediaRepoConfig
 var singletonLock = &sync.Once{}
 var Path = "media-repo.yaml"
 
-func ReloadConfig() error {
+func reloadConfig() (*MediaRepoConfig, error) {
 	c := NewDefaultConfig()
 
 	// Write a default config if the one given doesn't exist
@@ -181,29 +181,29 @@ func ReloadConfig() error {
 		fmt.Println("Generating new configuration...")
 		configBytes, err := yaml.Marshal(c)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		newFile, err := os.Create(Path)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		_, err = newFile.Write(configBytes)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		err = newFile.Close()
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	// Get new info about the possible directory after creating
 	info, err = os.Stat(Path)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	pathsOrdered := make([]string, 0)
@@ -212,7 +212,7 @@ func ReloadConfig() error {
 
 		files, err := ioutil.ReadDir(Path)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		for _, f := range files {
@@ -228,7 +228,7 @@ func ReloadConfig() error {
 		logrus.Info("Loading config file: ", p)
 		f, err := os.Open(p)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		//noinspection GoDeferInLoop
@@ -237,21 +237,21 @@ func ReloadConfig() error {
 		buffer, err := ioutil.ReadAll(f)
 		err = yaml.Unmarshal(buffer, &c)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	instance = c
-	return nil
+	return c, nil
 }
 
 func Get() *MediaRepoConfig {
 	if instance == nil {
 		singletonLock.Do(func() {
-			err := ReloadConfig()
+			c, err := reloadConfig()
 			if err != nil {
-				panic(err)
+				logrus.Fatal(err)
 			}
+			instance = c
 		})
 	}
 	return instance
