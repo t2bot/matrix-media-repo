@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -17,6 +16,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/logging"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/upload_controller"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
@@ -64,7 +64,7 @@ func main() {
 	}
 
 	logrus.Info("Preparing database...")
-	mediaStore := storage.GetDatabase().GetMediaStore(context.TODO(), &logrus.Entry{})
+	mediaStore := storage.GetDatabase().GetMediaStore(rcontext.Initial())
 
 	logrus.Info("Initializing datastores...")
 	enabledDatastores := 0
@@ -76,7 +76,7 @@ func main() {
 		enabledDatastores++
 		uri := datastore.GetUriForDatastore(ds)
 
-		_, err := storage.GetOrCreateDatastoreOfType(context.TODO(), &logrus.Entry{}, ds.Type, uri)
+		_, err := storage.GetOrCreateDatastoreOfType(rcontext.Initial(), ds.Type, uri)
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -174,10 +174,9 @@ func main() {
 func fetchMedia(req interface{}) interface{} {
 	payload := req.(*fetchRequest)
 	record := payload.media
-	ctx := context.TODO()
-	log := logrus.WithFields(logrus.Fields{})
+	ctx := rcontext.Initial()
 
-	db := storage.GetDatabase().GetMediaStore(ctx, log)
+	db := storage.GetDatabase().GetMediaStore(ctx)
 
 	_, err := db.Get(payload.serverName, record.MediaId)
 	if err == nil {
@@ -191,7 +190,7 @@ func fetchMedia(req interface{}) interface{} {
 		return nil
 	}
 
-	_, err = upload_controller.StoreDirect(body, -1, record.ContentType, record.UploadName, record.UserId, payload.serverName, record.MediaId, common.KindLocalMedia, ctx, log)
+	_, err = upload_controller.StoreDirect(body, -1, record.ContentType, record.UploadName, record.UserId, payload.serverName, record.MediaId, common.KindLocalMedia, ctx)
 	if err != nil {
 		logrus.Error(err.Error())
 		return nil
