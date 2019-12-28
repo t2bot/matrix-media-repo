@@ -81,14 +81,19 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var res interface{} = api.AuthFailed()
 	if util.IsServerOurs(r.Host) || h.ignoreHost {
 		contextLog.Info("Host is valid - processing request")
+		cfg := config.GetDomain(r.Host)
+		if h.ignoreHost {
+			dc := config.DomainConfigFrom(*config.Get())
+			cfg = &dc
+		}
 
 		// Build a context that can be used throughout the remainder of the app
 		// This is kinda annoying, but it's better than trying to pass our own
 		// thing throughout the layers.
 		ctx := r.Context()
 		ctx = context.WithValue(ctx, "mr.logger", contextLog)
-		ctx = context.WithValue(ctx, "mr.serverConfig", config.Get())
-		rctx := rcontext.RequestContext{Context: ctx, Log: contextLog}
+		ctx = context.WithValue(ctx, "mr.serverConfig", cfg)
+		rctx := rcontext.RequestContext{Context: ctx, Log: contextLog, Config: *cfg}
 		r = r.WithContext(rctx)
 
 		metrics.HttpRequests.With(prometheus.Labels{
