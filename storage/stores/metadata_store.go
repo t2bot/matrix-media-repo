@@ -1,11 +1,10 @@
 package stores
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
 
-	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 )
@@ -57,8 +56,7 @@ type MetadataStoreFactory struct {
 
 type MetadataStore struct {
 	factory    *MetadataStoreFactory // just for reference
-	ctx        context.Context
-	log        *logrus.Entry
+	ctx        rcontext.RequestContext
 	statements *metadataStoreStatements // copied from factory
 }
 
@@ -120,11 +118,10 @@ func InitMetadataStore(sqlDb *sql.DB) (*MetadataStoreFactory, error) {
 	return &store, nil
 }
 
-func (f *MetadataStoreFactory) Create(ctx context.Context, entry *logrus.Entry) *MetadataStore {
+func (f *MetadataStoreFactory) Create(ctx rcontext.RequestContext) *MetadataStore {
 	return &MetadataStore{
 		factory:    f,
 		ctx:        ctx,
-		log:        entry,
 		statements: f.stmts, // we copy this intentionally
 	}
 }

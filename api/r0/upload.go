@@ -9,6 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/common"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/upload_controller"
 )
 
@@ -16,11 +17,11 @@ type MediaUploadedResponse struct {
 	ContentUri string `json:"content_uri"`
 }
 
-func UploadMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
+func UploadMedia(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
 	filename := filepath.Base(r.URL.Query().Get("filename"))
 	defer r.Body.Close()
 
-	log = log.WithFields(logrus.Fields{
+	rctx = rctx.LogWithFields(logrus.Fields{
 		"filename": filename,
 	})
 
@@ -41,7 +42,7 @@ func UploadMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interfac
 
 	contentLength := upload_controller.EstimateContentLength(r.ContentLength, r.Header.Get("Content-Length"))
 
-	media, err := upload_controller.UploadMedia(r.Body, contentLength, contentType, filename, user.UserId, r.Host, r.Context(), log)
+	media, err := upload_controller.UploadMedia(r.Body, contentLength, contentType, filename, user.UserId, r.Host, rctx)
 	if err != nil {
 		io.Copy(ioutil.Discard, r.Body) // Ditch the entire request
 
@@ -51,7 +52,7 @@ func UploadMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interfac
 			return api.BadRequest("This file is not permitted on this server")
 		}
 
-		log.Error("Unexpected error storing media: " + err.Error())
+		rctx.Log.Error("Unexpected error storing media: " + err.Error())
 		return api.InternalServerError("Unexpected Error")
 	}
 

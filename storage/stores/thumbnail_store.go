@@ -1,10 +1,9 @@
 package stores
 
 import (
-	"context"
 	"database/sql"
 
-	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/types"
 )
 
@@ -35,8 +34,7 @@ type ThumbnailStoreFactory struct {
 
 type ThumbnailStore struct {
 	factory    *ThumbnailStoreFactory // just for reference
-	ctx        context.Context
-	log        *logrus.Entry
+	ctx        rcontext.RequestContext
 	statements *thumbnailStatements // copied from factory
 }
 
@@ -74,11 +72,10 @@ func InitThumbnailStore(sqlDb *sql.DB) (*ThumbnailStoreFactory, error) {
 	return &store, nil
 }
 
-func (f *ThumbnailStoreFactory) New(ctx context.Context, entry *logrus.Entry) *ThumbnailStore {
+func (f *ThumbnailStoreFactory) New(ctx rcontext.RequestContext) *ThumbnailStore {
 	return &ThumbnailStore{
 		factory:    f,
 		ctx:        ctx,
-		log:        entry,
 		statements: f.stmts, // we copy this intentionally
 	}
 }

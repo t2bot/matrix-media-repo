@@ -1,7 +1,6 @@
 package datastore
 
 import (
-	"context"
 	"fmt"
 	"io"
 
@@ -9,6 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/types"
 )
@@ -22,7 +22,7 @@ func GetAvailableDatastores() ([]*types.Datastore, error) {
 
 		uri := GetUriForDatastore(ds)
 
-		dsInstance, err := storage.GetOrCreateDatastoreOfType(context.TODO(), &logrus.Entry{}, ds.Type, uri)
+		dsInstance, err := storage.GetOrCreateDatastoreOfType(rcontext.Initial(), ds.Type, uri)
 		if err != nil {
 			return nil, err
 		}
@@ -33,8 +33,8 @@ func GetAvailableDatastores() ([]*types.Datastore, error) {
 	return datastores, nil
 }
 
-func LocateDatastore(ctx context.Context, log *logrus.Entry, datastoreId string) (*DatastoreRef, error) {
-	ds, err := storage.GetDatabase().GetMediaStore(ctx, log).GetDatastore(datastoreId)
+func LocateDatastore(ctx rcontext.RequestContext, datastoreId string) (*DatastoreRef, error) {
+	ds, err := storage.GetDatabase().GetMediaStore(ctx).GetDatastore(datastoreId)
 	if err != nil {
 		return nil, err
 	}
@@ -47,8 +47,8 @@ func LocateDatastore(ctx context.Context, log *logrus.Entry, datastoreId string)
 	return newDatastoreRef(ds, conf), nil
 }
 
-func DownloadStream(ctx context.Context, log *logrus.Entry, datastoreId string, location string) (io.ReadCloser, error) {
-	ref, err := LocateDatastore(ctx, log, datastoreId)
+func DownloadStream(ctx rcontext.RequestContext, datastoreId string, location string) (io.ReadCloser, error) {
+	ref, err := LocateDatastore(ctx, datastoreId)
 	if err != nil {
 		return nil, err
 	}
@@ -86,11 +86,11 @@ func GetUriForDatastore(dsConf config.DatastoreConfig) string {
 	return ""
 }
 
-func PickDatastore(forKind string, ctx context.Context, log *logrus.Entry) (*DatastoreRef, error) {
+func PickDatastore(forKind string, ctx rcontext.RequestContext) (*DatastoreRef, error) {
 	// If we haven't found a legacy option, pick a datastore
-	log.Info("Finding a suitable datastore to pick for uploads")
+	ctx.Log.Info("Finding a suitable datastore to pick for uploads")
 	confDatastores := config.Get().DataStores
-	mediaStore := storage.GetDatabase().GetMediaStore(ctx, log)
+	mediaStore := storage.GetDatabase().GetMediaStore(ctx)
 
 	var targetDs *types.Datastore
 	var targetDsConf config.DatastoreConfig
@@ -101,7 +101,7 @@ func PickDatastore(forKind string, ctx context.Context, log *logrus.Entry) (*Dat
 		}
 
 		if len(dsConf.MediaKinds) == 0 && dsConf.ForUploads {
-			log.Warnf("Datastore of type %s is using a deprecated flag (forUploads) - please use forKinds instead", dsConf.Type)
+			ctx.Log.Warnf("Datastore of type %s is using a deprecated flag (forUploads) - please use forKinds instead", dsConf.Type)
 			dsConf.MediaKinds = common.AllKinds
 		}
 
@@ -121,7 +121,7 @@ func PickDatastore(forKind string, ctx context.Context, log *logrus.Entry) (*Dat
 			continue
 		}
 
-		size, err := estimatedDatastoreSize(ds, ctx, log)
+		size, err := estimatedDatastoreSize(ds, ctx)
 		if err != nil {
 			continue
 		}
@@ -134,13 +134,13 @@ func PickDatastore(forKind string, ctx context.Context, log *logrus.Entry) (*Dat
 	}
 
 	if targetDs != nil {
-		logrus.Info("Using ", targetDs.Uri)
+		ctx.Log.Info("Using ", targetDs.Uri)
 		return newDatastoreRef(targetDs, targetDsConf), nil
 	}
 
 	return nil, errors.New("failed to pick a datastore: none available")
 }
 
-func estimatedDatastoreSize(ds *types.Datastore, ctx context.Context, log *logrus.Entry) (int64, error) {
-	return storage.GetDatabase().GetMetadataStore(ctx, log).GetEstimatedSizeOfDatastore(ds.DatastoreId)
+func estimatedDatastoreSize(ds *types.Datastore, ctx rcontext.RequestContext) (int64, error) {
+	return storage.GetDatabase().GetMetadataStore(ctx).GetEstimatedSizeOfDatastore(ds.DatastoreId)
 }

@@ -1,12 +1,12 @@
 package maintenance_controller
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 	"os"
 
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/download_controller"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
@@ -15,10 +15,8 @@ import (
 )
 
 // Returns an error only if starting up the background task failed.
-func StartStorageMigration(sourceDs *datastore.DatastoreRef, targetDs *datastore.DatastoreRef, beforeTs int64, log *logrus.Entry) (*types.BackgroundTask, error) {
-	ctx := context.Background()
-
-	db := storage.GetDatabase().GetMetadataStore(ctx, log)
+func StartStorageMigration(sourceDs *datastore.DatastoreRef, targetDs *datastore.DatastoreRef, beforeTs int64, ctx rcontext.RequestContext) (*types.BackgroundTask, error) {
+	db := storage.GetDatabase().GetMetadataStore(ctx)
 	task, err := db.CreateBackgroundTask("storage_migration", map[string]interface{}{
 		"source_datastore_id": sourceDs.DatastoreId,
 		"target_datastore_id": targetDs.DatastoreId,
@@ -29,82 +27,81 @@ func StartStorageMigration(sourceDs *datastore.DatastoreRef, targetDs *datastore
 	}
 
 	go func() {
-		log.Info("Starting transfer")
+		ctx.Log.Info("Starting transfer")
 
-		db := storage.GetDatabase().GetMetadataStore(ctx, log)
+		db := storage.GetDatabase().GetMetadataStore(ctx)
 
-		origLog := log
 		doUpdate := func(records []*types.MinimalMediaMetadata) {
 			for _, record := range records {
-				log := origLog.WithFields(logrus.Fields{"mediaSha256": record.Sha256Hash})
+				rctx := ctx.LogWithFields(logrus.Fields{"mediaSha256": record.Sha256Hash})
 
-				log.Info("Starting transfer of media")
+				rctx.Log.Info("Starting transfer of media")
 				sourceStream, err := sourceDs.DownloadFile(record.Location)
 				if err != nil {
-					log.Error(err)
-					log.Error("Failed to start download from source datastore")
+					rctx.Log.Error(err)
+					rctx.Log.Error("Failed to start download from source datastore")
 					continue
 				}
 
-				newLocation, err := targetDs.UploadFile(sourceStream, record.SizeBytes, ctx, log)
+				newLocation, err := targetDs.UploadFile(sourceStream, record.SizeBytes, rctx)
 				if err != nil {
-					log.Error(err)
-					log.Error("Failed to upload file to target datastore")
+					rctx.Log.Error(err)
+					rctx.Log.Error("Failed to upload file to target datastore")
 					continue
 				}
 
-				log.Info("Updating media records...")
+				rctx.Log.Info("Updating media records...")
 				err = db.ChangeDatastoreOfHash(targetDs.DatastoreId, newLocation.Location, record.Sha256Hash)
 				if err != nil {
-					log.Error(err)
-					log.Error("Failed to update database records")
+					rctx.Log.Error(err)
+					rctx.Log.Error("Failed to update database records")
 					continue
 				}
 
-				log.Info("Deleting media from old datastore")
+				rctx.Log.Info("Deleting media from old datastore")
 				err = sourceDs.DeleteObject(record.Location)
 				if err != nil {
-					log.Error(err)
-					log.Error("Failed to delete old media")
+					rctx.Log.Error(err)
+					rctx.Log.Error("Failed to delete old media")
 					continue
 				}
 
-				log.Info("Media updated!")
+				rctx.Log.Info("Media updated!")
 			}
 		}
 
 		media, err := db.GetOldMediaInDatastore(sourceDs.DatastoreId, beforeTs)
 		if err != nil {
-			log.Error(err)
+			ctx.Log.Error(err)
 			return
 		}
 		doUpdate(media)
 
 		thumbs, err := db.GetOldThumbnailsInDatastore(sourceDs.DatastoreId, beforeTs)
 		if err != nil {
-			log.Error(err)
+			ctx.Log.Error(err)
 			return
 		}
 		doUpdate(thumbs)
 
 		err = db.FinishedBackgroundTask(task.ID)
 		if err != nil {
-			log.Error(err)
-			log.Error("Failed to flag task as finished")
+			ctx.Log.Error(err)
+			ctx.Log.Error("Failed to flag task as finished")
 		}
-		log.Info("Finished transfer")
+		ctx.Log.Info("Finished transfer")
 	}()
 
 	return task, nil
 }
 
-func EstimateDatastoreSizeWithAge(beforeTs int64, datastoreId string, ctx context.Context, log *logrus.Entry) (*types.DatastoreMigrationEstimate, error) {
+func EstimateDatastoreSizeWithAge(beforeTs int64, datastoreId string, ctx rcontext.RequestContext) (*types.DatastoreMigrationEstimate, error) {
 	estimates := &types.DatastoreMigrationEstimate{}
 	seenHashes := make(map[string]bool)
 	seenMediaHashes := make(map[string]bool)
 	seenThumbnailHashes := make(map[string]bool)
 
-	db := storage.GetDatabase().GetMetadataStore(ctx, log)
+	db := storage.GetDatabase().GetMetadataStore(ctx)
 	media, err := db.GetOldMediaInDatastore(datastoreId, beforeTs)
 	if err != nil {
 		return nil, err
@@ -150,9 +147,9 @@ func EstimateDatastoreSizeWithAge(beforeTs int64, datastoreId string, ctx contex
 	return estimates, nil
 }
 
-func PurgeRemoteMediaBefore(beforeTs int64, ctx context.Context, log *logrus.Entry) (int, error) {
-	db := storage.GetDatabase().GetMediaStore(ctx, log)
-	thumbsDb := storage.GetDatabase().GetThumbnailStore(ctx, log)
+func PurgeRemoteMediaBefore(beforeTs int64, ctx rcontext.RequestContext) (int, error) {
+	db := storage.GetDatabase().GetMediaStore(ctx)
+	thumbsDb := storage.GetDatabase().GetThumbnailStore(ctx)
 
 	origins, err := db.GetOrigins()
 	if err != nil {
@@ -171,74 +168,74 @@ func PurgeRemoteMediaBefore(beforeTs int64, ctx context.Context, log *logrus.Ent
 		return 0, err
 	}
 
-	log.Info(fmt.Sprintf("Starting removal of %d remote media files (db records will be kept)", len(oldMedia)))
+	ctx.Log.Info(fmt.Sprintf("Starting removal of %d remote media files (db records will be kept)", len(oldMedia)))
 
 	removed := 0
 	for _, media := range oldMedia {
 		if media.Quarantined {
-			log.Warn("Not removing quarantined media to maintain quarantined status: " + media.Origin + "/" + media.MediaId)
+			ctx.Log.Warn("Not removing quarantined media to maintain quarantined status: " + media.Origin + "/" + media.MediaId)
 			continue
 		}
 
-		ds, err := datastore.LocateDatastore(context.TODO(), &logrus.Entry{}, media.DatastoreId)
+		ds, err := datastore.LocateDatastore(ctx, media.DatastoreId)
 		if err != nil {
-			log.Error("Error finding datastore for media " + media.Origin + "/" + media.MediaId + " because: " + err.Error())
+			ctx.Log.Error("Error finding datastore for media " + media.Origin + "/" + media.MediaId + " because: " + err.Error())
 			continue
 		}
 
 		// Delete the file first
 		err = ds.DeleteObject(media.Location)
 		if err != nil {
-			log.Warn("Cannot remove media " + media.Origin + "/" + media.MediaId + " because: " + err.Error())
+			ctx.Log.Warn("Cannot remove media " + media.Origin + "/" + media.MediaId + " because: " + err.Error())
 		} else {
 			removed++
-			log.Info("Removed remote media file: " + media.Origin + "/" + media.MediaId)
+			ctx.Log.Info("Removed remote media file: " + media.Origin + "/" + media.MediaId)
 		}
 
 		// Try to remove the record from the database now
 		err = db.Delete(media.Origin, media.MediaId)
 		if err != nil {
-			log.Warn("Error removing media " + media.Origin + "/" + media.MediaId + " from database: " + err.Error())
+			ctx.Log.Warn("Error removing media " + media.Origin + "/" + media.MediaId + " from database: " + err.Error())
 		}
 
 		// Delete the thumbnails too
 		thumbs, err := thumbsDb.GetAllForMedia(media.Origin, media.MediaId)
 		if err != nil {
-			log.Warn("Error getting thumbnails for media " + media.Origin + "/" + media.MediaId + " from database: " + err.Error())
+			ctx.Log.Warn("Error getting thumbnails for media " + media.Origin + "/" + media.MediaId + " from database: " + err.Error())
 			continue
 		}
 		for _, thumb := range thumbs {
-			log.Info("Deleting thumbnail with hash: ", thumb.Sha256Hash)
-			ds, err := datastore.LocateDatastore(ctx, log, thumb.DatastoreId)
+			ctx.Log.Info("Deleting thumbnail with hash: ", thumb.Sha256Hash)
+			ds, err := datastore.LocateDatastore(ctx, thumb.DatastoreId)
 			if err != nil {
-				log.Warn("Error removing thumbnail for media " + media.Origin + "/" + media.MediaId + " from database: " + err.Error())
+				ctx.Log.Warn("Error removing thumbnail for media " + media.Origin + "/" + media.MediaId + " from database: " + err.Error())
 				continue
 			}
 
 			err = ds.DeleteObject(thumb.Location)
 			if err != nil {
-				log.Warn("Error removing thumbnail for media " + media.Origin + "/" + media.MediaId + " from database: " + err.Error())
+				ctx.Log.Warn("Error removing thumbnail for media " + media.Origin + "/" + media.MediaId + " from database: " + err.Error())
 				continue
 			}
 		}
 		err = thumbsDb.DeleteAllForMedia(media.Origin, media.MediaId)
 		if err != nil {
-			log.Warn("Error removing thumbnails for media " + media.Origin + "/" + media.MediaId + " from database: " + err.Error())
+			ctx.Log.Warn("Error removing thumbnails for media " + media.Origin + "/" + media.MediaId + " from database: " + err.Error())
 		}
 	}
 
 	return removed, nil
 }
 
-func PurgeQuarantined(ctx context.Context, log *logrus.Entry) ([]*types.Media, error) {
-	mediaDb := storage.GetDatabase().GetMediaStore(ctx, log)
+func PurgeQuarantined(ctx rcontext.RequestContext) ([]*types.Media, error) {
+	mediaDb := storage.GetDatabase().GetMediaStore(ctx)
 	records, err := mediaDb.GetAllQuarantinedMedia()
 	if err != nil {
 		return nil, err
 	}
 
 	for _, r := range records {
-		err = doPurge(r, ctx, log)
+		err = doPurge(r, ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -247,15 +244,15 @@ func PurgeQuarantined(ctx context.Context, log *logrus.Entry) ([]*types.Media, e
 	return records, nil
 }
 
-func PurgeQuarantinedFor(serverName string, ctx context.Context, log *logrus.Entry) ([]*types.Media, error) {
-	mediaDb := storage.GetDatabase().GetMediaStore(ctx, log)
+func PurgeQuarantinedFor(serverName string, ctx rcontext.RequestContext) ([]*types.Media, error) {
+	mediaDb := storage.GetDatabase().GetMediaStore(ctx)
 	records, err := mediaDb.GetQuarantinedMediaFor(serverName)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, r := range records {
-		err = doPurge(r, ctx, log)
+		err = doPurge(r, ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -264,15 +261,15 @@ func PurgeQuarantinedFor(serverName string, ctx context.Context, log *logrus.Ent
 	return records, nil
 }
 
-func PurgeUserMedia(userId string, beforeTs int64, ctx context.Context, log *logrus.Entry) ([]*types.Media, error) {
-	mediaDb := storage.GetDatabase().GetMediaStore(ctx, log)
+func PurgeUserMedia(userId string, beforeTs int64, ctx rcontext.RequestContext) ([]*types.Media, error) {
+	mediaDb := storage.GetDatabase().GetMediaStore(ctx)
 	records, err := mediaDb.GetMediaByUserBefore(userId, beforeTs)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, r := range records {
-		err = doPurge(r, ctx, log)
+		err = doPurge(r, ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -281,9 +278,9 @@ func PurgeUserMedia(userId string, beforeTs int64, ctx context.Context, log *log
 	return records, nil
 }
 
-func PurgeOldMedia(beforeTs int64, includeLocal bool, ctx context.Context, log *logrus.Entry) ([]*types.Media, error) {
-	metadataDb := storage.GetDatabase().GetMetadataStore(ctx, log)
-	mediaDb := storage.GetDatabase().GetMediaStore(ctx, log)
+func PurgeOldMedia(beforeTs int64, includeLocal bool, ctx rcontext.RequestContext) ([]*types.Media, error) {
+	metadataDb := storage.GetDatabase().GetMetadataStore(ctx)
+	mediaDb := storage.GetDatabase().GetMediaStore(ctx)
 
 	oldHashes, err := metadataDb.GetOldMedia(beforeTs)
 	if err != nil {
@@ -303,7 +300,7 @@ func PurgeOldMedia(beforeTs int64, includeLocal bool, ctx context.Context, log *
 				continue
 			}
 
-			err = doPurge(m, ctx, log)
+			err = doPurge(m, ctx)
 			if err != nil {
 				return nil, err
 			}
@@ -315,8 +312,8 @@ func PurgeOldMedia(beforeTs int64, includeLocal bool, ctx context.Context, log *
 	return purged, nil
 }
 
-func PurgeRoomMedia(mxcs []string, beforeTs int64, ctx context.Context, log *logrus.Entry) ([]*types.Media, error) {
-	mediaDb := storage.GetDatabase().GetMediaStore(ctx, log)
+func PurgeRoomMedia(mxcs []string, beforeTs int64, ctx rcontext.RequestContext) ([]*types.Media, error) {
+	mediaDb := storage.GetDatabase().GetMediaStore(ctx)
 
 	purged := make([]*types.Media, 0)
 
@@ -339,7 +336,7 @@ func PurgeRoomMedia(mxcs []string, beforeTs int64, ctx context.Context, log *log
 			continue
 		}
 
-		err = doPurge(record, ctx, log)
+		err = doPurge(record, ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -350,15 +347,15 @@ func PurgeRoomMedia(mxcs []string, beforeTs int64, ctx context.Context, log *log
 	return purged, nil
 }
 
-func PurgeDomainMedia(serverName string, beforeTs int64, ctx context.Context, log *logrus.Entry) ([]*types.Media, error) {
-	mediaDb := storage.GetDatabase().GetMediaStore(ctx, log)
+func PurgeDomainMedia(serverName string, beforeTs int64, ctx rcontext.RequestContext) ([]*types.Media, error) {
+	mediaDb := storage.GetDatabase().GetMediaStore(ctx)
 	records, err := mediaDb.GetMediaByDomainBefore(serverName, beforeTs)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, r := range records {
-		err = doPurge(r, ctx, log)
+		err = doPurge(r, ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -367,25 +364,25 @@ func PurgeDomainMedia(serverName string, beforeTs int64, ctx context.Context, lo
 	return records, nil
 }
 
-func PurgeMedia(origin string, mediaId string, ctx context.Context, log *logrus.Entry) error {
-	media, err := download_controller.FindMediaRecord(origin, mediaId, false, ctx, log)
+func PurgeMedia(origin string, mediaId string, ctx rcontext.RequestContext) error {
+	media, err := download_controller.FindMediaRecord(origin, mediaId, false, ctx)
 	if err != nil {
 		return err
 	}
 
-	return doPurge(media, ctx, log)
+	return doPurge(media, ctx)
 }
 
-func doPurge(media *types.Media, ctx context.Context, log *logrus.Entry) error {
+func doPurge(media *types.Media, ctx rcontext.RequestContext) error {
 	// Delete all the thumbnails first
-	thumbsDb := storage.GetDatabase().GetThumbnailStore(ctx, log)
+	thumbsDb := storage.GetDatabase().GetThumbnailStore(ctx)
 	thumbs, err := thumbsDb.GetAllForMedia(media.Origin, media.MediaId)
 	if err != nil {
 		return err
 	}
 	for _, thumb := range thumbs {
-		log.Info("Deleting thumbnail with hash: ", thumb.Sha256Hash)
-		ds, err := datastore.LocateDatastore(ctx, log, thumb.DatastoreId)
+		ctx.Log.Info("Deleting thumbnail with hash: ", thumb.Sha256Hash)
+		ds, err := datastore.LocateDatastore(ctx, thumb.DatastoreId)
 		if err != nil {
 			return err
 		}
@@ -400,12 +397,12 @@ func doPurge(media *types.Media, ctx context.Context, log *logrus.Entry) error {
 		return err
 	}
 
-	ds, err := datastore.LocateDatastore(ctx, log, media.DatastoreId)
+	ds, err := datastore.LocateDatastore(ctx, media.DatastoreId)
 	if err != nil {
 		return err
 	}
 
-	mediaDb := storage.GetDatabase().GetMediaStore(ctx, log)
+	mediaDb := storage.GetDatabase().GetMediaStore(ctx)
 	similarMedia, err := mediaDb.GetByHash(media.Sha256Hash)
 	if err != nil {
 		return err
@@ -424,10 +421,10 @@ func doPurge(media *types.Media, ctx context.Context, log *logrus.Entry) error {
 			return err
 		}
 	} else {
-		log.Warnf("Not deleting media from datastore: media is shared over %d objects", len(similarMedia))
+		ctx.Log.Warnf("Not deleting media from datastore: media is shared over %d objects", len(similarMedia))
 	}
 
-	metadataDb := storage.GetDatabase().GetMetadataStore(ctx, log)
+	metadataDb := storage.GetDatabase().GetMetadataStore(ctx)
 
 	reserved, err := metadataDb.IsReserved(media.Origin, media.MediaId)
 	if err != nil {

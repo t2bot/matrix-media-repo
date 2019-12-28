@@ -1,12 +1,11 @@
 package stores
 
 import (
-	"context"
 	"database/sql"
 	"sync"
 
 	"github.com/lib/pq"
-	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/types"
 )
 
@@ -67,8 +66,7 @@ type MediaStoreFactory struct {
 
 type MediaStore struct {
 	factory    *MediaStoreFactory // just for reference
-	ctx        context.Context
-	log        *logrus.Entry
+	ctx        rcontext.RequestContext
 	statements *mediaStoreStatements // copied from factory
 }
 
@@ -142,11 +140,10 @@ func InitMediaStore(sqlDb *sql.DB) (*MediaStoreFactory, error) {
 	return &store, nil
 }
 
-func (f *MediaStoreFactory) Create(ctx context.Context, entry *logrus.Entry) *MediaStore {
+func (f *MediaStoreFactory) Create(ctx rcontext.RequestContext) *MediaStore {
 	return &MediaStore{
 		factory:    f,
 		ctx:        ctx,
-		log:        entry,
 		statements: f.stmts, // we copy this intentionally
 	}
 }

@@ -2,6 +2,7 @@ package webserver
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -19,12 +20,13 @@ import (
 	"github.com/turt2live/matrix-media-repo/api/r0"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
 type handler struct {
-	h          func(r *http.Request, entry *logrus.Entry) interface{}
+	h          func(r *http.Request, ctx rcontext.RequestContext) interface{}
 	action     string
 	reqCounter *requestCounter
 	ignoreHost bool
@@ -78,13 +80,23 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Process response
 	var res interface{} = api.AuthFailed()
 	if util.IsServerOurs(r.Host) || h.ignoreHost {
-		contextLog.Info("Server is owned by us, processing request")
+		contextLog.Info("Host is valid - processing request")
+
+		// Build a context that can be used throughout the remainder of the app
+		// This is kinda annoying, but it's better than trying to pass our own
+		// thing throughout the layers.
+		ctx := r.Context()
+		ctx = context.WithValue(ctx, "mr.logger", contextLog)
+		ctx = context.WithValue(ctx, "mr.serverConfig", config.Get())
+		rctx := rcontext.RequestContext{Context: ctx, Log: contextLog}
+		r = r.WithContext(rctx)
+
 		metrics.HttpRequests.With(prometheus.Labels{
 			"host":   r.Host,
 			"action": h.action,
 			"method": r.Method,
 		}).Inc()
-		res = h.h(r, contextLog)
+		res = h.h(r, rctx)
 		if res == nil {
 			res = &api.EmptyResponse{}
 		}

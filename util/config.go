@@ -1,6 +1,8 @@
 package util
 
-import "github.com/turt2live/matrix-media-repo/common/config"
+import (
+	"github.com/turt2live/matrix-media-repo/common/config"
+)
 
 func IsServerOurs(server string) bool {
 	hs := GetHomeserverConfig(server)

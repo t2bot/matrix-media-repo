@@ -1,7 +1,6 @@
 package preview_controller
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -9,6 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/globals"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/acl"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/stores"
@@ -16,24 +16,24 @@ import (
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
-func GetPreview(urlStr string, onHost string, forUserId string, atTs int64, ctx context.Context, log *logrus.Entry) (*types.UrlPreview, error) {
+func GetPreview(urlStr string, onHost string, forUserId string, atTs int64, ctx rcontext.RequestContext) (*types.UrlPreview, error) {
 	atTs = stores.GetBucketTs(atTs)
 	cacheKey := fmt.Sprintf("%d_%s/%s", atTs, onHost, urlStr)
 	v, _, err := globals.DefaultRequestGroup.DoWithoutPost(cacheKey, func() (interface{}, error) {
 
-		log = log.WithFields(logrus.Fields{
+		ctx := ctx.LogWithFields(logrus.Fields{
 			"preview_controller_at_ts": atTs,
 		})
 
-		db := storage.GetDatabase().GetUrlStore(ctx, log)
+		db := storage.GetDatabase().GetUrlStore(ctx)
 
 		cached, err := db.GetPreview(urlStr, atTs)
 		if err != nil && err != sql.ErrNoRows {
-			log.Error("Error getting cached URL preview: ", err.Error())
+			ctx.Log.Error("Error getting cached URL preview: ", err.Error())
 			return nil, err
 		}
 		if err != sql.ErrNoRows {
-			log.Info("Returning cached URL preview")
+			ctx.Log.Info("Returning cached URL preview")
 			return cachedPreviewToReal(cached)
 		}
 
@@ -44,12 +44,12 @@ func GetPreview(urlStr string, onHost string, forUserId string, atTs int64, ctx 
 			// Because we don't have a cached preview, we'll use the current time as the preview time.
 			// We also give a 60 second buffer so we don't cause an infinite loop (considering we're
 			// calling ourselves), and to give a lenient opportunity for slow execution.
-			return GetPreview(urlStr, onHost, forUserId, now, ctx, log)
+			return GetPreview(urlStr, onHost, forUserId, now, ctx)
 		}
 
-		log.Info("Preview not cached - fetching resource")
+		ctx.Log.Info("Preview not cached - fetching resource")
 
-		urlToPreview, err := acl.ValidateUrlForPreview(urlStr, ctx, log)
+		urlToPreview, err := acl.ValidateUrlForPreview(urlStr, ctx)
 		if err != nil {
 			return nil, err
 		}

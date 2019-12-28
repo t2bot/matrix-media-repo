@@ -1,19 +1,18 @@
 package ds_file
 
 import (
-	"context"
 	"errors"
 	"io"
 	"io/ioutil"
 	"os"
 	"path"
 
-	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
-func PersistFile(basePath string, file io.ReadCloser, ctx context.Context, log *logrus.Entry) (*types.ObjectInfo, error) {
+func PersistFile(basePath string, file io.ReadCloser, ctx rcontext.RequestContext) (*types.ObjectInfo, error) {
 	defer file.Close()
 
 	exists := true
@@ -35,13 +34,13 @@ func PersistFile(basePath string, file io.ReadCloser, ctx context.Context, log *
 		targetDir = path.Join(basePath, primaryContainer, secondaryContainer)
 		targetFile = path.Join(targetDir, fileName)
 
-		log.Info("Checking if file exists: " + targetFile)
+		ctx.Log.Info("Checking if file exists: " + targetFile)
 
 		exists, err = util.FileExists(targetFile)
 		attempts++
 
 		if err != nil {
-			log.Error("Error checking if the file exists: " + err.Error())
+			ctx.Log.Error("Error checking if the file exists: " + err.Error())
 		}
 
 		// Infinite loop protection
@@ -55,7 +54,7 @@ func PersistFile(basePath string, file io.ReadCloser, ctx context.Context, log *
 		return nil, err
 	}
 
-	sizeBytes, hash, err := PersistFileAtLocation(targetFile, file, ctx, log)
+	sizeBytes, hash, err := PersistFileAtLocation(targetFile, file, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +67,7 @@ func PersistFile(basePath string, file io.ReadCloser, ctx context.Context, log *
 	}, nil
 }
 
-func PersistFileAtLocation(targetFile string, file io.ReadCloser, ctx context.Context, log *logrus.Entry) (int64, string, error) {
+func PersistFileAtLocation(targetFile string, file io.ReadCloser, ctx rcontext.RequestContext) (int64, string, error) {
 	defer file.Close()
 
 	f, err := os.OpenFile(targetFile, os.O_WRONLY|os.O_CREATE, 0644)
@@ -90,16 +89,16 @@ func PersistFileAtLocation(targetFile string, file io.ReadCloser, ctx context.Co
 
 	go func() {
 		defer wfile.Close()
-		log.Info("Calculating hash of stream...")
+		ctx.Log.Info("Calculating hash of stream...")
 		hash, hashErr = util.GetSha256HashOfStream(ioutil.NopCloser(tr))
-		log.Info("Hash of file is ", hash)
+		ctx.Log.Info("Hash of file is ", hash)
 		done <- true
 	}()
 
 	go func() {
-		log.Info("Writing file...")
+		ctx.Log.Info("Writing file...")
 		sizeBytes, writeErr = io.Copy(f, rfile)
-		log.Info("Wrote ", sizeBytes, " bytes to file")
+		ctx.Log.Info("Wrote ", sizeBytes, " bytes to file")
 		done <- true
 	}()
 

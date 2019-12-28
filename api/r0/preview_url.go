@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/preview_controller"
 	"github.com/turt2live/matrix-media-repo/util"
 )
@@ -26,7 +26,7 @@ type MatrixOpenGraph struct {
 	ImageHeight int    `json:"og:image:height,omitempty"`
 }
 
-func PreviewUrl(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
+func PreviewUrl(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
 	if !config.Get().UrlPreviews.Enabled {
 		return api.NotFoundError()
 	}
@@ -41,7 +41,7 @@ func PreviewUrl(r *http.Request, log *logrus.Entry, user api.UserInfo) interface
 	if tsStr != "" {
 		ts, err = strconv.ParseInt(tsStr, 10, 64)
 		if err != nil {
-			log.Error("Error parsing ts: " + err.Error())
+			rctx.Log.Error("Error parsing ts: " + err.Error())
 			return api.BadRequest(err.Error())
 		}
 	}
@@ -54,7 +54,7 @@ func PreviewUrl(r *http.Request, log *logrus.Entry, user api.UserInfo) interface
 		return api.BadRequest("Scheme not accepted")
 	}
 
-	preview, err := preview_controller.GetPreview(urlStr, r.Host, user.UserId, ts, r.Context(), log)
+	preview, err := preview_controller.GetPreview(urlStr, r.Host, user.UserId, ts, rctx)
 	if err != nil {
 		if err == common.ErrMediaNotFound || err == common.ErrHostNotFound {
 			return api.NotFoundError()

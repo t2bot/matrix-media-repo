@@ -11,6 +11,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/api/r0"
 	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/data_controller"
 	"github.com/turt2live/matrix-media-repo/matrix"
 	"github.com/turt2live/matrix-media-repo/storage"
@@ -35,7 +36,7 @@ type ExportMetadata struct {
 	Parts  []*ExportPartMetadata `json:"parts"`
 }
 
-func ExportUserData(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
+func ExportUserData(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
 	if !config.Get().Archiving.Enabled {
 		return api.BadRequest("archiving is not enabled")
 	}
@@ -52,18 +53,18 @@ func ExportUserData(r *http.Request, log *logrus.Entry, user api.UserInfo) inter
 
 	userId := params["userId"]
 
-	if !isAdmin && user.UserId != userId  {
+	if !isAdmin && user.UserId != userId {
 		return api.BadRequest("cannot export data for another user")
 	}
 
-	log = log.WithFields(logrus.Fields{
+	rctx = rctx.LogWithFields(logrus.Fields{
 		"exportUserId": userId,
 		"includeData":  includeData,
 		"s3urls":       s3urls,
 	})
-	task, exportId, err := data_controller.StartUserExport(userId, s3urls, includeData, log)
+	task, exportId, err := data_controller.StartUserExport(userId, s3urls, includeData, rctx)
 	if err != nil {
-		log.Error(err)
+		rctx.Log.Error(err)
 		return api.InternalServerError("fatal error starting export")
 	}
 
@@ -73,7 +74,7 @@ func ExportUserData(r *http.Request, log *logrus.Entry, user api.UserInfo) inter
 	}}
 }
 
-func ExportServerData(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
+func ExportServerData(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
 	if !config.Get().Archiving.Enabled {
 		return api.BadRequest("archiving is not enabled")
 	}
@@ -98,9 +99,9 @@ func ExportServerData(r *http.Request, log *logrus.Entry, user api.UserInfo) int
 			return api.BadRequest("cannot export data for another server")
 		}
 
-		isLocalAdmin, err := matrix.IsUserAdmin(r.Context(), serverName, user.AccessToken, r.RemoteAddr)
+		isLocalAdmin, err := matrix.IsUserAdmin(rctx, serverName, user.AccessToken, r.RemoteAddr)
 		if err != nil {
-			log.Error("Error verifying local admin: " + err.Error())
+			rctx.Log.Error("Error verifying local admin: " + err.Error())
 			isLocalAdmin = false
 		}
 		if !isLocalAdmin {
@@ -108,14 +109,14 @@ func ExportServerData(r *http.Request, log *logrus.Entry, user api.UserInfo) int
 		}
 	}
 
-	log = log.WithFields(logrus.Fields{
+	rctx = rctx.LogWithFields(logrus.Fields{
 		"exportServerName": serverName,
 		"includeData":      includeData,
 		"s3urls":           s3urls,
 	})
-	task, exportId, err := data_controller.StartServerExport(serverName, s3urls, includeData, log)
+	task, exportId, err := data_controller.StartServerExport(serverName, s3urls, includeData, rctx)
 	if err != nil {
-		log.Error(err)
+		rctx.Log.Error(err)
 		return api.InternalServerError("fatal error starting export")
 	}
 
@@ -125,7 +126,7 @@ func ExportServerData(r *http.Request, log *logrus.Entry, user api.UserInfo) int
 	}}
 }
 
-func ViewExport(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
+func ViewExport(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
 	if !config.Get().Archiving.Enabled {
 		return api.BadRequest("archiving is not enabled")
 	}
@@ -133,27 +134,27 @@ func ViewExport(r *http.Request, log *logrus.Entry, user api.UserInfo) interface
 	params := mux.Vars(r)
 
 	exportId := params["exportId"]
-	log = log.WithFields(logrus.Fields{
+	rctx = rctx.LogWithFields(logrus.Fields{
 		"exportId": exportId,
 	})
 
-	exportDb := storage.GetDatabase().GetExportStore(r.Context(), log)
+	exportDb := storage.GetDatabase().GetExportStore(rctx)
 
 	exportInfo, err := exportDb.GetExportMetadata(exportId)
 	if err != nil {
-		log.Error(err)
+		rctx.Log.Error(err)
 		return api.InternalServerError("failed to get metadata")
 	}
 
 	parts, err := exportDb.GetExportParts(exportId)
 	if err != nil {
-		log.Error(err)
+		rctx.Log.Error(err)
 		return api.InternalServerError("failed to get export parts")
 	}
 
 	template, err := templating.GetTemplate("view_export")
 	if err != nil {
-		log.Error(err)
+		rctx.Log.Error(err)
 		return api.InternalServerError("failed to get template")
 	}
 
@@ -175,14 +176,14 @@ func ViewExport(r *http.Request, log *logrus.Entry, user api.UserInfo) interface
 	html := bytes.Buffer{}
 	err = template.Execute(&html, model)
 	if err != nil {
-		log.Error(err)
+		rctx.Log.Error(err)
 		return api.InternalServerError("failed to render template")
 	}
 
 	return &api.HtmlResponse{HTML: string(html.Bytes())}
 }
 
-func GetExportMetadata(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
+func GetExportMetadata(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
 	if !config.Get().Archiving.Enabled {
 		return api.BadRequest("archiving is not enabled")
 	}
@@ -190,21 +191,21 @@ func GetExportMetadata(r *http.Request, log *logrus.Entry, user api.UserInfo) in
 	params := mux.Vars(r)
 
 	exportId := params["exportId"]
-	log = log.WithFields(logrus.Fields{
+	rctx = rctx.LogWithFields(logrus.Fields{
 		"exportId": exportId,
 	})
 
-	exportDb := storage.GetDatabase().GetExportStore(r.Context(), log)
+	exportDb := storage.GetDatabase().GetExportStore(rctx)
 
 	exportInfo, err := exportDb.GetExportMetadata(exportId)
 	if err != nil {
-		log.Error(err)
+		rctx.Log.Error(err)
 		return api.InternalServerError("failed to get metadata")
 	}
 
 	parts, err := exportDb.GetExportParts(exportId)
 	if err != nil {
-		log.Error(err)
+		rctx.Log.Error(err)
 		return api.InternalServerError("failed to get export parts")
 	}
 
@@ -223,7 +224,7 @@ func GetExportMetadata(r *http.Request, log *logrus.Entry, user api.UserInfo) in
 	return &api.DoNotCacheResponse{Payload: metadata}
 }
 
-func DownloadExportPart(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
+func DownloadExportPart(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
 	if !config.Get().Archiving.Enabled {
 		return api.BadRequest("archiving is not enabled")
 	}
@@ -233,25 +234,25 @@ func DownloadExportPart(r *http.Request, log *logrus.Entry, user api.UserInfo) i
 	exportId := params["exportId"]
 	partId, err := strconv.ParseInt(params["partId"], 10, 64)
 	if err != nil {
-		log.Error(err)
+		rctx.Log.Error(err)
 		return api.BadRequest("invalid part index")
 	}
 
-	log = log.WithFields(logrus.Fields{
+	rctx = rctx.LogWithFields(logrus.Fields{
 		"exportId": exportId,
 		"partId":   partId,
 	})
 
-	db := storage.GetDatabase().GetExportStore(r.Context(), log)
+	db := storage.GetDatabase().GetExportStore(rctx)
 	part, err := db.GetExportPart(exportId, int(partId))
 	if err != nil {
-		log.Error(err)
+		rctx.Log.Error(err)
 		return api.InternalServerError("failed to get part")
 	}
 
-	s, err := datastore.DownloadStream(r.Context(), log, part.DatastoreID, part.Location)
+	s, err := datastore.DownloadStream(rctx, part.DatastoreID, part.Location)
 	if err != nil {
-		log.Error(err)
+		rctx.Log.Error(err)
 		return api.InternalServerError("failed to start download")
 	}
 
@@ -263,7 +264,7 @@ func DownloadExportPart(r *http.Request, log *logrus.Entry, user api.UserInfo) i
 	}
 }
 
-func DeleteExport(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
+func DeleteExport(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
 	if !config.Get().Archiving.Enabled {
 		return api.BadRequest("archiving is not enabled")
 	}
@@ -272,38 +273,38 @@ func DeleteExport(r *http.Request, log *logrus.Entry, user api.UserInfo) interfa
 
 	exportId := params["exportId"]
 
-	log = log.WithFields(logrus.Fields{
+	rctx = rctx.LogWithFields(logrus.Fields{
 		"exportId": exportId,
 	})
 
-	db := storage.GetDatabase().GetExportStore(r.Context(), log)
+	db := storage.GetDatabase().GetExportStore(rctx)
 
-	log.Info("Getting information on which parts to delete")
+	rctx.Log.Info("Getting information on which parts to delete")
 	parts, err := db.GetExportParts(exportId)
 	if err != nil {
-		log.Error(err)
+		rctx.Log.Error(err)
 		return api.InternalServerError("failed to delete export")
 	}
 
 	for _, part := range parts {
-		log.Info("Locating datastore: " + part.DatastoreID)
-		ds, err := datastore.LocateDatastore(r.Context(), log, part.DatastoreID)
+		rctx.Log.Info("Locating datastore: " + part.DatastoreID)
+		ds, err := datastore.LocateDatastore(rctx, part.DatastoreID)
 		if err != nil {
-			log.Error(err)
+			rctx.Log.Error(err)
 			return api.InternalServerError("failed to delete export")
 		}
 
-		log.Info("Deleting object: " + part.Location)
+		rctx.Log.Info("Deleting object: " + part.Location)
 		err = ds.DeleteObject(part.Location)
 		if err != nil {
-			log.Warn(err)
+			rctx.Log.Warn(err)
 		}
 	}
 
-	log.Info("Purging export from database")
+	rctx.Log.Info("Purging export from database")
 	err = db.DeleteExportAndParts(exportId)
 	if err != nil {
-		log.Error(err)
+		rctx.Log.Error(err)
 		return api.InternalServerError("failed to delete export")
 	}
 

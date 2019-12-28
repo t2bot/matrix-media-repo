@@ -9,6 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/common"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/download_controller"
 )
 
@@ -19,7 +20,7 @@ type DownloadMediaResponse struct {
 	Data        io.ReadCloser
 }
 
-func DownloadMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
+func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
 	params := mux.Vars(r)
 
 	server := params["server"]
@@ -36,14 +37,14 @@ func DownloadMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interf
 		downloadRemote = parsedFlag
 	}
 
-	log = log.WithFields(logrus.Fields{
+	rctx = rctx.LogWithFields(logrus.Fields{
 		"mediaId":     mediaId,
 		"server":      server,
 		"filename":    filename,
 		"allowRemote": downloadRemote,
 	})
 
-	streamedMedia, err := download_controller.GetMedia(server, mediaId, downloadRemote, false, r.Context(), log)
+	streamedMedia, err := download_controller.GetMedia(server, mediaId, downloadRemote, false, rctx)
 	if err != nil {
 		if err == common.ErrMediaNotFound {
 			return api.NotFoundError()
@@ -52,7 +53,7 @@ func DownloadMedia(r *http.Request, log *logrus.Entry, user api.UserInfo) interf
 		} else if err == common.ErrMediaQuarantined {
 			return api.NotFoundError() // We lie for security
 		}
-		log.Error("Unexpected error locating media: " + err.Error())
+		rctx.Log.Error("Unexpected error locating media: " + err.Error())
 		return api.InternalServerError("Unexpected Error")
 	}
 

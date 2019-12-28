@@ -54,4 +54,5 @@ identicons:
   enabled: false
 ```
 
-Per-domain configs can also be layered - just ensure that each layer has the `homeserver` property in it.
+Per-domain configs can also be layered - just ensure that each layer has the `homeserver` property in it. They inherit
+from the main config for options not defined in their layers.

@@ -4,7 +4,6 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
-	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -12,8 +11,9 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/sirupsen/logrus"
+	"github.com/prometheus/common/log"
 	"github.com/turt2live/matrix-media-repo/common"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/upload_controller"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
@@ -29,9 +29,7 @@ type importUpdate struct {
 
 var openImports = &sync.Map{} // importId => updateChan
 
-func StartImport(data io.Reader, log *logrus.Entry) (*types.BackgroundTask, string, error) {
-	ctx := context.Background()
-
+func StartImport(data io.Reader, ctx rcontext.RequestContext) (*types.BackgroundTask, string, error) {
 	// Prepare the first update for the import (sync, so we can error)
 	// We do this before anything else because if the archive is invalid then we shouldn't
 	// even bother with an import.
@@ -45,7 +43,7 @@ func StartImport(data io.Reader, log *logrus.Entry) (*types.BackgroundTask, stri
 		return nil, "", err
 	}
 
-	db := storage.GetDatabase().GetMetadataStore(ctx, log)
+	db := storage.GetDatabase().GetMetadataStore(ctx)
 	task, err := db.CreateBackgroundTask("import_data", map[string]interface{}{
 		"import_id": importId,
 	})
@@ -56,7 +54,7 @@ func StartImport(data io.Reader, log *logrus.Entry) (*types.BackgroundTask, stri
 
 	// Start the import and send it its first update
 	updateChan := make(chan *importUpdate)
-	go doImport(updateChan, task.ID, importId, ctx, log)
+	go doImport(updateChan, task.ID, importId, ctx)
 	openImports.Store(importId, updateChan)
 	updateChan <- &importUpdate{stop: false, fileMap: results}
 
@@ -131,29 +129,29 @@ func processArchive(data io.Reader) (map[string]*bytes.Buffer, error) {
 	return index, nil
 }
 
-func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx context.Context, log *logrus.Entry) {
-	log.Info("Preparing for import...")
+func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx rcontext.RequestContext) {
+	ctx.Log.Info("Preparing for import...")
 	fileMap := make(map[string]*bytes.Buffer)
 	stopImport := false
 	archiveManifest := &manifest{}
 	haveManifest := false
 	imported := make(map[string]bool)
-	db := storage.GetDatabase().GetMediaStore(ctx, log)
+	db := storage.GetDatabase().GetMediaStore(ctx)
 
 	for !stopImport {
 		update := <-updateChannel
 		if update.stop {
-			log.Info("Close requested")
+			ctx.Log.Info("Close requested")
 			stopImport = true
 		}
 
 		// Populate files
 		for name, fileBytes := range update.fileMap {
 			if _, ok := fileMap[name]; ok {
-				log.Warnf("Duplicate file name, skipping: %s", name)
+				ctx.Log.Warnf("Duplicate file name, skipping: %s", name)
 				continue // file already known to us
 			}
-			log.Infof("Tracking file: %s", name)
+			ctx.Log.Infof("Tracking file: %s", name)
 			fileMap[name] = fileBytes
 		}
 
@@ -161,7 +159,7 @@ func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx
 		var manifestBuf *bytes.Buffer
 		var ok bool
 		if manifestBuf, ok = fileMap["manifest.json"]; !ok {
-			log.Info("No manifest found - waiting for more files")
+			ctx.Log.Info("No manifest found - waiting for more files")
 			continue
 		}
 
@@ -169,26 +167,26 @@ func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx
 			haveManifest = true
 			err := json.Unmarshal(manifestBuf.Bytes(), archiveManifest)
 			if err != nil {
-				log.Error("Failed to parse manifest - giving up on import")
-				log.Error(err)
+				ctx.Log.Error("Failed to parse manifest - giving up on import")
+				ctx.Log.Error(err)
 				break
 			}
 			if archiveManifest.Version != 1 && archiveManifest.Version != 2 {
-				log.Error("Unsupported archive version")
+				ctx.Log.Error("Unsupported archive version")
 				break
 			}
 			if archiveManifest.Version == 1 {
 				archiveManifest.EntityId = archiveManifest.UserId
 			}
 			if archiveManifest.EntityId == "" {
-				log.Error("Invalid manifest: no entity")
+				ctx.Log.Error("Invalid manifest: no entity")
 				break
 			}
 			if archiveManifest.Media == nil {
-				log.Error("Invalid manifest: no media")
+				ctx.Log.Error("Invalid manifest: no media")
 				break
 			}
-			log.Infof("Using manifest for %s (v%d) created %d", archiveManifest.EntityId, archiveManifest.Version, archiveManifest.CreatedTs)
+			ctx.Log.Infof("Using manifest for %s (v%d) created %d", archiveManifest.EntityId, archiveManifest.Version, archiveManifest.CreatedTs)
 		}
 
 		if !haveManifest {
@@ -212,7 +210,7 @@ func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx
 			if userId != "" {
 				_, s, err := util.SplitUserId(userId)
 				if err != nil {
-					log.Errorf("Invalid user ID: %s", userId)
+					ctx.Log.Errorf("Invalid user ID: %s", userId)
 					serverName = ""
 				} else {
 					serverName = s
@@ -222,25 +220,25 @@ func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx
 				kind = common.KindRemoteMedia
 			}
 
-			log.Infof("Attempting to import %s for %s", mxc, archiveManifest.EntityId)
+			ctx.Log.Infof("Attempting to import %s for %s", mxc, archiveManifest.EntityId)
 			buf, found := fileMap[record.ArchivedName]
 			if found {
-				log.Info("Using file from memory")
+				ctx.Log.Info("Using file from memory")
 				closer := util.BufferToStream(buf)
-				_, err := upload_controller.StoreDirect(closer, record.SizeBytes, record.ContentType, record.FileName, userId, record.Origin, record.MediaId, kind, ctx, log)
+				_, err := upload_controller.StoreDirect(closer, record.SizeBytes, record.ContentType, record.FileName, userId, record.Origin, record.MediaId, kind, ctx)
 				if err != nil {
-					log.Errorf("Error importing file: %s", err.Error())
+					ctx.Log.Errorf("Error importing file: %s", err.Error())
 					continue
 				}
 			} else if record.S3Url != "" {
-				log.Info("Using S3 URL")
+				ctx.Log.Info("Using S3 URL")
 				endpoint, bucket, location, err := ds_s3.ParseS3URL(record.S3Url)
 				if err != nil {
-					log.Errorf("Error importing file: %s", err.Error())
+					ctx.Log.Errorf("Error importing file: %s", err.Error())
 					continue
 				}
 
-				log.Infof("Seeing if a datastore for %s/%s exists", endpoint, bucket)
+				ctx.Log.Infof("Seeing if a datastore for %s/%s exists", endpoint, bucket)
 				datastores, err := datastore.GetAvailableDatastores()
 				if err != nil {
 					log.Errorf("Error locating datastore: %s", err.Error())
@@ -254,19 +252,19 @@ func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx
 
 					tmplUrl, err := ds_s3.GetS3URL(ds.DatastoreId, location)
 					if err != nil {
-						log.Errorf("Error investigating s3 datastore: %s", err.Error())
+						ctx.Log.Errorf("Error investigating s3 datastore: %s", err.Error())
 						continue
 					}
 					if tmplUrl == record.S3Url {
-						log.Infof("File matches! Assuming the file has been uploaded already")
+						ctx.Log.Infof("File matches! Assuming the file has been uploaded already")
 
 						existingRecord, err := db.Get(record.Origin, record.MediaId)
 						if err != nil && err != sql.ErrNoRows {
-							log.Errorf("Error testing file in database: %s", err.Error())
+							ctx.Log.Errorf("Error testing file in database: %s", err.Error())
 							break
 						}
 						if err != sql.ErrNoRows && existingRecord != nil {
-							log.Warnf("Media %s already exists - skipping without altering record", existingRecord.MxcUri())
+							ctx.Log.Warnf("Media %s already exists - skipping without altering record", existingRecord.MxcUri())
 							imported = true
 							break
 						}
@@ -292,32 +290,32 @@ func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx
 
 						err = db.Insert(media)
 						if err != nil {
-							log.Errorf("Error creating media record: %s", err.Error())
+							ctx.Log.Errorf("Error creating media record: %s", err.Error())
 							break
 						}
 
-						log.Infof("Media %s has been imported", media.MxcUri())
+						ctx.Log.Infof("Media %s has been imported", media.MxcUri())
 						imported = true
 						break
 					}
 				}
 
 				if !imported {
-					log.Info("No datastore found - trying to upload by downloading first")
+					ctx.Log.Info("No datastore found - trying to upload by downloading first")
 					r, err := http.DefaultClient.Get(record.S3Url)
 					if err != nil {
-						log.Errorf("Error trying to download file from S3 via HTTP: ", err.Error())
+						ctx.Log.Errorf("Error trying to download file from S3 via HTTP: ", err.Error())
 						continue
 					}
 
-					_, err = upload_controller.StoreDirect(r.Body, r.ContentLength, record.ContentType, record.FileName, userId, record.Origin, record.MediaId, kind, ctx, log)
+					_, err = upload_controller.StoreDirect(r.Body, r.ContentLength, record.ContentType, record.FileName, userId, record.Origin, record.MediaId, kind, ctx)
 					if err != nil {
-						log.Errorf("Error importing file: %s", err.Error())
+						ctx.Log.Errorf("Error importing file: %s", err.Error())
 						continue
 					}
 				}
 			} else {
-				log.Warn("Missing usable file for import - assuming it will show up in a future upload")
+				ctx.Log.Warn("Missing usable file for import - assuming it will show up in a future upload")
 				continue
 			}
 
@@ -336,19 +334,19 @@ func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx
 		}
 
 		if !missingAny {
-			log.Info("No more files to import - closing import")
+			ctx.Log.Info("No more files to import - closing import")
 			stopImport = true
 		}
 	}
 
 	openImports.Delete(importId)
 
-	log.Info("Finishing import task")
-	dbMeta := storage.GetDatabase().GetMetadataStore(ctx, log)
+	ctx.Log.Info("Finishing import task")
+	dbMeta := storage.GetDatabase().GetMetadataStore(ctx)
 	err := dbMeta.FinishedBackgroundTask(taskId)
 	if err != nil {
-		log.Error(err)
-		log.Error("Failed to flag task as finished")
+		ctx.Log.Error(err)
+		ctx.Log.Error("Failed to flag task as finished")
 	}
-	log.Info("Finished import")
+	ctx.Log.Info("Finished import")
 }

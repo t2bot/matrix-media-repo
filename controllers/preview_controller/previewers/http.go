@@ -14,13 +14,13 @@ import (
 	"time"
 
 	"github.com/ryanuber/go-glob"
-	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/preview_types"
 )
 
-func doHttpGet(urlPayload *preview_types.UrlPayload, log *logrus.Entry) (*http.Response, error) {
+func doHttpGet(urlPayload *preview_types.UrlPayload, ctx rcontext.RequestContext) (*http.Response, error) {
 	var client *http.Client
 
 	dialer := &net.Dialer{
@@ -72,7 +72,7 @@ func doHttpGet(urlPayload *preview_types.UrlPayload, log *logrus.Entry) (*http.R
 	}
 
 	if config.Get().UrlPreviews.UnsafeCertificates {
-		log.Warn("Ignoring any certificate errors while making request")
+		ctx.Log.Warn("Ignoring any certificate errors while making request")
 		tr := &http.Transport{
 			DisableKeepAlives: true,
 			DialContext:       dialContext,
@@ -116,14 +116,14 @@ func doHttpGet(urlPayload *preview_types.UrlPayload, log *logrus.Entry) (*http.R
 	return client.Do(req)
 }
 
-func downloadRawContent(urlPayload *preview_types.UrlPayload, supportedTypes []string, log *logrus.Entry) ([]byte, string, string, string, error) {
-	log.Info("Fetching remote content...")
-	resp, err := doHttpGet(urlPayload, log)
+func downloadRawContent(urlPayload *preview_types.UrlPayload, supportedTypes []string, ctx rcontext.RequestContext) ([]byte, string, string, string, error) {
+	ctx.Log.Info("Fetching remote content...")
+	resp, err := doHttpGet(urlPayload, ctx)
 	if err != nil {
 		return nil, "", "", "", err
 	}
 	if resp.StatusCode != http.StatusOK {
-		log.Warn("Received status code " + strconv.Itoa(resp.StatusCode))
+		ctx.Log.Warn("Received status code " + strconv.Itoa(resp.StatusCode))
 		return nil, "", "", "", errors.New("error during transfer")
 	}
 
@@ -161,8 +161,8 @@ func downloadRawContent(urlPayload *preview_types.UrlPayload, supportedTypes []s
 	return bytes, filename, contentType, resp.Header.Get("Content-Length"), nil
 }
 
-func downloadHtmlContent(urlPayload *preview_types.UrlPayload, supportedTypes []string, log *logrus.Entry) (string, error) {
-	raw, _, _, _, err := downloadRawContent(urlPayload, supportedTypes, log)
+func downloadHtmlContent(urlPayload *preview_types.UrlPayload, supportedTypes []string, ctx rcontext.RequestContext) (string, error) {
+	raw, _, _, _, err := downloadRawContent(urlPayload, supportedTypes, ctx)
 	html := ""
 	if raw != nil {
 		html = string(raw)
@@ -170,14 +170,14 @@ func downloadHtmlContent(urlPayload *preview_types.UrlPayload, supportedTypes []
 	return html, err
 }
 
-func downloadImage(urlPayload *preview_types.UrlPayload, log *logrus.Entry) (*preview_types.PreviewImage, error) {
-	log.Info("Getting image from " + urlPayload.ParsedUrl.String())
-	resp, err := doHttpGet(urlPayload, log)
+func downloadImage(urlPayload *preview_types.UrlPayload, ctx rcontext.RequestContext) (*preview_types.PreviewImage, error) {
+	ctx.Log.Info("Getting image from " + urlPayload.ParsedUrl.String())
+	resp, err := doHttpGet(urlPayload, ctx)
 	if err != nil {
 		return nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
-		log.Warn("Received status code " + strconv.Itoa(resp.StatusCode))
+		ctx.Log.Warn("Received status code " + strconv.Itoa(resp.StatusCode))
 		return nil, errors.New("error during transfer")
 	}
 

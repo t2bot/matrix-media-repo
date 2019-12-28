@@ -14,13 +14,14 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 )
 
 type IdenticonResponse struct {
 	Avatar io.Reader
 }
 
-func Identicon(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
+func Identicon(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
 	if !config.Get().Identicons.Enabled {
 		return api.NotFoundError()
 	}
@@ -48,7 +49,7 @@ func Identicon(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{
 		}
 	}
 
-	log = log.WithFields(logrus.Fields{
+	rctx = rctx.LogWithFields(logrus.Fields{
 		"identiconWidth":  width,
 		"identiconHeight": height,
 		"identiconSeed":   seed,
@@ -72,18 +73,18 @@ func Identicon(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{
 		},
 	}
 
-	log.Info("Generating identicon")
+	rctx.Log.Info("Generating identicon")
 	img := sig.Make(width, false, []byte(hashed))
 	if width != height {
 		// Resize to the desired height
-		log.Info("Resizing image to fit height")
+		rctx.Log.Info("Resizing image to fit height")
 		img = imaging.Resize(img, width, height, imaging.Lanczos)
 	}
 
 	imgData := &bytes.Buffer{}
 	err = imaging.Encode(imgData, img, imaging.PNG)
 	if err != nil {
-		log.Error("Error generating image:" + err.Error())
+		rctx.Log.Error("Error generating image:" + err.Error())
 		return api.InternalServerError("error generating identicon")
 	}
 

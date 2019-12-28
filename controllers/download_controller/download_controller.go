@@ -2,7 +2,6 @@ package download_controller
 
 import (
 	"bytes"
-	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -10,10 +9,10 @@ import (
 
 	"github.com/disintegration/imaging"
 	"github.com/patrickmn/go-cache"
-	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/globals"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/quarantine_controller"
 	"github.com/turt2live/matrix-media-repo/internal_cache"
 	"github.com/turt2live/matrix-media-repo/storage"
@@ -24,14 +23,14 @@ import (
 
 var localCache = cache.New(30*time.Second, 60*time.Second)
 
-func GetMedia(origin string, mediaId string, downloadRemote bool, blockForMedia bool, ctx context.Context, log *logrus.Entry) (*types.MinimalMedia, error) {
+func GetMedia(origin string, mediaId string, downloadRemote bool, blockForMedia bool, ctx rcontext.RequestContext) (*types.MinimalMedia, error) {
 	cacheKey := fmt.Sprintf("%s/%s?r=%t&b=%t", origin, mediaId, downloadRemote, blockForMedia)
 	v, _, err := globals.DefaultRequestGroup.Do(cacheKey, func() (interface{}, error) {
 		var media *types.Media
 		var minMedia *types.MinimalMedia
 		var err error
 		if blockForMedia {
-			media, err = FindMediaRecord(origin, mediaId, downloadRemote, ctx, log)
+			media, err = FindMediaRecord(origin, mediaId, downloadRemote, ctx)
 			if media != nil {
 				minMedia = &types.MinimalMedia{
 					Origin:      media.Origin,
@@ -44,7 +43,7 @@ func GetMedia(origin string, mediaId string, downloadRemote bool, blockForMedia 
 				}
 			}
 		} else {
-			minMedia, err = FindMinimalMediaRecord(origin, mediaId, downloadRemote, ctx, log)
+			minMedia, err = FindMinimalMediaRecord(origin, mediaId, downloadRemote, ctx)
 			if minMedia != nil {
 				media = minMedia.KnownMedia
 			}
@@ -53,11 +52,11 @@ func GetMedia(origin string, mediaId string, downloadRemote bool, blockForMedia 
 			return nil, err
 		}
 		if minMedia == nil {
-			log.Warn("Unexpected error while fetching media: no minimal media record")
+			ctx.Log.Warn("Unexpected error while fetching media: no minimal media record")
 			return nil, common.ErrMediaNotFound
 		}
 		if media == nil && blockForMedia {
-			log.Warn("Unexpected error while fetching media: no regular media record (block for media in place)")
+			ctx.Log.Warn("Unexpected error while fetching media: no regular media record (block for media in place)")
 			return nil, common.ErrMediaNotFound
 		}
 
@@ -67,10 +66,10 @@ func GetMedia(origin string, mediaId string, downloadRemote bool, blockForMedia 
 
 		if media != nil {
 			if media.Quarantined {
-				log.Warn("Quarantined media accessed")
+				ctx.Log.Warn("Quarantined media accessed")
 
 				if config.Get().Quarantine.ReplaceDownloads {
-					log.Info("Replacing thumbnail with a quarantined one")
+					ctx.Log.Info("Replacing thumbnail with a quarantined one")
 
 					img, err := quarantine_controller.GenerateQuarantineThumbnail(512, 512)
 					if err != nil {
@@ -94,15 +93,15 @@ func GetMedia(origin string, mediaId string, downloadRemote bool, blockForMedia 
 				return nil, common.ErrMediaQuarantined
 			}
 
-			err = storage.GetDatabase().GetMetadataStore(ctx, log).UpsertLastAccess(media.Sha256Hash, util.NowMillis())
+			err = storage.GetDatabase().GetMetadataStore(ctx).UpsertLastAccess(media.Sha256Hash, util.NowMillis())
 			if err != nil {
-				logrus.Warn("Failed to upsert the last access time: ", err)
+				ctx.Log.Warn("Failed to upsert the last access time: ", err)
 			}
 
 			localCache.Set(origin+"/"+mediaId, media, cache.DefaultExpiration)
 			internal_cache.Get().IncrementDownloads(media.Sha256Hash)
 
-			cached, err := internal_cache.Get().GetMedia(media, log)
+			cached, err := internal_cache.Get().GetMedia(media, ctx)
 			if err != nil {
 				return nil, err
 			}
@@ -113,17 +112,17 @@ func GetMedia(origin string, mediaId string, downloadRemote bool, blockForMedia 
 		}
 
 		if minMedia.Stream != nil {
-			log.Info("Returning minimal media record with a viable stream")
+			ctx.Log.Info("Returning minimal media record with a viable stream")
 			return minMedia, nil
 		}
 
 		if media == nil {
-			log.Error("Failed to locate media")
+			ctx.Log.Error("Failed to locate media")
 			return nil, errors.New("failed to locate media")
 		}
 
-		log.Info("Reading media from disk")
-		mediaStream, err := datastore.DownloadStream(ctx, log, media.DatastoreId, media.Location)
+		ctx.Log.Info("Reading media from disk")
+		mediaStream, err := datastore.DownloadStream(ctx, media.DatastoreId, media.Location)
 		if err != nil {
 			return nil, err
 		}
@@ -165,26 +164,26 @@ func GetMedia(origin string, mediaId string, downloadRemote bool, blockForMedia 
 	return value, err
 }
 
-func FindMinimalMediaRecord(origin string, mediaId string, downloadRemote bool, ctx context.Context, log *logrus.Entry) (*types.MinimalMedia, error) {
-	db := storage.GetDatabase().GetMediaStore(ctx, log)
+func FindMinimalMediaRecord(origin string, mediaId string, downloadRemote bool, ctx rcontext.RequestContext) (*types.MinimalMedia, error) {
+	db := storage.GetDatabase().GetMediaStore(ctx)
 
 	var media *types.Media
 	item, found := localCache.Get(origin + "/" + mediaId)
 	if found {
 		media = item.(*types.Media)
 	} else {
-		log.Info("Getting media record from database")
+		ctx.Log.Info("Getting media record from database")
 		dbMedia, err := db.Get(origin, mediaId)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				if util.IsServerOurs(origin) {
-					log.Warn("Media not found")
+					ctx.Log.Warn("Media not found")
 					return nil, common.ErrMediaNotFound
 				}
 			}
 
 			if !downloadRemote {
-				log.Warn("Remote media not being downloaded")
+				ctx.Log.Warn("Remote media not being downloaded")
 				return nil, common.ErrMediaNotFound
 			}
 
@@ -196,13 +195,13 @@ func FindMinimalMediaRecord(origin string, mediaId string, downloadRemote bool, 
 				return nil, result.err
 			}
 			if result.stream == nil {
-				log.Info("No stream returned from remote download - attempting to create one")
+				ctx.Log.Info("No stream returned from remote download - attempting to create one")
 				if result.media == nil {
-					log.Error("Fatal error: No stream and no media. Cannot acquire a stream for media")
+					ctx.Log.Error("Fatal error: No stream and no media. Cannot acquire a stream for media")
 					return nil, errors.New("no stream available")
 				}
 
-				stream, err := datastore.DownloadStream(ctx, log, result.media.DatastoreId, result.media.Location)
+				stream, err := datastore.DownloadStream(ctx, result.media.DatastoreId, result.media.Location)
 				if err != nil {
 					return nil, err
 				}
@@ -224,11 +223,11 @@ func FindMinimalMediaRecord(origin string, mediaId string, downloadRemote bool, 
 	}
 
 	if media == nil {
-		log.Warn("Despite all efforts, a media record could not be found")
+		ctx.Log.Warn("Despite all efforts, a media record could not be found")
 		return nil, common.ErrMediaNotFound
 	}
 
-	mediaStream, err := datastore.DownloadStream(ctx, log, media.DatastoreId, media.Location)
+	mediaStream, err := datastore.DownloadStream(ctx, media.DatastoreId, media.Location)
 	if err != nil {
 		return nil, err
 	}
@@ -244,28 +243,28 @@ func FindMinimalMediaRecord(origin string, mediaId string, downloadRemote bool, 
 	}, nil
 }
 
-func FindMediaRecord(origin string, mediaId string, downloadRemote bool, ctx context.Context, log *logrus.Entry) (*types.Media, error) {
+func FindMediaRecord(origin string, mediaId string, downloadRemote bool, ctx rcontext.RequestContext) (*types.Media, error) {
 	cacheKey := origin + "/" + mediaId
 	v, _, err := globals.DefaultRequestGroup.DoWithoutPost(cacheKey, func() (interface{}, error) {
-		db := storage.GetDatabase().GetMediaStore(ctx, log)
+		db := storage.GetDatabase().GetMediaStore(ctx)
 
 		var media *types.Media
 		item, found := localCache.Get(cacheKey)
 		if found {
 			media = item.(*types.Media)
 		} else {
-			log.Info("Getting media record from database")
+			ctx.Log.Info("Getting media record from database")
 			dbMedia, err := db.Get(origin, mediaId)
 			if err != nil {
 				if err == sql.ErrNoRows {
 					if util.IsServerOurs(origin) {
-						log.Warn("Media not found")
+						ctx.Log.Warn("Media not found")
 						return nil, common.ErrMediaNotFound
 					}
 				}
 
 				if !downloadRemote {
-					log.Warn("Remote media not being downloaded")
+					ctx.Log.Warn("Remote media not being downloaded")
 					return nil, common.ErrMediaNotFound
 				}
 
@@ -283,7 +282,7 @@ func FindMediaRecord(origin string, mediaId string, downloadRemote bool, ctx con
 		}
 
 		if media == nil {
-			log.Warn("Despite all efforts, a media record could not be found")
+			ctx.Log.Warn("Despite all efforts, a media record could not be found")
 			return nil, common.ErrMediaNotFound
 		}
 

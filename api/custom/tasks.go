@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/storage"
 )
 
@@ -19,25 +20,25 @@ type TaskStatus struct {
 	IsFinished bool                   `json:"is_finished"`
 }
 
-func GetTask(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
+func GetTask(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
 	params := mux.Vars(r)
 
 	taskIdStr := params["taskId"]
 	taskId, err := strconv.Atoi(taskIdStr)
 	if err != nil {
-		log.Error(err)
+		rctx.Log.Error(err)
 		return api.BadRequest("invalid task ID")
 	}
 
-	log = log.WithFields(logrus.Fields{
+	rctx = rctx.LogWithFields(logrus.Fields{
 		"taskId": taskId,
 	})
 
-	db := storage.GetDatabase().GetMetadataStore(r.Context(), log)
+	db := storage.GetDatabase().GetMetadataStore(rctx)
 
 	task, err := db.GetBackgroundTask(taskId)
 	if err != nil {
-		log.Error(err)
+		rctx.Log.Error(err)
 		return api.InternalServerError("failed to get task information")
 	}
 
@@ -51,8 +52,8 @@ func GetTask(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} 
 	}}
 }
 
-func ListAllTasks(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
-	db := storage.GetDatabase().GetMetadataStore(r.Context(), log)
+func ListAllTasks(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
+	db := storage.GetDatabase().GetMetadataStore(rctx)
 
 	tasks, err := db.GetAllBackgroundTasks()
 	if err != nil {
@@ -75,8 +76,8 @@ func ListAllTasks(r *http.Request, log *logrus.Entry, user api.UserInfo) interfa
 	return &api.DoNotCacheResponse{Payload: statusObjs}
 }
 
-func ListUnfinishedTasks(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
-	db := storage.GetDatabase().GetMetadataStore(r.Context(), log)
+func ListUnfinishedTasks(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
+	db := storage.GetDatabase().GetMetadataStore(rctx)
 
 	tasks, err := db.GetAllBackgroundTasks()
 	if err != nil {

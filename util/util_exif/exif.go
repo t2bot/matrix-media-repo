@@ -1,12 +1,11 @@
 package util_exif
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/rwcarlsen/goexif/exif"
-	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/types"
 )
@@ -22,7 +21,7 @@ func GetExifOrientation(media *types.Media) (*ExifOrientation, error) {
 		return nil, errors.New("image is not a jpeg")
 	}
 
-	mediaStream, err := datastore.DownloadStream(context.TODO(), &logrus.Entry{}, media.DatastoreId, media.Location)
+	mediaStream, err := datastore.DownloadStream(rcontext.Initial(), media.DatastoreId, media.Location)
 	if err != nil {
 		return nil, err
 	}

@@ -1,10 +1,9 @@
 package stores
 
 import (
-	"context"
 	"database/sql"
 
-	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/types"
 )
 
@@ -33,8 +32,7 @@ type ExportStoreFactory struct {
 
 type ExportStore struct {
 	factory    *ExportStoreFactory // just for reference
-	ctx        context.Context
-	log        *logrus.Entry
+	ctx        rcontext.RequestContext
 	statements *exportStoreStatements // copied from factory
 }
 
@@ -69,11 +67,10 @@ func InitExportStore(sqlDb *sql.DB) (*ExportStoreFactory, error) {
 	return &store, nil
 }
 
-func (f *ExportStoreFactory) Create(ctx context.Context, entry *logrus.Entry) *ExportStore {
+func (f *ExportStoreFactory) Create(ctx rcontext.RequestContext) *ExportStore {
 	return &ExportStore{
 		factory:    f,
 		ctx:        ctx,
-		log:        entry,
 		statements: f.stmts, // we copy this intentionally
 	}
 }

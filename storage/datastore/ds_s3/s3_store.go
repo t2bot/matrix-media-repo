@@ -1,7 +1,6 @@
 package ds_s3
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -13,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 )
@@ -110,7 +110,7 @@ func (s *s3Datastore) EnsureTempPathExists() error {
 	return nil
 }
 
-func (s *s3Datastore) UploadFile(file io.ReadCloser, expectedLength int64, ctx context.Context, log *logrus.Entry) (*types.ObjectInfo, error) {
+func (s *s3Datastore) UploadFile(file io.ReadCloser, expectedLength int64, ctx rcontext.RequestContext) (*types.ObjectInfo, error) {
 	defer file.Close()
 
 	objectName, err := util.GenerateRandomString(512)
@@ -133,16 +133,16 @@ func (s *s3Datastore) UploadFile(file io.ReadCloser, expectedLength int64, ctx c
 
 	go func() {
 		defer ws3.Close()
-		log.Info("Calculating hash of stream...")
+		ctx.Log.Info("Calculating hash of stream...")
 		hash, hashErr = util.GetSha256HashOfStream(ioutil.NopCloser(tr))
-		log.Info("Hash of file is ", hash)
+		ctx.Log.Info("Hash of file is ", hash)
 		done <- true
 	}()
 
 	go func() {
 		if expectedLength <= 0 {
 			if s.tempPath != "" {
-				log.Info("Buffering file to temp path due to unknown file size")
+				ctx.Log.Info("Buffering file to temp path due to unknown file size")
 				var f *os.File
 				f, uploadErr = ioutil.TempFile(s.tempPath, "mr*")
 				if uploadErr != nil {
@@ -165,13 +165,13 @@ func (s *s3Datastore) UploadFile(file io.ReadCloser, expectedLength int64, ctx c
 				rs3 = f
 				defer f.Close()
 			} else {
-				log.Warn("Uploading content of unknown length to s3 - this could result in high memory usage")
+				ctx.Log.Warn("Uploading content of unknown length to s3 - this could result in high memory usage")
 				expectedLength = -1
 			}
 		}
-		log.Info("Uploading file...")
+		ctx.Log.Info("Uploading file...")
 		sizeBytes, uploadErr = s.client.PutObjectWithContext(ctx, s.bucket, objectName, rs3, expectedLength, minio.PutObjectOptions{})
-		log.Info("Uploaded ", sizeBytes, " bytes to s3")
+		ctx.Log.Info("Uploaded ", sizeBytes, " bytes to s3")
 		done <- true
 	}()
 

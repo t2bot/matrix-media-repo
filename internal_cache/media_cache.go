@@ -3,7 +3,6 @@ package internal_cache
 import (
 	"bytes"
 	"container/list"
-	"context"
 	"fmt"
 	"io/ioutil"
 	"sync"
@@ -11,8 +10,10 @@ import (
 
 	"github.com/patrickmn/go-cache"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/common/log"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/types"
@@ -90,14 +91,14 @@ func (c *MediaCache) IncrementDownloads(fileHash string) {
 	c.tracker.Increment(fileHash)
 }
 
-func (c *MediaCache) GetMedia(media *types.Media, log *logrus.Entry) (*cachedFile, error) {
+func (c *MediaCache) GetMedia(media *types.Media, ctx rcontext.RequestContext) (*cachedFile, error) {
 	if !c.enabled {
 		metrics.CacheMisses.With(prometheus.Labels{"cache": "media"}).Inc()
 		return nil, nil
 	}
 
 	cacheFn := func() (*cachedFile, error) {
-		mediaStream, err := datastore.DownloadStream(context.TODO(), log, media.DatastoreId, media.Location)
+		mediaStream, err := datastore.DownloadStream(ctx, media.DatastoreId, media.Location)
 		if err != nil {
 			return nil, err
 		}
@@ -110,17 +111,17 @@ func (c *MediaCache) GetMedia(media *types.Media, log *logrus.Entry) (*cachedFil
 		return &cachedFile{media: media, Contents: bytes.NewBuffer(data)}, nil
 	}
 
-	return c.updateItemInCache(media.Sha256Hash, media.SizeBytes, cacheFn, log)
+	return c.updateItemInCache(media.Sha256Hash, media.SizeBytes, cacheFn, ctx)
 }
 
-func (c *MediaCache) GetThumbnail(thumbnail *types.Thumbnail, log *logrus.Entry) (*cachedFile, error) {
+func (c *MediaCache) GetThumbnail(thumbnail *types.Thumbnail, ctx rcontext.RequestContext) (*cachedFile, error) {
 	if !c.enabled {
 		metrics.CacheMisses.With(prometheus.Labels{"cache": "media"}).Inc()
 		return nil, nil
 	}
 
 	cacheFn := func() (*cachedFile, error) {
-		mediaStream, err := datastore.DownloadStream(context.TODO(), log, thumbnail.DatastoreId, thumbnail.Location)
+		mediaStream, err := datastore.DownloadStream(ctx, thumbnail.DatastoreId, thumbnail.Location)
 		if err != nil {
 			return nil, err
 		}
@@ -133,10 +134,10 @@ func (c *MediaCache) GetThumbnail(thumbnail *types.Thumbnail, log *logrus.Entry)
 		return &cachedFile{thumbnail: thumbnail, Contents: bytes.NewBuffer(data)}, nil
 	}
 
-	return c.updateItemInCache(thumbnail.Sha256Hash, thumbnail.SizeBytes, cacheFn, log)
+	return c.updateItemInCache(thumbnail.Sha256Hash, thumbnail.SizeBytes, cacheFn, ctx)
 }
 
-func (c *MediaCache) updateItemInCache(recordId string, mediaSize int64, cacheFn func() (*cachedFile, error), log *logrus.Entry) (*cachedFile, error) {
+func (c *MediaCache) updateItemInCache(recordId string, mediaSize int64, cacheFn func() (*cachedFile, error), ctx rcontext.RequestContext) (*cachedFile, error) {
 	downloads := c.tracker.NumDownloads(recordId)
 	enoughDownloads := downloads >= config.Get().Downloads.Cache.MinDownloads
 	canCache := c.canJoinCache(recordId)
@@ -145,7 +146,7 @@ func (c *MediaCache) updateItemInCache(recordId string, mediaSize int64, cacheFn
 	// No longer eligible for the cache - delete item
 	// The cached bytes will leave memory over time
 	if found && !enoughDownloads {
-		log.Info("Removing media from cache because it does not have enough downloads")
+		ctx.Log.Info("Removing media from cache because it does not have enough downloads")
 		metrics.CacheMisses.With(prometheus.Labels{"cache": "media"}).Inc()
 		metrics.CacheEvictions.With(prometheus.Labels{"cache": "media", "reason": "not_enough_downloads"}).Inc()
 		c.cache.Delete(recordId)
@@ -162,14 +163,14 @@ func (c *MediaCache) updateItemInCache(recordId string, mediaSize int64, cacheFn
 
 		// Don't bother checking for space if it won't fit anyways
 		if mediaSize > maxSpace {
-			log.Warn("Media too large to cache")
+			ctx.Log.Warn("Media too large to cache")
 			metrics.CacheMisses.With(prometheus.Labels{"cache": "media"}).Inc()
 			return nil, nil
 		}
 
 		if freeSpace >= mediaSize {
 			// Perfect! It'll fit - just cache it
-			log.Info("Caching file in memory")
+			ctx.Log.Info("Caching file in memory")
 			c.size = usedSpace + mediaSize
 			c.flagCached(recordId)
 
@@ -184,9 +185,9 @@ func (c *MediaCache) updateItemInCache(recordId string, mediaSize int64, cacheFn
 
 		// We need to clean up some space
 		neededSize := (usedSpace + mediaSize) - maxSpace
-		log.Info(fmt.Sprintf("Attempting to clear %d bytes from media cache", neededSize))
+		ctx.Log.Info(fmt.Sprintf("Attempting to clear %d bytes from media cache", neededSize))
 		clearedSpace := c.clearSpace(neededSize, downloads, mediaSize)
-		log.Info(fmt.Sprintf("Cleared %d bytes from media cache", clearedSpace))
+		ctx.Log.Info(fmt.Sprintf("Cleared %d bytes from media cache", clearedSpace))
 		freeSpace += clearedSpace
 		if freeSpace >= mediaSize {
 			// Now it'll fit - cache it
@@ -205,7 +206,7 @@ func (c *MediaCache) updateItemInCache(recordId string, mediaSize int64, cacheFn
 			return cachedItem, nil
 		}
 
-		log.Warn("Unable to clear enough space for file to be cached")
+		ctx.Log.Warn("Unable to clear enough space for file to be cached")
 		return nil, nil
 	}
 

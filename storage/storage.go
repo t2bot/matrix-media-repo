@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"context"
 	"database/sql"
 	"sync"
 
@@ -9,6 +8,7 @@ import (
 	_ "github.com/lib/pq" // postgres driver
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/storage/stores"
 )
 
@@ -109,22 +109,22 @@ func OpenDatabase(connectionString string, maxConns int, maxIdleConns int) error
 	return nil
 }
 
-func (d *Database) GetMediaStore(ctx context.Context, log *logrus.Entry) *stores.MediaStore {
-	return d.repos.mediaStore.Create(ctx, log)
+func (d *Database) GetMediaStore(ctx rcontext.RequestContext) *stores.MediaStore {
+	return d.repos.mediaStore.Create(ctx)
 }
 
-func (d *Database) GetThumbnailStore(ctx context.Context, log *logrus.Entry) *stores.ThumbnailStore {
-	return d.repos.thumbnailStore.New(ctx, log)
+func (d *Database) GetThumbnailStore(ctx rcontext.RequestContext) *stores.ThumbnailStore {
+	return d.repos.thumbnailStore.New(ctx)
 }
 
-func (d *Database) GetUrlStore(ctx context.Context, log *logrus.Entry) *stores.UrlStore {
-	return d.repos.urlStore.Create(ctx, log)
+func (d *Database) GetUrlStore(ctx rcontext.RequestContext) *stores.UrlStore {
+	return d.repos.urlStore.Create(ctx)
 }
 
-func (d *Database) GetMetadataStore(ctx context.Context, log *logrus.Entry) *stores.MetadataStore {
-	return d.repos.metadataStore.Create(ctx, log)
+func (d *Database) GetMetadataStore(ctx rcontext.RequestContext) *stores.MetadataStore {
+	return d.repos.metadataStore.Create(ctx)
 }
 
-func (d *Database) GetExportStore(ctx context.Context, log *logrus.Entry) *stores.ExportStore {
-	return d.repos.exportStore.Create(ctx, log)
+func (d *Database) GetExportStore(ctx rcontext.RequestContext) *stores.ExportStore {
+	return d.repos.exportStore.Create(ctx)
 }

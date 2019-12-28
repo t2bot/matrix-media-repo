@@ -1,10 +1,9 @@
 package stores
 
 import (
-	"context"
 	"database/sql"
 
-	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 )
@@ -24,8 +23,7 @@ type UrlStoreFactory struct {
 
 type UrlStore struct {
 	factory    *UrlStoreFactory // just for reference
-	ctx        context.Context
-	log        *logrus.Entry
+	ctx        rcontext.RequestContext
 	statements *urlStatements // copied from factory
 }
 
@@ -45,11 +43,10 @@ func InitUrlStore(sqlDb *sql.DB) (*UrlStoreFactory, error) {
 	return &store, nil
 }
 
-func (f *UrlStoreFactory) Create(ctx context.Context, entry *logrus.Entry) *UrlStore {
+func (f *UrlStoreFactory) Create(ctx rcontext.RequestContext) *UrlStore {
 	return &UrlStore{
 		factory:    f,
 		ctx:        ctx,
-		log:        entry,
 		statements: f.stmts, // we copy this intentionally
 	}
 }

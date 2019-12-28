@@ -1,11 +1,12 @@
 package matrix
 
 import (
-	"context"
 	"time"
+
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 )
 
-func IsUserAdmin(ctx context.Context, serverName string, accessToken string, ipAddr string) (bool, error) {
+func IsUserAdmin(ctx rcontext.RequestContext, serverName string, accessToken string, ipAddr string) (bool, error) {
 	fakeUser := "@media.repo.admin.check:" + serverName
 	hs, cb := getBreakerAndConfig(serverName)
 
@@ -32,7 +33,7 @@ func IsUserAdmin(ctx context.Context, serverName string, accessToken string, ipA
 	return isAdmin, replyError
 }
 
-func ListMedia(ctx context.Context, serverName string, accessToken string, roomId string, ipAddr string) (*mediaListResponse, error) {
+func ListMedia(ctx rcontext.RequestContext, serverName string, accessToken string, roomId string, ipAddr string) (*mediaListResponse, error) {
 	hs, cb := getBreakerAndConfig(serverName)
 
 	response := &mediaListResponse{}

@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/data_controller"
 )
 
@@ -15,15 +15,15 @@ type ImportStarted struct {
 	TaskID   int    `json:"task_id"`
 }
 
-func StartImport(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
+func StartImport(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
 	if !config.Get().Archiving.Enabled {
 		return api.BadRequest("archiving is not enabled")
 	}
 
 	defer r.Body.Close()
-	task, importId, err := data_controller.StartImport(r.Body, log)
+	task, importId, err := data_controller.StartImport(r.Body, rctx)
 	if err != nil {
-		log.Error(err)
+		rctx.Log.Error(err)
 		return api.InternalServerError("fatal error starting import")
 	}
 
@@ -33,7 +33,7 @@ func StartImport(r *http.Request, log *logrus.Entry, user api.UserInfo) interfac
 	}}
 }
 
-func AppendToImport(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
+func AppendToImport(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
 	if !config.Get().Archiving.Enabled {
 		return api.BadRequest("archiving is not enabled")
 	}
@@ -45,14 +45,14 @@ func AppendToImport(r *http.Request, log *logrus.Entry, user api.UserInfo) inter
 	defer r.Body.Close()
 	err := data_controller.AppendToImport(importId, r.Body)
 	if err != nil {
-		log.Error(err)
+		rctx.Log.Error(err)
 		return api.InternalServerError("fatal error appending to import")
 	}
 
 	return &api.DoNotCacheResponse{Payload: &api.EmptyResponse{}}
 }
 
-func StopImport(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
+func StopImport(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
 	if !config.Get().Archiving.Enabled {
 		return api.BadRequest("archiving is not enabled")
 	}
@@ -63,7 +63,7 @@ func StopImport(r *http.Request, log *logrus.Entry, user api.UserInfo) interface
 
 	err := data_controller.StopImport(importId)
 	if err != nil {
-		log.Error(err)
+		rctx.Log.Error(err)
 		return api.InternalServerError("fatal error stopping import")
 	}
 

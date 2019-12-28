@@ -5,18 +5,18 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/ryanuber/go-glob"
-	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/preview_types"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
-func GenerateCalculatedPreview(urlPayload *preview_types.UrlPayload, log *logrus.Entry) (preview_types.PreviewResult, error) {
-	bytes, filename, contentType, contentLength, err := downloadRawContent(urlPayload, config.Get().UrlPreviews.FilePreviewTypes, log)
+func GenerateCalculatedPreview(urlPayload *preview_types.UrlPayload, ctx rcontext.RequestContext) (preview_types.PreviewResult, error) {
+	bytes, filename, contentType, contentLength, err := downloadRawContent(urlPayload, config.Get().UrlPreviews.FilePreviewTypes, ctx)
 	if err != nil {
-		log.Error("Error downloading content: " + err.Error())
+		ctx.Log.Error("Error downloading content: " + err.Error())
 
 		// Make sure the unsupported error gets passed through
 		if err == preview_types.ErrPreviewUnsupported {

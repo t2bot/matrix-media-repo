@@ -1,16 +1,16 @@
 package storage
 
 import (
-	"context"
 	"path"
 
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
 func populateThumbnailHashes(db *Database) error {
-	svc := db.GetThumbnailStore(context.TODO(), &logrus.Entry{})
-	mediaSvc := db.GetMediaStore(context.TODO(), &logrus.Entry{})
+	svc := db.GetThumbnailStore(rcontext.Initial())
+	mediaSvc := db.GetMediaStore(rcontext.Initial())
 
 	thumbs, err := svc.GetAllWithoutHash()
 	if err != nil {
@@ -52,8 +52,8 @@ func populateThumbnailHashes(db *Database) error {
 func populateDatastores(db *Database) error {
 	logrus.Info("Starting to populate datastores...")
 
-	thumbService := db.GetThumbnailStore(context.TODO(), &logrus.Entry{})
-	mediaService := db.GetMediaStore(context.TODO(), &logrus.Entry{})
+	thumbService := db.GetThumbnailStore(rcontext.Initial())
+	mediaService := db.GetMediaStore(rcontext.Initial())
 
 	logrus.Info("Fetching thumbnails...")
 	thumbs, err := thumbService.GetAllWithoutDatastore()

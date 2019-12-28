@@ -2,7 +2,6 @@ package thumbnail_controller
 
 import (
 	"bytes"
-	"context"
 	"errors"
 	"fmt"
 	"image"
@@ -22,6 +21,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
@@ -77,7 +77,7 @@ func getResourceHandler() *thumbnailResourceHandler {
 
 func thumbnailWorkFn(request *resource_handler.WorkRequest) interface{} {
 	info := request.Metadata.(*thumbnailRequest)
-	log := logrus.WithFields(logrus.Fields{
+	ctx := rcontext.Initial().LogWithFields(logrus.Fields{
 		"worker_requestId": request.Id,
 		"worker_media":     info.media.Origin + "/" + info.media.MediaId,
 		"worker_width":     info.width,
@@ -85,11 +85,9 @@ func thumbnailWorkFn(request *resource_handler.WorkRequest) interface{} {
 		"worker_method":    info.method,
 		"worker_animated":  info.animated,
 	})
-	log.Info("Processing thumbnail request")
+	ctx.Log.Info("Processing thumbnail request")
 
-	ctx := context.TODO() // TODO: Should we use a real context?
-
-	generated, err := GenerateThumbnail(info.media, info.width, info.height, info.method, info.animated, ctx, log)
+	generated, err := GenerateThumbnail(info.media, info.width, info.height, info.method, info.animated, ctx)
 	if err != nil {
 		return &thumbnailResponse{err: err}
 	}
@@ -109,10 +107,10 @@ func thumbnailWorkFn(request *resource_handler.WorkRequest) interface{} {
 		Sha256Hash:  generated.Sha256Hash,
 	}
 
-	db := storage.GetDatabase().GetThumbnailStore(ctx, log)
+	db := storage.GetDatabase().GetThumbnailStore(ctx)
 	err = db.Insert(newThumb)
 	if err != nil {
-		log.Error("Unexpected error caching thumbnail: " + err.Error())
+		ctx.Log.Error("Unexpected error caching thumbnail: " + err.Error())
 		return &thumbnailResponse{err: err}
 	}
 
@@ -135,7 +133,7 @@ func (h *thumbnailResourceHandler) GenerateThumbnail(media *types.Media, width i
 	return resultChan
 }
 
-func GenerateThumbnail(media *types.Media, width int, height int, method string, animated bool, ctx context.Context, log *logrus.Entry) (*GeneratedThumbnail, error) {
+func GenerateThumbnail(media *types.Media, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*GeneratedThumbnail, error) {
 	var src image.Image
 	var err error
 
@@ -143,13 +141,13 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 	allowAnimated := config.Get().Thumbnails.AllowAnimated
 
 	if media.ContentType == "image/svg+xml" {
-		src, err = svgToImage(media, ctx, log)
+		src, err = svgToImage(media, ctx)
 	} else if canAnimate && !animated {
-		src, err = pickImageFrame(media, ctx, log)
+		src, err = pickImageFrame(media, ctx)
 	} else {
-		mediaStream, err2 := datastore.DownloadStream(ctx, log, media.DatastoreId, media.Location)
+		mediaStream, err2 := datastore.DownloadStream(ctx, media.DatastoreId, media.Location)
 		if err2 != nil {
-			log.Error("Error getting file: ", err2)
+			ctx.Log.Error("Error getting file: ", err2)
 			return nil, err2
 		}
 		src, err = imaging.Decode(mediaStream)
@@ -167,7 +165,7 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 	if aspectRatio == targetAspectRatio {
 		// Highly unlikely, but if the aspect ratios match then just resize
 		method = "scale"
-		log.Info("Aspect ratio is the same, converting method to 'scale'")
+		ctx.Log.Info("Aspect ratio is the same, converting method to 'scale'")
 	}
 
 	metric := metrics.ThumbnailsGenerated.With(prometheus.Labels{
@@ -184,11 +182,11 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 
 	if srcWidth <= width && srcHeight <= height {
 		if animated {
-			log.Warn("Image is too small but the image should be animated. Adjusting dimensions to fit image exactly.")
+			ctx.Log.Warn("Image is too small but the image should be animated. Adjusting dimensions to fit image exactly.")
 			width = srcWidth
 			height = srcHeight
 		} else if canAnimate && !animated {
-			log.Warn("Image is too small, but the request calls for a static image. Adjusting dimensions to fit image exactly.")
+			ctx.Log.Warn("Image is too small, but the request calls for a static image. Adjusting dimensions to fit image exactly.")
 			width = srcWidth
 			height = srcHeight
 		} else {
@@ -198,7 +196,7 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 			thumb.DatastoreLocation = media.Location
 			thumb.SizeBytes = media.SizeBytes
 			thumb.Sha256Hash = media.Sha256Hash
-			log.Warn("Image too small, returning raw image")
+			ctx.Log.Warn("Image too small, returning raw image")
 			metric.Inc()
 			return thumb, nil
 		}
@@ -208,7 +206,7 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 	if media.ContentType == "image/jpeg" || media.ContentType == "image/jpg" {
 		orientation, err = util_exif.GetExifOrientation(media)
 		if err != nil {
-			log.Warn("Non-fatal error getting EXIF orientation: " + err.Error())
+			ctx.Log.Warn("Non-fatal error getting EXIF orientation: " + err.Error())
 			orientation = nil // just in case
 		}
 	}
@@ -216,21 +214,21 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 	contentType := "image/png"
 	imgData := &bytes.Buffer{}
 	if allowAnimated && animated {
-		log.Info("Generating animated thumbnail")
+		ctx.Log.Info("Generating animated thumbnail")
 		contentType = "image/gif"
 
 		// Animated GIFs are a bit more special because we need to do it frame by frame.
 		// This is fairly resource intensive. The calling code is responsible for limiting this case.
 
-		mediaStream, err := datastore.DownloadStream(ctx, log, media.DatastoreId, media.Location)
+		mediaStream, err := datastore.DownloadStream(ctx, media.DatastoreId, media.Location)
 		if err != nil {
-			log.Error("Error resolving datastore path: ", err)
+			ctx.Log.Error("Error resolving datastore path: ", err)
 			return nil, err
 		}
 
 		g, err := gif.DecodeAll(mediaStream)
 		if err != nil {
-			log.Error("Error generating animated thumbnail: " + err.Error())
+			ctx.Log.Error("Error generating animated thumbnail: " + err.Error())
 			return nil, err
 		}
 
@@ -249,7 +247,7 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 			// Do the thumbnailing on the copied frame
 			frameThumb, err := thumbnailFrame(frameImg, method, width, height, imaging.Linear, nil)
 			if err != nil {
-				log.Error("Error generating animated thumbnail frame: " + err.Error())
+				ctx.Log.Error("Error generating animated thumbnail frame: " + err.Error())
 				return nil, err
 			}
 
@@ -266,32 +264,32 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 
 		err = gif.EncodeAll(imgData, g)
 		if err != nil {
-			log.Error("Error generating animated thumbnail: " + err.Error())
+			ctx.Log.Error("Error generating animated thumbnail: " + err.Error())
 			return nil, err
 		}
 	} else {
 		src, err = thumbnailFrame(src, method, width, height, imaging.Lanczos, orientation)
 		if err != nil {
-			log.Error("Error generating thumbnail: " + err.Error())
+			ctx.Log.Error("Error generating thumbnail: " + err.Error())
 			return nil, err
 		}
 
 		// Put the image bytes into a memory buffer
 		err = imaging.Encode(imgData, src, imaging.PNG)
 		if err != nil {
-			log.Error("Unexpected error encoding thumbnail: " + err.Error())
+			ctx.Log.Error("Unexpected error encoding thumbnail: " + err.Error())
 			return nil, err
 		}
 	}
 
 	// Reset the buffer pointer and store the file
-	ds, err := datastore.PickDatastore(common.KindThumbnails, ctx, log)
+	ds, err := datastore.PickDatastore(common.KindThumbnails, ctx)
 	if err != nil {
 		return nil, err
 	}
-	info, err := ds.UploadFile(util.BufferToStream(imgData), int64(len(imgData.Bytes())), ctx, log)
+	info, err := ds.UploadFile(util.BufferToStream(imgData), int64(len(imgData.Bytes())), ctx)
 	if err != nil {
-		log.Error("Unexpected error saving thumbnail: " + err.Error())
+		ctx.Log.Error("Unexpected error saving thumbnail: " + err.Error())
 		return nil, err
 	}
 
@@ -337,7 +335,7 @@ func thumbnailFrame(src image.Image, method string, width int, height int, filte
 	return result, nil
 }
 
-func svgToImage(media *types.Media, ctx context.Context, log *logrus.Entry) (image.Image, error) {
+func svgToImage(media *types.Media, ctx rcontext.RequestContext) (image.Image, error) {
 	tempFile1 := path.Join(os.TempDir(), "media_repo."+media.Origin+"."+media.MediaId+".1.png")
 	tempFile2 := path.Join(os.TempDir(), "media_repo."+media.Origin+"."+media.MediaId+".2.png")
 
@@ -345,9 +343,9 @@ func svgToImage(media *types.Media, ctx context.Context, log *logrus.Entry) (ima
 	defer os.Remove(tempFile2)
 
 	// requires imagemagick
-	mediaStream, err := datastore.DownloadStream(ctx, log, media.DatastoreId, media.Location)
+	mediaStream, err := datastore.DownloadStream(ctx, media.DatastoreId, media.Location)
 	if err != nil {
-		log.Error("Error streaming file: ", err)
+		ctx.Log.Error("Error streaming file: ", err)
 		return nil, err
 	}
 
@@ -372,22 +370,22 @@ func svgToImage(media *types.Media, ctx context.Context, log *logrus.Entry) (ima
 	return imaging.Decode(imgData)
 }
 
-func pickImageFrame(media *types.Media, ctx context.Context, log *logrus.Entry) (image.Image, error) {
-	mediaStream, err := datastore.DownloadStream(ctx, log, media.DatastoreId, media.Location)
+func pickImageFrame(media *types.Media, ctx rcontext.RequestContext) (image.Image, error) {
+	mediaStream, err := datastore.DownloadStream(ctx, media.DatastoreId, media.Location)
 	if err != nil {
-		log.Error("Error resolving datastore path: ", err)
+		ctx.Log.Error("Error resolving datastore path: ", err)
 		return nil, err
 	}
 
 	g, err := gif.DecodeAll(mediaStream)
 	if err != nil {
-		log.Error("Error picking frame: " + err.Error())
+		ctx.Log.Error("Error picking frame: " + err.Error())
 		return nil, err
 	}
 
 	stillFrameRatio := float64(config.Get().Thumbnails.StillFrame)
 	frameIndex := int(math.Floor(math.Min(1, math.Max(0, stillFrameRatio)) * float64(len(g.Image))))
-	log.Info("Picking frame ", frameIndex, " for animated file")
+	ctx.Log.Info("Picking frame ", frameIndex, " for animated file")
 
 	return g.Image[frameIndex], nil
 }

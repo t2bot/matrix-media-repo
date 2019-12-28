@@ -3,17 +3,17 @@ package api
 import (
 	"net/http"
 
-	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 )
 
-func NotFoundHandler(r *http.Request, log *logrus.Entry) interface{} {
+func NotFoundHandler(r *http.Request, rctx rcontext.RequestContext) interface{} {
 	return NotFoundError()
 }
 
-func MethodNotAllowedHandler(r *http.Request, log *logrus.Entry) interface{} {
+func MethodNotAllowedHandler(r *http.Request, rctx rcontext.RequestContext) interface{} {
 	return MethodNotAllowed()
 }
 
-func EmptyResponseHandler(r *http.Request, log *logrus.Entry) interface{} {
+func EmptyResponseHandler(r *http.Request, rctx rcontext.RequestContext) interface{} {
 	return &EmptyResponse{}
 }

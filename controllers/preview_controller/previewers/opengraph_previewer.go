@@ -1,7 +1,6 @@
 package previewers
 
 import (
-	"context"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -10,9 +9,9 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/dyatlov/go-opengraph/opengraph"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/acl"
 	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/preview_types"
 	"github.com/turt2live/matrix-media-repo/metrics"
@@ -20,10 +19,10 @@ import (
 
 var ogSupportedTypes = []string{"text/*"}
 
-func GenerateOpenGraphPreview(urlPayload *preview_types.UrlPayload, log *logrus.Entry) (preview_types.PreviewResult, error) {
-	html, err := downloadHtmlContent(urlPayload, ogSupportedTypes, log)
+func GenerateOpenGraphPreview(urlPayload *preview_types.UrlPayload, ctx rcontext.RequestContext) (preview_types.PreviewResult, error) {
+	html, err := downloadHtmlContent(urlPayload, ogSupportedTypes, ctx)
 	if err != nil {
-		log.Error("Error downloading content: " + err.Error())
+		ctx.Log.Error("Error downloading content: " + err.Error())
 
 		// Make sure the unsupported error gets passed through
 		if err == preview_types.ErrPreviewUnsupported {
@@ -37,7 +36,7 @@ func GenerateOpenGraphPreview(urlPayload *preview_types.UrlPayload, log *logrus.
 	og := opengraph.NewOpenGraph()
 	err = og.ProcessHTML(strings.NewReader(html))
 	if err != nil {
-		log.Error("Error getting OpenGraph: " + err.Error())
+		ctx.Log.Error("Error getting OpenGraph: " + err.Error())
 		return preview_types.PreviewResult{}, err
 	}
 
@@ -67,27 +66,27 @@ func GenerateOpenGraphPreview(urlPayload *preview_types.UrlPayload, log *logrus.
 		baseUrlS := fmt.Sprintf("%s://%s", urlPayload.ParsedUrl.Scheme, urlPayload.Address.String())
 		baseUrl, err := url.Parse(baseUrlS)
 		if err != nil {
-			log.Error("Non-fatal error getting thumbnail (parsing base url): " + err.Error())
+			ctx.Log.Error("Non-fatal error getting thumbnail (parsing base url): " + err.Error())
 			return *graph, nil
 		}
 
 		imgUrl, err := url.Parse(og.Images[0].URL)
 		if err != nil {
-			log.Error("Non-fatal error getting thumbnail (parsing image url): " + err.Error())
+			ctx.Log.Error("Non-fatal error getting thumbnail (parsing image url): " + err.Error())
 			return *graph, nil
 		}
 
 		// Ensure images pass through the same validation check
 		imgAbsUrl := baseUrl.ResolveReference(imgUrl)
-		imgUrlPayload, err := acl.ValidateUrlForPreview(imgAbsUrl.String(), context.TODO(), log)
+		imgUrlPayload, err := acl.ValidateUrlForPreview(imgAbsUrl.String(), ctx)
 		if err != nil {
-			log.Error("Non-fatal error getting thumbnail (URL validation): " + err.Error())
+			ctx.Log.Error("Non-fatal error getting thumbnail (URL validation): " + err.Error())
 			return *graph, nil
 		}
 
-		img, err := downloadImage(imgUrlPayload, log)
+		img, err := downloadImage(imgUrlPayload, ctx)
 		if err != nil {
-			log.Error("Non-fatal error getting thumbnail (downloading image): " + err.Error())
+			ctx.Log.Error("Non-fatal error getting thumbnail (downloading image): " + err.Error())
 			return *graph, nil
 		}
 

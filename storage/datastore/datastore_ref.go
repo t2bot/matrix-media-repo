@@ -1,14 +1,14 @@
 package datastore
 
 import (
-	"context"
 	"errors"
 	"io"
 	"os"
 	"path"
 
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/common/config"
+	config2 "github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/storage/datastore/ds_file"
 	"github.com/turt2live/matrix-media-repo/storage/datastore/ds_s3"
 	"github.com/turt2live/matrix-media-repo/types"
@@ -22,10 +22,10 @@ type DatastoreRef struct {
 	Uri         string
 
 	datastore *types.Datastore
-	config    config.DatastoreConfig
+	config    config2.DatastoreConfig
 }
 
-func newDatastoreRef(ds *types.Datastore, config config.DatastoreConfig) *DatastoreRef {
+func newDatastoreRef(ds *types.Datastore, config config2.DatastoreConfig) *DatastoreRef {
 	return &DatastoreRef{
 		DatastoreId: ds.DatastoreId,
 		Type:        ds.Type,
@@ -35,17 +35,17 @@ func newDatastoreRef(ds *types.Datastore, config config.DatastoreConfig) *Datast
 	}
 }
 
-func (d *DatastoreRef) UploadFile(file io.ReadCloser, expectedLength int64, ctx context.Context, log *logrus.Entry) (*types.ObjectInfo, error) {
-	log = log.WithFields(logrus.Fields{"datastoreId": d.DatastoreId, "datastoreUri": d.Uri})
+func (d *DatastoreRef) UploadFile(file io.ReadCloser, expectedLength int64, ctx rcontext.RequestContext) (*types.ObjectInfo, error) {
+	ctx = ctx.LogWithFields(logrus.Fields{"datastoreId": d.DatastoreId, "datastoreUri": d.Uri})
 
 	if d.Type == "file" {
-		return ds_file.PersistFile(d.Uri, file, ctx, log)
+		return ds_file.PersistFile(d.Uri, file, ctx)
 	} else if d.Type == "s3" {
 		s3, err := ds_s3.GetOrCreateS3Datastore(d.DatastoreId, d.config)
 		if err != nil {
 			return nil, err
 		}
-		return s3.UploadFile(file, expectedLength, ctx, log)
+		return s3.UploadFile(file, expectedLength, ctx)
 	} else {
 		return nil, errors.New("unknown datastore type")
 	}
@@ -97,9 +97,9 @@ func (d *DatastoreRef) ObjectExists(location string) bool {
 	}
 }
 
-func (d *DatastoreRef) OverwriteObject(location string, stream io.ReadCloser, ctx context.Context, log *logrus.Entry) error {
+func (d *DatastoreRef) OverwriteObject(location string, stream io.ReadCloser, ctx rcontext.RequestContext) error {
 	if d.Type == "file" {
-		_, _, err := ds_file.PersistFileAtLocation(path.Join(d.Uri, location), stream, ctx, log)
+		_, _, err := ds_file.PersistFileAtLocation(path.Join(d.Uri, location), stream, ctx)
 		return err
 	} else if d.Type == "s3" {
 		s3, err := ds_s3.GetOrCreateS3Datastore(d.DatastoreId, d.config)

@@ -1,12 +1,12 @@
 package main
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/maintenance_controller"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
@@ -14,9 +14,8 @@ import (
 )
 
 func scanAndStartUnfinishedTasks() error {
-	ctx := context.Background()
-	log := logrus.WithFields(logrus.Fields{"stage": "startup"})
-	db := storage.GetDatabase().GetMetadataStore(ctx, log)
+	ctx := rcontext.Initial().LogWithFields(logrus.Fields{"stage": "startup"})
+	db := storage.GetDatabase().GetMetadataStore(ctx)
 	tasks, err := db.GetAllBackgroundTasks()
 	if err != nil {
 		return err
@@ -26,7 +25,7 @@ func scanAndStartUnfinishedTasks() error {
 			continue
 		}
 
-		taskLog := log.WithFields(logrus.Fields{
+		taskCtx := ctx.LogWithFields(logrus.Fields{
 			"prev_task_id":   task.ID,
 			"prev_task_name": task.Name,
 		})
@@ -36,16 +35,16 @@ func scanAndStartUnfinishedTasks() error {
 			sourceDsId := task.Params["source_datastore_id"].(string)
 			targetDsId := task.Params["target_datastore_id"].(string)
 
-			sourceDs, err := datastore.LocateDatastore(ctx, taskLog, sourceDsId)
+			sourceDs, err := datastore.LocateDatastore(taskCtx, sourceDsId)
 			if err != nil {
 				return err
 			}
-			targetDs, err := datastore.LocateDatastore(ctx, taskLog, targetDsId)
+			targetDs, err := datastore.LocateDatastore(taskCtx, targetDsId)
 			if err != nil {
 				return err
 			}
 
-			newTask, err := maintenance_controller.StartStorageMigration(sourceDs, targetDs, beforeTs, taskLog)
+			newTask, err := maintenance_controller.StartStorageMigration(sourceDs, targetDs, beforeTs, taskCtx)
 			if err != nil {
 				return err
 			}
@@ -55,9 +54,9 @@ func scanAndStartUnfinishedTasks() error {
 				return err
 			}
 
-			taskLog.Infof("Started replacement task ID %d for unfinished task %d (%s)", newTask.ID, task.ID, task.Name)
+			logrus.Infof("Started replacement task ID %d for unfinished task %d (%s)", newTask.ID, task.ID, task.Name)
 		} else {
-			taskLog.Warn(fmt.Sprintf("Unknown task %s at ID %d - ignoring", task.Name, task.ID))
+			logrus.Warn(fmt.Sprintf("Unknown task %s at ID %d - ignoring", task.Name, task.ID))
 		}
 	}
 
@@ -73,7 +72,8 @@ func loadDatastores() {
 	if len(config.Get().Uploads.StoragePaths) > 0 {
 		logrus.Warn("storagePaths usage is deprecated - please use datastores instead")
 		for _, p := range config.Get().Uploads.StoragePaths {
-			ds, err := storage.GetOrCreateDatastoreOfType(context.Background(), logrus.WithFields(logrus.Fields{"path": p}), "file", p)
+			ctx := rcontext.Initial().LogWithFields(logrus.Fields{"path": p})
+			ds, err := storage.GetOrCreateDatastoreOfType(ctx, "file", p)
 			if err != nil {
 				logrus.Fatal(err)
 			}
@@ -88,7 +88,7 @@ func loadDatastores() {
 		}
 	}
 
-	mediaStore := storage.GetDatabase().GetMediaStore(context.TODO(), &logrus.Entry{})
+	mediaStore := storage.GetDatabase().GetMediaStore(rcontext.Initial())
 
 	logrus.Info("Initializing datastores...")
 	for _, ds := range config.Get().DataStores {
@@ -98,7 +98,7 @@ func loadDatastores() {
 
 		uri := datastore.GetUriForDatastore(ds)
 
-		_, err := storage.GetOrCreateDatastoreOfType(context.TODO(), &logrus.Entry{}, ds.Type, uri)
+		_, err := storage.GetOrCreateDatastoreOfType(rcontext.Initial(), ds.Type, uri)
 		if err != nil {
 			logrus.Fatal(err)
 		}

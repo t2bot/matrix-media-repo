@@ -1,22 +1,22 @@
 package storage
 
 import (
-	"context"
 	"database/sql"
 
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/storage/stores"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
-func GetOrCreateDatastoreOfType(ctx context.Context, log *logrus.Entry, dsType string, dsUri string) (*types.Datastore, error) {
-	mediaService := GetDatabase().GetMediaStore(ctx, log)
+func GetOrCreateDatastoreOfType(ctx rcontext.RequestContext, dsType string, dsUri string) (*types.Datastore, error) {
+	mediaService := GetDatabase().GetMediaStore(ctx)
 	datastore, err := mediaService.GetDatastoreByUri(dsUri)
 	if err != nil && err == sql.ErrNoRows {
 		id, err2 := util.GenerateRandomString(32)
 		if err2 != nil {
-			logrus.Error("Error generating datastore ID for URI ", dsUri, ": ", err)
+			ctx.Log.Error("Error generating datastore ID for URI ", dsUri, ": ", err)
 			return nil, err2
 		}
 		datastore = &types.Datastore{
@@ -26,7 +26,7 @@ func GetOrCreateDatastoreOfType(ctx context.Context, log *logrus.Entry, dsType s
 		}
 		err2 = mediaService.InsertDatastore(datastore)
 		if err2 != nil {
-			logrus.Error("Error creating datastore for URI ", dsUri, ": ", err)
+			ctx.Log.Error("Error creating datastore for URI ", dsUri, ": ", err)
 			return nil, err2
 		}
 	}

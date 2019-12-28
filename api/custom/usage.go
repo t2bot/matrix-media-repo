@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
@@ -44,26 +45,26 @@ type MediaUsageEntry struct {
 	CreatedTs         int64  `json:"created_ts"`
 }
 
-func GetDomainUsage(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
+func GetDomainUsage(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
 	params := mux.Vars(r)
 
 	serverName := params["serverName"]
 
-	log = log.WithFields(logrus.Fields{
+	rctx = rctx.LogWithFields(logrus.Fields{
 		"serverName": serverName,
 	})
 
-	db := storage.GetDatabase().GetMetadataStore(r.Context(), log)
+	db := storage.GetDatabase().GetMetadataStore(rctx)
 
 	mediaBytes, thumbBytes, err := db.GetByteUsageForServer(serverName)
 	if err != nil {
-		log.Error(err)
+		rctx.Log.Error(err)
 		return api.InternalServerError("Failed to get byte usage for server")
 	}
 
 	mediaCount, thumbCount, err := db.GetCountUsageForServer(serverName)
 	if err != nil {
-		log.Error(err)
+		rctx.Log.Error(err)
 		return api.InternalServerError("Failed to get count usage for server")
 	}
 
@@ -87,17 +88,17 @@ func GetDomainUsage(r *http.Request, log *logrus.Entry, user api.UserInfo) inter
 	}
 }
 
-func GetUserUsage(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
+func GetUserUsage(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
 	params := mux.Vars(r)
 
 	serverName := params["serverName"]
 	userIds := r.URL.Query()["user_id"]
 
-	log = log.WithFields(logrus.Fields{
+	rctx = rctx.LogWithFields(logrus.Fields{
 		"serverName": serverName,
 	})
 
-	db := storage.GetDatabase().GetMediaStore(r.Context(), log)
+	db := storage.GetDatabase().GetMediaStore(rctx)
 
 	var records []*types.Media
 	var err error
@@ -108,7 +109,7 @@ func GetUserUsage(r *http.Request, log *logrus.Entry, user api.UserInfo) interfa
 	}
 
 	if err != nil {
-		log.Error(err)
+		rctx.Log.Error(err)
 		return api.InternalServerError("Failed to get media records for users")
 	}
 
@@ -143,17 +144,17 @@ func GetUserUsage(r *http.Request, log *logrus.Entry, user api.UserInfo) interfa
 	return &api.DoNotCacheResponse{Payload: parsed}
 }
 
-func GetUploadsUsage(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
+func GetUploadsUsage(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
 	params := mux.Vars(r)
 
 	serverName := params["serverName"]
 	mxcs := r.URL.Query()["mxc"]
 
-	log = log.WithFields(logrus.Fields{
+	rctx = rctx.LogWithFields(logrus.Fields{
 		"serverName": serverName,
 	})
 
-	db := storage.GetDatabase().GetMediaStore(r.Context(), log)
+	db := storage.GetDatabase().GetMediaStore(rctx)
 
 	var records []*types.Media
 	var err error
@@ -164,7 +165,7 @@ func GetUploadsUsage(r *http.Request, log *logrus.Entry, user api.UserInfo) inte
 		for _, mxc := range mxcs {
 			o, i, err := util.SplitMxc(mxc)
 			if err != nil {
-				log.Error(err)
+				rctx.Log.Error(err)
 				return api.InternalServerError("Error parsing MXC " + mxc)
 			}
 
@@ -178,7 +179,7 @@ func GetUploadsUsage(r *http.Request, log *logrus.Entry, user api.UserInfo) inte
 	}
 
 	if err != nil {
-		log.Error(err)
+		rctx.Log.Error(err)
 		return api.InternalServerError("Failed to get media records for users")
 	}
 

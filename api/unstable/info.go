@@ -10,6 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/common"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/download_controller"
 	"github.com/turt2live/matrix-media-repo/storage"
 )
@@ -34,7 +35,7 @@ type MediaInfoResponse struct {
 	Thumbnails  []*mediaInfoThumbnail `json:"thumbnails,omitempty"`
 }
 
-func MediaInfo(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{} {
+func MediaInfo(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
 	params := mux.Vars(r)
 
 	server := params["server"]
@@ -50,13 +51,13 @@ func MediaInfo(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{
 		downloadRemote = parsedFlag
 	}
 
-	log = log.WithFields(logrus.Fields{
+	rctx = rctx.LogWithFields(logrus.Fields{
 		"mediaId":     mediaId,
 		"server":      server,
 		"allowRemote": downloadRemote,
 	})
 
-	streamedMedia, err := download_controller.GetMedia(server, mediaId, downloadRemote, true, r.Context(), log)
+	streamedMedia, err := download_controller.GetMedia(server, mediaId, downloadRemote, true, rctx)
 	if err != nil {
 		if err == common.ErrMediaNotFound {
 			return api.NotFoundError()
@@ -65,7 +66,7 @@ func MediaInfo(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{
 		} else if err == common.ErrMediaQuarantined {
 			return api.NotFoundError() // We lie for security
 		}
-		log.Error("Unexpected error locating media: " + err.Error())
+		rctx.Log.Error("Unexpected error locating media: " + err.Error())
 		return api.InternalServerError("Unexpected Error")
 	}
 	defer streamedMedia.Stream.Close()
@@ -85,10 +86,10 @@ func MediaInfo(r *http.Request, log *logrus.Entry, user api.UserInfo) interface{
 		response.Height = img.Bounds().Max.Y
 	}
 
-	thumbsDb := storage.GetDatabase().GetThumbnailStore(r.Context(), log)
+	thumbsDb := storage.GetDatabase().GetThumbnailStore(rctx)
 	thumbs, err := thumbsDb.GetAllForMedia(streamedMedia.KnownMedia.Origin, streamedMedia.KnownMedia.MediaId)
 	if err != nil && err != sql.ErrNoRows {
-		log.Error("Unexpected error locating media: " + err.Error())
+		rctx.Log.Error("Unexpected error locating media: " + err.Error())
 		return api.InternalServerError("Unexpected Error")
 	}
 

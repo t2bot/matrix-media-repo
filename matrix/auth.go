@@ -1,16 +1,16 @@
 package matrix
 
 import (
-	"context"
 	"net/url"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 )
 
 var ErrNoToken = errors.New("Missing access token")
 
-func GetUserIdFromToken(ctx context.Context, serverName string, accessToken string, appserviceUserId string, ipAddr string) (string, error) {
+func GetUserIdFromToken(ctx rcontext.RequestContext, serverName string, accessToken string, appserviceUserId string, ipAddr string) (string, error) {
 	if accessToken == "" {
 		return "", ErrNoToken
 	}
