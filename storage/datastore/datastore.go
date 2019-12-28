@@ -88,7 +88,7 @@ func GetUriForDatastore(dsConf config.DatastoreConfig) string {
 
 func PickDatastore(forKind string, ctx rcontext.RequestContext) (*DatastoreRef, error) {
 	// If we haven't found a legacy option, pick a datastore
-	ctx.Log.Info("Finding a suitable datastore to pick for uploads")
+	ctx.Log.Info("Finding a suitable datastore to pick for " + forKind)
 	confDatastores := ctx.Config.DataStores
 	mediaStore := storage.GetDatabase().GetMediaStore(ctx)
 
