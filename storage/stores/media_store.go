@@ -136,6 +136,9 @@ func InitMediaStore(sqlDb *sql.DB) (*MediaStoreFactory, error) {
 	if store.stmts.selectMediaByUserBefore, err = store.sqlDb.Prepare(selectMediaByUserBefore); err != nil {
 		return nil, err
 	}
+	if store.stmts.selectMediaByDomainBefore, err = store.sqlDb.Prepare(selectMediaByDomainBefore); err != nil {
+		return nil, err
+	}
 
 	return &store, nil
 }
