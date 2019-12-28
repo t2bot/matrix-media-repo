@@ -138,7 +138,7 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 	var err error
 
 	canAnimate := util.ArrayContains(animatedTypes, media.ContentType)
-	allowAnimated := config.Get().Thumbnails.AllowAnimated
+	allowAnimated := ctx.Config.Thumbnails.AllowAnimated
 
 	if media.ContentType == "image/svg+xml" {
 		src, err = svgToImage(media, ctx)
@@ -383,7 +383,7 @@ func pickImageFrame(media *types.Media, ctx rcontext.RequestContext) (image.Imag
 		return nil, err
 	}
 
-	stillFrameRatio := float64(config.Get().Thumbnails.StillFrame)
+	stillFrameRatio := float64(ctx.Config.Thumbnails.StillFrame)
 	frameIndex := int(math.Floor(math.Min(1, math.Max(0, stillFrameRatio)) * float64(len(g.Image))))
 	ctx.Log.Info("Picking frame ", frameIndex, " for animated file")
 

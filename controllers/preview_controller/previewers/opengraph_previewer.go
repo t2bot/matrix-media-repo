@@ -10,7 +10,6 @@ import (
 	"github.com/dyatlov/go-opengraph/opengraph"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/turt2live/matrix-media-repo/common"
-	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/acl"
 	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/preview_types"
@@ -51,8 +50,8 @@ func GenerateOpenGraphPreview(urlPayload *preview_types.UrlPayload, ctx rcontext
 	}
 
 	// Be sure to trim the title and description
-	og.Title = summarize(og.Title, config.Get().UrlPreviews.NumTitleWords, config.Get().UrlPreviews.MaxTitleLength)
-	og.Description = summarize(og.Description, config.Get().UrlPreviews.NumWords, config.Get().UrlPreviews.MaxLength)
+	og.Title = summarize(og.Title, ctx.Config.UrlPreviews.NumTitleWords, ctx.Config.UrlPreviews.MaxTitleLength)
+	og.Description = summarize(og.Description, ctx.Config.UrlPreviews.NumWords, ctx.Config.UrlPreviews.MaxLength)
 
 	graph := &preview_types.PreviewResult{
 		Type:        og.Type,

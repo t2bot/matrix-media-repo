@@ -10,7 +10,6 @@ import (
 	"github.com/ryanuber/go-glob"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
-	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
@@ -20,41 +19,41 @@ import (
 
 const NoApplicableUploadUser = ""
 
-func IsRequestTooLarge(contentLength int64, contentLengthHeader string) bool {
-	if config.Get().Uploads.MaxSizeBytes <= 0 {
+func IsRequestTooLarge(contentLength int64, contentLengthHeader string, ctx rcontext.RequestContext) bool {
+	if ctx.Config.Uploads.MaxSizeBytes <= 0 {
 		return false
 	}
 	if contentLength >= 0 {
-		return contentLength > config.Get().Uploads.MaxSizeBytes
+		return contentLength > ctx.Config.Uploads.MaxSizeBytes
 	}
 	if contentLengthHeader != "" {
 		parsed, err := strconv.ParseInt(contentLengthHeader, 10, 64)
 		if err != nil {
-			logrus.Warn("Invalid content length header given; assuming too large. Value received: " + contentLengthHeader)
+			ctx.Log.Warn("Invalid content length header given; assuming too large. Value received: " + contentLengthHeader)
 			return true // Invalid header
 		}
 
-		return parsed > config.Get().Uploads.MaxSizeBytes
+		return parsed > ctx.Config.Uploads.MaxSizeBytes
 	}
 
 	return false // We can only assume
 }
 
-func IsRequestTooSmall(contentLength int64, contentLengthHeader string) bool {
-	if config.Get().Uploads.MinSizeBytes <= 0 {
+func IsRequestTooSmall(contentLength int64, contentLengthHeader string, ctx rcontext.RequestContext) bool {
+	if ctx.Config.Uploads.MinSizeBytes <= 0 {
 		return false
 	}
 	if contentLength >= 0 {
-		return contentLength < config.Get().Uploads.MinSizeBytes
+		return contentLength < ctx.Config.Uploads.MinSizeBytes
 	}
 	if contentLengthHeader != "" {
 		parsed, err := strconv.ParseInt(contentLengthHeader, 10, 64)
 		if err != nil {
-			logrus.Warn("Invalid content length header given; assuming too small. Value received: " + contentLengthHeader)
+			ctx.Log.Warn("Invalid content length header given; assuming too small. Value received: " + contentLengthHeader)
 			return true // Invalid header
 		}
 
-		return parsed < config.Get().Uploads.MinSizeBytes
+		return parsed < ctx.Config.Uploads.MinSizeBytes
 	}
 
 	return false // We can only assume
@@ -81,8 +80,8 @@ func UploadMedia(contents io.ReadCloser, contentLength int64, contentType string
 	defer contents.Close()
 
 	var data io.ReadCloser
-	if config.Get().Uploads.MaxSizeBytes > 0 {
-		data = ioutil.NopCloser(io.LimitReader(contents, config.Get().Uploads.MaxSizeBytes))
+	if ctx.Config.Uploads.MaxSizeBytes > 0 {
+		data = ioutil.NopCloser(io.LimitReader(contents, ctx.Config.Uploads.MaxSizeBytes))
 	} else {
 		data = contents
 	}
@@ -140,7 +139,7 @@ func IsAllowed(contentType string, reportedContentType string, userId string, ct
 	userMatched := false
 
 	if userId != NoApplicableUploadUser {
-		for user, userExcl := range config.Get().Uploads.PerUserExclusions {
+		for user, userExcl := range ctx.Config.Uploads.PerUserExclusions {
 			if glob.Glob(user, userId) {
 				if !userMatched {
 					ctx.Log.Info("Per-user allowed types policy found for " + userId)
@@ -163,14 +162,14 @@ func IsAllowed(contentType string, reportedContentType string, userId string, ct
 
 	if !userMatched && !allowed {
 		ctx.Log.Info("Checking general allowed types due to no matching per-user policy")
-		for _, allowedType := range config.Get().Uploads.AllowedTypes {
+		for _, allowedType := range ctx.Config.Uploads.AllowedTypes {
 			if glob.Glob(allowedType, contentType) {
 				allowed = true
 				break
 			}
 		}
 
-		if len(config.Get().Uploads.AllowedTypes) == 0 {
+		if len(ctx.Config.Uploads.AllowedTypes) == 0 {
 			allowed = true
 		}
 	}

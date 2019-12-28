@@ -11,7 +11,6 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"github.com/turt2live/matrix-media-repo/common"
-	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
@@ -344,7 +343,7 @@ func compileArchive(exportId string, entityId string, archiveDs *datastore.Datas
 				return
 			}
 
-			if currentSize >= config.Get().Archiving.TargetBytesPerPart {
+			if currentSize >= ctx.Config.Archiving.TargetBytesPerPart {
 				ctx.Log.Info("Rotating tar")
 				err = newTar()
 				if err != nil {

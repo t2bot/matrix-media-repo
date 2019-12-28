@@ -10,7 +10,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/api/r0"
-	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/data_controller"
 	"github.com/turt2live/matrix-media-repo/matrix"
@@ -37,12 +36,12 @@ type ExportMetadata struct {
 }
 
 func ExportUserData(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
-	if !config.Get().Archiving.Enabled {
+	if !rctx.Config.Archiving.Enabled {
 		return api.BadRequest("archiving is not enabled")
 	}
 
 	isAdmin := util.IsGlobalAdmin(user.UserId) || user.IsShared
-	if !config.Get().Archiving.SelfService && !isAdmin {
+	if !rctx.Config.Archiving.SelfService && !isAdmin {
 		return api.AuthFailed()
 	}
 
@@ -75,12 +74,12 @@ func ExportUserData(r *http.Request, rctx rcontext.RequestContext, user api.User
 }
 
 func ExportServerData(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
-	if !config.Get().Archiving.Enabled {
+	if !rctx.Config.Archiving.Enabled {
 		return api.BadRequest("archiving is not enabled")
 	}
 
 	isAdmin := util.IsGlobalAdmin(user.UserId) || user.IsShared
-	if !config.Get().Archiving.SelfService && !isAdmin {
+	if !rctx.Config.Archiving.SelfService && !isAdmin {
 		return api.AuthFailed()
 	}
 
@@ -127,7 +126,7 @@ func ExportServerData(r *http.Request, rctx rcontext.RequestContext, user api.Us
 }
 
 func ViewExport(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
-	if !config.Get().Archiving.Enabled {
+	if !rctx.Config.Archiving.Enabled {
 		return api.BadRequest("archiving is not enabled")
 	}
 
@@ -184,7 +183,7 @@ func ViewExport(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo
 }
 
 func GetExportMetadata(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
-	if !config.Get().Archiving.Enabled {
+	if !rctx.Config.Archiving.Enabled {
 		return api.BadRequest("archiving is not enabled")
 	}
 
@@ -225,7 +224,7 @@ func GetExportMetadata(r *http.Request, rctx rcontext.RequestContext, user api.U
 }
 
 func DownloadExportPart(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
-	if !config.Get().Archiving.Enabled {
+	if !rctx.Config.Archiving.Enabled {
 		return api.BadRequest("archiving is not enabled")
 	}
 
@@ -265,7 +264,7 @@ func DownloadExportPart(r *http.Request, rctx rcontext.RequestContext, user api.
 }
 
 func DeleteExport(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
-	if !config.Get().Archiving.Enabled {
+	if !rctx.Config.Archiving.Enabled {
 		return api.BadRequest("archiving is not enabled")
 	}
 

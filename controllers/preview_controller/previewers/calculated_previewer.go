@@ -6,7 +6,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/ryanuber/go-glob"
 	"github.com/turt2live/matrix-media-repo/common"
-	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/preview_types"
 	"github.com/turt2live/matrix-media-repo/metrics"
@@ -14,7 +13,7 @@ import (
 )
 
 func GenerateCalculatedPreview(urlPayload *preview_types.UrlPayload, ctx rcontext.RequestContext) (preview_types.PreviewResult, error) {
-	bytes, filename, contentType, contentLength, err := downloadRawContent(urlPayload, config.Get().UrlPreviews.FilePreviewTypes, ctx)
+	bytes, filename, contentType, contentLength, err := downloadRawContent(urlPayload, ctx.Config.UrlPreviews.FilePreviewTypes, ctx)
 	if err != nil {
 		ctx.Log.Error("Error downloading content: " + err.Error())
 
@@ -52,8 +51,8 @@ func GenerateCalculatedPreview(urlPayload *preview_types.UrlPayload, ctx rcontex
 	result := &preview_types.PreviewResult{
 		Type:        "", // intentionally empty
 		Url:         urlPayload.ParsedUrl.String(),
-		Title:       summarize(filename, config.Get().UrlPreviews.NumTitleWords, config.Get().UrlPreviews.MaxTitleLength),
-		Description: summarize(description, config.Get().UrlPreviews.NumWords, config.Get().UrlPreviews.MaxLength),
+		Title:       summarize(filename, ctx.Config.UrlPreviews.NumTitleWords, ctx.Config.UrlPreviews.MaxTitleLength),
+		Description: summarize(description, ctx.Config.UrlPreviews.NumWords, ctx.Config.UrlPreviews.MaxLength),
 		SiteName:    "", // intentionally empty
 	}
 

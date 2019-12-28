@@ -9,6 +9,7 @@ func IsServerOurs(server string) bool {
 	return hs != nil
 }
 
+// TODO: Replace with per-domain config
 func GetHomeserverConfig(server string) *config.HomeserverConfig {
 	for i := 0; i < len(config.Get().Homeservers); i++ {
 		hs := config.Get().Homeservers[i]

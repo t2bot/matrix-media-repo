@@ -9,15 +9,15 @@ import (
 	"github.com/disintegration/imaging"
 	"github.com/fogleman/gg"
 	"github.com/golang/freetype/truetype"
-	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"golang.org/x/image/font/gofont/gosmallcaps"
 )
 
-func GenerateQuarantineThumbnail(width int, height int) (image.Image, error) {
+func GenerateQuarantineThumbnail(width int, height int, ctx rcontext.RequestContext) (image.Image, error) {
 	var centerImage image.Image
 	var err error
-	if config.Get().Quarantine.ThumbnailPath != "" {
-		centerImage, err = imaging.Open(config.Get().Quarantine.ThumbnailPath)
+	if ctx.Config.Quarantine.ThumbnailPath != "" {
+		centerImage, err = imaging.Open(ctx.Config.Quarantine.ThumbnailPath)
 	} else {
 		centerImage, err = generateDefaultQuarantineThumbnail()
 	}

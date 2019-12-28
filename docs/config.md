@@ -45,6 +45,11 @@ Any options from the main config can then be overridden per-domain with the exce
 * `sharedSecretAuth` - because the option doesn't apply to a particular domain.
 * `rateLimit` - because this configuration is applied before the host is known.
 * `metrics` - because this affects the whole process.
+* `admins` - because admins are repo-wide.
+* `downloads.cache` - because the cache is repo-wide.
+* `downloads.numWorkers` - because workers are configured repo-wide.
+* `urlPreviews.numWorkers` - because workers are configured repo-wide.
+* `thumbnails.numWorkers` - because workers are configured repo-wide.
 
 To override a value, simply provide it in any valid per-domain config:
 

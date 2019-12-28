@@ -13,9 +13,9 @@ import (
 	"github.com/turt2live/matrix-media-repo/types"
 )
 
-func GetAvailableDatastores() ([]*types.Datastore, error) {
+func GetAvailableDatastores(ctx rcontext.RequestContext) ([]*types.Datastore, error) {
 	datastores := make([]*types.Datastore, 0)
-	for _, ds := range config.Get().DataStores {
+	for _, ds := range ctx.Config.DataStores {
 		if !ds.Enabled {
 			continue
 		}
@@ -39,7 +39,7 @@ func LocateDatastore(ctx rcontext.RequestContext, datastoreId string) (*Datastor
 		return nil, err
 	}
 
-	conf, err := GetDatastoreConfig(ds)
+	conf, err := GetDatastoreConfig(ds, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -55,8 +55,8 @@ func DownloadStream(ctx rcontext.RequestContext, datastoreId string, location st
 	return ref.DownloadFile(location)
 }
 
-func GetDatastoreConfig(ds *types.Datastore) (config.DatastoreConfig, error) {
-	for _, dsConf := range config.Get().DataStores {
+func GetDatastoreConfig(ds *types.Datastore, ctx rcontext.RequestContext) (config.DatastoreConfig, error) {
+	for _, dsConf := range ctx.Config.DataStores {
 		if dsConf.Type == ds.Type && GetUriForDatastore(dsConf) == ds.Uri {
 			return dsConf, nil
 		}
@@ -89,7 +89,7 @@ func GetUriForDatastore(dsConf config.DatastoreConfig) string {
 func PickDatastore(forKind string, ctx rcontext.RequestContext) (*DatastoreRef, error) {
 	// If we haven't found a legacy option, pick a datastore
 	ctx.Log.Info("Finding a suitable datastore to pick for uploads")
-	confDatastores := config.Get().DataStores
+	confDatastores := ctx.Config.DataStores
 	mediaStore := storage.GetDatabase().GetMediaStore(ctx)
 
 	var targetDs *types.Datastore

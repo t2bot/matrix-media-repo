@@ -175,7 +175,7 @@ func downloadResourceWorkFn(request *resource_handler.WorkRequest) interface{} {
 func DownloadRemoteMediaDirect(server string, mediaId string, ctx rcontext.RequestContext) (*downloadedMedia, error) {
 	if downloadErrorsCache == nil {
 		downloadErrorCacheSingletonLock.Do(func() {
-			cacheTime := time.Duration(config.Get().Downloads.FailureCacheMinutes) * time.Minute
+			cacheTime := time.Duration(ctx.Config.Downloads.FailureCacheMinutes) * time.Minute
 			downloadErrorsCache = cache.New(cacheTime, cacheTime*2)
 		})
 	}
@@ -224,7 +224,7 @@ func DownloadRemoteMediaDirect(server string, mediaId string, ctx rcontext.Reque
 		ctx.Log.Warn("Missing Content-Length header on response - continuing anyway")
 	}
 
-	if contentLength > 0 && config.Get().Downloads.MaxSizeBytes > 0 && contentLength > config.Get().Downloads.MaxSizeBytes {
+	if contentLength > 0 && ctx.Config.Downloads.MaxSizeBytes > 0 && contentLength > ctx.Config.Downloads.MaxSizeBytes {
 		ctx.Log.Warn("Attempted to download media that was too large")
 
 		err = common.ErrMediaTooLarge

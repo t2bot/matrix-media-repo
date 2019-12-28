@@ -7,7 +7,6 @@ import (
 
 	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/common"
-	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/preview_controller"
 	"github.com/turt2live/matrix-media-repo/util"
@@ -27,7 +26,7 @@ type MatrixOpenGraph struct {
 }
 
 func PreviewUrl(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
-	if !config.Get().UrlPreviews.Enabled {
+	if !rctx.Config.UrlPreviews.Enabled {
 		return api.NotFoundError()
 	}
 

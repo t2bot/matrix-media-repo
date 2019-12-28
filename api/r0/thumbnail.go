@@ -8,7 +8,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/common"
-	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/thumbnail_controller"
 )
@@ -40,9 +39,9 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user api.User
 	method := r.URL.Query().Get("method")
 	animatedStr := r.URL.Query().Get("animated")
 
-	width := config.Get().Thumbnails.Sizes[0].Width
-	height := config.Get().Thumbnails.Sizes[0].Height
-	animated := config.Get().Thumbnails.AllowAnimated && config.Get().Thumbnails.DefaultAnimated
+	width := rctx.Config.Thumbnails.Sizes[0].Width
+	height := rctx.Config.Thumbnails.Sizes[0].Height
+	animated := rctx.Config.Thumbnails.AllowAnimated && rctx.Config.Thumbnails.DefaultAnimated
 
 	if widthStr != "" {
 		parsedWidth, err := strconv.Atoi(widthStr)

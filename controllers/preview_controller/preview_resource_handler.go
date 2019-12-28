@@ -93,7 +93,7 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) interface{} {
 	}
 
 	// Store the thumbnail, if there is one
-	if preview.Image != nil && !upload_controller.IsRequestTooLarge(preview.Image.ContentLength, preview.Image.ContentLengthHeader) {
+	if preview.Image != nil && !upload_controller.IsRequestTooLarge(preview.Image.ContentLength, preview.Image.ContentLengthHeader, ctx) {
 		contentLength := upload_controller.EstimateContentLength(preview.Image.ContentLength, preview.Image.ContentLengthHeader)
 
 		// UploadMedia will close the read stream for the thumbnail and dedupe the image

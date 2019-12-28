@@ -10,7 +10,6 @@ import (
 	"github.com/disintegration/imaging"
 	"github.com/patrickmn/go-cache"
 	"github.com/turt2live/matrix-media-repo/common"
-	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/globals"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/quarantine_controller"
@@ -68,10 +67,10 @@ func GetMedia(origin string, mediaId string, downloadRemote bool, blockForMedia 
 			if media.Quarantined {
 				ctx.Log.Warn("Quarantined media accessed")
 
-				if config.Get().Quarantine.ReplaceDownloads {
+				if ctx.Config.Quarantine.ReplaceDownloads {
 					ctx.Log.Info("Replacing thumbnail with a quarantined one")
 
-					img, err := quarantine_controller.GenerateQuarantineThumbnail(512, 512)
+					img, err := quarantine_controller.GenerateQuarantineThumbnail(512, 512, ctx)
 					if err != nil {
 						return nil, err
 					}

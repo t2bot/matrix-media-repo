@@ -239,7 +239,7 @@ func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx
 				}
 
 				ctx.Log.Infof("Seeing if a datastore for %s/%s exists", endpoint, bucket)
-				datastores, err := datastore.GetAvailableDatastores()
+				datastores, err := datastore.GetAvailableDatastores(ctx)
 				if err != nil {
 					log.Errorf("Error locating datastore: %s", err.Error())
 					continue

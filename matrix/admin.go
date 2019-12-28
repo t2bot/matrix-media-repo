@@ -20,7 +20,7 @@ func IsUserAdmin(ctx rcontext.RequestContext, serverName string, accessToken str
 			path = "/_synapse/admin/v1/whois/"
 		}
 		url := makeUrl(hs.ClientServerApi, path, fakeUser)
-		err := doRequest("GET", url, nil, response, accessToken, ipAddr)
+		err := doRequest(ctx, "GET", url, nil, response, accessToken, ipAddr)
 		if err != nil {
 			err, replyError = filterError(err)
 			return err
@@ -44,7 +44,7 @@ func ListMedia(ctx rcontext.RequestContext, serverName string, accessToken strin
 			path = "/_synapse/admin/v1/room/"
 		}
 		url := makeUrl(hs.ClientServerApi, path, roomId, "/media")
-		err := doRequest("GET", url, nil, response, accessToken, ipAddr)
+		err := doRequest(ctx, "GET", url, nil, response, accessToken, ipAddr)
 		if err != nil {
 			err, replyError = filterError(err)
 			return err

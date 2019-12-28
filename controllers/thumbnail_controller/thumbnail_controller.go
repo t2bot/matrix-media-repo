@@ -10,7 +10,6 @@ import (
 	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
 	"github.com/turt2live/matrix-media-repo/common"
-	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/globals"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/download_controller"
@@ -49,7 +48,7 @@ func GetThumbnail(origin string, mediaId string, desiredWidth int, desiredHeight
 		return nil, errors.New("cannot generate thumbnail for this media's content type")
 	}
 
-	if !util.ArrayContains(config.Get().Thumbnails.Types, media.ContentType) {
+	if !util.ArrayContains(ctx.Config.Thumbnails.Types, media.ContentType) {
 		ctx.Log.Warn("Cannot generate thumbnail for " + media.ContentType + " because it is not listed in the config")
 		return nil, errors.New("cannot generate thumbnail for this media's content type")
 	}
@@ -57,10 +56,10 @@ func GetThumbnail(origin string, mediaId string, desiredWidth int, desiredHeight
 	if media.Quarantined {
 		ctx.Log.Warn("Quarantined media accessed")
 
-		if config.Get().Quarantine.ReplaceThumbnails {
+		if ctx.Config.Quarantine.ReplaceThumbnails {
 			ctx.Log.Info("Replacing thumbnail with a quarantined one")
 
-			img, err := quarantine_controller.GenerateQuarantineThumbnail(desiredWidth, desiredHeight)
+			img, err := quarantine_controller.GenerateQuarantineThumbnail(desiredWidth, desiredHeight, ctx)
 			if err != nil {
 				return nil, err
 			}
@@ -88,7 +87,7 @@ func GetThumbnail(origin string, mediaId string, desiredWidth int, desiredHeight
 		return nil, common.ErrMediaQuarantined
 	}
 
-	if animated && config.Get().Thumbnails.MaxAnimateSizeBytes > 0 && config.Get().Thumbnails.MaxAnimateSizeBytes < media.SizeBytes {
+	if animated && ctx.Config.Thumbnails.MaxAnimateSizeBytes > 0 && ctx.Config.Thumbnails.MaxAnimateSizeBytes < media.SizeBytes {
 		ctx.Log.Warn("Attempted to animate a media record that is too large. Assuming animated=false")
 		animated = false
 	}
@@ -98,12 +97,12 @@ func GetThumbnail(origin string, mediaId string, desiredWidth int, desiredHeight
 		animated = false
 	}
 
-	if media.SizeBytes > config.Get().Thumbnails.MaxSourceBytes {
+	if media.SizeBytes > ctx.Config.Thumbnails.MaxSourceBytes {
 		ctx.Log.Warn("Media too large to thumbnail")
 		return nil, common.ErrMediaTooLarge
 	}
 
-	width, height, method, err := pickThumbnailDimensions(desiredWidth, desiredHeight, method)
+	width, height, method, err := pickThumbnailDimensions(desiredWidth, desiredHeight, method, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -215,7 +214,7 @@ func GetOrGenerateThumbnail(media *types.Media, width int, height int, animated 
 	return result.thumbnail, result.err
 }
 
-func pickThumbnailDimensions(desiredWidth int, desiredHeight int, desiredMethod string) (int, int, string, error) {
+func pickThumbnailDimensions(desiredWidth int, desiredHeight int, desiredMethod string, ctx rcontext.RequestContext) (int, int, string, error) {
 	if desiredWidth <= 0 {
 		return 0, 0, "", errors.New("width must be positive")
 	}
@@ -232,7 +231,7 @@ func pickThumbnailDimensions(desiredWidth int, desiredHeight int, desiredMethod 
 	largestWidth := 0
 	largestHeight := 0
 
-	for _, size := range config.Get().Thumbnails.Sizes {
+	for _, size := range ctx.Config.Thumbnails.Sizes {
 		largestWidth = util.MaxInt(largestWidth, size.Width)
 		largestHeight = util.MaxInt(largestHeight, size.Height)
 

@@ -32,7 +32,7 @@ func GetUserIdFromToken(ctx rcontext.RequestContext, serverName string, accessTo
 			q.Set(k, v)
 		}
 		target.RawQuery = q.Encode()
-		err := doRequest("GET", target.String(), nil, response, accessToken, ipAddr)
+		err := doRequest(ctx, "GET", target.String(), nil, response, accessToken, ipAddr)
 		if err != nil {
 			err, replyError = filterError(err)
 			return err

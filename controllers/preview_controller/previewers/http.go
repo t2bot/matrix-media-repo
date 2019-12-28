@@ -15,7 +15,6 @@ import (
 
 	"github.com/ryanuber/go-glob"
 	"github.com/turt2live/matrix-media-repo/common"
-	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/preview_types"
 )
@@ -24,8 +23,8 @@ func doHttpGet(urlPayload *preview_types.UrlPayload, ctx rcontext.RequestContext
 	var client *http.Client
 
 	dialer := &net.Dialer{
-		Timeout:   time.Duration(config.Get().TimeoutSeconds.UrlPreviews) * time.Second,
-		KeepAlive: time.Duration(config.Get().TimeoutSeconds.UrlPreviews) * time.Second,
+		Timeout:   time.Duration(ctx.Config.TimeoutSeconds.UrlPreviews) * time.Second,
+		KeepAlive: time.Duration(ctx.Config.TimeoutSeconds.UrlPreviews) * time.Second,
 		DualStack: true,
 	}
 
@@ -71,7 +70,7 @@ func doHttpGet(urlPayload *preview_types.UrlPayload, ctx rcontext.RequestContext
 		return nil, errors.New("unexpected host: not safe to complete request")
 	}
 
-	if config.Get().UrlPreviews.UnsafeCertificates {
+	if ctx.Config.UrlPreviews.UnsafeCertificates {
 		ctx.Log.Warn("Ignoring any certificate errors while making request")
 		tr := &http.Transport{
 			DisableKeepAlives: true,
@@ -96,11 +95,11 @@ func doHttpGet(urlPayload *preview_types.UrlPayload, ctx rcontext.RequestContext
 		}
 		client = &http.Client{
 			Transport: tr,
-			Timeout:   time.Duration(config.Get().TimeoutSeconds.UrlPreviews) * time.Second,
+			Timeout:   time.Duration(ctx.Config.TimeoutSeconds.UrlPreviews) * time.Second,
 		}
 	} else {
 		client = &http.Client{
-			Timeout: time.Duration(config.Get().TimeoutSeconds.UrlPreviews) * time.Second,
+			Timeout: time.Duration(ctx.Config.TimeoutSeconds.UrlPreviews) * time.Second,
 			Transport: &http.Transport{
 				DisableKeepAlives: true,
 				DialContext:       dialContext,
@@ -127,14 +126,14 @@ func downloadRawContent(urlPayload *preview_types.UrlPayload, supportedTypes []s
 		return nil, "", "", "", errors.New("error during transfer")
 	}
 
-	if config.Get().UrlPreviews.MaxPageSizeBytes > 0 && resp.ContentLength >= 0 && resp.ContentLength > config.Get().UrlPreviews.MaxPageSizeBytes {
+	if ctx.Config.UrlPreviews.MaxPageSizeBytes > 0 && resp.ContentLength >= 0 && resp.ContentLength > ctx.Config.UrlPreviews.MaxPageSizeBytes {
 		return nil, "", "", "", common.ErrMediaTooLarge
 	}
 
 	var reader io.Reader
 	reader = resp.Body
-	if config.Get().UrlPreviews.MaxPageSizeBytes > 0 {
-		reader = io.LimitReader(resp.Body, config.Get().UrlPreviews.MaxPageSizeBytes)
+	if ctx.Config.UrlPreviews.MaxPageSizeBytes > 0 {
+		reader = io.LimitReader(resp.Body, ctx.Config.UrlPreviews.MaxPageSizeBytes)
 	}
 
 	bytes, err := ioutil.ReadAll(reader)

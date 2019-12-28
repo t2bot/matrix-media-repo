@@ -7,7 +7,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
-	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/internal_cache"
 	"github.com/turt2live/matrix-media-repo/matrix"
@@ -245,7 +244,7 @@ func getQuarantineRequestInfo(r *http.Request, rctx rcontext.RequestContext, use
 	isLocalAdmin := false
 	var err error
 	if !isGlobalAdmin {
-		if config.Get().Quarantine.AllowLocalAdmins {
+		if rctx.Config.Quarantine.AllowLocalAdmins {
 			isLocalAdmin, err = matrix.IsUserAdmin(rctx, r.Host, user.AccessToken, r.RemoteAddr)
 			if err != nil {
 				rctx.Log.Error("Error verifying local admin: " + err.Error())

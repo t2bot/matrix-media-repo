@@ -7,7 +7,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
-	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/preview_types"
 	"github.com/turt2live/matrix-media-repo/storage"
@@ -43,11 +42,11 @@ func ValidateUrlForPreview(urlStr string, ctx rcontext.RequestContext) (*preview
 		addr = addrs[0]
 	}
 
-	allowedCidrs := config.Get().UrlPreviews.AllowedNetworks
+	allowedCidrs := ctx.Config.UrlPreviews.AllowedNetworks
 	if allowedCidrs == nil {
 		allowedCidrs = []string{"0.0.0.0/0"}
 	}
-	deniedCidrs := config.Get().UrlPreviews.DisallowedNetworks
+	deniedCidrs := ctx.Config.UrlPreviews.DisallowedNetworks
 	if deniedCidrs == nil {
 		deniedCidrs = []string{}
 	}

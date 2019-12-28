@@ -9,11 +9,11 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 )
 
 // Based in part on https://github.com/matrix-org/gomatrix/blob/072b39f7fa6b40257b4eead8c958d71985c28bdd/client.go#L180-L243
-func doRequest(method string, urlStr string, body interface{}, result interface{}, accessToken string, ipAddr string) error {
+func doRequest(ctx rcontext.RequestContext, method string, urlStr string, body interface{}, result interface{}, accessToken string, ipAddr string) error {
 	logrus.Infof("Calling %s %s", method, urlStr)
 	var bodyBytes []byte
 	if body != nil {
@@ -41,7 +41,7 @@ func doRequest(method string, urlStr string, body interface{}, result interface{
 	}
 
 	client := &http.Client{
-		Timeout: time.Duration(config.Get().TimeoutSeconds.ClientServer) * time.Second,
+		Timeout: time.Duration(ctx.Config.TimeoutSeconds.ClientServer) * time.Second,
 	}
 	res, err := client.Do(req)
 	if res != nil {

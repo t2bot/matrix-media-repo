@@ -5,7 +5,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/turt2live/matrix-media-repo/api"
-	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/data_controller"
 )
@@ -16,7 +15,7 @@ type ImportStarted struct {
 }
 
 func StartImport(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
-	if !config.Get().Archiving.Enabled {
+	if !rctx.Config.Archiving.Enabled {
 		return api.BadRequest("archiving is not enabled")
 	}
 
@@ -34,7 +33,7 @@ func StartImport(r *http.Request, rctx rcontext.RequestContext, user api.UserInf
 }
 
 func AppendToImport(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
-	if !config.Get().Archiving.Enabled {
+	if !rctx.Config.Archiving.Enabled {
 		return api.BadRequest("archiving is not enabled")
 	}
 
@@ -53,7 +52,7 @@ func AppendToImport(r *http.Request, rctx rcontext.RequestContext, user api.User
 }
 
 func StopImport(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
-	if !config.Get().Archiving.Enabled {
+	if !rctx.Config.Archiving.Enabled {
 		return api.BadRequest("archiving is not enabled")
 	}
 

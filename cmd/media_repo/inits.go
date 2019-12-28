@@ -114,7 +114,7 @@ func loadDatastores() {
 		logrus.Info(fmt.Sprintf("\t%s (%s): %s", ds.Type, ds.DatastoreId, ds.Uri))
 
 		if ds.Type == "s3" {
-			conf, err := datastore.GetDatastoreConfig(ds)
+			conf, err := datastore.GetDatastoreConfig(ds, rcontext.Initial())
 			if err != nil {
 				continue
 			}

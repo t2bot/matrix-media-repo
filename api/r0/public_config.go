@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/turt2live/matrix-media-repo/api"
-	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 )
 
@@ -13,9 +12,9 @@ type PublicConfigResponse struct {
 }
 
 func PublicConfig(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
-	uploadSize := config.Get().Uploads.ReportedMaxSizeBytes
+	uploadSize := rctx.Config.Uploads.ReportedMaxSizeBytes
 	if uploadSize == 0 {
-		uploadSize = config.Get().Uploads.MaxSizeBytes
+		uploadSize = rctx.Config.Uploads.MaxSizeBytes
 	}
 
 	if uploadSize < 0 {
