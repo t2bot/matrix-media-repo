@@ -6,13 +6,12 @@ import (
 	"github.com/rubyist/circuitbreaker"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
-	"github.com/turt2live/matrix-media-repo/util"
 )
 
 var breakers = &sync.Map{}
 
-func getBreakerAndConfig(serverName string) (*config.HomeserverConfig, *circuit.Breaker) {
-	hs := util.GetHomeserverConfig(serverName)
+func getBreakerAndConfig(serverName string) (*config.DomainRepoConfig, *circuit.Breaker) {
+	hs := config.GetDomain(serverName)
 
 	var cb *circuit.Breaker
 	cbRaw, hasCb := breakers.Load(hs.Name)

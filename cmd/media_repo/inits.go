@@ -91,7 +91,7 @@ func loadDatastores() {
 	mediaStore := storage.GetDatabase().GetMediaStore(rcontext.Initial())
 
 	logrus.Info("Initializing datastores...")
-	for _, ds := range config.Get().DataStores {
+	for _, ds := range config.UniqueDatastores() {
 		if !ds.Enabled {
 			continue
 		}
@@ -114,7 +114,7 @@ func loadDatastores() {
 		logrus.Info(fmt.Sprintf("\t%s (%s): %s", ds.Type, ds.DatastoreId, ds.Uri))
 
 		if ds.Type == "s3" {
-			conf, err := datastore.GetDatastoreConfig(ds, rcontext.Initial())
+			conf, err := datastore.GetDatastoreConfig(ds)
 			if err != nil {
 				continue
 			}

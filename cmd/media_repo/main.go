@@ -35,6 +35,7 @@ func main() {
 
 	logrus.Info("Starting up...")
 
+	config.PrintDomainInfo()
 	loadDatabase()
 	loadDatastores()
 

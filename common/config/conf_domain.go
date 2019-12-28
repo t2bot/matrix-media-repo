@@ -2,6 +2,7 @@ package config
 
 type DomainRepoConfig struct {
 	MinimumRepoConfig `yaml:",inline"`
+	HomeserverConfig  `yaml:",inline"`
 	Downloads         DownloadsConfig   `yaml:"downloads"`
 	Thumbnails        ThumbnailsConfig  `yaml:"thumbnails"`
 	UrlPreviews       UrlPreviewsConfig `yaml:"urlPreviews"`
@@ -10,6 +11,12 @@ type DomainRepoConfig struct {
 func NewDefaultDomainConfig() DomainRepoConfig {
 	return DomainRepoConfig{
 		MinimumRepoConfig: NewDefaultMinimumRepoConfig(),
+		HomeserverConfig: HomeserverConfig{
+			Name:            "UNDEFINED",
+			ClientServerApi: "https://UNDEFINED",
+			BackoffAt:       10,
+			AdminApiKind:    "matrix",
+		},
 		Downloads: DownloadsConfig{
 			MaxSizeBytes:        104857600, // 100mb
 			FailureCacheMinutes: 15,

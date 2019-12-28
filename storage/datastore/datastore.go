@@ -39,7 +39,7 @@ func LocateDatastore(ctx rcontext.RequestContext, datastoreId string) (*Datastor
 		return nil, err
 	}
 
-	conf, err := GetDatastoreConfig(ds, ctx)
+	conf, err := GetDatastoreConfig(ds)
 	if err != nil {
 		return nil, err
 	}
@@ -55,8 +55,8 @@ func DownloadStream(ctx rcontext.RequestContext, datastoreId string, location st
 	return ref.DownloadFile(location)
 }
 
-func GetDatastoreConfig(ds *types.Datastore, ctx rcontext.RequestContext) (config.DatastoreConfig, error) {
-	for _, dsConf := range ctx.Config.DataStores {
+func GetDatastoreConfig(ds *types.Datastore) (config.DatastoreConfig, error) {
+	for _, dsConf := range config.UniqueDatastores() {
 		if dsConf.Type == ds.Type && GetUriForDatastore(dsConf) == ds.Uri {
 			return dsConf, nil
 		}

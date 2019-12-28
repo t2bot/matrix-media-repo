@@ -44,7 +44,7 @@ func Watch() *fsnotify.Watcher {
 func onFileChanged() {
 	logrus.Info("Config file change detected - reloading")
 	configNow := Get()
-	configNew, err := reloadConfig()
+	configNew, domainsNew, err := reloadConfig()
 	if err != nil {
 		logrus.Error("Error reloading configuration - ignoring")
 		logrus.Error(err)
@@ -53,6 +53,8 @@ func onFileChanged() {
 
 	logrus.Info("Applying reloaded config live")
 	instance = configNew
+	domains = domainsNew
+	PrintDomainInfo()
 
 	bindAddressChange := configNew.General.BindAddress != configNow.General.BindAddress
 	bindPortChange := configNew.General.Port != configNow.General.Port
