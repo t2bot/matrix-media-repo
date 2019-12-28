@@ -11,7 +11,12 @@ func Initial() RequestContext {
 	return RequestContext{
 		Context: context.Background(),
 		Log:     &logrus.Entry{},
-		Config:  config.Get(),
+		Config: config.DomainRepoConfig{
+			MinimumRepoConfig: config.Get().MinimumRepoConfig,
+			Downloads:         config.Get().Downloads.DownloadsConfig,
+			Thumbnails:        config.Get().Thumbnails.ThumbnailsConfig,
+			UrlPreviews:       config.Get().UrlPreviews.UrlPreviewsConfig,
+		},
 	}.populate()
 }
 
@@ -20,7 +25,7 @@ type RequestContext struct {
 
 	// These are also stored on the context object itself
 	Log    *logrus.Entry           // mr.logger
-	Config *config.MediaRepoConfig // mr.serverConfig
+	Config config.DomainRepoConfig // mr.serverConfig
 }
 
 func (c RequestContext) populate() RequestContext {

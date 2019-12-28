@@ -5,6 +5,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
+	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/matrix"
 	"github.com/turt2live/matrix-media-repo/util"
@@ -28,7 +29,7 @@ func AccessTokenRequiredRoute(next func(r *http.Request, rctx rcontext.RequestCo
 			rctx.Log.Error("Error: no token provided (required)")
 			return &ErrorResponse{common.ErrCodeMissingToken, "no token provided (required)", common.ErrCodeUnknownToken}
 		}
-		if rctx.Config.SharedSecret.Enabled && accessToken == rctx.Config.SharedSecret.Token {
+		if config.Get().SharedSecret.Enabled && accessToken == config.Get().SharedSecret.Token {
 			log := rctx.Log.WithFields(logrus.Fields{"isRepoAdmin": true})
 			log.Info("User authed using shared secret")
 			return callUserNext(next, r, rctx, UserInfo{UserId: "@sharedsecret", AccessToken: accessToken, IsShared: true})
@@ -56,7 +57,7 @@ func AccessTokenOptionalRoute(next func(r *http.Request, rctx rcontext.RequestCo
 		if accessToken == "" {
 			return callUserNext(next, r, rctx, UserInfo{"", "", false})
 		}
-		if rctx.Config.SharedSecret.Enabled && accessToken == rctx.Config.SharedSecret.Token {
+		if config.Get().SharedSecret.Enabled && accessToken == config.Get().SharedSecret.Token {
 			rctx = rctx.LogWithFields(logrus.Fields{"isRepoAdmin": true})
 			rctx.Log.Info("User authed using shared secret")
 			return callUserNext(next, r, rctx, UserInfo{UserId: "@sharedsecret", AccessToken: accessToken, IsShared: true})
@@ -94,9 +95,9 @@ func RepoAdminRoute(next func(r *http.Request, rctx rcontext.RequestContext, use
 	})
 
 	return func(r *http.Request, rctx rcontext.RequestContext) interface{} {
-		if rctx.Config.SharedSecret.Enabled {
+		if config.Get().SharedSecret.Enabled {
 			accessToken := util.GetAccessTokenFromRequest(r)
-			if accessToken == rctx.Config.SharedSecret.Token {
+			if accessToken == config.Get().SharedSecret.Token {
 				rctx = rctx.LogWithFields(logrus.Fields{"isRepoAdmin": true})
 				rctx.Log.Info("User authed using shared secret")
 				return callUserNext(next, r, rctx, UserInfo{UserId: "@sharedsecret", AccessToken: accessToken, IsShared: true})

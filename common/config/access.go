@@ -18,13 +18,14 @@ type runtimeConfig struct {
 }
 
 var Runtime = &runtimeConfig{}
-
-var instance *MediaRepoConfig
-var singletonLock = &sync.Once{}
 var Path = "media-repo.yaml"
 
-func reloadConfig() (*MediaRepoConfig, error) {
-	c := NewDefaultConfig()
+var instance *MainRepoConfig
+var singletonLock = &sync.Once{}
+var domains = make(map[string]DomainRepoConfig)
+
+func reloadConfig() (*MainRepoConfig, error) {
+	c := NewDefaultMainConfig()
 
 	// Write a default config if the one given doesn't exist
 	info, err := os.Stat(Path)
@@ -93,10 +94,10 @@ func reloadConfig() (*MediaRepoConfig, error) {
 		}
 	}
 
-	return c, nil
+	return &c, nil
 }
 
-func Get() *MediaRepoConfig {
+func Get() *MainRepoConfig {
 	if instance == nil {
 		singletonLock.Do(func() {
 			c, err := reloadConfig()
