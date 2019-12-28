@@ -25,7 +25,6 @@ var singletonLock = &sync.Once{}
 var domains = make(map[string]*DomainRepoConfig)
 
 func reloadConfig() (*MainRepoConfig, map[string]*DomainRepoConfig, error) {
-	c := NewDefaultMainConfig()
 	domainConfs := make(map[string]*DomainRepoConfig)
 
 	// Write a default config if the one given doesn't exist
@@ -33,7 +32,7 @@ func reloadConfig() (*MainRepoConfig, map[string]*DomainRepoConfig, error) {
 	exists := err == nil || !os.IsNotExist(err)
 	if !exists {
 		fmt.Println("Generating new configuration...")
-		configBytes, err := yaml.Marshal(c)
+		configBytes, err := yaml.Marshal(NewDefaultMainConfig())
 		if err != nil {
 			return nil, nil, err
 		}
@@ -78,7 +77,12 @@ func reloadConfig() (*MainRepoConfig, map[string]*DomainRepoConfig, error) {
 		pathsOrdered = append(pathsOrdered, Path)
 	}
 
+	// Note: the rest of this relies on maps before finalizing on objects because when
+	// the yaml is parsed it causes default values for the types to land in the overridden
+	// config. We don't want this, so we use maps which inherently override only what is
+	// present then we convert that overtop of a default object we create.
 	pendingDomainConfigs := make(map[string][][]byte)
+	cMap := make(map[string]interface{})
 
 	for _, p := range pathsOrdered {
 		logrus.Info("Loading config file: ", p)
@@ -121,50 +125,61 @@ func reloadConfig() (*MainRepoConfig, map[string]*DomainRepoConfig, error) {
 		}
 
 		// Not a domain config - parse into regular config
-		err = yaml.Unmarshal(buffer, &c)
+		err = yaml.Unmarshal(buffer, &cMap)
 		if err != nil {
 			return nil, nil, err
 		}
 	}
 
-	newDomainConfig := func() DomainRepoConfig {
-		dc := NewDefaultDomainConfig()
-		dc.DataStores = c.DataStores
-		dc.Archiving = c.Archiving
-		dc.Uploads = c.Uploads
-		dc.Identicons = c.Identicons
-		dc.Quarantine = c.Quarantine
-		dc.TimeoutSeconds = c.TimeoutSeconds
-		dc.Downloads = c.Downloads.DownloadsConfig
-		dc.Thumbnails = c.Thumbnails.ThumbnailsConfig
-		dc.UrlPreviews = c.UrlPreviews.UrlPreviewsConfig
-		return dc
+	c := NewDefaultMainConfig()
+	err = mapToObjYaml(cMap, &c)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	// Start building domain configs
+	dMaps := make(map[string]map[string]interface{})
 	for _, d := range c.Homeservers {
-		dc := newDomainConfig()
-		domainConfs[d.Name] = &dc
-		domainConfs[d.Name].Name = d.Name
-		domainConfs[d.Name].ClientServerApi = d.ClientServerApi
-		domainConfs[d.Name].BackoffAt = d.BackoffAt
-		domainConfs[d.Name].AdminApiKind = d.AdminApiKind
+		dc := DomainConfigFrom(c)
+		dc.Name = d.Name
+		dc.ClientServerApi = d.ClientServerApi
+		dc.BackoffAt = d.BackoffAt
+		dc.AdminApiKind = d.AdminApiKind
+
+		m, err := objToMapYaml(dc)
+		if err != nil {
+			return nil, nil, err
+		}
+		dMaps[d.Name] = m
 	}
 	for hs, bs := range pendingDomainConfigs {
-		if _, ok := domainConfs[hs]; !ok {
-			dc := newDomainConfig()
-			domainConfs[hs] = &dc
-			domainConfs[hs].Name = hs
+		if _, ok := dMaps[hs]; !ok {
+			dc := DomainConfigFrom(c)
+			dc.Name = hs
+
+			m, err := objToMapYaml(dc)
+			if err != nil {
+				return nil, nil, err
+			}
+			dMaps[hs] = m
 		}
 
 		for _, b := range bs {
-			err = yaml.Unmarshal(b, domainConfs[hs])
+			m := dMaps[hs]
+			err = yaml.Unmarshal(b, &m)
 			if err != nil {
 				return nil, nil, err
 			}
 		}
 
+		c := DomainRepoConfig{}
+		err = mapToObjYaml(dMaps[hs], &c)
+		if err != nil {
+			return nil, nil, err
+		}
+
 		// For good measure...
+		domainConfs[hs] = &c
 		domainConfs[hs].Name = hs
 	}
 
@@ -196,6 +211,21 @@ func AllDomains() []*DomainRepoConfig {
 func GetDomain(domain string) *DomainRepoConfig {
 	Get() // Ensure we generate a main config
 	return domains[domain]
+}
+
+func DomainConfigFrom(c MainRepoConfig) DomainRepoConfig {
+	// HACK: We should be better at this kind of inheritance
+	dc := NewDefaultDomainConfig()
+	dc.DataStores = c.DataStores
+	dc.Archiving = c.Archiving
+	dc.Uploads = c.Uploads
+	dc.Identicons = c.Identicons
+	dc.Quarantine = c.Quarantine
+	dc.TimeoutSeconds = c.TimeoutSeconds
+	dc.Downloads = c.Downloads.DownloadsConfig
+	dc.Thumbnails = c.Thumbnails.ThumbnailsConfig
+	dc.UrlPreviews = c.UrlPreviews.UrlPreviewsConfig
+	return dc
 }
 
 func UniqueDatastores() []DatastoreConfig {
