@@ -127,9 +127,23 @@ func reloadConfig() (*MainRepoConfig, map[string]*DomainRepoConfig, error) {
 		}
 	}
 
+	newDomainConfig := func() DomainRepoConfig {
+		dc := NewDefaultDomainConfig()
+		dc.DataStores = c.DataStores
+		dc.Archiving = c.Archiving
+		dc.Uploads = c.Uploads
+		dc.Identicons = c.Identicons
+		dc.Quarantine = c.Quarantine
+		dc.TimeoutSeconds = c.TimeoutSeconds
+		dc.Downloads = c.Downloads.DownloadsConfig
+		dc.Thumbnails = c.Thumbnails.ThumbnailsConfig
+		dc.UrlPreviews = c.UrlPreviews.UrlPreviewsConfig
+		return dc
+	}
+
 	// Start building domain configs
 	for _, d := range c.Homeservers {
-		dc := NewDefaultDomainConfig()
+		dc := newDomainConfig()
 		domainConfs[d.Name] = &dc
 		domainConfs[d.Name].Name = d.Name
 		domainConfs[d.Name].ClientServerApi = d.ClientServerApi
@@ -138,7 +152,7 @@ func reloadConfig() (*MainRepoConfig, map[string]*DomainRepoConfig, error) {
 	}
 	for hs, bs := range pendingDomainConfigs {
 		if _, ok := domainConfs[hs]; !ok {
-			dc := NewDefaultDomainConfig()
+			dc := newDomainConfig()
 			domainConfs[hs] = &dc
 			domainConfs[hs].Name = hs
 		}
