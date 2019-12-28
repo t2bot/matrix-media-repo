@@ -21,7 +21,7 @@ As it loads each file, it overrides whatever the file has defined.
 Simply put, given `00-main.yaml`, `01-bind.yaml`, and `02-datastores.yaml` the media repo will read the defaults, then
 apply 00, then 01, then 02. The file names do not matter aside from application order.
 
-## Per-domain configs (not yet implemented)
+## Per-domain configs
 
 When using per-domain configs the `homeservers` field of the main config can be ignored. The `homeservers` option
 is still respected for simple configuration of domains, though it is recommended to use per-domain configs if you're
