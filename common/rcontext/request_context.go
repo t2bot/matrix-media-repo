@@ -10,7 +10,7 @@ import (
 func Initial() RequestContext {
 	return RequestContext{
 		Context: context.Background(),
-		Log:     &logrus.Entry{},
+		Log:     logrus.WithFields(logrus.Fields{"nocontext": true}),
 		Config: config.DomainRepoConfig{
 			MinimumRepoConfig: config.Get().MinimumRepoConfig,
 			Downloads:         config.Get().Downloads.DownloadsConfig,

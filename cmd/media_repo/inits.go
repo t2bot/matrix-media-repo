@@ -54,9 +54,9 @@ func scanAndStartUnfinishedTasks() error {
 				return err
 			}
 
-			logrus.Infof("Started replacement task ID %d for unfinished task %d (%s)", newTask.ID, task.ID, task.Name)
+			taskCtx.Log.Infof("Started replacement task ID %d for unfinished task %d (%s)", newTask.ID, task.ID, task.Name)
 		} else {
-			logrus.Warn(fmt.Sprintf("Unknown task %s at ID %d - ignoring", task.Name, task.ID))
+			taskCtx.Log.Warn(fmt.Sprintf("Unknown task %s at ID %d - ignoring", task.Name, task.ID))
 		}
 	}
 
