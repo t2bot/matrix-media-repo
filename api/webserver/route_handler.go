@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
@@ -170,8 +172,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Disposition", "inline; filename*=utf-8''"+url.QueryEscape(result.Filename))
 			}
 		}
-		defer result.Data.Close()
-		io.Copy(w, result.Data)
+		writeResponseData(w, result.Data, result.SizeBytes)
 		return // Prevent sending conflicting responses
 	case *r0.IdenticonResponse:
 		metrics.HttpResponses.With(prometheus.Labels{
@@ -182,7 +183,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}).Inc()
 		w.Header().Set("Cache-Control", "private, max-age=604800") // 7 days
 		w.Header().Set("Content-Type", "image/png")
-		io.Copy(w, result.Avatar)
+		writeResponseData(w, ioutil.NopCloser(result.Avatar), 0)
 		return // Prevent sending conflicting responses
 	case *api.HtmlResponse:
 		metrics.HttpResponses.With(prometheus.Labels{
@@ -212,4 +213,17 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	encoder := json.NewEncoder(w)
 	encoder.Encode(res)
+}
+
+func writeResponseData(w http.ResponseWriter, s io.ReadCloser, expectedBytes int64) {
+	defer s.Close()
+	b, err := io.Copy(w, s)
+	if err != nil {
+		// Should only blow up this request
+		panic(err)
+	}
+	if expectedBytes > 0 && b != expectedBytes {
+		// Should only blow up this request
+		panic(errors.New("mismatch transfer size"))
+	}
 }
