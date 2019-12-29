@@ -19,6 +19,13 @@ repo:
   # See https://github.com/turt2live/matrix-media-repo/issues/202 for more information.
   useForwardedHost: true
 
+# Options for dealing with federation
+federation:
+  # On a per-host basis, the number of consecutive failures in calling the host before the
+  # media repo will back off. This defaults to 20 if not given. Note that 404 errors from
+  # the remote server do not count towards this.
+  backoffAt: 20
+
 # The database configuration for the media repository
 database:
   # Currently only "postgres" is supported.

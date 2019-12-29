@@ -12,6 +12,7 @@ type MainRepoConfig struct {
 	RateLimit         RateLimitConfig       `yaml:"rateLimit"`
 	Metrics           MetricsConfig         `yaml:"metrics"`
 	SharedSecret      SharedSecretConfig    `yaml:"sharedSecretAuth"`
+	Federation        FederationConfig      `yaml:"federation"`
 }
 
 func NewDefaultMainConfig() MainRepoConfig {
@@ -114,6 +115,9 @@ func NewDefaultMainConfig() MainRepoConfig {
 		SharedSecret: SharedSecretConfig{
 			Enabled: false,
 			Token:   "ReplaceMe",
+		},
+		Federation: FederationConfig{
+			BackoffAt: 20,
 		},
 	}
 }

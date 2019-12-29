@@ -3,6 +3,7 @@ package matrix
 import (
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -13,11 +14,15 @@ import (
 
 	"github.com/alioygur/is"
 	"github.com/patrickmn/go-cache"
+	circuit "github.com/rubyist/circuitbreaker"
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 )
 
 var apiUrlCacheInstance *cache.Cache
 var apiUrlSingletonLock = &sync.Once{}
+var federationBreakers = &sync.Map{}
 
 type cachedServer struct {
 	url      string
@@ -32,8 +37,28 @@ func setupCache() {
 	}
 }
 
+func getFederationBreaker(hostname string) *circuit.Breaker {
+	var cb *circuit.Breaker
+	cbRaw, hasCb := federationBreakers.Load(hostname)
+	if !hasCb {
+		backoffAt := int64(config.Get().Federation.BackoffAt)
+		if backoffAt <= 0 {
+			backoffAt = 20 // default to 20 for those who don't have this set
+		}
+		cb = circuit.NewConsecutiveBreaker(backoffAt)
+		federationBreakers.Store(hostname, cb)
+	} else {
+		cb = cbRaw.(*circuit.Breaker)
+	}
+	return cb
+}
+
+// Note: URL lookups are not covered by the breaker because otherwise it might never close.
 func GetServerApiUrl(hostname string) (string, string, error) {
 	logrus.Info("Getting server API URL for " + hostname)
+	if hostname == "federation.matrix.org" {
+		return "https://oauth.t2host.io", "oauth.t2host.io", nil
+	}
 
 	// Check to see if we've cached this hostname at all
 	setupCache()
@@ -167,40 +192,48 @@ func GetServerApiUrl(hostname string) (string, string, error) {
 	return url, h, nil
 }
 
-func FederatedGet(url string, realHost string) (*http.Response, error) {
+func FederatedGet(url string, realHost string, ctx rcontext.RequestContext) (*http.Response, error) {
 	logrus.Info("Doing federated GET to " + url + " with host " + realHost)
 
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, err
-	}
+	cb := getFederationBreaker(realHost)
 
-	// Override the host to be compliant with the spec
-	req.Header.Set("Host", realHost)
-	req.Header.Set("User-Agent", "matrix-media-repo")
-	req.Host = realHost
+	var resp *http.Response
+	replyError := cb.CallContext(ctx, func() error {
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			return err
+		}
 
-	logrus.Info(req.URL.String())
+		// Override the host to be compliant with the spec
+		req.Header.Set("Host", realHost)
+		req.Header.Set("User-Agent", "matrix-media-repo")
+		req.Host = realHost
 
-	// This is how we verify the certificate is valid for the host we expect.
-	// Previously using `req.URL.Host` we'd end up changing which server we were
-	// connecting to (ie: matrix.org instead of matrix.org.cdn.cloudflare.net),
-	// which obviously doesn't help us. We needed to do that though because the
-	// HTTP client doesn't verify against the req.Host certificate, but it does
-	// handle it off the req.URL.Host. So, we need to tell it which certificate
-	// to verify.
-	client := http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				ServerName: realHost,
+		// This is how we verify the certificate is valid for the host we expect.
+		// Previously using `req.URL.Host` we'd end up changing which server we were
+		// connecting to (ie: matrix.org instead of matrix.org.cdn.cloudflare.net),
+		// which obviously doesn't help us. We needed to do that though because the
+		// HTTP client doesn't verify against the req.Host certificate, but it does
+		// handle it off the req.URL.Host. So, we need to tell it which certificate
+		// to verify.
+		client := http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					ServerName: realHost,
+				},
 			},
-		},
-	}
+			Timeout: time.Duration(ctx.Config.TimeoutSeconds.Federation) * time.Second,
+		}
 
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
+		resp, err = client.Do(req)
+		if err != nil {
+			return err
+		}
+		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
+			return errors.New(fmt.Sprintf("response not ok: %d", resp.StatusCode))
+		}
+		return nil
+	}, 1*time.Minute)
 
-	return resp, nil
+	return resp, replyError
 }

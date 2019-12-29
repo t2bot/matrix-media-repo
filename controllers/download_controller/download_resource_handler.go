@@ -194,7 +194,7 @@ func DownloadRemoteMediaDirect(server string, mediaId string, ctx rcontext.Reque
 	}
 
 	downloadUrl := baseUrl + "/_matrix/media/v1/download/" + server + "/" + mediaId + "?allow_remote=false"
-	resp, err := matrix.FederatedGet(downloadUrl, realHost)
+	resp, err := matrix.FederatedGet(downloadUrl, realHost, ctx)
 	if err != nil {
 		downloadErrorsCache.Set(cacheKey, err, cache.DefaultExpiration)
 		return nil, err

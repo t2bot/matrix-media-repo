@@ -67,3 +67,7 @@ type SharedSecretConfig struct {
 	Enabled bool   `yaml:"enabled"`
 	Token   string `yaml:"token"`
 }
+
+type FederationConfig struct {
+	BackoffAt int `yaml:"backoffAt"`
+}

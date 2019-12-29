@@ -50,6 +50,7 @@ Any options from the main config can then be overridden per-domain with the exce
 * `downloads.numWorkers` - because workers are configured repo-wide.
 * `urlPreviews.numWorkers` - because workers are configured repo-wide.
 * `thumbnails.numWorkers` - because workers are configured repo-wide.
+* `federation` - because the federation options are repo-wide.
 
 To override a value, simply provide it in any valid per-domain config:
 

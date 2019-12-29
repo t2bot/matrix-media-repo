@@ -28,7 +28,7 @@ func GetFederationInfo(r *http.Request, rctx rcontext.RequestContext, user api.U
 	}
 
 	versionUrl := url + "/_matrix/federation/v1/version"
-	versionResponse, err := matrix.FederatedGet(versionUrl, hostname)
+	versionResponse, err := matrix.FederatedGet(versionUrl, hostname, rctx)
 	if err != nil {
 		rctx.Log.Error(err)
 		return api.InternalServerError(err.Error())
