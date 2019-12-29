@@ -17,35 +17,10 @@ jobs:
       - store_artifacts:
           path: bin/import_synapse
           destination: import_synapse
-#  sytest:
-#    docker:
-#      - image: circleci/golang:1.12
-#    working_directory: /go/src/github.com/turt2live/matrix-media-repo
-#    steps:
-#      # Build the project
-#      - checkout
-#      - run:
-#          name: build binaries
-#          command: 'GOBIN=$PWD/`dirname $0`/bin go install -v ./cmd/...'
-#      # Install sytest
-#      - run:
-#          name: go to sytest
-#          command: 'cd /test'
-#      - run:
-#          name: download sytest
-#          command: 'wget -q https://github.com/matrix-org/sytest/archive/develop.tar.gz -O sytest.tar.gz'
-#      - run:
-#          name: unpack sytest
-#          command: 'tar --strip-components=1 -xf sytest.tar.gz'
-#      # Finally, run the tests
-#      - run:
-#          name: run sytests
-#          command: './run-tests.sh'
 workflows:
   version: 2
   build_and_test:
     jobs:
-      #- sytest  # https://github.com/turt2live/matrix-media-repo/issues/117
       - build:
           filters:
             branches:
