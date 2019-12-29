@@ -24,7 +24,7 @@ install:
 build_script:
   - set GOBIN=%CD%/bin
   - set GO111MODULE=on
-  - ./build.ps1
+  - ps: build.ps1
 
 artifacts:
   - path: bin/media_repo.exe
