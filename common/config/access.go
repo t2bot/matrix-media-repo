@@ -171,9 +171,10 @@ func reloadConfig() (*MainRepoConfig, map[string]*DomainRepoConfig, error) {
 				return nil, nil, err
 			}
 		}
-
+	}
+	for hs, m := range dMaps {
 		c := DomainRepoConfig{}
-		err = mapToObjYaml(dMaps[hs], &c)
+		err = mapToObjYaml(m, &c)
 		if err != nil {
 			return nil, nil, err
 		}
