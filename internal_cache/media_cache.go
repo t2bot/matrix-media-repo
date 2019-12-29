@@ -10,7 +10,6 @@ import (
 
 	"github.com/patrickmn/go-cache"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/common/log"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
@@ -191,7 +190,7 @@ func (c *MediaCache) updateItemInCache(recordId string, mediaSize int64, cacheFn
 		freeSpace += clearedSpace
 		if freeSpace >= mediaSize {
 			// Now it'll fit - cache it
-			log.Info("Caching file in memory")
+			ctx.Log.Info("Caching file in memory")
 			c.size = usedSpace + mediaSize
 			c.flagCached(recordId)
 
