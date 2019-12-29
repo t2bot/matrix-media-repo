@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/turt2live/matrix-media-repo/api/webserver"
 	"github.com/turt2live/matrix-media-repo/common/globals"
+	"github.com/turt2live/matrix-media-repo/common/runtime"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/tasks"
@@ -57,7 +58,7 @@ func reloadDatabaseOnChan(reloadChan chan bool) {
 			shouldReload := <-reloadChan
 			if shouldReload {
 				storage.ReloadDatabase()
-				loadDatabase()
+				runtime.LoadDatabase()
 				globals.DatastoresReloadChan <- true
 			} else {
 				return // received stop
@@ -71,7 +72,7 @@ func reloadDatastoresOnChan(reloadChan chan bool) {
 		for {
 			shouldReload := <-reloadChan
 			if shouldReload {
-				loadDatastores()
+				runtime.LoadDatastores()
 			} else {
 				return // received stop
 			}

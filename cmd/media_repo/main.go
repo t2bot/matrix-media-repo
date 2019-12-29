@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"os"
 	"os/signal"
 
@@ -10,22 +9,11 @@ import (
 	"github.com/turt2live/matrix-media-repo/api/webserver"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/logging"
+	"github.com/turt2live/matrix-media-repo/common/runtime"
 	"github.com/turt2live/matrix-media-repo/common/version"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/tasks"
 )
-
-func printVersion(usingLogger bool) {
-	version.SetDefaults()
-
-	if usingLogger {
-		logrus.Info("Version: " + version.Version)
-		logrus.Info("Commit: " + version.GitCommit)
-	} else {
-		fmt.Println("Version: " + version.Version)
-		fmt.Println("Commit: " + version.GitCommit)
-	}
-}
 
 func main() {
 	configPath := flag.String("config", "media-repo.yaml", "The path to the configuration")
@@ -35,7 +23,7 @@ func main() {
 	flag.Parse()
 
 	if *versionFlag {
-		printVersion(false)
+		version.Print(false)
 		return // exit 0
 	}
 
@@ -55,11 +43,7 @@ func main() {
 	}
 
 	logrus.Info("Starting up...")
-	printVersion(true)
-
-	config.PrintDomainInfo()
-	loadDatabase()
-	loadDatastores()
+	runtime.RunStartupSequence()
 
 	logrus.Info("Checking background tasks...")
 	err = scanAndStartUnfinishedTasks()

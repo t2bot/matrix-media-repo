@@ -17,10 +17,9 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/logging"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
+	"github.com/turt2live/matrix-media-repo/common/runtime"
 	"github.com/turt2live/matrix-media-repo/controllers/upload_controller"
 	"github.com/turt2live/matrix-media-repo/storage"
-	"github.com/turt2live/matrix-media-repo/storage/datastore"
-	"github.com/turt2live/matrix-media-repo/storage/datastore/ds_s3"
 	"github.com/turt2live/matrix-media-repo/synapse"
 )
 
@@ -31,15 +30,15 @@ type fetchRequest struct {
 }
 
 func main() {
-	postgresHost := flag.String("dbHost", "localhost", "The IP or hostname of the postgresql server with the synapse database")
-	postgresPort := flag.Int("dbPort", 5432, "The port to access postgres on")
-	postgresUsername := flag.String("dbUsername", "synapse", "The username to access postgres with")
-	postgresPassword := flag.String("dbPassword", "", "The password to authorize the postgres user. Can be omitted to be prompted when run")
-	postgresDatabase := flag.String("dbName", "synapse", "The name of the synapse database")
+	postgresHost := flag.String("dbHost", "localhost", "The PostgresSQL hostname for your Synapse database")
+	postgresPort := flag.Int("dbPort", 5432, "The port for your Synapse's PostgreSQL database")
+	postgresUsername := flag.String("dbUsername", "synapse", "The username for your Synapse's PostgreSQL database")
+	postgresPassword := flag.String("dbPassword", "", "The password for your Synapse's PostgreSQL database. Can be omitted to be prompted when run")
+	postgresDatabase := flag.String("dbName", "synapse", "The name of your Synapse database")
 	baseUrl := flag.String("baseUrl", "http://localhost:8008", "The base URL to access your homeserver with")
 	serverName := flag.String("serverName", "localhost", "The name of your homeserver (eg: matrix.org)")
-	configPath := flag.String("config", "media-repo.yaml", "The path to the configuration")
-	migrationsPath := flag.String("migrations", "./migrations", "The absolute path the migrations folder")
+	configPath := flag.String("config", "media-repo.yaml", "The path to the media repo configuration (with the database section completed)")
+	migrationsPath := flag.String("migrations", "./migrations", "The absolute path the media repo's migrations folder")
 	numWorkers := flag.Int("workers", 1, "The number of workers to use when downloading media. Using multiple workers risks deduplication not working as efficiently.")
 	flag.Parse()
 
@@ -63,60 +62,8 @@ func main() {
 		panic(err)
 	}
 
-	logrus.Info("Preparing database...")
-	mediaStore := storage.GetDatabase().GetMediaStore(rcontext.Initial())
-
-	logrus.Info("Initializing datastores...")
-	enabledDatastores := 0
-	for _, ds := range config.Get().DataStores {
-		if !ds.Enabled {
-			continue
-		}
-
-		enabledDatastores++
-		uri := datastore.GetUriForDatastore(ds)
-
-		_, err := storage.GetOrCreateDatastoreOfType(rcontext.Initial(), ds.Type, uri)
-		if err != nil {
-			logrus.Fatal(err)
-		}
-	}
-
-	// Print all the known datastores at startup. Doubles as a way to initialize the database.
-	datastores, err := mediaStore.GetAllDatastores()
-	if err != nil {
-		logrus.Fatal(err)
-	}
-	logrus.Info("Datastores:")
-	for _, ds := range datastores {
-		logrus.Info(fmt.Sprintf("\t%s (%s): %s", ds.Type, ds.DatastoreId, ds.Uri))
-
-		if ds.Type == "s3" {
-			conf, err := datastore.GetDatastoreConfig(ds)
-			if err != nil {
-				continue
-			}
-
-			s3, err := ds_s3.GetOrCreateS3Datastore(ds.DatastoreId, conf)
-			if err != nil {
-				continue
-			}
-
-			err = s3.EnsureBucketExists()
-			if err != nil {
-				logrus.Warn("\t\tBucket does not exist!")
-			}
-
-			err = s3.EnsureTempPathExists()
-			if err != nil {
-				logrus.Warn("\t\tTemporary path does not exist!")
-			}
-		}
-	}
-
-	if len(config.Get().Uploads.StoragePaths) > 0 {
-		logrus.Warn("You are using `storagePaths` in your configuration - in a future update, this will be removed. Please use datastores instead (see sample config).")
-	}
+	logrus.Info("Starting up...")
+	runtime.RunStartupSequence()
 
 	logrus.Info("Setting up for importing...")
 
@@ -189,6 +136,7 @@ func fetchMedia(req interface{}) interface{} {
 		logrus.Error(err.Error())
 		return nil
 	}
+	defer body.Close()
 
 	_, err = upload_controller.StoreDirect(body, -1, record.ContentType, record.UploadName, record.UserId, payload.serverName, record.MediaId, common.KindLocalMedia, ctx)
 	if err != nil {
@@ -196,7 +144,6 @@ func fetchMedia(req interface{}) interface{} {
 		return nil
 	}
 
-	body.Close()
 	return nil
 }
 

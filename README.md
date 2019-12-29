@@ -113,21 +113,27 @@ release though if you want to avoid building it yourself.
 2. Edit/setup `media-repo.yaml` per the install instructions above
 3. Run `bin/import_synapse`. The usage is below. 
     ```
-    Usage of ./bin/import_synapse:
+    Usage of import_synapse.exe:
       -baseUrl string
             The base URL to access your homeserver with (default "http://localhost:8008")
+      -config string
+            The path to the media repo configuration (with the database section completed) (default "media-repo.yaml")
       -dbHost string
-            The IP or hostname of the postgresql server with the synapse database (default "localhost")
+            The PostgresSQL hostname for your Synapse database (default "localhost")
       -dbName string
-            The name of the synapse database (default "synapse")
+            The name of your Synapse database (default "synapse")
       -dbPassword string
-            The password to authorize the postgres user. Can be omitted to be prompted when run
+            The password for your Synapse's PostgreSQL database. Can be omitted to be prompted when run
       -dbPort int
-            The port to access postgres on (default 5432)
+            The port for your Synapse's PostgreSQL database (default 5432)
       -dbUsername string
-            The username to access postgres with (default "synapse")
+            The username for your Synapse's PostgreSQL database (default "synapse")
+      -migrations string
+            The absolute path the media repo's migrations folder (default "./migrations")
       -serverName string
             The name of your homeserver (eg: matrix.org) (default "localhost")
+      -workers int
+            The number of workers to use when downloading media. Using multiple workers risks deduplication not working as efficiently. (default 1)
     ```
     Assuming the media repository, postgres database, and synapse are all on the same host, the command to run would look something like: `bin/import_synapse -serverName myserver.com -dbUsername my_database_user -dbName synapse`
 4. Wait for the import to complete. The script will automatically deduplicate media.
