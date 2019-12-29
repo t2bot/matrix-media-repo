@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"os/signal"
 
@@ -9,14 +10,33 @@ import (
 	"github.com/turt2live/matrix-media-repo/api/webserver"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/logging"
+	"github.com/turt2live/matrix-media-repo/common/version"
 	"github.com/turt2live/matrix-media-repo/metrics"
 )
+
+func printVersion(usingLogger bool) {
+	version.SetDefaults()
+
+	if usingLogger {
+		logrus.Info("Version: " + version.Version)
+		logrus.Info("Commit: " + version.GitCommit)
+	} else {
+		fmt.Println("Version: " + version.Version)
+		fmt.Println("Commit: " + version.GitCommit)
+	}
+}
 
 func main() {
 	configPath := flag.String("config", "media-repo.yaml", "The path to the configuration")
 	migrationsPath := flag.String("migrations", "./migrations", "The absolute path for the migrations folder")
 	templatesPath := flag.String("templates", "./templates", "The absolute path for the templates folder")
+	versionFlag := flag.Bool("version", true, "Prints the version and exits")
 	flag.Parse()
+
+	if *versionFlag {
+		printVersion(false)
+		return // exit 0
+	}
 
 	// Override config path with config for Docker users
 	configEnv := os.Getenv("REPO_CONFIG")
@@ -34,6 +54,7 @@ func main() {
 	}
 
 	logrus.Info("Starting up...")
+	printVersion(true)
 
 	config.PrintDomainInfo()
 	loadDatabase()
