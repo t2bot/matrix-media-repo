@@ -71,9 +71,13 @@ func Init() *sync.WaitGroup {
 	startImportHandler := handler{api.RepoAdminRoute(custom.StartImport), "start_import", counter, false}
 	appendToImportHandler := handler{api.RepoAdminRoute(custom.AppendToImport), "append_to_import", counter, false}
 	stopImportHandler := handler{api.RepoAdminRoute(custom.StopImport), "stop_import", counter, false}
+	versionHandler := handler{api.AccessTokenOptionalRoute(custom.GetVersion), "get_version", counter, false}
 
 	routes := make(map[string]route)
 	versions := []string{"r0", "v1", "unstable"} // r0 is typically clients and v1 is typically servers. v1 is deprecated.
+
+	// Things that don't need a version
+	routes["/_matrix/media/version"] = route{"GET", versionHandler}
 
 	for _, version := range versions {
 		// Standard routes we have to handle
