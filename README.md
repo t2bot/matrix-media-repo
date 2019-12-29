@@ -1,13 +1,19 @@
 # matrix-media-repo
 
-[![#mediarepo:t2bot.io](https://img.shields.io/badge/matrix-%23mediarepo:t2bot.io-brightgreen.svg)](https://matrix.to/#/#mediarepo:t2bot.io)
-[![TravisCI badge](https://travis-ci.org/turt2live/matrix-media-repo.svg?branch=master)](https://travis-ci.org/turt2live/matrix-media-repo)
 [![AppVeyor badge](https://ci.appveyor.com/api/projects/status/github/turt2live/matrix-media-repo?branch=master&svg=true)](https://ci.appveyor.com/project/turt2live/matrix-media-repo)
 [![CircleCI](https://circleci.com/gh/turt2live/matrix-media-repo/tree/master.svg?style=svg)](https://circleci.com/gh/turt2live/matrix-media-repo/tree/master)
 
-Designed for environments with multiple homeservers, matrix-media-repo de-duplicates all media automatically, including remote content. Environments with only one homeserver can still make use of the de-duplication and performance of matrix-media-repo.
+matrix-media-repo is a highly customizable multi-domain media repository for Matrix. Intended for medium to large environments
+consisting of several homeservers, this media repo de-duplicates media (including remote media) while being fully compliant
+with the specification. 
 
-# Installing
+Smaller/individual homeservers can still make use of this project's features, though it may be difficult to set up or have 
+higher than expected resource consumption - please do your research before deploying this as this project may not be useful
+for your environment.
+
+For help and support, visit [#mediarepo:t2bot.io](https://matrix.to/#/#mediarepo:t2bot.io).
+
+# Installing / building
 
 Assuming Go 1.12+ is already installed on your PATH:
 ```bash
@@ -18,12 +24,27 @@ cd matrix-media-repo
 # Build it
 ./build.sh
 
-# Configure it (edit media-repo.yaml to meet your needs)
+# Edit media-repo.yaml with your favourite editor
 cp config.sample.yaml media-repo.yaml
+vi /etc/matrix-media-repo/media-repo.yaml
 
 # Run it
 bin/media_repo
 ```
+
+Another option is to use a Docker container (this script might need to be modified for your environment):
+```bash
+# Create a path for the Docker volume
+mkdir -p /etc/matrix-media-repo
+
+# Using config.sample.yaml as a template, edit media-repo.yaml with your favourite editor
+vi /etc/matrix-media-repo/media-repo.yaml
+
+docker run --rm -it -p 8000:8000 -v /etc/matrix-media-repo:/data turt2live/matrix-media-repo
+```
+
+Note that using `latest` is dangerous - it is effectively the development branch for this project. Instead,
+prefer to use one of the tagged versions and update regularly.
 
 # Deployment
 
@@ -78,12 +99,18 @@ After importing your media, setting `enable_media_repo: false` in your Synapse c
 
 # Importing media from synapse
 
-Media is imported by connecting to your synapse database and downloading all the content from the homeserver. This is so you have a backup of the media repository still with synapse. **Do not point traffic at the media repo until after the import is complete.**
+Media is imported by connecting to your synapse database and downloading all the content from the homeserver. This is so 
+you have a backup of the media repository still with synapse. **Do not point traffic at the media repo until after the 
+import is complete.**
 
-**Note**: the database options provided on the command line are for the Synapse database. The media repo will use the connection string in the media-repo.yaml config when trying to store the Synapse media.
+**Note**: the database options provided on the command line are for the Synapse database. The media repo will use the 
+connection string in the media-repo.yaml config when trying to store the Synapse media.
+
+**Note**: the import script is not available to the Docker container. Binaries of the script are included with every
+release though if you want to avoid building it yourself.
 
 1. Build the media repo (as stated above)
-2. Configure the `media-repo.yaml`
+2. Edit/setup `media-repo.yaml` per the install instructions above
 3. Run `bin/import_synapse`. The usage is below. 
     ```
     Usage of ./bin/import_synapse:
@@ -104,4 +131,4 @@ Media is imported by connecting to your synapse database and downloading all the
     ```
     Assuming the media repository, postgres database, and synapse are all on the same host, the command to run would look something like: `bin/import_synapse -serverName myserver.com -dbUsername my_database_user -dbName synapse`
 4. Wait for the import to complete. The script will automatically deduplicate media.
-5. Point traffic to the media repository
+5. Point traffic to the media repository.
