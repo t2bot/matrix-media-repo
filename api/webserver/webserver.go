@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -74,7 +75,9 @@ func Init() *sync.WaitGroup {
 	versionHandler := handler{api.AccessTokenOptionalRoute(custom.GetVersion), "get_version", counter, false}
 
 	routes := make(map[string]route)
-	versions := []string{"r0", "v1", "unstable"} // r0 is typically clients and v1 is typically servers. v1 is deprecated.
+	// r0 is typically clients and v1 is typically servers. v1 is deprecated.
+	// unstable is, well, unstable. unstable/io.t2bot.media is to comply with MSC2324
+	versions := []string{"r0", "v1", "unstable", "unstable/io.t2bot.media"}
 
 	// Things that don't need a version
 	routes["/_matrix/media/version"] = route{"GET", versionHandler}
@@ -127,7 +130,7 @@ func Init() *sync.WaitGroup {
 		routes["/_matrix/client/"+version+"/admin/purge_media_cache"] = route{"POST", purgeRemote}
 		routes["/_matrix/client/"+version+"/admin/quarantine_media/{roomId:[^/]+}"] = route{"POST", quarantineRoomHandler}
 
-		if version == "unstable" {
+		if strings.Index(version, "unstable") == 0 {
 			routes["/_matrix/media/"+version+"/local_copy/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"GET", localCopyHandler}
 			routes["/_matrix/media/"+version+"/info/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"GET", infoHandler}
 			routes["/_matrix/media/"+version+"/download/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"DELETE", purgeOneHandler}
