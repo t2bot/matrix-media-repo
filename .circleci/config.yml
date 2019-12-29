@@ -8,7 +8,7 @@ jobs:
       - checkout
       - run:
           name: build binaries
-          command: 'GOBIN=$PWD/`dirname $0`/bin go install -v ./cmd/...'
+          command: 'GOBIN=$PWD/`dirname $0`/bin GO111MODULE=on go install -v ./cmd/...'
       - store_artifacts:
           path: bin/media_repo
           destination: media_repo
