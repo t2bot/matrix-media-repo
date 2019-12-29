@@ -15,15 +15,17 @@ import (
 func ValidateUrlForPreview(urlStr string, ctx rcontext.RequestContext) (*preview_types.UrlPayload, error) {
 	db := storage.GetDatabase().GetUrlStore(ctx)
 
-	parsedUrl, err := url.ParseRequestURI(urlStr)
+	parsedUrl, err := url.Parse(urlStr)
 	if err != nil {
 		ctx.Log.Error("Error parsing URL: ", err.Error())
 		db.InsertPreviewError(urlStr, common.ErrCodeInvalidHost)
 		return nil, common.ErrInvalidHost
 	}
+	parsedUrl.Fragment = "" // Remove fragment because it's not important for servers
+
 	realHost, _, err := net.SplitHostPort(parsedUrl.Host)
 	if err != nil {
-		ctx.Log.Error("Error parsing host and port: ", err.Error())
+		ctx.Log.Warn("Error parsing host and port: ", err.Error())
 		realHost = parsedUrl.Host
 	}
 
