@@ -4,12 +4,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net/url"
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/globals"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/acl"
+	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/preview_types"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/stores"
 	"github.com/turt2live/matrix-media-repo/types"
@@ -47,12 +48,19 @@ func GetPreview(urlStr string, onHost string, forUserId string, atTs int64, ctx 
 			return GetPreview(urlStr, onHost, forUserId, now, ctx)
 		}
 
-		ctx.Log.Info("Preview not cached - fetching resource")
-
-		urlToPreview, err := acl.ValidateUrlForPreview(urlStr, ctx)
+		parsedUrl, err := url.Parse(urlStr)
 		if err != nil {
-			return nil, err
+			ctx.Log.Error("Error parsing URL: ", err.Error())
+			db.InsertPreviewError(urlStr, common.ErrCodeInvalidHost)
+			return nil, common.ErrInvalidHost
 		}
+		parsedUrl.Fragment = "" // Remove fragment because it's not important for servers
+		urlToPreview := &preview_types.UrlPayload{
+			UrlString: urlStr,
+			ParsedUrl: parsedUrl,
+		}
+
+		ctx.Log.Info("Preview not cached - fetching resource")
 
 		previewChan := getResourceHandler().GeneratePreview(urlToPreview, forUserId, onHost)
 		defer close(previewChan)

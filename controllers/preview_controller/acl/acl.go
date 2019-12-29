@@ -3,45 +3,30 @@ package acl
 import (
 	"fmt"
 	"net"
-	"net/url"
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/preview_types"
-	"github.com/turt2live/matrix-media-repo/storage"
 )
 
-func ValidateUrlForPreview(urlStr string, ctx rcontext.RequestContext) (*preview_types.UrlPayload, error) {
-	db := storage.GetDatabase().GetUrlStore(ctx)
-
-	parsedUrl, err := url.Parse(urlStr)
-	if err != nil {
-		ctx.Log.Error("Error parsing URL: ", err.Error())
-		db.InsertPreviewError(urlStr, common.ErrCodeInvalidHost)
-		return nil, common.ErrInvalidHost
-	}
-	parsedUrl.Fragment = "" // Remove fragment because it's not important for servers
-
-	realHost, _, err := net.SplitHostPort(parsedUrl.Host)
+func GetSafeAddress(addr string, ctx rcontext.RequestContext) (net.IP, string, error) {
+	ctx.Log.Info("Checking address: " + addr)
+	realHost, p, err := net.SplitHostPort(addr)
 	if err != nil {
 		ctx.Log.Warn("Error parsing host and port: ", err.Error())
-		realHost = parsedUrl.Host
+		realHost = addr
 	}
 
-	addr := net.IPv4(127, 0, 0, 1)
+	ipAddr := net.IPv4(127, 0, 0, 1)
 	if realHost != "localhost" {
 		addrs, err := net.LookupIP(realHost)
 		if err != nil {
-			ctx.Log.Error("Error getting host info: ", err.Error())
-			db.InsertPreviewError(urlStr, common.ErrCodeInvalidHost)
-			return nil, common.ErrInvalidHost
+			return nil, "", common.ErrInvalidHost
 		}
 		if len(addrs) == 0 {
-			db.InsertPreviewError(urlStr, common.ErrCodeHostNotFound)
-			return nil, common.ErrHostNotFound
+			return nil, "", common.ErrHostNotFound
 		}
-		addr = addrs[0]
+		ipAddr = addrs[0]
 	}
 
 	allowedCidrs := ctx.Config.UrlPreviews.AllowedNetworks
@@ -57,17 +42,10 @@ func ValidateUrlForPreview(urlStr string, ctx rcontext.RequestContext) (*preview
 	deniedCidrs = append(deniedCidrs, "0.0.0.0/32")
 	deniedCidrs = append(deniedCidrs, "::/128")
 
-	if !isAllowed(addr, allowedCidrs, deniedCidrs, ctx) {
-		db.InsertPreviewError(urlStr, common.ErrCodeHostBlacklisted)
-		return nil, common.ErrHostBlacklisted
+	if !isAllowed(ipAddr, allowedCidrs, deniedCidrs, ctx) {
+		return nil, "", common.ErrHostBlacklisted
 	}
-
-	urlToPreview := &preview_types.UrlPayload{
-		UrlString: urlStr,
-		ParsedUrl: parsedUrl,
-		Address:   addr,
-	}
-	return urlToPreview, nil
+	return ipAddr, p, nil
 }
 
 func isAllowed(ip net.IP, allowed []string, disallowed []string, ctx rcontext.RequestContext) bool {

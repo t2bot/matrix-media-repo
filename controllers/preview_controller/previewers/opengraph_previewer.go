@@ -1,7 +1,6 @@
 package previewers
 
 import (
-	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
@@ -11,7 +10,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/acl"
 	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/preview_types"
 	"github.com/turt2live/matrix-media-repo/metrics"
 )
@@ -62,25 +60,16 @@ func GenerateOpenGraphPreview(urlPayload *preview_types.UrlPayload, ctx rcontext
 	}
 
 	if og.Images != nil && len(og.Images) > 0 {
-		baseUrlS := fmt.Sprintf("%s://%s", urlPayload.ParsedUrl.Scheme, urlPayload.Address.String())
-		baseUrl, err := url.Parse(baseUrlS)
-		if err != nil {
-			ctx.Log.Error("Non-fatal error getting thumbnail (parsing base url): " + err.Error())
-			return *graph, nil
-		}
-
 		imgUrl, err := url.Parse(og.Images[0].URL)
 		if err != nil {
 			ctx.Log.Error("Non-fatal error getting thumbnail (parsing image url): " + err.Error())
 			return *graph, nil
 		}
 
-		// Ensure images pass through the same validation check
-		imgAbsUrl := baseUrl.ResolveReference(imgUrl)
-		imgUrlPayload, err := acl.ValidateUrlForPreview(imgAbsUrl.String(), ctx)
-		if err != nil {
-			ctx.Log.Error("Non-fatal error getting thumbnail (URL validation): " + err.Error())
-			return *graph, nil
+		imgAbsUrl := urlPayload.ParsedUrl.ResolveReference(imgUrl)
+		imgUrlPayload := &preview_types.UrlPayload{
+			UrlString: imgAbsUrl.String(),
+			ParsedUrl: imgAbsUrl,
 		}
 
 		img, err := downloadImage(imgUrlPayload, ctx)

@@ -16,6 +16,7 @@ import (
 	"github.com/ryanuber/go-glob"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
+	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/acl"
 	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/preview_types"
 )
 
@@ -28,10 +29,14 @@ func doHttpGet(urlPayload *preview_types.UrlPayload, ctx rcontext.RequestContext
 		DualStack: true,
 	}
 
-	dialContext := func(ctx context.Context, network, addr string) (conn net.Conn, e error) {
-		// If we aren't handling any address then return the default behaviour
-		if urlPayload.Address == nil {
-			return dialer.DialContext(ctx, network, addr)
+	dialContext := func(ctx2 context.Context, network, addr string) (conn net.Conn, e error) {
+		if network != "tcp" {
+			return nil, errors.New("invalid network: expected tcp")
+		}
+
+		safeIp, safePort, err := acl.GetSafeAddress(addr, ctx)
+		if err != nil {
+			return nil, err
 		}
 
 		// Try and determine which port we're expecting a request to come in on. Because the
@@ -39,28 +44,27 @@ func doHttpGet(urlPayload *preview_types.UrlPayload, ctx rcontext.RequestContext
 		// so that redirects don't fail previews. We only support the alternate port if the
 		// default port for the scheme is used, however.
 
-		expectedPort := urlPayload.ParsedUrl.Port()
 		altPort := ""
-		if expectedPort == "" {
+		if safePort == "" {
 			if urlPayload.ParsedUrl.Scheme == "http" {
-				expectedPort = "80"
+				safePort = "80"
 				altPort = "443"
 			} else if urlPayload.ParsedUrl.Scheme == "https" {
-				expectedPort = "443"
+				safePort = "443"
 				altPort = "80"
 			} else {
 				return nil, errors.New("unexpected scheme: cannot determine port")
 			}
 		}
 
-		expectedAddr := fmt.Sprintf("%s:%s", urlPayload.ParsedUrl.Host, expectedPort)
+		expectedAddr := fmt.Sprintf("%s:%s", urlPayload.ParsedUrl.Host, safePort)
 		altAddr := fmt.Sprintf("%s:%s", urlPayload.ParsedUrl.Host, altPort)
 
 		returnAddr := ""
 		if addr == expectedAddr {
-			returnAddr = fmt.Sprintf("%s:%s", urlPayload.Address.String(), expectedPort)
+			returnAddr = fmt.Sprintf("%s:%s", safeIp.String(), safePort)
 		} else if addr == altAddr && altPort != "" {
-			returnAddr = fmt.Sprintf("%s:%s", urlPayload.Address.String(), altPort)
+			returnAddr = fmt.Sprintf("%s:%s", safeIp.String(), altPort)
 		}
 
 		if returnAddr != "" {
