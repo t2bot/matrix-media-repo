@@ -29,6 +29,7 @@ type MainDownloadsConfig struct {
 	DownloadsConfig `yaml:",inline"`
 	NumWorkers      int         `yaml:"numWorkers"`
 	Cache           CacheConfig `yaml:"cache"`
+	ExpireDays      int         `yaml:"expireAfterDays"`
 }
 
 type CacheConfig struct {
@@ -44,11 +45,13 @@ type CacheConfig struct {
 type MainThumbnailsConfig struct {
 	ThumbnailsConfig `yaml:",inline"`
 	NumWorkers       int `yaml:"numWorkers"`
+	ExpireDays       int `yaml:"expireAfterDays"`
 }
 
 type MainUrlPreviewsConfig struct {
 	UrlPreviewsConfig `yaml:",inline"`
 	NumWorkers        int `yaml:"numWorkers"`
+	ExpireDays        int `yaml:"expireAfterDays"`
 }
 
 type RateLimitConfig struct {

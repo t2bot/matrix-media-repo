@@ -51,6 +51,9 @@ Any options from the main config can then be overridden per-domain with the exce
 * `urlPreviews.numWorkers` - because workers are configured repo-wide.
 * `thumbnails.numWorkers` - because workers are configured repo-wide.
 * `federation` - because the federation options are repo-wide.
+* `downloads.expireAfterDays` - because remote media downloads are not for any particular domain.
+* `thumbnails.expireAfterDays` - because thumbnails aren't associated with any particular domain.
+* `urlPreviews.expireAfterDays` - because previews aren't associated with any particular domain.
 
 To override a value, simply provide it in any valid per-domain config:
 

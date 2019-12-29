@@ -5,6 +5,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/globals"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/storage"
+	"github.com/turt2live/matrix-media-repo/tasks"
 )
 
 func setupReloads() {
@@ -12,6 +13,7 @@ func setupReloads() {
 	reloadMetricsOnChan(globals.MetricsReloadChan)
 	reloadDatabaseOnChan(globals.DatabaseReloadChan)
 	reloadDatastoresOnChan(globals.DatastoresReloadChan)
+	reloadRecurringTasksOnChan(globals.RecurringTasksReloadChan)
 }
 
 func stopReloads() {
@@ -20,6 +22,7 @@ func stopReloads() {
 	globals.MetricsReloadChan <- false
 	globals.DatabaseReloadChan <- false
 	globals.DatastoresReloadChan <- false
+	globals.RecurringTasksReloadChan <- false
 }
 
 func reloadWebOnChan(reloadChan chan bool) {
@@ -69,6 +72,20 @@ func reloadDatastoresOnChan(reloadChan chan bool) {
 			shouldReload := <-reloadChan
 			if shouldReload {
 				loadDatastores()
+			} else {
+				return // received stop
+			}
+		}
+	}()
+}
+
+func reloadRecurringTasksOnChan(reloadChan chan bool) {
+	go func() {
+		for {
+			shouldReload := <-reloadChan
+			if shouldReload {
+				tasks.StopAll()
+				tasks.StartAll()
 			} else {
 				return // received stop
 			}

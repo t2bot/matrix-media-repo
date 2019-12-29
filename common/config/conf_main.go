@@ -49,6 +49,7 @@ func NewDefaultMainConfig() MainRepoConfig {
 				MinCacheTimeSeconds:   300, // 5min
 				MinEvictedTimeSeconds: 60,
 			},
+			ExpireDays: 0,
 		},
 		UrlPreviews: MainUrlPreviewsConfig{
 			UrlPreviewsConfig: UrlPreviewsConfig{
@@ -76,8 +77,8 @@ func NewDefaultMainConfig() MainRepoConfig {
 					"0.0.0.0/0", // "Everything"
 				},
 			},
-
 			NumWorkers: 10,
+			ExpireDays: 0,
 		},
 		Thumbnails: MainThumbnailsConfig{
 			ThumbnailsConfig: ThumbnailsConfig{
@@ -101,6 +102,7 @@ func NewDefaultMainConfig() MainRepoConfig {
 				},
 			},
 			NumWorkers: 10,
+			ExpireDays: 0,
 		},
 		RateLimit: RateLimitConfig{
 			Enabled:           true,

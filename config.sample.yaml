@@ -208,6 +208,11 @@ downloads:
     # The minimum amount of time an item should remain outside the cache once it is removed.
     minEvictedTimeSeconds: 60
 
+  # How many days after a piece of remote content is downloaded before it expires. It can be
+  # re-downloaded on demand, this just helps free up space in your datastore. Set to zero or
+  # negative to disable. Defaults to disabled.
+  expireAfterDays: 0
+
 # URL Preview settings
 urlPreviews:
   enabled: true # If enabled, the preview_url routes will be accessible
@@ -255,6 +260,11 @@ urlPreviews:
   allowedNetworks:
     - "0.0.0.0/0" # "Everything". The blacklist will help limit this.
                   # This is the default value for this field.
+
+  # How many days after a preview is generated before it expires and is deleted. The preview
+  # can be regenerated safely - this just helps free up some space in your database. Set to
+  # zero or negative to disable. Defaults to disabled.
+  expireAfterDays: 0
 
 # The thumbnail configuration for the media repository.
 thumbnails:
@@ -309,6 +319,11 @@ thumbnails:
   # On a scale of 0 (start of animation) to 1 (end of animation), where should the thumbnailer try
   # and thumbnail animated content? Defaults to 0.5 (middle of animation).
   stillFrame: 0.5
+
+  # How many days after a thumbnail is generated before it expires and is deleted. The thumbnail
+  # can be regenerated safely - this just helps free up some space in your datastores. Set to
+  # zero or negative to disable. Defaults to disabled.
+  expireAfterDays: 0
 
 # Controls for the rate limit functionality
 rateLimit:

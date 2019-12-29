@@ -10,10 +10,12 @@ import (
 
 const selectUrlPreview = "SELECT url, error_code, bucket_ts, site_url, site_name, resource_type, description, title, image_mxc, image_type, image_size, image_width, image_height FROM url_previews WHERE url = $1 AND bucket_ts = $2;"
 const insertUrlPreview = "INSERT INTO url_previews (url, error_code, bucket_ts, site_url, site_name, resource_type, description, title, image_mxc, image_type, image_size, image_width, image_height) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13);"
+const deletePreviewsOlderThan = "DELETE FROM url_previews WHERE bucket_ts <= $1;"
 
 type urlStatements struct {
-	selectUrlPreview *sql.Stmt
-	insertUrlPreview *sql.Stmt
+	selectUrlPreview        *sql.Stmt
+	insertUrlPreview        *sql.Stmt
+	deletePreviewsOlderThan *sql.Stmt
 }
 
 type UrlStoreFactory struct {
@@ -37,6 +39,9 @@ func InitUrlStore(sqlDb *sql.DB) (*UrlStoreFactory, error) {
 		return nil, err
 	}
 	if store.stmts.insertUrlPreview, err = store.sqlDb.Prepare(insertUrlPreview); err != nil {
+		return nil, err
+	}
+	if store.stmts.deletePreviewsOlderThan, err = store.sqlDb.Prepare(deletePreviewsOlderThan); err != nil {
 		return nil, err
 	}
 
@@ -102,6 +107,11 @@ func (s *UrlStore) InsertPreviewError(url string, errorCode string) error {
 		ErrorCode: errorCode,
 		FetchedTs: util.NowMillis(),
 	})
+}
+
+func (s *UrlStore) DeleteOlderThan(beforeTs int64) error {
+	_, err := s.statements.deletePreviewsOlderThan.ExecContext(s.ctx, beforeTs)
+	return err
 }
 
 func GetBucketTs(ts int64) int64 {

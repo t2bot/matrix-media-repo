@@ -12,6 +12,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/logging"
 	"github.com/turt2live/matrix-media-repo/common/version"
 	"github.com/turt2live/matrix-media-repo/metrics"
+	"github.com/turt2live/matrix-media-repo/tasks"
 )
 
 func printVersion(usingLogger bool) {
@@ -66,6 +67,9 @@ func main() {
 		logrus.Fatal(err)
 	}
 
+	logrus.Info("Starting recurring tasks...")
+	tasks.StartAll()
+
 	logrus.Info("Starting config watcher...")
 	watcher := config.Watch()
 	defer watcher.Close()
@@ -82,6 +86,9 @@ func main() {
 
 		logrus.Info("Stopping metrics...")
 		metrics.Stop()
+
+		logrus.Info("Stopping recurring tasks...")
+		tasks.StopAll()
 	}
 
 	// Set up a listener for SIGINT
