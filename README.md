@@ -113,7 +113,7 @@ release though if you want to avoid building it yourself.
 2. Edit/setup `media-repo.yaml` per the install instructions above
 3. Run `bin/import_synapse`. The usage is below. 
     ```
-    Usage of import_synapse.exe:
+    Usage of import_synapse:
       -baseUrl string
             The base URL to access your homeserver with (default "http://localhost:8008")
       -config string
