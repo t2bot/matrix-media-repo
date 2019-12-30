@@ -7,7 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
-<!--## [1.0.0-rc.1] - December 29, 2019-->
+Nothing yet.
+
+## [1.0.0-rc.1] - December 29, 2019
 
 ### Added
 
