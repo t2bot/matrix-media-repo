@@ -37,8 +37,8 @@ func AccessTokenRequiredRoute(next func(r *http.Request, rctx rcontext.RequestCo
 		appserviceUserId := util.GetAppserviceUserIdFromRequest(r)
 		userId, err := matrix.GetUserIdFromToken(rctx, r.Host, accessToken, appserviceUserId, r.RemoteAddr)
 		if err != nil || userId == "" {
-			if err != nil && err != matrix.ErrNoToken {
-				rctx.Log.Error("Error verifying token: ", err)
+			if err != nil && err != matrix.ErrInvalidToken {
+				rctx.Log.Error("Error verifying token (fatal): ", err)
 				return InternalServerError("Unexpected Error")
 			}
 
@@ -65,7 +65,7 @@ func AccessTokenOptionalRoute(next func(r *http.Request, rctx rcontext.RequestCo
 		appserviceUserId := util.GetAppserviceUserIdFromRequest(r)
 		userId, err := matrix.GetUserIdFromToken(rctx, r.Host, accessToken, appserviceUserId, r.RemoteAddr)
 		if err != nil {
-			if err != matrix.ErrNoToken {
+			if err != matrix.ErrInvalidToken {
 				rctx.Log.Error("Error verifying token: ", err)
 				return InternalServerError("Unexpected Error")
 			}

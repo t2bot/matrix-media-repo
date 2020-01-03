@@ -8,17 +8,18 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 )
 
-var ErrNoToken = errors.New("Missing access token")
+var ErrInvalidToken = errors.New("Missing or invalid access token")
 
 func GetUserIdFromToken(ctx rcontext.RequestContext, serverName string, accessToken string, appserviceUserId string, ipAddr string) (string, error) {
 	if accessToken == "" {
-		return "", ErrNoToken
+		return "", ErrInvalidToken
 	}
 
 	hs, cb := getBreakerAndConfig(serverName)
 
 	userId := ""
 	var replyError error
+	var authError error
 	replyError = cb.CallContext(ctx, func() error {
 		query := map[string]string{}
 		if appserviceUserId != "" {
@@ -34,7 +35,8 @@ func GetUserIdFromToken(ctx rcontext.RequestContext, serverName string, accessTo
 		target.RawQuery = q.Encode()
 		err := doRequest(ctx, "GET", target.String(), nil, response, accessToken, ipAddr)
 		if err != nil {
-			err, replyError = filterError(err)
+			ctx.Log.Warn("Error from homeserver: ", err)
+			err, authError = filterError(err)
 			return err
 		}
 
@@ -42,8 +44,8 @@ func GetUserIdFromToken(ctx rcontext.RequestContext, serverName string, accessTo
 		return nil
 	}, 1*time.Minute)
 
-	if replyError == nil {
-		return userId, nil
+	if authError != nil {
+		return userId, authError
 	}
 	return userId, replyError
 }
