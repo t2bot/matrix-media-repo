@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -130,6 +131,9 @@ func processArchive(data io.Reader) (map[string]*bytes.Buffer, error) {
 }
 
 func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx rcontext.RequestContext) {
+	// Use a new context in the goroutine
+	ctx.Context = context.Background()
+
 	ctx.Log.Info("Preparing for import...")
 	fileMap := make(map[string]*bytes.Buffer)
 	stopImport := false
