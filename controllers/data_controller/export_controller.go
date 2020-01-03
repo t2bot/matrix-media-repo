@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -62,6 +63,10 @@ func StartServerExport(serverName string, s3urls bool, includeData bool, ctx rco
 	}
 
 	go func() {
+		// Use a new context in the goroutine
+		ctx.Context = context.Background()
+		db := storage.GetDatabase().GetMetadataStore(ctx)
+
 		ds, err := datastore.PickDatastore(common.KindArchives, ctx)
 		if err != nil {
 			ctx.Log.Error(err)
@@ -108,6 +113,10 @@ func StartUserExport(userId string, s3urls bool, includeData bool, ctx rcontext.
 	}
 
 	go func() {
+		// Use a new context in the goroutine
+		ctx.Context = context.Background()
+		db := storage.GetDatabase().GetMetadataStore(ctx)
+
 		ds, err := datastore.PickDatastore(common.KindArchives, ctx, )
 		if err != nil {
 			ctx.Log.Error(err)
