@@ -14,6 +14,7 @@ import (
 	"github.com/jeffail/tunny"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
+	"github.com/turt2live/matrix-media-repo/common/assets"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/logging"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
@@ -43,7 +44,7 @@ func main() {
 	flag.Parse()
 
 	config.Path = *configPath
-	config.Runtime.MigrationsPath = *migrationsPath
+	assets.SetupTemplatesAndMigrations(*migrationsPath, "")
 
 	var realPsqlPassword string
 	if *postgresPassword == "" {
@@ -114,6 +115,9 @@ func main() {
 		logrus.Info("Waiting for import to complete...")
 		time.Sleep(1 * time.Second)
 	}
+
+	// Clean up
+	assets.Cleanup()
 
 	logrus.Info("Import completed")
 }

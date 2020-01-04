@@ -6,6 +6,9 @@
 /vendor
 /config
 
+# Generated files
+assets.bin.go
+
 media-repo*.yaml
 homeserver.yaml
 

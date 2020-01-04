@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Added
+
+* Compile assets (templates and migrations) into the binary for ease of deployment.
+
 ### Fixed
 
 * Fix error message when an invalid access token is provided.

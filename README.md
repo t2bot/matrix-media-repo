@@ -13,7 +13,9 @@ for your environment.
 
 For help and support, visit [#mediarepo:t2bot.io](https://matrix.to/#/#mediarepo:t2bot.io).
 
-# Installing / building
+## Installing / building
+
+**Note**: developing on matrix-media-repo requires you to follow these steps at least once.
 
 Assuming Go 1.12+ is already installed on your PATH:
 ```bash
@@ -46,7 +48,7 @@ docker run --rm -it -p 8000:8000 -v /etc/matrix-media-repo:/data turt2live/matri
 Note that using `latest` is dangerous - it is effectively the development branch for this project. Instead,
 prefer to use one of the tagged versions and update regularly.
 
-# Deployment
+## Deployment
 
 This is intended to run behind a load balancer and beside your homeserver deployments. Assuming your load balancer handles SSL termination, a sample nginx config would be:
 
@@ -97,7 +99,7 @@ listeners:
 
 After importing your media, setting `enable_media_repo: false` in your Synapse configuration will disable the media repository.
 
-# Importing media from synapse
+## Importing media from synapse
 
 Media is imported by connecting to your synapse database and downloading all the content from the homeserver. This is so 
 you have a backup of the media repository still with synapse. **Do not point traffic at the media repo until after the 

@@ -17,6 +17,9 @@ type runtimeConfig struct {
 	TemplatesPath  string
 }
 
+const DefaultMigrationsPath = "./migrations"
+const DefaultTemplatesPath = "./templates"
+
 var Runtime = &runtimeConfig{}
 var Path = "media-repo.yaml"
 

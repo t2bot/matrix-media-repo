@@ -7,6 +7,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api/webserver"
+	"github.com/turt2live/matrix-media-repo/common/assets"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/logging"
 	"github.com/turt2live/matrix-media-repo/common/runtime"
@@ -17,8 +18,8 @@ import (
 
 func main() {
 	configPath := flag.String("config", "media-repo.yaml", "The path to the configuration")
-	migrationsPath := flag.String("migrations", "./migrations", "The absolute path for the migrations folder")
-	templatesPath := flag.String("templates", "./templates", "The absolute path for the templates folder")
+	migrationsPath := flag.String("migrations", config.DefaultMigrationsPath, "The absolute path for the migrations folder")
+	templatesPath := flag.String("templates", config.DefaultTemplatesPath, "The absolute path for the templates folder")
 	versionFlag := flag.Bool("version", false, "Prints the version and exits")
 	flag.Parse()
 
@@ -34,8 +35,7 @@ func main() {
 	}
 
 	config.Path = *configPath
-	config.Runtime.MigrationsPath = *migrationsPath
-	config.Runtime.TemplatesPath = *templatesPath
+	assets.SetupTemplatesAndMigrations(*migrationsPath, *templatesPath)
 
 	err := logging.Setup(config.Get().General.LogDirectory)
 	if err != nil {
@@ -98,6 +98,9 @@ func main() {
 	if !selfStop {
 		stopAllButWeb()
 	}
+
+	// Clean up
+	assets.Cleanup()
 
 	// For debugging
 	logrus.Info("Goodbye!")
