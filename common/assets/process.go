@@ -71,7 +71,7 @@ func extractPrefixTo(pathName string, destination string) {
 
 		dest := path.Join(destination, filepath.Base(f))
 		logrus.Infof("Writing %s to %s", f, dest)
-		err = ioutil.WriteFile(dest, b, 644)
+		err = ioutil.WriteFile(dest, b, 0644)
 		if err != nil {
 			panic(err)
 		}

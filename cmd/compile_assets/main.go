@@ -39,7 +39,7 @@ func main() {
 		str += fmt.Sprintf("\t\"%s\": \"%s\",\n", f, b64)
 	}
 	str += "}\n"
-	err := ioutil.WriteFile(*outputFile, []byte(str), 644)
+	err := ioutil.WriteFile(*outputFile, []byte(str), 0644)
 	if err != nil {
 		panic(err)
 	}
