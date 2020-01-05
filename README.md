@@ -140,3 +140,43 @@ release though if you want to avoid building it yourself.
     Assuming the media repository, postgres database, and synapse are all on the same host, the command to run would look something like: `bin/import_synapse -serverName myserver.com -dbUsername my_database_user -dbName synapse`
 4. Wait for the import to complete. The script will automatically deduplicate media.
 5. Point traffic to the media repository.
+
+## Export and import user data
+
+The admin API for this is specified in [docs/admin.md](./docs/admin.md), though they can be difficult to use for scripts.
+The `bin/gdpr_export` and `bin/gdpr_import` binaries do the process for you, and do so in memory but against the real
+media repo database and datastores - this moves the resource intensiveness to the binary you're running instead of the
+media repo instance, but still makes reads and writes to your database and datastores. For example, when exporting a 
+user's data the binary will pull all the data locally and write it to disk for you, but during that process the user's
+export is accessible via the main media repo too. The export is deleted if the binary is successful at exporting the 
+data.
+
+**Note**: Imports done through this method can affect other homeservers! For example, a user's data export could contain
+an entry for a homeserver other than their own, which the media repo will happily import. Always validate the manifest
+of an import before running it!
+
+Ensuring you have your media repo config available, here's the help for each binary:
+
+```
+Usage of gdpr_export:
+  -config string
+        The path to the configuration (default "media-repo.yaml")
+  -destination string
+        The directory for where export files should be placed (default "./gdpr-data")
+  -entity string
+        The user ID or server name to export
+  -migrations string
+        The absolute path for the migrations folder (default "./migrations")
+  -templates string
+        The absolute path for the templates folder (default "./templates")
+```
+
+```
+Usage of gdpr_import.exe:
+  -config string
+        The path to the configuration (default "media-repo.yaml")
+  -directory string
+        The directory for where the entity's exported files are (default "./gdpr-data")
+  -migrations string
+        The absolute path for the migrations folder (default "./migrations")
+```

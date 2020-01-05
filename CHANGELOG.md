@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 
 * Compile assets (templates and migrations) into the binary for ease of deployment.
+* Added binaries to make exports and imports easier.
 
 ### Fixed
 

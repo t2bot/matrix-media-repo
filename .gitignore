@@ -5,6 +5,7 @@
 /logs
 /vendor
 /config
+/gdpr-data
 
 # Generated files
 assets.bin.go

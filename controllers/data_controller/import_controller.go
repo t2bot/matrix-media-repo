@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/prometheus/common/log"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/upload_controller"
@@ -159,7 +158,6 @@ func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx
 			fileMap[name] = fileBytes
 		}
 
-		// TODO: Search for a manifest and import a bunch of files
 		var manifestBuf *bytes.Buffer
 		var ok bool
 		if manifestBuf, ok = fileMap["manifest.json"]; !ok {
@@ -245,7 +243,7 @@ func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx
 				ctx.Log.Infof("Seeing if a datastore for %s/%s exists", endpoint, bucket)
 				datastores, err := datastore.GetAvailableDatastores(ctx)
 				if err != nil {
-					log.Errorf("Error locating datastore: %s", err.Error())
+					ctx.Log.Errorf("Error locating datastore: %s", err.Error())
 					continue
 				}
 				imported := false
@@ -323,7 +321,7 @@ func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx
 				continue
 			}
 
-			log.Info("Counting file as imported")
+			ctx.Log.Info("Counting file as imported")
 			imported[mxc] = true
 		}
 

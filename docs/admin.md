@@ -410,6 +410,10 @@ Once an export has been completed it can be imported back into the media repo. F
 
 **Note**: Only repository administrators can perform imports, regardless of who they are for.
 
+**Note**: Imports done through this method can affect other homeservers! For example, a user's data export could contain
+an entry for a homeserver other than their own, which the media repo will happily import. Always validate the manifest
+of an import before running it!
+
 URL: `POST /_matrix/media/unstable/admin/import`
 
 The request body is the bytes of the first archive (eg: `TravisR-part-1.tgz` in the above examples).

@@ -28,5 +28,9 @@ artifacts:
     name: media_repo.exe
   - path: bin/import_synapse.exe
     name: import_synapse.exe
+  - path: bin/gdpr_export.exe
+    name: gdpr_export.exe
+  - path: bin/gdpr_import.exe
+    name: gdpr_import.exe
 
 test_script: [] # https://github.com/turt2live/matrix-media-repo/issues/40

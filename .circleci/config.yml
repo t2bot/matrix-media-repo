@@ -17,6 +17,12 @@ jobs:
       - store_artifacts:
           path: bin/import_synapse
           destination: import_synapse
+      - store_artifacts:
+          path: bin/gdpr_export
+          destination: gdpr_export
+      - store_artifacts:
+          path: bin/gdpr_import
+          destination: gdpr_import
 workflows:
   version: 2
   build_and_test:
