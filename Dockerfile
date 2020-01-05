@@ -14,7 +14,7 @@ RUN ./build.sh
 # Final runtime stage.
 FROM alpine
 
-COPY --from=builder /opt/bin/media_repo /opt/bin/import_synapse /usr/local/bin/
+COPY --from=builder /opt/bin/media_repo /opt/bin/import_synapse /opt/bin/gdpr_export /opt/bin/gdpr_import /usr/local/bin/
 
 RUN apk add --no-cache \
         su-exec \
