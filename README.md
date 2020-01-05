@@ -172,7 +172,7 @@ Usage of gdpr_export:
 ```
 
 ```
-Usage of gdpr_import.exe:
+Usage of gdpr_import:
   -config string
         The path to the configuration (default "media-repo.yaml")
   -directory string
