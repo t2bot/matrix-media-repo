@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [1.0.0] - January 4, 2020
+
 ### Added
 
 * Compile assets (templates and migrations) into the binary for ease of deployment.
@@ -43,6 +47,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Various other features that would be expected like maximum/minimum size controls, rate limiting, etc. Check out the
   sample config for a better idea of what else is possible.
 
-[unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.0.0-rc.2...HEAD
+[unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/turt2live/matrix-media-repo/compare/v1.0.0...v1.0.0-rc.2
 [1.0.0-rc.2]: https://github.com/turt2live/matrix-media-repo/compare/v1.0.0-rc.1...v1.0.0-rc.2
 [1.0.0-rc.1]: https://github.com/turt2live/matrix-media-repo/releases/tag/v1.0.0-rc.1
