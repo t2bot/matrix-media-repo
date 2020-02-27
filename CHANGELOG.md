@@ -11,6 +11,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [1.0.1] - February 27, 2020
 
+### Fixed
+
 * Fix a memory leak within the cache layers.
 
 ## [1.0.0] - January 4, 2020
@@ -52,7 +54,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   sample config for a better idea of what else is possible.
 
 [unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.0.1...HEAD
-[1.0.1]: https://github.com/turt2live/matrix-media-repo/compare/v1.0.1...v1.0.0
-[1.0.0]: https://github.com/turt2live/matrix-media-repo/compare/v1.0.0...v1.0.0-rc.2
+[1.0.1]: https://github.com/turt2live/matrix-media-repo/compare/v1.0.0...v1.0.1
+[1.0.0]: https://github.com/turt2live/matrix-media-repo/compare/v1.0.0-rc.2...v1.0.0
 [1.0.0-rc.2]: https://github.com/turt2live/matrix-media-repo/compare/v1.0.0-rc.1...v1.0.0-rc.2
 [1.0.0-rc.1]: https://github.com/turt2live/matrix-media-repo/releases/tag/v1.0.0-rc.1
