@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
-Nothing yet.
+* Fix a memory leak within the cache layers.
 
 ## [1.0.0] - January 4, 2020
 

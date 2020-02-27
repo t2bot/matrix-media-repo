@@ -5,6 +5,7 @@ import (
 	"container/list"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"sync"
 	"time"
 
@@ -183,9 +184,9 @@ func (c *MediaCache) updateItemInCache(recordId string, mediaSize int64, cacheFn
 		}
 
 		// We need to clean up some space
-		neededSize := (usedSpace + mediaSize) - maxSpace
-		ctx.Log.Info(fmt.Sprintf("Attempting to clear %d bytes from media cache", neededSize))
-		clearedSpace := c.clearSpace(neededSize, downloads, mediaSize)
+		maxSizeClear := int64(math.Ceil(float64(mediaSize) * 1.25))
+		ctx.Log.Info(fmt.Sprintf("Attempting to clear %d bytes from media cache (max evict size %d bytes)", mediaSize, maxSizeClear))
+		clearedSpace := c.clearSpace(mediaSize, downloads, maxSizeClear, ctx)
 		ctx.Log.Info(fmt.Sprintf("Cleared %d bytes from media cache", clearedSpace))
 		freeSpace += clearedSpace
 		if freeSpace >= mediaSize {
@@ -218,7 +219,15 @@ func (c *MediaCache) updateItemInCache(recordId string, mediaSize int64, cacheFn
 	return nil, nil
 }
 
-func (c *MediaCache) clearSpace(neededBytes int64, withDownloadsLessThan int, withSizeLessThan int64) int64 {
+func (c *MediaCache) clearSpace(neededBytes int64, withDownloadsLessThan int, withSizeLessThan int64, ctx rcontext.RequestContext) int64 {
+	// This should never happen, but we'll protect against it anyways. If we clear negative space we
+	// end up assuming that a very small amount being cleared is enough space for the file we're about
+	// to put in, which results in the cache growing beyond the file size limit.
+	if neededBytes < 0 {
+		ctx.Log.Warnf("Refusing to clear negative space in the cache. Args: neededBytes=%d, withDownloadsLessThan=%d, withSizeLessThan=%d", neededBytes, withDownloadsLessThan, withSizeLessThan)
+		return 0
+	}
+
 	type removable struct {
 		cacheKey string
 		recordId string
