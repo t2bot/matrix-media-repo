@@ -203,6 +203,22 @@ func (c *MediaCache) updateItemInCache(recordId string, mediaSize int64, cacheFn
 			metrics.CacheNumItems.With(prometheus.Labels{"cache": "media"}).Inc()
 			metrics.CacheNumBytes.With(prometheus.Labels{"cache": "media"}).Set(float64(c.size))
 			c.cache.Set(recordId, cachedItem, cache.DefaultExpiration)
+
+			// This should never happen, but we'll be aggressive in how we handle it.
+			if c.size > maxSpace {
+				ctx.Log.Warnf("Cache size of %d bytes is larger than prescribed maximum of %d bytes")
+				overage := c.size - maxSpace
+
+				// We want to aggressively clear the cache by basically deleting anything that
+				// will get us back under the limit. To do this we set the 'safe to clear' download
+				// counter at 4x the configured minimum which should catch most things. We also
+				// set the maximum file size that can be cleared to the size of the cache which
+				// essentially allows us to remove anything.
+				downloadsLessThan := config.Get().Downloads.Cache.MinDownloads * 4
+				overageCleared := c.clearSpace(overage, downloadsLessThan, maxSpace, ctx) // metrics handled internally
+				ctx.Log.Infof("Cleared %d bytes from media cache", overageCleared)
+			}
+
 			return cachedItem, nil
 		}
 
