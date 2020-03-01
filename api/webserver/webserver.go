@@ -74,6 +74,7 @@ func Init() *sync.WaitGroup {
 	appendToImportHandler := handler{api.RepoAdminRoute(custom.AppendToImport), "append_to_import", counter, false}
 	stopImportHandler := handler{api.RepoAdminRoute(custom.StopImport), "stop_import", counter, false}
 	versionHandler := handler{api.AccessTokenOptionalRoute(custom.GetVersion), "get_version", counter, false}
+	blurhashRenderHandler := handler{api.AccessTokenRequiredRoute(unstable.RenderBlurhash), "render_blurhash", counter, false}
 
 	routes := make(map[string]route)
 	// r0 is typically clients and v1 is typically servers. v1 is deprecated.
@@ -140,6 +141,7 @@ func Init() *sync.WaitGroup {
 
 	if config.Get().Features.MSC2448Blurhash.Enabled {
 		routes[features.MSC2448UploadRoute] = route{"POST", uploadHandler}
+		routes[features.MSC2448AltRenderRoute] = route{"GET", blurhashRenderHandler}
 	}
 
 	for routePath, route := range routes {
