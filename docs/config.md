@@ -65,3 +65,6 @@ identicons:
 
 Per-domain configs can also be layered - just ensure that each layer has the `homeserver` property in it. They inherit
 from the main config for options not defined in their layers.
+
+Note: all feature configs which require webserver routes to be added will need to be additionally defined in the main 
+config as enabled or disabled, then turned on and off for individual domains.

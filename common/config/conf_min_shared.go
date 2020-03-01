@@ -7,6 +7,7 @@ type MinimumRepoConfig struct {
 	Identicons     IdenticonsConfig  `yaml:"identicons"`
 	Quarantine     QuarantineConfig  `yaml:"quarantine"`
 	TimeoutSeconds TimeoutsConfig    `yaml:"timeouts"`
+	Features       FeatureConfig     `yaml:"featureSupport"`
 }
 
 func NewDefaultMinimumRepoConfig() MinimumRepoConfig {
@@ -37,6 +38,18 @@ func NewDefaultMinimumRepoConfig() MinimumRepoConfig {
 			UrlPreviews:  10,
 			ClientServer: 30,
 			Federation:   120,
+		},
+		Features: FeatureConfig{
+			MSC2448Blurhash: MSC2448Config{
+				Enabled:         false,
+				MaxRenderWidth:  1024,
+				MaxRenderHeight: 1024,
+				GenerateWidth:   64,
+				GenerateHeight:  64,
+				XComponents:     4,
+				YComponents:     3,
+				Punch:           1,
+			},
 		},
 	}
 }

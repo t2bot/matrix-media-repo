@@ -135,8 +135,9 @@ func Init() *sync.WaitGroup {
 			routes["/_matrix/media/"+version+"/info/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"GET", infoHandler}
 			routes["/_matrix/media/"+version+"/download/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"DELETE", purgeOneHandler}
 
-			// MSC2448: Blurhash
-			routes["/_matrix/media/"+version+"/xyz.amorgan/upload"] = route{"POST", uploadHandler}
+			if config.Get().Features.MSC2448Blurhash.Enabled {
+				routes["/_matrix/media/"+version+"/xyz.amorgan/upload"] = route{"POST", uploadHandler}
+			}
 		}
 	}
 

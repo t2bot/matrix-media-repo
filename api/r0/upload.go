@@ -58,13 +58,19 @@ func UploadMedia(r *http.Request, rctx rcontext.RequestContext, user api.UserInf
 		return api.InternalServerError("Unexpected Error")
 	}
 
-	hash, err := info_controller.GetOrCalculateBlurhash(media, rctx)
-	if err != nil {
-		rctx.Log.Warn("Failed to calculate blurhash: " + err.Error())
+	if rctx.Config.Features.MSC2448Blurhash.Enabled {
+		hash, err := info_controller.GetOrCalculateBlurhash(media, rctx)
+		if err != nil {
+			rctx.Log.Warn("Failed to calculate blurhash: " + err.Error())
+		}
+
+		return &MediaUploadedResponse{
+			ContentUri: media.MxcUri(),
+			Blurhash:   hash,
+		}
 	}
 
 	return &MediaUploadedResponse{
 		ContentUri: media.MxcUri(),
-		Blurhash:   hash,
 	}
 }

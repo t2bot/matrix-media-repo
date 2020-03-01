@@ -392,3 +392,28 @@ metrics:
 
   # The port to listen on. Cannot be the same as the general web server port.
   port: 9000
+
+# Options for controlling various MSCs/unstable features of the media repo
+# Sections of this config might disappear or be added over time. By default all
+# features are disabled in here and must be explicitly enabled to be used.
+featureSupport:
+  # MSC2248 - Blurhash
+  MSC2448:
+    # Whether or not this MSC is enabled for use in the media repo
+    enabled: false
+
+    # Maximum dimensions for converting a blurhash to an image
+    maxWidth: 1024
+    maxHeight: 1024
+
+    # Thumbnail size in pixels to use to generate the blurhash string
+    thumbWidth: 64
+    thumbHeight: 64
+
+    # The X and Y components to use. Higher numbers blur less, lower numbers blur more.
+    xComponents: 4
+    yComponents: 3
+
+    # The amount of contrast to apply when converting a blurhash to an image. Lower values
+    # make the effect more subtle, larger values make it stronger.
+    punch: 1

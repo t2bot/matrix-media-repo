@@ -40,7 +40,7 @@ func GetOrCalculateBlurhash(media *types.Media, rctx rcontext.RequestContext) (s
 
 	// Resize the image to make the blurhash a bit more reasonable to calculate
 	rctx.Log.Info("Resizing image for blurhash (faster calculation)")
-	smallImg := imaging.Fill(imgSrc, 128, 128, imaging.Center, imaging.Lanczos)
+	smallImg := imaging.Fill(imgSrc, rctx.Config.Features.MSC2448Blurhash.GenerateWidth, rctx.Config.Features.MSC2448Blurhash.GenerateHeight, imaging.Center, imaging.Lanczos)
 	imgBuf := &bytes.Buffer{}
 	err = imaging.Encode(imgBuf, smallImg, imaging.PNG)
 	if err != nil {
@@ -52,7 +52,7 @@ func GetOrCalculateBlurhash(media *types.Media, rctx rcontext.RequestContext) (s
 	}
 
 	rctx.Log.Info("Calculating blurhash")
-	encoded, err := blurhash.Encode(4, 3, &decoded)
+	encoded, err := blurhash.Encode(rctx.Config.Features.MSC2448Blurhash.XComponents, rctx.Config.Features.MSC2448Blurhash.YComponents, &decoded)
 	if err != nil {
 		return "", err
 	}

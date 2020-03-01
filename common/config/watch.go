@@ -60,7 +60,8 @@ func onFileChanged() {
 	bindPortChange := configNew.General.Port != configNow.General.Port
 	forwardAddressChange := configNew.General.TrustAnyForward != configNow.General.TrustAnyForward
 	forwardedHostChange := configNew.General.UseForwardedHost != configNow.General.UseForwardedHost
-	if bindAddressChange || bindPortChange || forwardAddressChange || forwardedHostChange {
+	featureChanged := hasWebFeatureChanged(configNew, configNow)
+	if bindAddressChange || bindPortChange || forwardAddressChange || forwardedHostChange || featureChanged {
 		logrus.Warn("Webserver configuration changed - remounting")
 		globals.WebReloadChan <- true
 	}
@@ -92,4 +93,12 @@ func onFileChanged() {
 
 	logrus.Info("Restarting recurring tasks")
 	globals.RecurringTasksReloadChan <- true
+}
+
+func hasWebFeatureChanged(configNew *MainRepoConfig, configNow *MainRepoConfig) bool {
+	if configNew.Features.MSC2448Blurhash.Enabled != configNow.Features.MSC2448Blurhash.Enabled {
+		return true
+	}
+
+	return false
 }
