@@ -14,6 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/api/custom"
+	"github.com/turt2live/matrix-media-repo/api/features"
 	"github.com/turt2live/matrix-media-repo/api/r0"
 	"github.com/turt2live/matrix-media-repo/api/unstable"
 	"github.com/turt2live/matrix-media-repo/common/config"
@@ -134,11 +135,11 @@ func Init() *sync.WaitGroup {
 			routes["/_matrix/media/"+version+"/local_copy/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"GET", localCopyHandler}
 			routes["/_matrix/media/"+version+"/info/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"GET", infoHandler}
 			routes["/_matrix/media/"+version+"/download/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"DELETE", purgeOneHandler}
-
-			if config.Get().Features.MSC2448Blurhash.Enabled {
-				routes["/_matrix/media/"+version+"/xyz.amorgan/upload"] = route{"POST", uploadHandler}
-			}
 		}
+	}
+
+	if config.Get().Features.MSC2448Blurhash.Enabled {
+		routes[features.MSC2448UploadRoute] = route{"POST", uploadHandler}
 	}
 
 	for routePath, route := range routes {
