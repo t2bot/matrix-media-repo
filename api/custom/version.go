@@ -10,9 +10,12 @@ import (
 
 func GetVersion(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
 	return &api.DoNotCacheResponse{
-		Payload: map[string]string{
+		Payload: map[string]interface{}{
 			"Version":   version.Version,
 			"GitCommit": version.GitCommit,
+			"unstable_features": []string{
+				"xyz.amorgan.blurhash",
+			},
 		},
 	}
 }

@@ -29,6 +29,8 @@ const selectAllBackgroundTasks = "SELECT id, task, params, start_ts, end_ts FROM
 const insertReservation = "INSERT INTO reserved_media (origin, media_id, reason) VALUES ($1, $2, $3);"
 const selectReservation = "SELECT origin, media_id, reason FROM reserved_media WHERE origin = $1 AND media_id = $2;"
 const selectMediaLastAccessed = "SELECT m.sha256_hash, m.size_bytes, m.datastore_id, m.location, m.creation_ts, a.last_access_ts FROM media AS m JOIN last_access AS a ON m.sha256_hash = a.sha256_hash WHERE a.last_access_ts < $1;"
+const insertBlurhash = "INSERT INTO blurhashes (sha256_hash, blurhash) VALUES ($1, $2);"
+const selectBlurhash = "SELECT blurhash FROM blurhashes WHERE sha256_hash = $1;"
 
 type metadataStoreStatements struct {
 	upsertLastAccessed                            *sql.Stmt
@@ -47,6 +49,8 @@ type metadataStoreStatements struct {
 	insertReservation                             *sql.Stmt
 	selectReservation                             *sql.Stmt
 	selectMediaLastAccessed                       *sql.Stmt
+	insertBlurhash                                *sql.Stmt
+	selectBlurhash                                *sql.Stmt
 }
 
 type MetadataStoreFactory struct {
@@ -112,6 +116,12 @@ func InitMetadataStore(sqlDb *sql.DB) (*MetadataStoreFactory, error) {
 		return nil, err
 	}
 	if store.stmts.selectMediaLastAccessed, err = store.sqlDb.Prepare(selectMediaLastAccessed); err != nil {
+		return nil, err
+	}
+	if store.stmts.insertBlurhash, err = store.sqlDb.Prepare(insertBlurhash); err != nil {
+		return nil, err
+	}
+	if store.stmts.selectBlurhash, err = store.sqlDb.Prepare(selectBlurhash); err != nil {
 		return nil, err
 	}
 
@@ -375,4 +385,26 @@ func (s *MetadataStore) IsReserved(origin string, mediaId string) (bool, error) 
 		return true, err
 	}
 	return true, nil
+}
+
+func (s *MetadataStore) InsertBlurhash(sha256Hash string, blurhash string) error {
+	_, err := s.statements.insertBlurhash.ExecContext(s.ctx, sha256Hash, blurhash)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *MetadataStore) GetBlurhash(sha256Hash string) (string, error) {
+	r := s.statements.selectBlurhash.QueryRowContext(s.ctx, sha256Hash)
+	var blurhash string
+
+	err := r.Scan(&blurhash)
+	if err == sql.ErrNoRows {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	return blurhash, nil
 }
