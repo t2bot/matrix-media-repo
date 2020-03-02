@@ -105,13 +105,7 @@ func PickDatastore(forKind string, ctx rcontext.RequestContext) (*DatastoreRef, 
 			dsConf.MediaKinds = common.AllKinds
 		}
 
-		allowed := false
-		for _, k := range dsConf.MediaKinds {
-			if k == forKind {
-				allowed = true
-				break
-			}
-		}
+		allowed := common.HasKind(dsConf.MediaKinds, forKind)
 		if !allowed {
 			continue
 		}
