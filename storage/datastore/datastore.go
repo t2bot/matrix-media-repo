@@ -75,10 +75,15 @@ func GetUriForDatastore(dsConf config.DatastoreConfig) string {
 	} else if dsConf.Type == "s3" {
 		endpoint, epFound := dsConf.Options["endpoint"]
 		bucket, bucketFound := dsConf.Options["bucketName"]
+		region, regionFound := dsConf.Options["region"]
 		if !epFound || !bucketFound {
 			logrus.Fatal("Missing 'endpoint' or 'bucketName' on s3 datastore")
 		}
-		return fmt.Sprintf("s3://%s/%s", endpoint, bucket)
+		if regionFound {
+			return fmt.Sprintf("s3://%s/%s?region=%s", endpoint, bucket, region)
+		} else {
+			return fmt.Sprintf("s3://%s/%s", endpoint, bucket)
+		}
 	} else {
 		logrus.Fatal("Unknown datastore type: ", dsConf.Type)
 	}

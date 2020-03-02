@@ -24,6 +24,7 @@ type s3Datastore struct {
 	dsId     string
 	client   *minio.Client
 	bucket   string
+	region string
 	tempPath string
 }
 
@@ -36,6 +37,7 @@ func GetOrCreateS3Datastore(dsId string, conf config.DatastoreConfig) (*s3Datast
 	bucket, bucketFound := conf.Options["bucketName"]
 	accessKeyId, keyFound := conf.Options["accessKeyId"]
 	accessSecret, secretFound := conf.Options["accessSecret"]
+	region, regionFound := conf.Options["region"]
 	tempPath, tempPathFound := conf.Options["tempPath"]
 	if !epFound || !bucketFound || !keyFound || !secretFound {
 		return nil, errors.New("invalid configuration: missing s3 options")
@@ -50,7 +52,14 @@ func GetOrCreateS3Datastore(dsId string, conf config.DatastoreConfig) (*s3Datast
 		useSsl, _ = strconv.ParseBool(useSslStr)
 	}
 
-	s3client, err := minio.New(endpoint, accessKeyId, accessSecret, useSsl)
+	var s3client *minio.Client
+	var err error
+
+	if regionFound {
+		s3client, err = minio.NewWithRegion(endpoint, accessKeyId, accessSecret, useSsl, region)
+	} else {
+		s3client, err = minio.New(endpoint, accessKeyId, accessSecret, useSsl)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -60,6 +69,7 @@ func GetOrCreateS3Datastore(dsId string, conf config.DatastoreConfig) (*s3Datast
 		dsId:     dsId,
 		client:   s3client,
 		bucket:   bucket,
+		region: region,
 		tempPath: tempPath,
 	}
 	stores[dsId] = s3ds
