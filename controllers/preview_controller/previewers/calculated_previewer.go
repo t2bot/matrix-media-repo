@@ -12,8 +12,8 @@ import (
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
-func GenerateCalculatedPreview(urlPayload *preview_types.UrlPayload, ctx rcontext.RequestContext) (preview_types.PreviewResult, error) {
-	bytes, filename, contentType, contentLength, err := downloadRawContent(urlPayload, ctx.Config.UrlPreviews.FilePreviewTypes, ctx)
+func GenerateCalculatedPreview(urlPayload *preview_types.UrlPayload, languageHeader string, ctx rcontext.RequestContext) (preview_types.PreviewResult, error) {
+	bytes, filename, contentType, contentLength, err := downloadRawContent(urlPayload, ctx.Config.UrlPreviews.FilePreviewTypes, languageHeader, ctx)
 	if err != nil {
 		ctx.Log.Error("Error downloading content: " + err.Error())
 

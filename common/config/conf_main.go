@@ -76,6 +76,7 @@ func NewDefaultMainConfig() MainRepoConfig {
 				AllowedNetworks: []string{
 					"0.0.0.0/0", // "Everything"
 				},
+				DefaultLanguage: "en-US,en",
 			},
 			NumWorkers: 10,
 			ExpireDays: 0,

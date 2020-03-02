@@ -17,7 +17,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
-func GetPreview(urlStr string, onHost string, forUserId string, atTs int64, ctx rcontext.RequestContext) (*types.UrlPreview, error) {
+func GetPreview(urlStr string, onHost string, forUserId string, atTs int64, languageHeader string, ctx rcontext.RequestContext) (*types.UrlPreview, error) {
 	atTs = stores.GetBucketTs(atTs)
 	cacheKey := fmt.Sprintf("%d_%s/%s", atTs, onHost, urlStr)
 	v, _, err := globals.DefaultRequestGroup.DoWithoutPost(cacheKey, func() (interface{}, error) {
@@ -28,7 +28,7 @@ func GetPreview(urlStr string, onHost string, forUserId string, atTs int64, ctx 
 
 		db := storage.GetDatabase().GetUrlStore(ctx)
 
-		cached, err := db.GetPreview(urlStr, atTs)
+		cached, err := db.GetPreview(urlStr, atTs, languageHeader)
 		if err != nil && err != sql.ErrNoRows {
 			ctx.Log.Error("Error getting cached URL preview: ", err.Error())
 			return nil, err
@@ -45,7 +45,7 @@ func GetPreview(urlStr string, onHost string, forUserId string, atTs int64, ctx 
 			// Because we don't have a cached preview, we'll use the current time as the preview time.
 			// We also give a 60 second buffer so we don't cause an infinite loop (considering we're
 			// calling ourselves), and to give a lenient opportunity for slow execution.
-			return GetPreview(urlStr, onHost, forUserId, now, ctx)
+			return GetPreview(urlStr, onHost, forUserId, now, languageHeader, ctx)
 		}
 
 		parsedUrl, err := url.Parse(urlStr)
@@ -62,7 +62,7 @@ func GetPreview(urlStr string, onHost string, forUserId string, atTs int64, ctx 
 
 		ctx.Log.Info("Preview not cached - fetching resource")
 
-		previewChan := getResourceHandler().GeneratePreview(urlToPreview, forUserId, onHost)
+		previewChan := getResourceHandler().GeneratePreview(urlToPreview, forUserId, onHost, languageHeader)
 		defer close(previewChan)
 
 		result := <-previewChan

@@ -27,6 +27,7 @@ type urlPreviewRequest struct {
 	urlPayload *preview_types.UrlPayload
 	forUserId  string
 	onHost     string
+	languageHeader string
 }
 
 type urlPreviewResponse struct {
@@ -63,12 +64,12 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) interface{} {
 
 	db := storage.GetDatabase().GetUrlStore(ctx)
 
-	preview, err := previewers.GenerateOpenGraphPreview(info.urlPayload, ctx)
+	preview, err := previewers.GenerateOpenGraphPreview(info.urlPayload, info.languageHeader, ctx)
 	if err == preview_types.ErrPreviewUnsupported {
 		ctx.Log.Info("OpenGraph preview for this URL is unsupported - treating it as a file")
 		ctx = ctx.LogWithFields(logrus.Fields{"worker_previewer": "File"})
 
-		preview, err = previewers.GenerateCalculatedPreview(info.urlPayload, ctx)
+		preview, err = previewers.GenerateCalculatedPreview(info.urlPayload, info.languageHeader, ctx)
 	}
 	if err != nil {
 		// Transparently convert "unsupported" to "not found" for processing
@@ -90,6 +91,7 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) interface{} {
 		Type:        preview.Type,
 		Description: preview.Description,
 		Title:       preview.Title,
+		LanguageHeader:info.languageHeader,
 	}
 
 	// Store the thumbnail, if there is one
@@ -134,7 +136,7 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) interface{} {
 	return &urlPreviewResponse{preview: result}
 }
 
-func (h *urlResourceHandler) GeneratePreview(urlPayload *preview_types.UrlPayload, forUserId string, onHost string) chan *urlPreviewResponse {
+func (h *urlResourceHandler) GeneratePreview(urlPayload *preview_types.UrlPayload, forUserId string, onHost string, languageHeader string) chan *urlPreviewResponse {
 	resultChan := make(chan *urlPreviewResponse)
 	go func() {
 		reqId := fmt.Sprintf("preview_%s", urlPayload.UrlString) // don't put the user id or host in the ID string
@@ -142,6 +144,7 @@ func (h *urlResourceHandler) GeneratePreview(urlPayload *preview_types.UrlPayloa
 			urlPayload: urlPayload,
 			forUserId:  forUserId,
 			onHost:     onHost,
+			languageHeader: languageHeader,
 		})
 		resultChan <- result.(*urlPreviewResponse)
 	}()

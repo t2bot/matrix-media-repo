@@ -272,6 +272,11 @@ urlPreviews:
   # zero or negative to disable. Defaults to disabled.
   expireAfterDays: 0
 
+  # The default Accept-Language header to supply when generating URL previews when one isn't
+  # supplied by the client.
+  # Reference: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Language
+  defaultLanguage: "en-US,en"
+
 # The thumbnail configuration for the media repository.
 thumbnails:
   # The maximum number of bytes an image can be before the thumbnailer refuses.

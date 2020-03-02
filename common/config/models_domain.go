@@ -54,6 +54,7 @@ type UrlPreviewsConfig struct {
 	DisallowedNetworks []string `yaml:"disallowedNetworks,flow"`
 	AllowedNetworks    []string `yaml:"allowedNetworks,flow"`
 	UnsafeCertificates bool     `yaml:"previewUnsafeCertificates"`
+	DefaultLanguage    string   `yaml:"defaultLanguage"`
 }
 
 type IdenticonsConfig struct {

@@ -16,8 +16,8 @@ import (
 
 var ogSupportedTypes = []string{"text/*"}
 
-func GenerateOpenGraphPreview(urlPayload *preview_types.UrlPayload, ctx rcontext.RequestContext) (preview_types.PreviewResult, error) {
-	html, err := downloadHtmlContent(urlPayload, ogSupportedTypes, ctx)
+func GenerateOpenGraphPreview(urlPayload *preview_types.UrlPayload, languageHeader string, ctx rcontext.RequestContext) (preview_types.PreviewResult, error) {
+	html, err := downloadHtmlContent(urlPayload, ogSupportedTypes, languageHeader, ctx)
 	if err != nil {
 		ctx.Log.Error("Error downloading content: " + err.Error())
 
@@ -72,7 +72,7 @@ func GenerateOpenGraphPreview(urlPayload *preview_types.UrlPayload, ctx rcontext
 			ParsedUrl: imgAbsUrl,
 		}
 
-		img, err := downloadImage(imgUrlPayload, ctx)
+		img, err := downloadImage(imgUrlPayload, languageHeader, ctx)
 		if err != nil {
 			ctx.Log.Error("Non-fatal error getting thumbnail (downloading image): " + err.Error())
 			return *graph, nil

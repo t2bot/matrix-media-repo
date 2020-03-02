@@ -8,8 +8,8 @@ import (
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
-const selectUrlPreview = "SELECT url, error_code, bucket_ts, site_url, site_name, resource_type, description, title, image_mxc, image_type, image_size, image_width, image_height FROM url_previews WHERE url = $1 AND bucket_ts = $2;"
-const insertUrlPreview = "INSERT INTO url_previews (url, error_code, bucket_ts, site_url, site_name, resource_type, description, title, image_mxc, image_type, image_size, image_width, image_height) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13);"
+const selectUrlPreview = "SELECT url, error_code, bucket_ts, site_url, site_name, resource_type, description, title, image_mxc, image_type, image_size, image_width, image_height, language_header FROM url_previews WHERE url = $1 AND bucket_ts = $2;"
+const insertUrlPreview = "INSERT INTO url_previews (url, error_code, bucket_ts, site_url, site_name, resource_type, description, title, image_mxc, image_type, image_size, image_width, image_height, language_header) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14);"
 const deletePreviewsOlderThan = "DELETE FROM url_previews WHERE bucket_ts <= $1;"
 
 type urlStatements struct {
@@ -56,11 +56,11 @@ func (f *UrlStoreFactory) Create(ctx rcontext.RequestContext) *UrlStore {
 	}
 }
 
-func (s *UrlStore) GetPreview(url string, ts int64) (*types.CachedUrlPreview, error) {
+func (s *UrlStore) GetPreview(url string, ts int64, languageHeader string) (*types.CachedUrlPreview, error) {
 	r := &types.CachedUrlPreview{
 		Preview: &types.UrlPreview{},
 	}
-	err := s.statements.selectUrlPreview.QueryRowContext(s.ctx, url, GetBucketTs(ts)).Scan(
+	err := s.statements.selectUrlPreview.QueryRowContext(s.ctx, url, GetBucketTs(ts), languageHeader).Scan(
 		&r.SearchUrl,
 		&r.ErrorCode,
 		&r.FetchedTs,
@@ -74,6 +74,7 @@ func (s *UrlStore) GetPreview(url string, ts int64) (*types.CachedUrlPreview, er
 		&r.Preview.ImageSize,
 		&r.Preview.ImageWidth,
 		&r.Preview.ImageHeight,
+		&r.Preview.LanguageHeader,
 	)
 
 	return r, err
@@ -95,6 +96,7 @@ func (s *UrlStore) InsertPreview(record *types.CachedUrlPreview) error {
 		record.Preview.ImageSize,
 		record.Preview.ImageWidth,
 		record.Preview.ImageHeight,
+		record.Preview.LanguageHeader,
 	)
 
 	return err

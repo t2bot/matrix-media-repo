@@ -53,7 +53,12 @@ func PreviewUrl(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo
 		return api.BadRequest("Scheme not accepted")
 	}
 
-	preview, err := preview_controller.GetPreview(urlStr, r.Host, user.UserId, ts, rctx)
+	languageHeader := rctx.Config.UrlPreviews.DefaultLanguage
+	if r.Header.Get("Accept-Language") != "" {
+		languageHeader = r.Header.Get("Accept-Language")
+	}
+
+	preview, err := preview_controller.GetPreview(urlStr, r.Host, user.UserId, ts, languageHeader, rctx)
 	if err != nil {
 		if err == common.ErrMediaNotFound || err == common.ErrHostNotFound {
 			return api.NotFoundError()
