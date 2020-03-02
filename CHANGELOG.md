@@ -9,8 +9,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
-* Added support for [MSC2448](https://github.com/matrix-org/matrix-doc/pull/2448)
+* Added support for [MSC2448](https://github.com/matrix-org/matrix-doc/pull/2448).
 * Added support for a `forKinds: ["all"]` option on datastores.
+
+### Fixed
+
+* Fixed thumbnails producing the wrong result.
 
 ## [1.0.1] - February 27, 2020
 

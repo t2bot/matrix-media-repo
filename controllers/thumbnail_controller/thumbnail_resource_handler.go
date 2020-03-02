@@ -268,7 +268,7 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 			return nil, err
 		}
 	} else {
-		src, err = thumbnailFrame(src, method, width, height, imaging.Lanczos, orientation)
+		src, err = thumbnailFrame(src, method, width, height, imaging.Linear, orientation)
 		if err != nil {
 			ctx.Log.Error("Error generating thumbnail: " + err.Error())
 			return nil, err
