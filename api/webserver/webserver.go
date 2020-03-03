@@ -89,9 +89,9 @@ func Init() *sync.WaitGroup {
 	for _, version := range versions {
 		// Standard routes we have to handle
 		routes["/_matrix/media/"+version+"/upload"] = route{"POST", uploadHandler}
-		routes["/_matrix/media/"+version+"/download/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"GET", downloadHandler}
-		routes["/_matrix/media/"+version+"/download/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}/{filename:.+}"] = route{"GET", downloadHandler}
-		routes["/_matrix/media/"+version+"/thumbnail/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"GET", thumbnailHandler}
+		routes["/_matrix/media/"+version+"/download/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}"] = route{"GET", downloadHandler}
+		routes["/_matrix/media/"+version+"/download/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}/{filename:.+}"] = route{"GET", downloadHandler}
+		routes["/_matrix/media/"+version+"/thumbnail/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}"] = route{"GET", thumbnailHandler}
 		routes["/_matrix/media/"+version+"/preview_url"] = route{"GET", previewUrlHandler}
 		routes["/_matrix/media/"+version+"/identicon/{seed:.*}"] = route{"GET", identiconHandler}
 		routes["/_matrix/media/"+version+"/config"] = route{"GET", configHandler}
@@ -99,14 +99,14 @@ func Init() *sync.WaitGroup {
 		// Routes that we define but are not part of the spec (management)
 		routes["/_matrix/media/"+version+"/admin/purge_remote"] = route{"POST", purgeRemote} // deprecated
 		routes["/_matrix/media/"+version+"/admin/purge/remote"] = route{"POST", purgeRemote}
-		routes["/_matrix/media/"+version+"/admin/purge/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"POST", purgeOneHandler}
+		routes["/_matrix/media/"+version+"/admin/purge/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}"] = route{"POST", purgeOneHandler}
 		routes["/_matrix/media/"+version+"/admin/purge/quarantined"] = route{"POST", purgeQuarantinedHandler}
 		routes["/_matrix/media/"+version+"/admin/purge/user/{userId:[^/]+}"] = route{"POST", purgeUserMediaHandler}
 		routes["/_matrix/media/"+version+"/admin/purge/room/{roomId:[^/]+}"] = route{"POST", purgeRoomHandler}
 		routes["/_matrix/media/"+version+"/admin/purge/server/{serverName:[^/]+}"] = route{"POST", purgeDomainHandler}
 		routes["/_matrix/media/"+version+"/admin/purge/old"] = route{"POST", purgeOldHandler}
 		routes["/_matrix/media/"+version+"/admin/room/{roomId:[^/]+}/quarantine"] = route{"POST", quarantineRoomHandler} // deprecated
-		routes["/_matrix/media/"+version+"/admin/quarantine/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"POST", quarantineHandler}
+		routes["/_matrix/media/"+version+"/admin/quarantine/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}"] = route{"POST", quarantineHandler}
 		routes["/_matrix/media/"+version+"/admin/quarantine/room/{roomId:[^/]+}"] = route{"POST", quarantineRoomHandler}
 		routes["/_matrix/media/"+version+"/admin/quarantine/user/{userId:[^/]+}"] = route{"POST", quarantineUserHandler}
 		routes["/_matrix/media/"+version+"/admin/quarantine/server/{serverName:[^/]+}"] = route{"POST", quarantineDomainHandler}
@@ -135,9 +135,9 @@ func Init() *sync.WaitGroup {
 		routes["/_matrix/client/"+version+"/admin/quarantine_media/{roomId:[^/]+}"] = route{"POST", quarantineRoomHandler}
 
 		if strings.Index(version, "unstable") == 0 {
-			routes["/_matrix/media/"+version+"/local_copy/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"GET", localCopyHandler}
-			routes["/_matrix/media/"+version+"/info/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"GET", infoHandler}
-			routes["/_matrix/media/"+version+"/download/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[a-zA-Z0-9.\\-_]+}"] = route{"DELETE", purgeOneHandler}
+			routes["/_matrix/media/"+version+"/local_copy/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}"] = route{"GET", localCopyHandler}
+			routes["/_matrix/media/"+version+"/info/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}"] = route{"GET", infoHandler}
+			routes["/_matrix/media/"+version+"/download/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}"] = route{"DELETE", purgeOneHandler}
 		}
 	}
 
