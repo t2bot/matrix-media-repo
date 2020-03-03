@@ -17,7 +17,7 @@ For help and support, visit [#mediarepo:t2bot.io](https://matrix.to/#/#mediarepo
 
 **Note**: developing on matrix-media-repo requires you to follow these steps at least once.
 
-Assuming Go 1.12+ is already installed on your PATH:
+Assuming Go 1.14+ is already installed on your PATH:
 ```bash
 # Get it
 git clone https://github.com/turt2live/matrix-media-repo

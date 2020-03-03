@@ -1,6 +1,6 @@
 # ---- Stage 0 ----
-# Builds media_repo and import_synapse
-FROM golang:1.12-alpine AS builder
+# Builds media repo binaries
+FROM golang:1.14-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache git musl-dev dos2unix

@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.12
+      - image: circleci/golang:1.14
         environment:
           GO111MODULE: "on"
     working_directory: /go/src/github.com/turt2live/matrix-media-repo
