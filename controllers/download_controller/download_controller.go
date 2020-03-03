@@ -98,7 +98,6 @@ func GetMedia(origin string, mediaId string, downloadRemote bool, blockForMedia 
 			}
 
 			localCache.Set(origin+"/"+mediaId, media, cache.DefaultExpiration)
-			internal_cache.Get().IncrementDownloads(media.Sha256Hash)
 
 			cached, err := internal_cache.Get().GetMedia(media, ctx)
 			if err != nil {
