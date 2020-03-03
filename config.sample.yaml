@@ -29,9 +29,11 @@ federation:
   backoffAt: 20
 
 # The database configuration for the media repository
+# Do NOT put your homeserver's existing database credentials here. Create a new database and
+# user instead. Using the same server is fine, just not the same username and database.
 database:
   # Currently only "postgres" is supported.
-  postgres: "postgres://your_username:your_password@localhost/database_name?sslmode=disable"
+  postgres: "postgres://your_username:your_password@localhost/database_name?sslmode=require"
 
   # The database pooling options
   pool:

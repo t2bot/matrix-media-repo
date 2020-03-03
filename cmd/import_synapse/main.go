@@ -38,7 +38,7 @@ func main() {
 	postgresDatabase := flag.String("dbName", "synapse", "The name of your Synapse database")
 	baseUrl := flag.String("baseUrl", "http://localhost:8008", "The base URL to access your homeserver with")
 	serverName := flag.String("serverName", "localhost", "The name of your homeserver (eg: matrix.org)")
-	configPath := flag.String("config", "media-repo.yaml", "The path to the media repo configuration (with the database section completed)")
+	configPath := flag.String("config", "media-repo.yaml", "The path to the media repo configuration (configured for the media repo's database)")
 	migrationsPath := flag.String("migrations", "./migrations", "The absolute path the media repo's migrations folder")
 	numWorkers := flag.Int("workers", 1, "The number of workers to use when downloading media. Using multiple workers risks deduplication not working as efficiently.")
 	flag.Parse()
