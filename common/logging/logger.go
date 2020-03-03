@@ -20,7 +20,7 @@ func (f utcFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 }
 
 func Setup(dir string) error {
-	logrus.SetFormatter(&utcFormatter{
+	formatter := &utcFormatter{
 		&logrus.TextFormatter{
 			TimestampFormat:  "2006-01-02 15:04:05.000 Z07:00",
 			FullTimestamp:    true,
@@ -29,7 +29,8 @@ func Setup(dir string) error {
 			DisableTimestamp: false,
 			QuoteEmptyFields: true,
 		},
-	})
+	}
+	logrus.SetFormatter(formatter)
 	logrus.SetOutput(os.Stdout)
 
 	if dir == "" || dir == "-" {
@@ -55,7 +56,7 @@ func Setup(dir string) error {
 		logrus.ErrorLevel: writer,
 		logrus.FatalLevel: writer,
 		logrus.PanicLevel: writer,
-	}))
+	}, formatter))
 
 	return nil
 }

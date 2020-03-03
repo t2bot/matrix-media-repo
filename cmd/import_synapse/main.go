@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/howeyc/gopass"
-	"github.com/jeffail/tunny"
+	"github.com/Jeffail/tunny"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/assets"

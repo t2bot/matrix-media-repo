@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/jeffail/tunny"
+	"github.com/Jeffail/tunny"
 	"github.com/olebedev/emitter"
 	"github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
