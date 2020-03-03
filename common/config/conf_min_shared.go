@@ -50,6 +50,9 @@ func NewDefaultMinimumRepoConfig() MinimumRepoConfig {
 				YComponents:     3,
 				Punch:           1,
 			},
+			IPFS: IPFSConfig{
+				Enabled: false,
+			},
 		},
 	}
 }

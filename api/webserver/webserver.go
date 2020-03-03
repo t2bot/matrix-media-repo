@@ -76,6 +76,7 @@ func Init() *sync.WaitGroup {
 	versionHandler := handler{api.AccessTokenOptionalRoute(custom.GetVersion), "get_version", counter, false}
 	blurhashRenderHandler := handler{api.AccessTokenRequiredRoute(unstable.RenderBlurhash), "render_blurhash", counter, false}
 	blurhashCalcHandler := handler{api.AccessTokenRequiredRoute(unstable.GetBlurhash), "calculate_blurhash", counter, false}
+	ipfsDownloadHandler := handler{api.AccessTokenOptionalRoute(unstable.IPFSDownload), "ipfs_download", counter, false}
 
 	routes := make(map[string]route)
 	// r0 is typically clients and v1 is typically servers. v1 is deprecated.
@@ -144,6 +145,13 @@ func Init() *sync.WaitGroup {
 		routes[features.MSC2448UploadRoute] = route{"POST", uploadHandler}
 		routes[features.MSC2448GetHashRoute] = route{"GET", blurhashCalcHandler}
 		routes[features.MSC2448AltRenderRoute] = route{"GET", blurhashRenderHandler}
+	}
+
+	if config.Get().Features.IPFS.Enabled {
+		routes[features.IPFSDownloadRoute] = route{"GET", ipfsDownloadHandler}
+		routes[features.IPFSLiveDownloadRouteR0] = route{"GET", ipfsDownloadHandler}
+		routes[features.IPFSLiveDownloadRouteV1] = route{"GET", ipfsDownloadHandler}
+		routes[features.IPFSLiveDownloadRouteUnstable] = route{"GET", ipfsDownloadHandler}
 	}
 
 	for routePath, route := range routes {

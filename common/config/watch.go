@@ -99,6 +99,9 @@ func hasWebFeatureChanged(configNew *MainRepoConfig, configNow *MainRepoConfig) 
 	if configNew.Features.MSC2448Blurhash.Enabled != configNow.Features.MSC2448Blurhash.Enabled {
 		return true
 	}
+	if configNew.Features.IPFS.Enabled != configNow.Features.IPFS.Enabled {
+		return true
+	}
 
 	return false
 }

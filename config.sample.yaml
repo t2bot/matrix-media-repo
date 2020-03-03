@@ -426,3 +426,11 @@ featureSupport:
     # The amount of contrast to apply when converting a blurhash to an image. Lower values
     # make the effect more subtle, larger values make it stronger.
     punch: 1
+
+  # IPFS Support
+  # This is currently beta and might not work at all. It also assumes you have a local IPFS
+  # agent running so it can access the HTTP API. In future these options might be moved and
+  # more configurable.
+  IPFS:
+    # Whether or not IPFS support is enabled for use in the media repo.
+    enabled: false
