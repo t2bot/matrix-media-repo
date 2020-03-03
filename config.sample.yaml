@@ -186,7 +186,7 @@ downloads:
   failureCacheMinutes: 5
 
   # The cache control settings for downloads. This can help speed up downloads for users by
-  # keeping popular media in the cache.
+  # keeping popular media in the cache. This cache is also used for thumbnails.
   cache:
     enabled: true
 

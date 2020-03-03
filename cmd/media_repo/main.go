@@ -12,6 +12,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/logging"
 	"github.com/turt2live/matrix-media-repo/common/runtime"
 	"github.com/turt2live/matrix-media-repo/common/version"
+	"github.com/turt2live/matrix-media-repo/internal_cache"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/tasks"
 )
@@ -73,6 +74,7 @@ func main() {
 
 		logrus.Info("Stopping recurring tasks...")
 		tasks.StopAll()
+		internal_cache.Get().Stop()
 	}
 
 	// Set up a listener for SIGINT

@@ -27,6 +27,7 @@ type MediaCache struct {
 	tracker       *download_tracker.DownloadTracker
 	size          int64
 	enabled       bool
+	cleanupTimer  *time.Ticker
 }
 
 type cachedFile struct {
@@ -63,7 +64,20 @@ func Get() *MediaCache {
 				cache:         cache.New(trackedMinutes, trackedMinutes*2),
 				cooldownCache: cache.New(maxCooldown*2, maxCooldown*2),
 				tracker:       download_tracker.New(config.Get().Downloads.Cache.TrackedMinutes),
+				cleanupTimer:  time.NewTicker(1000 * time.Millisecond),
 			}
+
+			go func() {
+				rctx := rcontext.Initial().LogWithFields(logrus.Fields{"task": "cache_cleanup"})
+				for _ = range instance.cleanupTimer.C {
+					rctx.Log.Info("Cleanup timer fired at")
+					maxSize := config.Get().Downloads.Cache.MaxSizeBytes
+					maxDownloads := config.Get().Downloads.Cache.MinDownloads * 10
+
+					b := instance.clearSpace(maxSize, maxDownloads, maxSize, rctx)
+					rctx.Log.Infof("Cleared %d bytes from cache during cleanup", b)
+				}
+			}()
 		}
 	})
 
@@ -80,6 +94,10 @@ func (c *MediaCache) Reset() {
 	c.cooldownCache.Flush()
 	c.size = 0
 	c.tracker.Reset()
+}
+
+func (c *MediaCache) Stop() {
+	c.cleanupTimer.Stop()
 }
 
 func (c *MediaCache) IncrementDownloads(fileHash string) {
