@@ -9,6 +9,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 *Nothing yet*.
 
+## [1.0.2] - March 3, 2020
+
+### Fixed
+
+* Fixed a bug with the cache where it would never expire old entries unless it was pressed for space.
+
 ## [1.0.1] - February 27, 2020
 
 ### Fixed
@@ -53,7 +59,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Various other features that would be expected like maximum/minimum size controls, rate limiting, etc. Check out the
   sample config for a better idea of what else is possible.
 
-[unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.0.1...HEAD
+[unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.0.2...HEAD
+[1.0.2]: https://github.com/turt2live/matrix-media-repo/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/turt2live/matrix-media-repo/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/turt2live/matrix-media-repo/compare/v1.0.0-rc.2...v1.0.0
 [1.0.0-rc.2]: https://github.com/turt2live/matrix-media-repo/compare/v1.0.0-rc.1...v1.0.0-rc.2
