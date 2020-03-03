@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"sync"
 	"time"
 
-	"github.com/howeyc/gopass"
 	"github.com/Jeffail/tunny"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
@@ -22,6 +22,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/controllers/upload_controller"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/synapse"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 type fetchRequest struct {
@@ -48,8 +49,14 @@ func main() {
 
 	var realPsqlPassword string
 	if *postgresPassword == "" {
+		if !terminal.IsTerminal(int(os.Stdin.Fd())) {
+			fmt.Println("Sorry, your terminal does not support reading passwords. Please supply a -dbPassword or use a different terminal.")
+			fmt.Println("If you're on Windows, try using a plain Command Prompt window instead of a bash-like terminal.")
+			os.Exit(1)
+			return // for good measure
+		}
 		fmt.Printf("Postgres password: ")
-		pass, err := gopass.GetPasswd()
+		pass, err := terminal.ReadPassword(int(os.Stdin.Fd()))
 		if err != nil {
 			panic(err)
 		}
