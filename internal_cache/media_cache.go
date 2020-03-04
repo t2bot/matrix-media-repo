@@ -27,6 +27,7 @@ type MediaCache struct {
 	tracker       *download_tracker.DownloadTracker
 	size          int64
 	enabled       bool
+	cleanupTimer  *time.Ticker
 }
 
 type cachedFile struct {
@@ -63,7 +64,19 @@ func Get() *MediaCache {
 				cache:         cache.New(trackedMinutes, trackedMinutes*2),
 				cooldownCache: cache.New(maxCooldown*2, maxCooldown*2),
 				tracker:       download_tracker.New(config.Get().Downloads.Cache.TrackedMinutes),
+				cleanupTimer:  time.NewTicker(5 * time.Minute),
 			}
+
+			go func() {
+				rctx := rcontext.Initial().LogWithFields(logrus.Fields{"task": "cache_cleanup"})
+				for _ = range instance.cleanupTimer.C {
+					rctx.Log.Info("Cache cleanup timer fired")
+					maxSize := config.Get().Downloads.Cache.MaxSizeBytes
+
+					b := instance.clearSpace(maxSize, math.MaxInt32, maxSize, true, rctx)
+					rctx.Log.Infof("Cleared %d bytes from cache during cleanup (%d bytes remain)", b, instance.size)
+				}
+			}()
 		}
 	})
 
@@ -80,6 +93,10 @@ func (c *MediaCache) Reset() {
 	c.cooldownCache.Flush()
 	c.size = 0
 	c.tracker.Reset()
+}
+
+func (c *MediaCache) Stop() {
+	c.cleanupTimer.Stop()
 }
 
 func (c *MediaCache) IncrementDownloads(fileHash string) {
@@ -186,7 +203,7 @@ func (c *MediaCache) updateItemInCache(recordId string, mediaSize int64, cacheFn
 		// We need to clean up some space
 		maxSizeClear := int64(math.Ceil(float64(mediaSize) * 1.25))
 		ctx.Log.Info(fmt.Sprintf("Attempting to clear %d bytes from media cache (max evict size %d bytes)", mediaSize, maxSizeClear))
-		clearedSpace := c.clearSpace(mediaSize, downloads, maxSizeClear, ctx)
+		clearedSpace := c.clearSpace(mediaSize, downloads, maxSizeClear, false, ctx)
 		ctx.Log.Info(fmt.Sprintf("Cleared %d bytes from media cache", clearedSpace))
 		freeSpace += clearedSpace
 		if freeSpace >= mediaSize {
@@ -215,7 +232,7 @@ func (c *MediaCache) updateItemInCache(recordId string, mediaSize int64, cacheFn
 				// set the maximum file size that can be cleared to the size of the cache which
 				// essentially allows us to remove anything.
 				downloadsLessThan := config.Get().Downloads.Cache.MinDownloads * 4
-				overageCleared := c.clearSpace(overage, downloadsLessThan, maxSpace, ctx) // metrics handled internally
+				overageCleared := c.clearSpace(overage, downloadsLessThan, maxSpace, true, ctx) // metrics handled internally
 				ctx.Log.Infof("Cleared %d bytes from media cache", overageCleared)
 			}
 
@@ -235,7 +252,7 @@ func (c *MediaCache) updateItemInCache(recordId string, mediaSize int64, cacheFn
 	return nil, nil
 }
 
-func (c *MediaCache) clearSpace(neededBytes int64, withDownloadsLessThan int, withSizeLessThan int64, ctx rcontext.RequestContext) int64 {
+func (c *MediaCache) clearSpace(neededBytes int64, withDownloadsLessThan int, withSizeLessThan int64, deleteEvenIfNotEnough bool, ctx rcontext.RequestContext) int64 {
 	// This should never happen, but we'll protect against it anyways. If we clear negative space we
 	// end up assuming that a very small amount being cleared is enough space for the file we're about
 	// to put in, which results in the cache growing beyond the file size limit.
@@ -253,15 +270,16 @@ func (c *MediaCache) clearSpace(neededBytes int64, withDownloadsLessThan int, wi
 	var preppedSpace int64 = 0
 	for k, item := range c.cache.Items() {
 		record := item.Object.(*cachedFile)
-		if int64(record.Contents.Len()) >= withSizeLessThan {
-			continue // file too large, cannot evict
-		}
 
 		var recordId string
 		if record.thumbnail != nil {
 			recordId = record.thumbnail.Sha256Hash
 		} else {
 			recordId = record.media.Sha256Hash
+		}
+
+		if int64(record.Contents.Len()) >= withSizeLessThan {
+			continue // file too large, cannot evict
 		}
 
 		downloads := c.tracker.NumDownloads(recordId)
@@ -281,7 +299,7 @@ func (c *MediaCache) clearSpace(neededBytes int64, withDownloadsLessThan int, wi
 		}
 	}
 
-	if preppedSpace < neededBytes {
+	if preppedSpace < neededBytes && !deleteEvenIfNotEnough {
 		// not enough space prepared - don't evict anything
 		return 0
 	}
@@ -346,14 +364,14 @@ func (c *MediaCache) checkExpiration(cd *cooldown, recordId string) bool {
 
 func (c *MediaCache) flagEvicted(recordId string) {
 	logrus.Info("Flagging " + recordId + " as evicted (overwriting any previous cooldowns)")
-	duration := int64(config.Get().Downloads.Cache.MinEvictedTimeSeconds) * 1000
-	c.cooldownCache.Set(recordId, &cooldown{isEviction: true, expiresTs: duration}, cache.DefaultExpiration)
+	expireTs := (int64(config.Get().Downloads.Cache.MinEvictedTimeSeconds) * 1000) + util.NowMillis()
+	c.cooldownCache.Set(recordId, &cooldown{isEviction: true, expiresTs: expireTs}, cache.DefaultExpiration)
 }
 
 func (c *MediaCache) flagCached(recordId string) {
 	logrus.Info("Flagging " + recordId + " as joining the cache (overwriting any previous cooldowns)")
-	duration := int64(config.Get().Downloads.Cache.MinCacheTimeSeconds) * 1000
-	c.cooldownCache.Set(recordId, &cooldown{isEviction: false, expiresTs: duration}, cache.DefaultExpiration)
+	expireTs := (int64(config.Get().Downloads.Cache.MinCacheTimeSeconds) * 1000) + util.NowMillis()
+	c.cooldownCache.Set(recordId, &cooldown{isEviction: false, expiresTs: expireTs}, cache.DefaultExpiration)
 }
 
 func (c *cooldown) IsExpired() bool {

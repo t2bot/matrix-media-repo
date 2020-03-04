@@ -159,7 +159,7 @@ func GetThumbnail(origin string, mediaId string, desiredWidth int, desiredHeight
 			}, nil
 		}
 
-		ctx.Log.Info("Reading thumbnail from disk")
+		ctx.Log.Info("Reading thumbnail from datastore")
 		mediaStream, err := datastore.DownloadStream(ctx, thumbnail.DatastoreId, thumbnail.Location)
 		if err != nil {
 			return nil, err
