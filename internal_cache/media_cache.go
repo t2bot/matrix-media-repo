@@ -364,14 +364,14 @@ func (c *MediaCache) checkExpiration(cd *cooldown, recordId string) bool {
 
 func (c *MediaCache) flagEvicted(recordId string) {
 	logrus.Info("Flagging " + recordId + " as evicted (overwriting any previous cooldowns)")
-	duration := int64(config.Get().Downloads.Cache.MinEvictedTimeSeconds) * 1000
-	c.cooldownCache.Set(recordId, &cooldown{isEviction: true, expiresTs: duration}, cache.DefaultExpiration)
+	expireTs := (int64(config.Get().Downloads.Cache.MinEvictedTimeSeconds) * 1000) + util.NowMillis()
+	c.cooldownCache.Set(recordId, &cooldown{isEviction: true, expiresTs: expireTs}, cache.DefaultExpiration)
 }
 
 func (c *MediaCache) flagCached(recordId string) {
 	logrus.Info("Flagging " + recordId + " as joining the cache (overwriting any previous cooldowns)")
-	duration := int64(config.Get().Downloads.Cache.MinCacheTimeSeconds) * 1000
-	c.cooldownCache.Set(recordId, &cooldown{isEviction: false, expiresTs: duration}, cache.DefaultExpiration)
+	expireTs := (int64(config.Get().Downloads.Cache.MinCacheTimeSeconds) * 1000) + util.NowMillis()
+	c.cooldownCache.Set(recordId, &cooldown{isEviction: false, expiresTs: expireTs}, cache.DefaultExpiration)
 }
 
 func (c *cooldown) IsExpired() bool {
