@@ -9,13 +9,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
-* Added support for a `forKinds: ["all"]` option on datastores.
 
 ## [1.0.2] - March 3, 2020
+
+### Added
+
+* Added support for a `forKinds: ["all"]` option on datastores.
 
 ### Fixed
 
 * Fixed a bug with the cache where it would never expire old entries unless it was pressed for space.
+* Fixed a bug with the cache where the minimum cache time trigger would not work.
 
 ## [1.0.1] - February 27, 2020
 
