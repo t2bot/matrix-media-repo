@@ -64,7 +64,7 @@ func Get() *MediaCache {
 				cache:         cache.New(trackedMinutes, trackedMinutes*2),
 				cooldownCache: cache.New(maxCooldown*2, maxCooldown*2),
 				tracker:       download_tracker.New(config.Get().Downloads.Cache.TrackedMinutes),
-				cleanupTimer:  time.NewTicker(1000 * time.Millisecond),
+				cleanupTimer:  time.NewTicker(5 * time.Minute),
 			}
 
 			go func() {
