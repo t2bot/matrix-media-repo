@@ -430,9 +430,13 @@ featureSupport:
     punch: 1
 
   # IPFS Support
-  # This is currently beta and might not work at all. It also assumes you have a local IPFS
-  # agent running so it can access the HTTP API. In future these options might be moved and
-  # more configurable.
+  # This is currently beta and might not work at all.
   IPFS:
     # Whether or not IPFS support is enabled for use in the media repo.
     enabled: false
+
+    # Enable this to spawn an ephemeral IPFS node (one that gets destroyed when the
+    # process exits) to use instead of a localhost HTTP agent. If this is disabled,
+    # the media repo will assume you have an HTTP IPFS agent running and accessible.
+    # Defaults to using a daemon.
+    daemon: true

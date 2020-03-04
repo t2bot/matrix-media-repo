@@ -92,4 +92,5 @@ type MSC2448Config struct {
 
 type IPFSConfig struct {
 	Enabled bool `yaml:"enabled"`
+	Daemon  bool `yaml:"daemon"`
 }

@@ -52,6 +52,7 @@ func NewDefaultMinimumRepoConfig() MinimumRepoConfig {
 			},
 			IPFS: IPFSConfig{
 				Enabled: false,
+				Daemon:  true,
 			},
 		},
 	}
