@@ -25,7 +25,6 @@ func Reload() {
 
 	if config.Get().Features.IPFS.Daemon {
 		logrus.Info("Starting up local IPFS daemon...")
-		// TODO: Make this work. It currently causes build errors.
 		impl, err := ipfs_embedded.NewEmbeddedIPFSNode()
 		if err != nil {
 			panic(err)
