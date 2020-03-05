@@ -29,6 +29,7 @@ require (
 	github.com/ipfs/go-cid v0.0.4
 	github.com/ipfs/go-ipfs v0.4.22-0.20191119151441-b8ec598d5801
 	github.com/ipfs/go-ipfs-config v0.0.11
+	github.com/ipfs/go-ipfs-files v0.0.4
 	github.com/ipfs/go-ipfs-http-client v0.0.5
 	github.com/ipfs/interface-go-ipfs-core v0.2.6
 	github.com/jehiah/go-strftime v0.0.0-20171201141054-1d33003b3869 // indirect

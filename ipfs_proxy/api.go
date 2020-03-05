@@ -1,6 +1,8 @@
 package ipfs_proxy
 
 import (
+	"io"
+
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
@@ -58,4 +60,8 @@ func getImpl() IPFSImplementation {
 
 func GetObject(contentId string, ctx rcontext.RequestContext) (*ipfs_models.IPFSObject, error) {
 	return getImpl().GetObject(contentId, ctx)
+}
+
+func PutObject(data io.Reader, ctx rcontext.RequestContext) (string, error) {
+	return getImpl().PutObject(data, ctx)
 }

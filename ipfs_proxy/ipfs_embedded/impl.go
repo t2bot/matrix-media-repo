@@ -3,6 +3,7 @@ package ipfs_embedded
 import (
 	"bytes"
 	"context"
+	"io"
 	"io/ioutil"
 	"path/filepath"
 	"sync"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/ipfs/go-cid"
 	ipfsConfig "github.com/ipfs/go-ipfs-config"
+	files "github.com/ipfs/go-ipfs-files"
 	"github.com/ipfs/go-ipfs/core"
 	"github.com/ipfs/go-ipfs/core/coreapi"
 	"github.com/ipfs/go-ipfs/core/node/libp2p"
@@ -27,13 +29,17 @@ import (
 )
 
 type IPFSEmbedded struct {
-	api  icore.CoreAPI
-	node *core.IpfsNode
+	api         icore.CoreAPI
+	node        *core.IpfsNode
+	ctx         context.Context
+	cancelCtxFn context.CancelFunc
 }
 
 func NewEmbeddedIPFSNode() (IPFSEmbedded, error) {
 	// Startup routine modified from:
 	// https://github.com/ipfs/go-ipfs/blob/083ef47ce84a5bd9a93f0ce0afaf668881dc1f35/docs/examples/go-ipfs-as-a-library/main.go
+
+	ctx, cancel := context.WithCancel(context.Background())
 
 	blank := IPFSEmbedded{}
 
@@ -85,7 +91,7 @@ func NewEmbeddedIPFSNode() (IPFSEmbedded, error) {
 	}
 
 	logrus.Info("Building IPFS embedded node")
-	node, err := core.NewNode(context.Background(), nodeOptions)
+	node, err := core.NewNode(ctx, nodeOptions)
 	if err != nil {
 		return blank, err
 	}
@@ -135,7 +141,7 @@ func NewEmbeddedIPFSNode() (IPFSEmbedded, error) {
 	for _, peerInfo := range peerInfos {
 		go func(peerInfo *peerstore.PeerInfo) {
 			defer wg.Done()
-			err := api.Swarm().Connect(context.Background(), *peerInfo)
+			err := api.Swarm().Connect(ctx, *peerInfo)
 			if err != nil {
 				logrus.Error(err)
 			} else {
@@ -147,8 +153,10 @@ func NewEmbeddedIPFSNode() (IPFSEmbedded, error) {
 
 	logrus.Info("Done building IPFS embedded node")
 	return IPFSEmbedded{
-		api:  api,
-		node: node,
+		api:         api,
+		node:        node,
+		ctx:         ctx,
+		cancelCtxFn: cancel,
 	}, nil
 }
 
@@ -160,7 +168,7 @@ func (i IPFSEmbedded) GetObject(contentId string, ctx rcontext.RequestContext) (
 	}
 
 	ctx.Log.Info("Resolving path and node")
-	timeoutCtx, cancel := context.WithTimeout(ctx.Context, 10 * time.Second)
+	timeoutCtx, cancel := context.WithTimeout(ctx.Context, 10*time.Second)
 	defer cancel()
 	ipfsPath := icorepath.IpfsPath(ipfsCid)
 	node, err := i.api.ResolveNode(timeoutCtx, ipfsPath)
@@ -177,6 +185,16 @@ func (i IPFSEmbedded) GetObject(contentId string, ctx rcontext.RequestContext) (
 	}, nil
 }
 
+func (i IPFSEmbedded) PutObject(data io.Reader, ctx rcontext.RequestContext) (string, error) {
+	ipfsFile := files.NewReaderFile(data)
+	p, err := i.api.Unixfs().Add(ctx.Context, ipfsFile)
+	if err != nil {
+		return "", err
+	}
+	return p.Cid().String(), nil
+}
+
 func (i IPFSEmbedded) Stop() {
+	i.cancelCtxFn()
 	i.node.Close()
 }
