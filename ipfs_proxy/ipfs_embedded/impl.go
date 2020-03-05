@@ -4,13 +4,16 @@ import (
 	"bytes"
 	"context"
 	"io/ioutil"
+	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/ipfs/go-cid"
 	ipfsConfig "github.com/ipfs/go-ipfs-config"
 	"github.com/ipfs/go-ipfs/core"
 	"github.com/ipfs/go-ipfs/core/coreapi"
 	"github.com/ipfs/go-ipfs/core/node/libp2p"
+	"github.com/ipfs/go-ipfs/plugin/loader"
 	"github.com/ipfs/go-ipfs/repo/fsrepo"
 	icore "github.com/ipfs/interface-go-ipfs-core"
 	icorepath "github.com/ipfs/interface-go-ipfs-core/path"
@@ -34,22 +37,41 @@ func NewEmbeddedIPFSNode() (IPFSEmbedded, error) {
 
 	blank := IPFSEmbedded{}
 
+	// Load plugins
+	logrus.Info("Loading plugins for IPFS embedded node...")
+	plugins, err := loader.NewPluginLoader(filepath.Join(".", "plugins"))
+	if err != nil {
+		return blank, err
+	}
+	err = plugins.Initialize()
+	if err != nil {
+		return blank, err
+	}
+	err = plugins.Inject()
+	if err != nil {
+		return blank, err
+	}
+
 	// Create the repo (in ephemeral space)
+	logrus.Info("Creating temporary directory for IPFS embedded node")
 	repoPath, err := ioutil.TempDir("", "ipfs-shell")
 	if err != nil {
 		return blank, err
 	}
 
+	logrus.Info("Generating config for IPFS embedded node")
 	cfg, err := ipfsConfig.Init(ioutil.Discard, 2048)
 	if err != nil {
 		return blank, err
 	}
 
+	logrus.Info("Initializing IPFS embedded node")
 	err = fsrepo.Init(repoPath, cfg)
 	if err != nil {
 		return blank, err
 	}
 
+	logrus.Info("Starting fsrepo for IPFS embedded node")
 	repo, err := fsrepo.Open(repoPath)
 	if err != nil {
 		return blank, err
@@ -62,17 +84,20 @@ func NewEmbeddedIPFSNode() (IPFSEmbedded, error) {
 		Repo:    repo,
 	}
 
+	logrus.Info("Building IPFS embedded node")
 	node, err := core.NewNode(context.Background(), nodeOptions)
 	if err != nil {
 		return blank, err
 	}
 
+	logrus.Info("Generating API reference for IPFS embedded node")
 	api, err := coreapi.NewCoreAPI(node)
 	if err != nil {
 		return blank, err
 	}
 
 	// Connect to peers so we can actually get started
+	logrus.Info("Connecting to peers for IPFS embedded node")
 	bootstrapNodes := []string{
 		// IPFS Bootstrapper nodes.
 		"/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
@@ -113,11 +138,14 @@ func NewEmbeddedIPFSNode() (IPFSEmbedded, error) {
 			err := api.Swarm().Connect(context.Background(), *peerInfo)
 			if err != nil {
 				logrus.Error(err)
+			} else {
+				logrus.Infof("Connected to %s as a peer", peerInfo.String())
 			}
 		}(peerInfo)
 	}
 	wg.Wait()
 
+	logrus.Info("Done building IPFS embedded node")
 	return IPFSEmbedded{
 		api:  api,
 		node: node,
@@ -125,17 +153,22 @@ func NewEmbeddedIPFSNode() (IPFSEmbedded, error) {
 }
 
 func (i IPFSEmbedded) GetObject(contentId string, ctx rcontext.RequestContext) (*ipfs_models.IPFSObject, error) {
+	ctx.Log.Info("Getting object from embedded IPFS node")
 	ipfsCid, err := cid.Decode(contentId)
 	if err != nil {
 		return nil, err
 	}
 
+	ctx.Log.Info("Resolving path and node")
+	timeoutCtx, cancel := context.WithTimeout(ctx.Context, 10 * time.Second)
+	defer cancel()
 	ipfsPath := icorepath.IpfsPath(ipfsCid)
-	node, err := i.api.ResolveNode(ctx.Context, ipfsPath)
+	node, err := i.api.ResolveNode(timeoutCtx, ipfsPath)
 	if err != nil {
 		return nil, err
 	}
 
+	ctx.Log.Info("Returning object")
 	return &ipfs_models.IPFSObject{
 		ContentType: "application/octet-stream", // TODO: Actually fetch
 		FileName:    "ipfs.dat",                 // TODO: Actually fetch

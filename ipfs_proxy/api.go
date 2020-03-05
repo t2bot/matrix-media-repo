@@ -4,6 +4,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
+	"github.com/turt2live/matrix-media-repo/ipfs_proxy/ipfs_embedded"
 	"github.com/turt2live/matrix-media-repo/ipfs_proxy/ipfs_local"
 	"github.com/turt2live/matrix-media-repo/ipfs_proxy/ipfs_models"
 )
@@ -23,11 +24,11 @@ func Reload() {
 	if config.Get().Features.IPFS.Daemon {
 		logrus.Info("Starting up local IPFS daemon...")
 		// TODO: Make this work. It currently causes build errors.
-		//impl, err := ipfs_embedded.NewEmbeddedIPFSNode()
-		//if err != nil {
-		//	panic(err)
-		//}
-		//implementation = impl
+		impl, err := ipfs_embedded.NewEmbeddedIPFSNode()
+		if err != nil {
+			panic(err)
+		}
+		implementation = impl
 	} else {
 		logrus.Info("Using localhost IPFS HTTP agent...")
 		impl, err := ipfs_local.NewLocalIPFSImplementation()
