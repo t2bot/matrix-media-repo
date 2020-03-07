@@ -2,7 +2,10 @@ package ipfs_local
 
 import (
 	"bytes"
+	"context"
 	"io"
+	"io/ioutil"
+	"time"
 
 	"github.com/ipfs/go-cid"
 	files "github.com/ipfs/go-ipfs-files"
@@ -30,8 +33,16 @@ func (i IPFSLocal) GetObject(contentId string, ctx rcontext.RequestContext) (*ip
 		return nil, err
 	}
 
+	timeoutCtx, cancel := context.WithTimeout(ctx.Context, 10*time.Second)
+	defer cancel()
+
 	ipfsPath := path.IpfsPath(ipfsCid)
-	node, err := i.client.ResolveNode(ctx.Context, ipfsPath)
+	r, err := i.client.Object().Data(timeoutCtx, ipfsPath)
+	if err != nil {
+		return nil, err
+	}
+
+	b, err := ioutil.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}
@@ -39,8 +50,8 @@ func (i IPFSLocal) GetObject(contentId string, ctx rcontext.RequestContext) (*ip
 	return &ipfs_models.IPFSObject{
 		ContentType: "application/octet-stream", // TODO: Actually fetch
 		FileName:    "ipfs.dat",                 // TODO: Actually fetch
-		SizeBytes:   int64(len(node.RawData())),
-		Data:        util.BufferToStream(bytes.NewBuffer(node.RawData())), // stream to avoid log spam
+		SizeBytes:   int64(len(b)),
+		Data:        util.BufferToStream(bytes.NewBuffer(b)), // stream to avoid log spam
 	}, nil
 }
 

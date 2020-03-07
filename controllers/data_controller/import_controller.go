@@ -227,7 +227,7 @@ func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx
 			if found {
 				ctx.Log.Info("Using file from memory")
 				closer := util.BufferToStream(buf)
-				_, err := upload_controller.StoreDirect(closer, record.SizeBytes, record.ContentType, record.FileName, userId, record.Origin, record.MediaId, kind, ctx)
+				_, err := upload_controller.StoreDirect(nil, closer, record.SizeBytes, record.ContentType, record.FileName, userId, record.Origin, record.MediaId, kind, ctx)
 				if err != nil {
 					ctx.Log.Errorf("Error importing file: %s", err.Error())
 					continue
@@ -310,7 +310,7 @@ func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx
 						continue
 					}
 
-					_, err = upload_controller.StoreDirect(r.Body, r.ContentLength, record.ContentType, record.FileName, userId, record.Origin, record.MediaId, kind, ctx)
+					_, err = upload_controller.StoreDirect(nil, r.Body, r.ContentLength, record.ContentType, record.FileName, userId, record.Origin, record.MediaId, kind, ctx)
 					if err != nil {
 						ctx.Log.Errorf("Error importing file: %s", err.Error())
 						continue
