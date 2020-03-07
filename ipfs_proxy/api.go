@@ -23,7 +23,7 @@ func Reload() {
 		return
 	}
 
-	if config.Get().Features.IPFS.Daemon {
+	if config.Get().Features.IPFS.Daemon.Enabled {
 		logrus.Info("Starting up local IPFS daemon...")
 		impl, err := ipfs_embedded.NewEmbeddedIPFSNode()
 		if err != nil {

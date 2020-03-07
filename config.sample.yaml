@@ -435,8 +435,14 @@ featureSupport:
     # Whether or not IPFS support is enabled for use in the media repo.
     enabled: false
 
-    # Enable this to spawn an ephemeral IPFS node (one that gets destroyed when the
-    # process exits) to use instead of a localhost HTTP agent. If this is disabled,
-    # the media repo will assume you have an HTTP IPFS agent running and accessible.
-    # Defaults to using a daemon.
-    daemon: true
+    # Options for the built in IPFS daemon
+    builtInDaemon:
+      # Enable this to spawn an in-process IPFS node to use instead of a localhost
+      # HTTP agent. If this is disabled, the media repo will assume you have an HTTP
+      # IPFS agent running and accessible. Defaults to using a daemon (true).
+      enabled: true
+
+      # If the Daemon is enabled, set this to the location where the IPFS files should
+      # be stored. If you're using Docker, this should be something like "/data/ipfs"
+      # so it can be mapped to a volume.
+      repoPath: "./ipfs"

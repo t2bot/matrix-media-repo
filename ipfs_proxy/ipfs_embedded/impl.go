@@ -5,6 +5,7 @@ import (
 	"context"
 	"io"
 	"io/ioutil"
+	"path"
 	"path/filepath"
 	"sync"
 	"time"
@@ -23,6 +24,7 @@ import (
 	peerstore "github.com/libp2p/go-libp2p-peerstore"
 	"github.com/multiformats/go-multiaddr"
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/ipfs_proxy/ipfs_models"
 	"github.com/turt2live/matrix-media-repo/util"
@@ -39,13 +41,16 @@ func NewEmbeddedIPFSNode() (IPFSEmbedded, error) {
 	// Startup routine modified from:
 	// https://github.com/ipfs/go-ipfs/blob/083ef47ce84a5bd9a93f0ce0afaf668881dc1f35/docs/examples/go-ipfs-as-a-library/main.go
 
+	basePath := config.Get().Features.IPFS.Daemon.RepoPath
+	dataPath := path.Join(basePath, "data")
+
 	ctx, cancel := context.WithCancel(context.Background())
 
 	blank := IPFSEmbedded{}
 
 	// Load plugins
 	logrus.Info("Loading plugins for IPFS embedded node...")
-	plugins, err := loader.NewPluginLoader(filepath.Join(".", "plugins"))
+	plugins, err := loader.NewPluginLoader(filepath.Join(basePath, "plugins"))
 	if err != nil {
 		return blank, err
 	}
@@ -58,13 +63,6 @@ func NewEmbeddedIPFSNode() (IPFSEmbedded, error) {
 		return blank, err
 	}
 
-	// Create the repo (in ephemeral space)
-	logrus.Info("Creating temporary directory for IPFS embedded node")
-	repoPath, err := ioutil.TempDir("", "ipfs-shell")
-	if err != nil {
-		return blank, err
-	}
-
 	logrus.Info("Generating config for IPFS embedded node")
 	cfg, err := ipfsConfig.Init(ioutil.Discard, 2048)
 	if err != nil {
@@ -72,13 +70,13 @@ func NewEmbeddedIPFSNode() (IPFSEmbedded, error) {
 	}
 
 	logrus.Info("Initializing IPFS embedded node")
-	err = fsrepo.Init(repoPath, cfg)
+	err = fsrepo.Init(dataPath, cfg)
 	if err != nil {
 		return blank, err
 	}
 
 	logrus.Info("Starting fsrepo for IPFS embedded node")
-	repo, err := fsrepo.Open(repoPath)
+	repo, err := fsrepo.Open(dataPath)
 	if err != nil {
 		return blank, err
 	}

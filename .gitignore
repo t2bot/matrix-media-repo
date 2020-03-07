@@ -6,6 +6,7 @@
 /vendor
 /config
 /gdpr-data
+/ipfs
 
 # Generated files
 assets.bin.go
