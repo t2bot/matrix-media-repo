@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Added support for specifying a `region` to the S3 provider.
 * Pass-through the `Accept-Language` header for URL previews, with options to set a default.
 * Experimental support for IPFS.
+* Consistent inclusion of a charset for certain text `Content-Type`s
 
 ### Fixed
 
