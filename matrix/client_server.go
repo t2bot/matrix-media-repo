@@ -31,7 +31,7 @@ func doRequest(ctx rcontext.RequestContext, method string, urlStr string, body i
 	}
 
 	req.Header.Set("User-Agent", "matrix-media-repo")
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
 	if accessToken != "" {
 		req.Header.Set("Authorization", "Bearer "+accessToken)
 	}

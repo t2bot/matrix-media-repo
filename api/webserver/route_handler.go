@@ -160,8 +160,30 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			"method":     r.Method,
 			"statusCode": strconv.Itoa(http.StatusOK),
 		}).Inc()
+
+		textTypes := []string{
+			"text/css",
+			"text/csv",
+			"text/html",
+			"text/calendar",
+			"text/plain",
+			"text/javascript",
+			"application/json",
+			"application/ld+json",
+			"application/rtf",
+			"image/svg+xml",
+			"text/xml",
+		}
+		contentType := strings.ToLower(result.ContentType)
+		for _, v := range textTypes {
+			if contentType == v {
+				contentType += "; charset=UTF-8"
+				break
+			}
+		}
+
 		w.Header().Set("Cache-Control", "private, max-age=259200") // 3 days
-		w.Header().Set("Content-Type", result.ContentType)
+		w.Header().Set("Content-Type", contentType)
 		if result.SizeBytes > 0 {
 			w.Header().Set("Content-Length", fmt.Sprint(result.SizeBytes))
 		}
@@ -192,7 +214,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			"method":     r.Method,
 			"statusCode": strconv.Itoa(http.StatusOK),
 		}).Inc()
-		w.Header().Set("Content-Type", "text/html")
+		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
 		w.Header().Set("Content-Security-Policy", "") // We're serving HTML, so take away the CSP
 		io.Copy(w, bytes.NewBuffer([]byte(result.HTML)))
 		return
@@ -208,7 +230,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}).Inc()
 
 	// Order is important: Set headers before sending responses
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(statusCode)
 
 	encoder := json.NewEncoder(w)
