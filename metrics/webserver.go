@@ -13,14 +13,22 @@ import (
 
 var srv *http.Server
 
+func internalHandler(res http.ResponseWriter, req *http.Request) {
+	logrus.Info("Updating live metrics for cache")
+	for _, fn := range beforeMetricsCalledFns {
+		fn()
+	}
+	promhttp.Handler().ServeHTTP(res, req)
+}
+
 func Init() {
 	if !config.Get().Metrics.Enabled {
 		logrus.Info("Metrics disabled")
 		return
 	}
 	rtr := http.NewServeMux()
-	rtr.Handle("/metrics", promhttp.Handler())
-	rtr.Handle("/_media/metrics", promhttp.Handler())
+	rtr.HandleFunc("/metrics", internalHandler)
+	rtr.HandleFunc("/_media/metrics", internalHandler)
 
 	address := config.Get().Metrics.BindAddress + ":" + strconv.Itoa(config.Get().Metrics.Port)
 	srv = &http.Server{Addr: address, Handler: rtr}

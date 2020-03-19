@@ -70,6 +70,11 @@ func Get() *MediaCache {
 				logrus.Infof("Record %s has been evicted from the cache", recordId)
 			})
 
+			metrics.OnBeforeMetricsRequested(func() {
+				metrics.CacheLiveNumBytes.With(prometheus.Labels{"cache": "media"}).Set(float64(instance.getUnderlyingUsedBytes()))
+				metrics.CacheNumLiveItems.With(prometheus.Labels{"cache": "media"}).Set(float64(instance.getUnderlyingItemCount()))
+			})
+
 			go func() {
 				rctx := rcontext.Initial().LogWithFields(logrus.Fields{"task": "cache_cleanup"})
 				for _ = range instance.cleanupTimer.C {
@@ -100,6 +105,19 @@ func (c *MediaCache) Reset() {
 
 func (c *MediaCache) Stop() {
 	c.cleanupTimer.Stop()
+}
+
+func (c *MediaCache) getUnderlyingUsedBytes() int64 {
+	var size int64 = 0
+	for _, entry := range c.cache.Items() {
+		f := entry.Object.(*cachedFile)
+		size += int64(f.Contents.Len())
+	}
+	return size
+}
+
+func (c *MediaCache) getUnderlyingItemCount() int {
+	return c.cache.ItemCount()
 }
 
 func (c *MediaCache) IncrementDownloads(fileHash string) {
