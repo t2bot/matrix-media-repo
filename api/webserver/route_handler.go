@@ -161,7 +161,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			"statusCode": strconv.Itoa(http.StatusOK),
 		}).Inc()
 
-		textTypes := [11]string{
+		textTypes := []string{
 			"text/css",
 			"text/csv",
 			"text/html",
@@ -172,9 +172,9 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			"application/ld+json",
 			"application/rtf",
 			"image/svg+xml",
-			"text/xml"}
+			"text/xml",
+		}
 		contentType := strings.ToLower(result.ContentType)
-
 		for _, v := range textTypes {
 			if contentType == v {
 				contentType += "; charset=UTF-8"
