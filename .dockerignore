@@ -5,6 +5,8 @@
 /logs
 /vendor
 /config
+/gdpr-data
+/ipfs
 
 media-repo*.yaml
 homeserver.yaml

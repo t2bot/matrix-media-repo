@@ -91,5 +91,11 @@ type MSC2448Config struct {
 }
 
 type IPFSConfig struct {
-	Enabled bool `yaml:"enabled"`
+	Enabled bool             `yaml:"enabled"`
+	Daemon  IPFSDaemonConfig `yaml:"builtInDaemon"`
+}
+
+type IPFSDaemonConfig struct {
+	Enabled  bool   `yaml:"enabled"`
+	RepoPath string `yaml:"repoPath"`
 }

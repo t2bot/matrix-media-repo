@@ -26,7 +26,10 @@ require (
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
 	github.com/gorilla/mux v1.7.4
 	github.com/h2non/filetype v1.0.12
-	github.com/ipfs/go-cid v0.0.3
+	github.com/ipfs/go-cid v0.0.4
+	github.com/ipfs/go-ipfs v0.4.22-0.20191119151441-b8ec598d5801
+	github.com/ipfs/go-ipfs-config v0.0.11
+	github.com/ipfs/go-ipfs-files v0.0.4
 	github.com/ipfs/go-ipfs-http-client v0.0.5
 	github.com/ipfs/interface-go-ipfs-core v0.2.6
 	github.com/jehiah/go-strftime v0.0.0-20171201141054-1d33003b3869 // indirect
@@ -35,8 +38,11 @@ require (
 	github.com/lestrrat/go-file-rotatelogs v0.0.0-20180223000712-d3151e2a480f
 	github.com/lestrrat/go-strftime v0.0.0-20180220042222-ba3bf9c1d042 // indirect
 	github.com/lib/pq v1.3.0
+	github.com/libp2p/go-libp2p-core v0.2.5
+	github.com/libp2p/go-libp2p-peerstore v0.1.3
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible // indirect
 	github.com/minio/minio-go v6.0.14+incompatible
+	github.com/multiformats/go-multiaddr v0.1.2
 	github.com/olebedev/emitter v0.0.0-20190110104742-e8d1457e6aee
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/peterbourgon/g2s v0.0.0-20170223122336-d4e7ad98afea // indirect

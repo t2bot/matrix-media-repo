@@ -2,6 +2,7 @@ package upload_controller
 
 import (
 	"database/sql"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"strconv"
@@ -18,6 +19,11 @@ import (
 )
 
 const NoApplicableUploadUser = ""
+
+type AlreadyUploadedFile struct {
+	DS         *datastore.DatastoreRef
+	ObjectInfo *types.ObjectInfo
+}
 
 func IsRequestTooLarge(contentLength int64, contentLengthHeader string, ctx rcontext.RequestContext) bool {
 	if ctx.Config.Uploads.MaxSizeBytes <= 0 {
@@ -124,7 +130,25 @@ func UploadMedia(contents io.ReadCloser, contentLength int64, contentType string
 		}
 	}
 
-	return StoreDirect(data, contentLength, contentType, filename, userId, origin, mediaId, common.KindLocalMedia, ctx)
+	var existingFile *AlreadyUploadedFile = nil
+	ds, err := datastore.PickDatastore(common.KindLocalMedia, ctx)
+	if err != nil {
+		return nil, err
+	}
+	if ds.Type == "ipfs" {
+		// Do the upload now so we can pick the media ID to point to IPFS
+		info, err := ds.UploadFile(data, contentLength, ctx)
+		if err != nil {
+			return nil, err
+		}
+		existingFile = &AlreadyUploadedFile{
+			DS:         ds,
+			ObjectInfo: info,
+		}
+		mediaId = fmt.Sprintf("ipfs:%s", info.Location[len("ipfs/"):])
+	}
+
+	return StoreDirect(existingFile, data, contentLength, contentType, filename, userId, origin, mediaId, common.KindLocalMedia, ctx)
 }
 
 func trackUploadAsLastAccess(ctx rcontext.RequestContext, media *types.Media) {
@@ -177,14 +201,24 @@ func IsAllowed(contentType string, reportedContentType string, userId string, ct
 	return allowed
 }
 
-func StoreDirect(contents io.ReadCloser, expectedSize int64, contentType string, filename string, userId string, origin string, mediaId string, kind string, ctx rcontext.RequestContext) (*types.Media, error) {
-	ds, err := datastore.PickDatastore(kind, ctx)
-	if err != nil {
-		return nil, err
-	}
-	info, err := ds.UploadFile(contents, expectedSize, ctx)
-	if err != nil {
-		return nil, err
+func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize int64, contentType string, filename string, userId string, origin string, mediaId string, kind string, ctx rcontext.RequestContext) (*types.Media, error) {
+	var ds *datastore.DatastoreRef
+	var info *types.ObjectInfo
+	if f == nil {
+		dsPicked, err := datastore.PickDatastore(kind, ctx)
+		if err != nil {
+			return nil, err
+		}
+		ds = dsPicked
+
+		fInfo, err := ds.UploadFile(contents, expectedSize, ctx)
+		if err != nil {
+			return nil, err
+		}
+		info = fInfo
+	} else {
+		ds = f.DS
+		info = f.ObjectInfo
 	}
 
 	stream, err := ds.DownloadFile(info.Location)
