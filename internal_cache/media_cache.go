@@ -61,7 +61,7 @@ func Get() *MediaCache {
 			instance = &MediaCache{
 				enabled:       true,
 				size:          0,
-				cache:         cache.New(trackedMinutes, trackedMinutes*2),
+				cache:         cache.New(trackedMinutes, -1), // we manually clear the cache, so no need for an expiration timer
 				cooldownCache: cache.New(maxCooldown*2, maxCooldown*2),
 				tracker:       download_tracker.New(config.Get().Downloads.Cache.TrackedMinutes),
 				cleanupTimer:  time.NewTicker(5 * time.Minute),
@@ -218,7 +218,7 @@ func (c *MediaCache) updateItemInCache(recordId string, mediaSize int64, cacheFn
 			}
 			metrics.CacheNumItems.With(prometheus.Labels{"cache": "media"}).Inc()
 			metrics.CacheNumBytes.With(prometheus.Labels{"cache": "media"}).Set(float64(c.size))
-			c.cache.Set(recordId, cachedItem, cache.DefaultExpiration)
+			c.cache.Set(recordId, cachedItem, cache.NoExpiration)
 		}
 
 		// We need to clean up some space
@@ -240,7 +240,7 @@ func (c *MediaCache) updateItemInCache(recordId string, mediaSize int64, cacheFn
 			metrics.CacheHits.With(prometheus.Labels{"cache": "media"}).Inc()
 			metrics.CacheNumItems.With(prometheus.Labels{"cache": "media"}).Inc()
 			metrics.CacheNumBytes.With(prometheus.Labels{"cache": "media"}).Set(float64(c.size))
-			c.cache.Set(recordId, cachedItem, cache.DefaultExpiration)
+			c.cache.Set(recordId, cachedItem, cache.NoExpiration)
 
 			// This should never happen, but we'll be aggressive in how we handle it.
 			if c.size > maxSpace {
