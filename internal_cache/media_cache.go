@@ -232,6 +232,7 @@ func (c *MediaCache) updateItemInCache(recordId string, mediaSize int64, cacheFn
 			metrics.CacheNumBytes.With(prometheus.Labels{"cache": "media"}).Set(float64(c.size))
 			c.cache.Set(recordId, cachedItem, cache.NoExpiration)
 			rwLock.Unlock()
+			return cachedItem, nil
 		}
 
 		// We need to clean up some space
