@@ -117,7 +117,8 @@ datastores:
       #region: "sfo2"
 
   # The media repo does support an IPFS datastore, but only if the IPFS feature is enabled. If
-  # the feature is not enabled, this will not work.
+  # the feature is not enabled, this will not work. Note that IPFS support is experimental at
+  # the moment and not recommended for general use.
   #
   # NOTE: Everything you upload to IPFS will be publicly accessible, even when the media repo
   # puts authentication on the download endpoints. Only use this option for cases where you
@@ -444,7 +445,7 @@ featureSupport:
     punch: 1
 
   # IPFS Support
-  # This is currently beta and might not work at all.
+  # This is currently experimental and might not work at all.
   IPFS:
     # Whether or not IPFS support is enabled for use in the media repo.
     enabled: false
