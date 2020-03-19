@@ -87,6 +87,13 @@ func onFileChanged() {
 		logrus.Warn("Log configuration changed - restart the media repo to apply changes")
 	}
 
+	ipfsDaemonChange := configNew.Features.IPFS.Daemon.Enabled != configNow.Features.IPFS.Daemon.Enabled
+	ipfsDaemonPathChange := configNew.Features.IPFS.Daemon.RepoPath != configNow.Features.IPFS.Daemon.RepoPath
+	if ipfsDaemonChange || ipfsDaemonPathChange {
+		logrus.Warn("IPFS Daemon options changed - reloading")
+		globals.IPFSReloadChan <- true
+	}
+
 	// Always update the datastores
 	logrus.Warn("Updating datastores to ensure accuracy")
 	globals.DatastoresReloadChan <- true

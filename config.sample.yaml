@@ -97,6 +97,7 @@ datastores:
     forKinds: ["thumbnails"]
     opts:
       path: /var/matrix/media
+
   - type: s3
     enabled: false # Enable this to set up s3 uploads
     forKinds: ["thumbnails", "remote_media", "local_media", "archives"]
@@ -114,6 +115,20 @@ datastores:
       # An optional region for where this S3 endpoint is located. Typically not needed, though
       # some providers will need this (like Scaleway). Uncomment to use.
       #region: "sfo2"
+
+  # The media repo does support an IPFS datastore, but only if the IPFS feature is enabled. If
+  # the feature is not enabled, this will not work. Note that IPFS support is experimental at
+  # the moment and not recommended for general use.
+  #
+  # NOTE: Everything you upload to IPFS will be publicly accessible, even when the media repo
+  # puts authentication on the download endpoints. Only use this option for cases where you
+  # expect your media to be publicly accessible.
+  - type: ipfs
+    enabled: false # Enable this to use IPFS support
+    forKinds: ["local_media"]
+    # The IPFS datastore currently has no options. It will use the daemon or HTTP API configured
+    # in the IPFS section of your main config.
+    opts: {}
 
 # Options for controlling archives. Archives are exports of a particular user's content for
 # the purpose of GDPR or moving media to a different server.
@@ -430,9 +445,19 @@ featureSupport:
     punch: 1
 
   # IPFS Support
-  # This is currently beta and might not work at all. It also assumes you have a local IPFS
-  # agent running so it can access the HTTP API. In future these options might be moved and
-  # more configurable.
+  # This is currently experimental and might not work at all.
   IPFS:
     # Whether or not IPFS support is enabled for use in the media repo.
     enabled: false
+
+    # Options for the built in IPFS daemon
+    builtInDaemon:
+      # Enable this to spawn an in-process IPFS node to use instead of a localhost
+      # HTTP agent. If this is disabled, the media repo will assume you have an HTTP
+      # IPFS agent running and accessible. Defaults to using a daemon (true).
+      enabled: true
+
+      # If the Daemon is enabled, set this to the location where the IPFS files should
+      # be stored. If you're using Docker, this should be something like "/data/ipfs"
+      # so it can be mapped to a volume.
+      repoPath: "./ipfs"

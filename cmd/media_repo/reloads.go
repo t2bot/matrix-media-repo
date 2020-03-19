@@ -4,6 +4,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/api/webserver"
 	"github.com/turt2live/matrix-media-repo/common/globals"
 	"github.com/turt2live/matrix-media-repo/common/runtime"
+	"github.com/turt2live/matrix-media-repo/ipfs_proxy"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/tasks"
@@ -15,6 +16,7 @@ func setupReloads() {
 	reloadDatabaseOnChan(globals.DatabaseReloadChan)
 	reloadDatastoresOnChan(globals.DatastoresReloadChan)
 	reloadRecurringTasksOnChan(globals.RecurringTasksReloadChan)
+	reloadIpfsOnChan(globals.IPFSReloadChan)
 }
 
 func stopReloads() {
@@ -24,6 +26,7 @@ func stopReloads() {
 	globals.DatabaseReloadChan <- false
 	globals.DatastoresReloadChan <- false
 	globals.RecurringTasksReloadChan <- false
+	globals.IPFSReloadChan <- false
 }
 
 func reloadWebOnChan(reloadChan chan bool) {
@@ -89,6 +92,19 @@ func reloadRecurringTasksOnChan(reloadChan chan bool) {
 				tasks.StartAll()
 			} else {
 				return // received stop
+			}
+		}
+	}()
+}
+
+func reloadIpfsOnChan(reloadChan chan bool) {
+	go func() {
+		for {
+			shouldReload := <-reloadChan
+			if shouldReload {
+				ipfs_proxy.Reload()
+			} else {
+				ipfs_proxy.Stop()
 			}
 		}
 	}()

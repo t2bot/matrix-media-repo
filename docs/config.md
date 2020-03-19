@@ -54,6 +54,7 @@ Any options from the main config can then be overridden per-domain with the exce
 * `downloads.expireAfterDays` - because remote media downloads are not for any particular domain.
 * `thumbnails.expireAfterDays` - because thumbnails aren't associated with any particular domain.
 * `urlPreviews.expireAfterDays` - because previews aren't associated with any particular domain.
+* `featureSupport.IPFS.builtInDaemon` - because spawning multiple daemons doesn't make sense.
 
 To override a value, simply provide it in any valid per-domain config:
 

@@ -84,6 +84,8 @@ func GetUriForDatastore(dsConf config.DatastoreConfig) string {
 		} else {
 			return fmt.Sprintf("s3://%s/%s", endpoint, bucket)
 		}
+	} else if dsConf.Type == "ipfs" {
+		return "ipfs://localhost"
 	} else {
 		logrus.Fatal("Unknown datastore type: ", dsConf.Type)
 	}
