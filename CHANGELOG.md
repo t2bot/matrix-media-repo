@@ -27,6 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Changed
 
 * Updated to Go 1.14
+* Updated the Grafana dashboard and moved it in-tree.
 
 ## [1.0.2] - March 3, 2020
 
