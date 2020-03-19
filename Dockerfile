@@ -3,7 +3,7 @@
 FROM golang:1.14-alpine AS builder
 
 # Install build dependencies
-RUN apk add --no-cache git musl-dev dos2unix
+RUN apk add --no-cache git musl-dev dos2unix build-base
 
 WORKDIR /opt
 COPY . /opt
