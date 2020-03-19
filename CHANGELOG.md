@@ -22,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Fixed `expireAfterDays` for thumbnails potentially deleting media under some conditions.
 * Fixed a bug where items could be double-counted (but not double-stored) in the cache.
 * Fixed the cache metrics reporting inaccurate values.
+* Fixed a general memory leak in the cache due to inaccurate counting of items in the cache.
 
 ### Changed
 
