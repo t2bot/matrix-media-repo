@@ -66,6 +66,9 @@ func Get() *MediaCache {
 				tracker:       download_tracker.New(config.Get().Downloads.Cache.TrackedMinutes),
 				cleanupTimer:  time.NewTicker(5 * time.Minute),
 			}
+			instance.cache.OnEvicted(func(recordId string, item interface{}) {
+				logrus.Infof("Record %s has been evicted from the cache", recordId)
+			})
 
 			go func() {
 				rctx := rcontext.Initial().LogWithFields(logrus.Fields{"task": "cache_cleanup"})
