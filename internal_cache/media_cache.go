@@ -43,6 +43,7 @@ type cooldown struct {
 
 var instance *MediaCache
 var lock = &sync.Once{}
+var rwLock = &sync.RWMutex{}
 
 func Get() *MediaCache {
 	if instance != nil {
@@ -97,10 +98,12 @@ func (c *MediaCache) Reset() {
 	}
 
 	logrus.Warn("Resetting media cache")
+	rwLock.Lock()
 	c.cache.Flush()
 	c.cooldownCache.Flush()
 	c.size = 0
 	c.tracker.Reset()
+	rwLock.Unlock()
 }
 
 func (c *MediaCache) Stop() {
@@ -126,7 +129,9 @@ func (c *MediaCache) IncrementDownloads(fileHash string) {
 	}
 
 	logrus.Info("File " + fileHash + " has been downloaded")
+	rwLock.Lock()
 	c.tracker.Increment(fileHash)
+	rwLock.Unlock()
 }
 
 func (c *MediaCache) GetMedia(media *types.Media, ctx rcontext.RequestContext) (*cachedFile, error) {
@@ -185,10 +190,12 @@ func (c *MediaCache) updateItemInCache(recordId string, mediaSize int64, cacheFn
 	// The cached bytes will leave memory over time
 	if found && !enoughDownloads {
 		ctx.Log.Info("Removing media from cache because it does not have enough downloads")
+		rwLock.Lock()
 		metrics.CacheMisses.With(prometheus.Labels{"cache": "media"}).Inc()
 		metrics.CacheEvictions.With(prometheus.Labels{"cache": "media", "reason": "not_enough_downloads"}).Inc()
 		c.cache.Delete(recordId)
 		c.flagEvicted(recordId)
+		rwLock.Unlock()
 		return nil, nil
 	}
 
@@ -209,16 +216,22 @@ func (c *MediaCache) updateItemInCache(recordId string, mediaSize int64, cacheFn
 		if freeSpace >= mediaSize {
 			// Perfect! It'll fit - just cache it
 			ctx.Log.Info("Caching file in memory")
-			c.size = usedSpace + mediaSize
-			c.flagCached(recordId)
 
 			cachedItem, err := cacheFn()
 			if err != nil {
 				return nil, err
 			}
+			rwLock.Lock()
+			actualSize := int64(cachedItem.Contents.Len())
+			c.size = c.size + actualSize
+			if actualSize != mediaSize {
+				ctx.Log.Warnf("Media size of %d bytes is not the same as %d bytes which have been cached", mediaSize, actualSize)
+			}
+			c.flagCached(recordId)
 			metrics.CacheNumItems.With(prometheus.Labels{"cache": "media"}).Inc()
 			metrics.CacheNumBytes.With(prometheus.Labels{"cache": "media"}).Set(float64(c.size))
 			c.cache.Set(recordId, cachedItem, cache.NoExpiration)
+			rwLock.Unlock()
 		}
 
 		// We need to clean up some space
@@ -230,17 +243,23 @@ func (c *MediaCache) updateItemInCache(recordId string, mediaSize int64, cacheFn
 		if freeSpace >= mediaSize {
 			// Now it'll fit - cache it
 			ctx.Log.Info("Caching file in memory")
-			c.size = usedSpace + mediaSize
-			c.flagCached(recordId)
 
 			cachedItem, err := cacheFn()
 			if err != nil {
 				return nil, err
 			}
+			actualSize := int64(cachedItem.Contents.Len())
+			rwLock.Lock()
+			c.size = c.size + actualSize
+			if actualSize != mediaSize {
+				ctx.Log.Warnf("Media size of %d bytes is not the same as %d bytes which have been cached", mediaSize, actualSize)
+			}
+			c.flagCached(recordId)
 			metrics.CacheHits.With(prometheus.Labels{"cache": "media"}).Inc()
 			metrics.CacheNumItems.With(prometheus.Labels{"cache": "media"}).Inc()
 			metrics.CacheNumBytes.With(prometheus.Labels{"cache": "media"}).Set(float64(c.size))
 			c.cache.Set(recordId, cachedItem, cache.NoExpiration)
+			rwLock.Unlock()
 
 			// This should never happen, but we'll be aggressive in how we handle it.
 			if c.size > maxSpace {
@@ -325,6 +344,8 @@ func (c *MediaCache) clearSpace(neededBytes int64, withDownloadsLessThan int, wi
 		return 0
 	}
 
+	rwLock.Lock()
+
 	for e := keysToClear.Front(); e != nil; e = e.Next() {
 		toRemove := e.Value.(*removable)
 		c.cache.Delete(toRemove.cacheKey)
@@ -335,6 +356,9 @@ func (c *MediaCache) clearSpace(neededBytes int64, withDownloadsLessThan int, wi
 
 	c.size -= preppedSpace
 	metrics.CacheNumBytes.With(prometheus.Labels{"cache": "media"}).Set(float64(c.size))
+
+	rwLock.Unlock()
+
 	return preppedSpace
 }
 
