@@ -9,8 +9,8 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "mkdirp": "^0.5.1",
-    "request": "^2.88.0",
-    "request-promise": "^4.2.4"
+    "mkdirp": "^1.0.3",
+    "request": "^2.88.2",
+    "request-promise": "^4.2.5"
   }
 }
