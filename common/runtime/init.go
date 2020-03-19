@@ -8,6 +8,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/common/version"
+	"github.com/turt2live/matrix-media-repo/ipfs_proxy"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/storage/datastore/ds_s3"
@@ -18,6 +19,9 @@ func RunStartupSequence() {
 	config.PrintDomainInfo()
 	LoadDatabase()
 	LoadDatastores()
+
+	logrus.Info("Starting IPFS (if enabled)...")
+	ipfs_proxy.Reload()
 }
 
 func LoadDatabase() {

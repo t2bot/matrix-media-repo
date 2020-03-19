@@ -149,7 +149,7 @@ func fetchMedia(req interface{}) interface{} {
 	}
 	defer body.Close()
 
-	_, err = upload_controller.StoreDirect(body, -1, record.ContentType, record.UploadName, record.UserId, payload.serverName, record.MediaId, common.KindLocalMedia, ctx)
+	_, err = upload_controller.StoreDirect(nil, body, -1, record.ContentType, record.UploadName, record.UserId, payload.serverName, record.MediaId, common.KindLocalMedia, ctx)
 	if err != nil {
 		logrus.Error(err.Error())
 		return nil

@@ -13,7 +13,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/runtime"
 	"github.com/turt2live/matrix-media-repo/common/version"
 	"github.com/turt2live/matrix-media-repo/internal_cache"
-	"github.com/turt2live/matrix-media-repo/ipfs_proxy"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/tasks"
 )
@@ -60,9 +59,6 @@ func main() {
 	watcher := config.Watch()
 	defer watcher.Close()
 	setupReloads()
-
-	logrus.Info("Starting IPFS (if enabled)...")
-	ipfs_proxy.Reload()
 
 	logrus.Info("Starting media repository...")
 	metrics.Init()
