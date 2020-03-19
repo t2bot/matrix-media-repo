@@ -54,7 +54,20 @@ func doRecurringThumbnailPurge() {
 		return
 	}
 
+	mediaDb := storage.GetDatabase().GetMediaStore(ctx)
+
 	for _, thumb := range thumbs {
+		// Double check that the thumbnail won't also delete some media
+		m, err := mediaDb.GetMediaByLocation(thumb.DatastoreId, thumb.Location)
+		if err != nil {
+			ctx.Log.Error(err)
+			return
+		}
+		if len(m) > 0 {
+			ctx.Log.Warnf("Refusing to delete thumbnails with hash %s because it looks like other pieces of media are using it", thumb.Sha256Hash)
+			continue
+		}
+
 		ctx.Log.Info("Deleting thumbnails with hash: ", thumb.Sha256Hash)
 		err = db.DeleteWithHash(thumb.Sha256Hash)
 		if err != nil {

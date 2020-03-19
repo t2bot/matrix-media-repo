@@ -12,7 +12,7 @@ import (
 const selectMedia = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE origin = $1 and media_id = $2;"
 const selectMediaByHash = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE sha256_hash = $1;"
 const insertMedia = "INSERT INTO media (origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);"
-const selectOldMedia = "SELECT m.origin, m.media_id, m.upload_name, m.content_type, m.user_id, m.sha256_hash, m.size_bytes, m.datastore_id, m.location, m.creation_ts, quarantined FROM media AS m WHERE NOT(m.origin = ANY($1)) AND m.creation_ts < $2 AND (SELECT COUNT(*) FROM media AS d WHERE d.sha256_hash = m.sha256_hash AND d.creation_ts >= $2) = 0 AND (SELECT COUNT(*) FROM media AS d WHERE d.sha256_hash = m.sha256_hash AND d.origin = ANY($1)) = 0;"
+const selectOldMedia = "SELECT m.origin, m.media_id, m.upload_name, m.content_type, m.user_id, m.sha256_hash, m.size_bytes, m.datastore_id, m.location, m.creation_ts, quarantined FROM media AS m WHERE m.origin <> ANY($1) AND m.creation_ts < $2 AND (SELECT COUNT(*) FROM media AS d WHERE d.sha256_hash = m.sha256_hash AND d.creation_ts >= $2) = 0 AND (SELECT COUNT(*) FROM media AS d WHERE d.sha256_hash = m.sha256_hash AND d.origin = ANY($1)) = 0;"
 const selectOrigins = "SELECT DISTINCT origin FROM media;"
 const deleteMedia = "DELETE FROM media WHERE origin = $1 AND media_id = $2;"
 const updateQuarantined = "UPDATE media SET quarantined = $3 WHERE origin = $1 AND media_id = $2;"
@@ -30,6 +30,7 @@ const selectServerQuarantinedMedia = "SELECT origin, media_id, upload_name, cont
 const selectMediaByUser = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE user_id = $1"
 const selectMediaByUserBefore = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE user_id = $1 AND creation_ts <= $2"
 const selectMediaByDomainBefore = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE origin = $1 AND creation_ts <= $2"
+const selectMediaByLocation = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE datastore_id = $1 AND location = $2"
 
 var dsCacheByPath = sync.Map{} // [string] => Datastore
 var dsCacheById = sync.Map{}   // [string] => Datastore
@@ -57,6 +58,7 @@ type mediaStoreStatements struct {
 	selectMediaByUser               *sql.Stmt
 	selectMediaByUserBefore         *sql.Stmt
 	selectMediaByDomainBefore       *sql.Stmt
+	selectMediaByLocation           *sql.Stmt
 }
 
 type MediaStoreFactory struct {
@@ -137,6 +139,9 @@ func InitMediaStore(sqlDb *sql.DB) (*MediaStoreFactory, error) {
 		return nil, err
 	}
 	if store.stmts.selectMediaByDomainBefore, err = store.sqlDb.Prepare(selectMediaByDomainBefore); err != nil {
+		return nil, err
+	}
+	if store.stmts.selectMediaByLocation, err = store.sqlDb.Prepare(selectMediaByLocation); err != nil {
 		return nil, err
 	}
 
@@ -638,6 +643,37 @@ func (s *MediaStore) GetMediaByUserBefore(userId string, beforeTs int64) ([]*typ
 
 func (s *MediaStore) GetMediaByDomainBefore(serverName string, beforeTs int64) ([]*types.Media, error) {
 	rows, err := s.statements.selectMediaByDomainBefore.QueryContext(s.ctx, serverName, beforeTs)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []*types.Media
+	for rows.Next() {
+		obj := &types.Media{}
+		err = rows.Scan(
+			&obj.Origin,
+			&obj.MediaId,
+			&obj.UploadName,
+			&obj.ContentType,
+			&obj.UserId,
+			&obj.Sha256Hash,
+			&obj.SizeBytes,
+			&obj.DatastoreId,
+			&obj.Location,
+			&obj.CreationTs,
+			&obj.Quarantined,
+		)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, obj)
+	}
+
+	return results, nil
+}
+
+func (s *MediaStore) GetMediaByLocation(datastoreId string, location string) ([]*types.Media, error) {
+	rows, err := s.statements.selectMediaByLocation.QueryContext(s.ctx, datastoreId, location)
 	if err != nil {
 		return nil, err
 	}
