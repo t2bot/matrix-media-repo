@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -17,6 +18,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/api/features"
 	"github.com/turt2live/matrix-media-repo/api/r0"
 	"github.com/turt2live/matrix-media-repo/api/unstable"
+	"github.com/turt2live/matrix-media-repo/api/webserver/debug"
 	"github.com/turt2live/matrix-media-repo/common/config"
 )
 
@@ -190,13 +192,11 @@ func Init() *sync.WaitGroup {
 	httpMux := http.NewServeMux()
 	httpMux.Handle("/", handler)
 
-	// pprof endpoints
-	//httpMux.HandleFunc("/debug/pprof", pprof.Index)
-	//httpMux.HandleFunc("/debug/pprof/heap", pprof.Index)
-	//httpMux.HandleFunc("/debug/pprof/allocs", pprof.Index)
-	//httpMux.HandleFunc("/debug/pprof/block", pprof.Index)
-	//httpMux.HandleFunc("/debug/pprof/profile", pprof.Index)
-	//httpMux.HandleFunc("/debug/pprof/trace", pprof.Index)
+	pprofSecret := os.Getenv("MEDIA_PPROF_SECRET_KEY")
+	if pprofSecret != "" {
+		logrus.Warn("Enabling pprof endpoints")
+		debug.BindPprofEndpoints(httpMux, pprofSecret)
+	}
 
 	srv = &http.Server{Addr: address, Handler: httpMux}
 	reload = false
