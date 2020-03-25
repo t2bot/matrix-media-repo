@@ -25,6 +25,7 @@ func GetExifOrientation(media *types.Media) (*ExifOrientation, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer mediaStream.Close()
 
 	exifData, err := exif.Decode(mediaStream)
 	if err != nil {

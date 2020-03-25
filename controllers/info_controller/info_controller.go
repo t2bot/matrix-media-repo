@@ -30,6 +30,7 @@ func GetOrCalculateBlurhash(media *types.Media, rctx rcontext.RequestContext) (s
 	if err != nil {
 		return "", err
 	}
+	defer minMedia.Stream.Close()
 
 	// No cached blurhash: calculate one
 	rctx.Log.Info("Decoding image for blurhash calculation")

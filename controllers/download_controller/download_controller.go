@@ -66,6 +66,9 @@ func GetMedia(origin string, mediaId string, downloadRemote bool, blockForMedia 
 		if media != nil {
 			if media.Quarantined {
 				ctx.Log.Warn("Quarantined media accessed")
+				if minMedia.Stream != nil {
+					minMedia.Stream.Close() // close the other one first
+				}
 
 				if ctx.Config.Quarantine.ReplaceDownloads {
 					ctx.Log.Info("Replacing thumbnail with a quarantined one")
@@ -104,6 +107,9 @@ func GetMedia(origin string, mediaId string, downloadRemote bool, blockForMedia 
 				return nil, err
 			}
 			if cached != nil && cached.Contents != nil {
+				if minMedia.Stream != nil {
+					minMedia.Stream.Close() // close the other one first
+				}
 				minMedia.Stream = util.BufferToStream(cached.Contents)
 				return minMedia, nil
 			}

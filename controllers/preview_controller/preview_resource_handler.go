@@ -107,6 +107,7 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) interface{} {
 			if err != nil {
 				ctx.Log.Warn("Non-fatal error streaming datastore file: " + err.Error())
 			} else {
+				defer mediaStream.Close()
 				img, err := imaging.Decode(mediaStream)
 				if err != nil {
 					ctx.Log.Warn("Non-fatal error getting thumbnail dimensions: " + err.Error())
