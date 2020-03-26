@@ -54,7 +54,6 @@ func StartImport(data io.Reader, ctx rcontext.RequestContext) (*types.Background
 
 	// Start the import and send it its first update
 	updateChan := make(chan *importUpdate)
-	defer close(updateChan)
 	go doImport(updateChan, task.ID, importId, ctx)
 	openImports.Store(importId, updateChan)
 	updateChan <- &importUpdate{stop: false, fileMap: results}
@@ -131,6 +130,8 @@ func processArchive(data io.Reader) (map[string]*bytes.Buffer, error) {
 }
 
 func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx rcontext.RequestContext) {
+	defer close(updateChannel)
+
 	// Use a new context in the goroutine
 	ctx.Context = context.Background()
 
