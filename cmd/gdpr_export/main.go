@@ -17,6 +17,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/types"
+	"github.com/turt2live/matrix-media-repo/util"
 )
 
 func main() {
@@ -61,6 +62,7 @@ func main() {
 
 	logrus.Info("Waiting for export to complete")
 	waitChan := make(chan bool)
+	defer close(waitChan)
 	go func() {
 		// Initial sleep to let the caches fill
 		time.Sleep(1 * time.Second)
@@ -109,8 +111,8 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		_ = f.Close()
-		_ = s.Close()
+		util.DumpAndCloseStream(f)
+		util.DumpAndCloseStream(s)
 	}
 
 	logrus.Info("Deleting export now that it has been dumped")

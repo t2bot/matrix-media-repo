@@ -19,6 +19,7 @@ func StartPreviewsPurgeRecurring() {
 	previewsPurgeDone = make(chan bool)
 
 	go func() {
+		defer close(previewsPurgeDone)
 		for {
 			select {
 			case <-previewsPurgeDone:

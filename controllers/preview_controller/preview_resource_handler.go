@@ -107,7 +107,7 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) interface{} {
 			if err != nil {
 				ctx.Log.Warn("Non-fatal error streaming datastore file: " + err.Error())
 			} else {
-				defer mediaStream.Close()
+				defer util.DumpAndCloseStream(mediaStream)
 				img, err := imaging.Decode(mediaStream)
 				if err != nil {
 					ctx.Log.Warn("Non-fatal error getting thumbnail dimensions: " + err.Error())
@@ -141,12 +141,14 @@ func (h *urlResourceHandler) GeneratePreview(urlPayload *preview_types.UrlPayloa
 	resultChan := make(chan *urlPreviewResponse)
 	go func() {
 		reqId := fmt.Sprintf("preview_%s", urlPayload.UrlString) // don't put the user id or host in the ID string
-		result := <-h.resourceHandler.GetResource(reqId, &urlPreviewRequest{
+		c := h.resourceHandler.GetResource(reqId, &urlPreviewRequest{
 			urlPayload: urlPayload,
 			forUserId:  forUserId,
 			onHost:     onHost,
 			languageHeader: languageHeader,
 		})
+		defer close(c)
+		result := <-c
 		resultChan <- result.(*urlPreviewResponse)
 	}()
 	return resultChan

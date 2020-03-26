@@ -79,6 +79,7 @@ func main() {
 
 	// Set up a listener for SIGINT
 	stop := make(chan os.Signal)
+	defer close(stop)
 	signal.Notify(stop, os.Interrupt, os.Kill)
 	selfStop := false
 	go func() {

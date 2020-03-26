@@ -154,5 +154,5 @@ func (i IPFSEmbedded) PutObject(data io.Reader, ctx rcontext.RequestContext) (st
 
 func (i IPFSEmbedded) Stop() {
 	i.cancelCtxFn()
-	i.node.Close()
+	_ = i.node.Close()
 }

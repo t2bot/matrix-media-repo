@@ -10,6 +10,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/controllers/download_controller"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/types"
+	"github.com/turt2live/matrix-media-repo/util"
 )
 
 func GetOrCalculateBlurhash(media *types.Media, rctx rcontext.RequestContext) (string, error) {
@@ -30,7 +31,7 @@ func GetOrCalculateBlurhash(media *types.Media, rctx rcontext.RequestContext) (s
 	if err != nil {
 		return "", err
 	}
-	defer minMedia.Stream.Close()
+	defer util.DumpAndCloseStream(minMedia.Stream)
 
 	// No cached blurhash: calculate one
 	rctx.Log.Info("Decoding image for blurhash calculation")

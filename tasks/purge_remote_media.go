@@ -19,6 +19,7 @@ func StartRemoteMediaPurgeRecurring() {
 	mediaPurgeDone = make(chan bool)
 
 	go func() {
+		defer close(mediaPurgeDone)
 		for {
 			select {
 			case <-mediaPurgeDone:

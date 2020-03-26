@@ -159,7 +159,7 @@ func compileArchive(exportId string, entityId string, archiveDs *datastore.Datas
 	currentSize := int64(0)
 
 	persistTar := func() error {
-		currentTar.Close()
+		_ = currentTar.Close()
 
 		// compress
 		ctx.Log.Info("Compressing tar file")
@@ -170,7 +170,7 @@ func compileArchive(exportId string, entityId string, archiveDs *datastore.Datas
 		if err != nil {
 			return err
 		}
-		archiver.Close()
+		_ = archiver.Close()
 
 		ctx.Log.Info("Uploading compressed tar file")
 		buf := bytes.NewBuffer(gzipBytes.Bytes())
@@ -340,9 +340,10 @@ func compileArchive(exportId string, entityId string, archiveDs *datastore.Datas
 			_, err = io.Copy(&b, s)
 			if err != nil {
 				ctx.Log.Error(err)
+				util.DumpAndCloseStream(s)
 				continue
 			}
-			s.Close()
+			util.DumpAndCloseStream(s)
 			s = util.BufferToStream(bytes.NewBuffer(b.Bytes()))
 
 			ctx.Log.Info("Archiving ", m.MxcUri())

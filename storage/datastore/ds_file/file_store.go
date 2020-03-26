@@ -13,7 +13,7 @@ import (
 )
 
 func PersistFile(basePath string, file io.ReadCloser, ctx rcontext.RequestContext) (*types.ObjectInfo, error) {
-	defer file.Close()
+	defer util.DumpAndCloseStream(file)
 
 	exists := true
 	var primaryContainer string
@@ -68,13 +68,13 @@ func PersistFile(basePath string, file io.ReadCloser, ctx rcontext.RequestContex
 }
 
 func PersistFileAtLocation(targetFile string, file io.ReadCloser, ctx rcontext.RequestContext) (int64, string, error) {
-	defer file.Close()
+	defer util.DumpAndCloseStream(file)
 
 	f, err := os.OpenFile(targetFile, os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return 0, "", err
 	}
-	defer f.Close()
+	defer util.DumpAndCloseStream(f)
 
 	rfile, wfile := io.Pipe()
 	tr := io.TeeReader(file, wfile)

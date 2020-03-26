@@ -13,6 +13,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/info_controller"
 	"github.com/turt2live/matrix-media-repo/controllers/upload_controller"
+	"github.com/turt2live/matrix-media-repo/util"
 )
 
 type MediaUploadedResponse struct {
@@ -22,7 +23,7 @@ type MediaUploadedResponse struct {
 
 func UploadMedia(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
 	filename := filepath.Base(r.URL.Query().Get("filename"))
-	defer r.Body.Close()
+	defer util.DumpAndCloseStream(r.Body)
 
 	rctx = rctx.LogWithFields(logrus.Fields{
 		"filename": filename,

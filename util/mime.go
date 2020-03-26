@@ -9,7 +9,7 @@ import (
 )
 
 func GetMimeType(stream io.ReadCloser) (string, error) {
-	defer stream.Close()
+	defer DumpAndCloseStream(stream)
 
 	// We only need the first 512 bytes at most to determine the file type
 	buf := make([]byte, 512)

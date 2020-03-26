@@ -102,5 +102,6 @@ func main() {
 
 	// wait forever (will need `kill -9` to kill this)
 	c := make(chan bool)
+	defer close(c)
 	<-c
 }

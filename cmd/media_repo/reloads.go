@@ -31,6 +31,7 @@ func stopReloads() {
 
 func reloadWebOnChan(reloadChan chan bool) {
 	go func() {
+		defer close(reloadChan)
 		for {
 			shouldReload := <-reloadChan
 			if shouldReload {
@@ -44,6 +45,7 @@ func reloadWebOnChan(reloadChan chan bool) {
 
 func reloadMetricsOnChan(reloadChan chan bool) {
 	go func() {
+		defer close(reloadChan)
 		for {
 			shouldReload := <-reloadChan
 			if shouldReload {
@@ -57,6 +59,7 @@ func reloadMetricsOnChan(reloadChan chan bool) {
 
 func reloadDatabaseOnChan(reloadChan chan bool) {
 	go func() {
+		defer close(reloadChan)
 		for {
 			shouldReload := <-reloadChan
 			if shouldReload {
@@ -72,6 +75,7 @@ func reloadDatabaseOnChan(reloadChan chan bool) {
 
 func reloadDatastoresOnChan(reloadChan chan bool) {
 	go func() {
+		defer close(reloadChan)
 		for {
 			shouldReload := <-reloadChan
 			if shouldReload {
@@ -85,6 +89,7 @@ func reloadDatastoresOnChan(reloadChan chan bool) {
 
 func reloadRecurringTasksOnChan(reloadChan chan bool) {
 	go func() {
+		defer close(reloadChan)
 		for {
 			shouldReload := <-reloadChan
 			if shouldReload {
@@ -99,6 +104,7 @@ func reloadRecurringTasksOnChan(reloadChan chan bool) {
 
 func reloadIpfsOnChan(reloadChan chan bool) {
 	go func() {
+		defer close(reloadChan)
 		for {
 			shouldReload := <-reloadChan
 			if shouldReload {

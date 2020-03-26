@@ -52,8 +52,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	handles := make([]*os.File, 0)
-	handles = append(handles, f)
+	defer f.Close()
 	task, importId, err := data_controller.StartImport(f, ctx)
 	if err != nil {
 		panic(err)
@@ -70,7 +69,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		handles = append(handles, f)
+		defer f.Close()
 		err = data_controller.AppendToImport(importId, f)
 		if err != nil {
 			panic(err)
@@ -79,6 +78,7 @@ func main() {
 
 	logrus.Info("Waiting for import to complete")
 	waitChan := make(chan bool)
+	defer close(waitChan)
 	go func() {
 		// Initial sleep to let the caches fill
 		time.Sleep(1 * time.Second)
@@ -100,11 +100,6 @@ func main() {
 		}
 	}()
 	<-waitChan
-
-	logrus.Info("Import finished, cleaning up")
-	for _, h := range handles {
-		h.Close()
-	}
 
 	logrus.Infof("Import complete!")
 }

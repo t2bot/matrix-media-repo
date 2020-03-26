@@ -20,6 +20,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/matrix"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/types"
+	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/resource_handler"
 )
 
@@ -88,7 +89,9 @@ func (h *mediaResourceHandler) DownloadRemoteMedia(origin string, mediaId string
 	resultChan := make(chan *downloadResponse)
 	go func() {
 		reqId := "remote_download:" + origin + "_" + mediaId
-		result := <-h.resourceHandler.GetResource(reqId, &downloadRequest{origin, mediaId, blockForMedia})
+		c := h.resourceHandler.GetResource(reqId, &downloadRequest{origin, mediaId, blockForMedia})
+		defer close(c)
+		result := <-c
 
 		// Translate the response stream into something that is safe to support multiple readers
 		resp := result.(*workerDownloadResponse)
@@ -135,8 +138,7 @@ func downloadResourceWorkFn(request *resource_handler.WorkRequest) interface{} {
 	}
 
 	persistFile := func(fileStream io.ReadCloser) *workerDownloadResponse {
-		defer fileStream.Close()
-
+		defer util.DumpAndCloseStream(fileStream)
 		userId := upload_controller.NoApplicableUploadUser
 		media, err := upload_controller.StoreDirect(nil, fileStream, downloaded.ContentLength, downloaded.ContentType, downloaded.DesiredFilename, userId, info.origin, info.mediaId, common.KindRemoteMedia, ctx)
 		if err != nil {

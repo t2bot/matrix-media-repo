@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/util"
 	"gopkg.in/yaml.v2"
 )
 
@@ -102,9 +103,7 @@ func reloadConfig() (*MainRepoConfig, map[string]*DomainRepoConfig, error) {
 		if err != nil {
 			return nil, nil, err
 		}
-
-		//noinspection GoDeferInLoop
-		defer f.Close()
+		defer util.DumpAndCloseStream(f)
 
 		buffer, err := ioutil.ReadAll(f)
 		if err != nil {

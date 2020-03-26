@@ -69,8 +69,8 @@ func readDir(dir string, pathName string) map[string][]byte {
 		if err != nil {
 			panic(err)
 		}
-		gw.Write(b)
-		gw.Close()
+		_, _ = gw.Write(b)
+		_ = gw.Close()
 
 		fileMap[path.Join(pathName, f.Name())] = out.Bytes()
 	}

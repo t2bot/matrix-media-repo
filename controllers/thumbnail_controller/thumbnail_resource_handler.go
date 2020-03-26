@@ -121,13 +121,15 @@ func (h *thumbnailResourceHandler) GenerateThumbnail(media *types.Media, width i
 	resultChan := make(chan *thumbnailResponse)
 	go func() {
 		reqId := fmt.Sprintf("thumbnail_%s_%s_%d_%d_%s_%t", media.Origin, media.MediaId, width, height, method, animated)
-		result := <-h.resourceHandler.GetResource(reqId, &thumbnailRequest{
+		c := h.resourceHandler.GetResource(reqId, &thumbnailRequest{
 			media:    media,
 			width:    width,
 			height:   height,
 			method:   method,
 			animated: animated,
 		})
+		defer close(c)
+		result := <-c
 		resultChan <- result.(*thumbnailResponse)
 	}()
 	return resultChan
@@ -150,7 +152,7 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 			ctx.Log.Error("Error getting file: ", err2)
 			return nil, err2
 		}
-		defer mediaStream.Close()
+		defer util.DumpAndCloseStream(mediaStream)
 		src, err = imaging.Decode(mediaStream)
 	}
 
@@ -226,7 +228,7 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 			ctx.Log.Error("Error resolving datastore path: ", err)
 			return nil, err
 		}
-		defer mediaStream.Close()
+		defer util.DumpAndCloseStream(mediaStream)
 
 		g, err := gif.DecodeAll(mediaStream)
 		if err != nil {
@@ -350,14 +352,14 @@ func svgToImage(media *types.Media, ctx rcontext.RequestContext) (image.Image, e
 		ctx.Log.Error("Error streaming file: ", err)
 		return nil, err
 	}
-	defer mediaStream.Close()
+	defer util.DumpAndCloseStream(mediaStream)
 
 	f, err := os.OpenFile(tempFile1, os.O_RDWR|os.O_CREATE, 0640)
 	if err != nil {
 		return nil, err
 	}
 	io.Copy(f, mediaStream)
-	f.Close()
+	util.DumpAndCloseStream(f)
 
 	err = exec.Command("convert", tempFile1, tempFile2).Run()
 	if err != nil {
@@ -379,7 +381,7 @@ func pickImageFrame(media *types.Media, ctx rcontext.RequestContext) (image.Imag
 		ctx.Log.Error("Error resolving datastore path: ", err)
 		return nil, err
 	}
-	defer mediaStream.Close()
+	defer util.DumpAndCloseStream(mediaStream)
 
 	g, err := gif.DecodeAll(mediaStream)
 	if err != nil {

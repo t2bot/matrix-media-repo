@@ -121,7 +121,7 @@ func (s *s3Datastore) EnsureTempPathExists() error {
 }
 
 func (s *s3Datastore) UploadFile(file io.ReadCloser, expectedLength int64, ctx rcontext.RequestContext) (*types.ObjectInfo, error) {
-	defer file.Close()
+	defer util.DumpAndCloseStream(file)
 
 	objectName, err := util.GenerateRandomString(512)
 	if err != nil {
@@ -162,18 +162,14 @@ func (s *s3Datastore) UploadFile(file io.ReadCloser, expectedLength int64, ctx r
 				}
 				defer os.Remove(f.Name())
 				expectedLength, uploadErr = io.Copy(f, rs3)
-				uploadErr = f.Close()
-				if uploadErr != nil {
-					done <- true
-					return
-				}
+				util.DumpAndCloseStream(f)
 				f, uploadErr = os.Open(f.Name())
 				if uploadErr != nil {
 					done <- true
 					return
 				}
 				rs3 = f
-				defer f.Close()
+				defer util.DumpAndCloseStream(f)
 			} else {
 				ctx.Log.Warn("Uploading content of unknown length to s3 - this could result in high memory usage")
 				expectedLength = -1
@@ -226,7 +222,7 @@ func (s *s3Datastore) ObjectExists(location string) bool {
 }
 
 func (s *s3Datastore) OverwriteObject(location string, stream io.ReadCloser) error {
-	defer stream.Close()
+	defer util.DumpAndCloseStream(stream)
 	_, err := s.client.PutObject(s.bucket, location, stream, -1, minio.PutObjectOptions{})
 	return err
 }

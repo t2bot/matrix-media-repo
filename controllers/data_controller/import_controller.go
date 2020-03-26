@@ -54,6 +54,7 @@ func StartImport(data io.Reader, ctx rcontext.RequestContext) (*types.Background
 
 	// Start the import and send it its first update
 	updateChan := make(chan *importUpdate)
+	defer close(updateChan)
 	go doImport(updateChan, task.ID, importId, ctx)
 	openImports.Store(importId, updateChan)
 	updateChan <- &importUpdate{stop: false, fileMap: results}

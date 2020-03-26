@@ -31,7 +31,7 @@ func GetFileHash(filePath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer f.Close()
+	defer DumpAndCloseStream(f)
 
 	return GetSha256HashOfStream(f)
 }

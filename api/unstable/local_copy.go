@@ -12,6 +12,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/download_controller"
 	"github.com/turt2live/matrix-media-repo/controllers/upload_controller"
+	"github.com/turt2live/matrix-media-repo/util"
 )
 
 func LocalCopy(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
@@ -50,7 +51,7 @@ func LocalCopy(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo)
 		rctx.Log.Error("Unexpected error locating media: " + err.Error())
 		return api.InternalServerError("Unexpected Error")
 	}
-	defer streamedMedia.Stream.Close()
+	defer util.DumpAndCloseStream(streamedMedia.Stream)
 
 	// Don't clone the media if it's already available on this domain
 	if streamedMedia.KnownMedia.Origin == r.Host {

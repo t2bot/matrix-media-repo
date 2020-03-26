@@ -7,6 +7,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/data_controller"
+	"github.com/turt2live/matrix-media-repo/util"
 )
 
 type ImportStarted struct {
@@ -19,7 +20,7 @@ func StartImport(r *http.Request, rctx rcontext.RequestContext, user api.UserInf
 		return api.BadRequest("archiving is not enabled")
 	}
 
-	defer r.Body.Close()
+	defer util.DumpAndCloseStream(r.Body)
 	task, importId, err := data_controller.StartImport(r.Body, rctx)
 	if err != nil {
 		rctx.Log.Error(err)
@@ -41,7 +42,7 @@ func AppendToImport(r *http.Request, rctx rcontext.RequestContext, user api.User
 
 	importId := params["importId"]
 
-	defer r.Body.Close()
+	defer util.DumpAndCloseStream(r.Body)
 	err := data_controller.AppendToImport(importId, r.Body)
 	if err != nil {
 		rctx.Log.Error(err)

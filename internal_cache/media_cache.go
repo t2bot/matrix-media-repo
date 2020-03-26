@@ -149,7 +149,7 @@ func (c *MediaCache) GetMedia(media *types.Media, ctx rcontext.RequestContext) (
 		if err != nil {
 			return nil, err
 		}
-		defer mediaStream.Close()
+		defer util.DumpAndCloseStream(mediaStream)
 
 		return &cachedFile{media: media, Contents: bytes.NewBuffer(data)}, nil
 	}
@@ -172,7 +172,7 @@ func (c *MediaCache) GetThumbnail(thumbnail *types.Thumbnail, ctx rcontext.Reque
 		if err != nil {
 			return nil, err
 		}
-		defer mediaStream.Close()
+		defer util.DumpAndCloseStream(mediaStream)
 
 		return &cachedFile{thumbnail: thumbnail, Contents: bytes.NewBuffer(data)}, nil
 	}

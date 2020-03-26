@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
@@ -194,6 +193,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Disposition", "inline; filename*=utf-8''"+url.QueryEscape(result.Filename))
 			}
 		}
+		defer result.Data.Close()
 		writeResponseData(w, result.Data, result.SizeBytes)
 		return // Prevent sending conflicting responses
 	case *r0.IdenticonResponse:
@@ -205,7 +205,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}).Inc()
 		w.Header().Set("Cache-Control", "private, max-age=604800") // 7 days
 		w.Header().Set("Content-Type", "image/png")
-		writeResponseData(w, ioutil.NopCloser(result.Avatar), 0)
+		writeResponseData(w, result.Avatar, 0)
 		return // Prevent sending conflicting responses
 	case *api.HtmlResponse:
 		metrics.HttpResponses.With(prometheus.Labels{
@@ -237,8 +237,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	encoder.Encode(res)
 }
 
-func writeResponseData(w http.ResponseWriter, s io.ReadCloser, expectedBytes int64) {
-	defer s.Close()
+func writeResponseData(w http.ResponseWriter, s io.Reader, expectedBytes int64) {
 	b, err := io.Copy(w, s)
 	if err != nil {
 		// Should only blow up this request

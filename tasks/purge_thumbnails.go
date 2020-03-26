@@ -20,6 +20,7 @@ func StartThumbnailPurgeRecurring() {
 	thumbnailsPurgeDone = make(chan bool)
 
 	go func() {
+		defer close(thumbnailsPurgeDone)
 		for {
 			select {
 			case <-thumbnailsPurgeDone:

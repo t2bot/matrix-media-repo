@@ -12,7 +12,7 @@ import (
 )
 
 func UploadFile(file io.ReadCloser, ctx rcontext.RequestContext) (*types.ObjectInfo, error) {
-	defer file.Close()
+	defer util.DumpAndCloseStream(file)
 
 	b, err := ioutil.ReadAll(file)
 	if err != nil {

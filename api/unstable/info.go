@@ -13,6 +13,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/download_controller"
 	"github.com/turt2live/matrix-media-repo/storage"
+	"github.com/turt2live/matrix-media-repo/util"
 )
 
 type mediaInfoHashes struct {
@@ -69,7 +70,7 @@ func MediaInfo(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo)
 		rctx.Log.Error("Unexpected error locating media: " + err.Error())
 		return api.InternalServerError("Unexpected Error")
 	}
-	defer streamedMedia.Stream.Close()
+	defer util.DumpAndCloseStream(streamedMedia.Stream)
 
 	response := &MediaInfoResponse{
 		ContentUri:  streamedMedia.KnownMedia.MxcUri(),

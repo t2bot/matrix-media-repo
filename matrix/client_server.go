@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
+	"github.com/turt2live/matrix-media-repo/util"
 )
 
 // Based in part on https://github.com/matrix-org/gomatrix/blob/072b39f7fa6b40257b4eead8c958d71985c28bdd/client.go#L180-L243
@@ -44,12 +45,10 @@ func doRequest(ctx rcontext.RequestContext, method string, urlStr string, body i
 		Timeout: time.Duration(ctx.Config.TimeoutSeconds.ClientServer) * time.Second,
 	}
 	res, err := client.Do(req)
-	if res != nil {
-		defer res.Body.Close()
-	}
 	if err != nil {
 		return err
 	}
+	defer util.DumpAndCloseStream(res.Body)
 
 	contents, err := ioutil.ReadAll(res.Body)
 	if err != nil {
