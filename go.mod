@@ -21,7 +21,6 @@ require (
 	github.com/fastly/go-utils v0.0.0-20180712184237-d95a45783239 // indirect
 	github.com/fogleman/gg v1.3.0
 	github.com/fsnotify/fsnotify v1.4.7
-	github.com/go-ini/ini v1.52.0 // indirect
 	github.com/go-sql-driver/mysql v1.5.0 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
 	github.com/gorilla/mux v1.7.4
@@ -38,11 +37,8 @@ require (
 	github.com/lestrrat/go-file-rotatelogs v0.0.0-20180223000712-d3151e2a480f
 	github.com/lestrrat/go-strftime v0.0.0-20180220042222-ba3bf9c1d042 // indirect
 	github.com/lib/pq v1.3.0
-	github.com/libp2p/go-libp2p-core v0.2.5
-	github.com/libp2p/go-libp2p-peerstore v0.1.3
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible // indirect
-	github.com/minio/minio-go v6.0.14+incompatible
-	github.com/multiformats/go-multiaddr v0.1.2
+	github.com/minio/minio-go/v6 v6.0.50
 	github.com/olebedev/emitter v0.0.0-20190110104742-e8d1457e6aee
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/peterbourgon/g2s v0.0.0-20170223122336-d4e7ad98afea // indirect
@@ -56,8 +52,9 @@ require (
 	github.com/sirupsen/logrus v1.4.2
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/tebeka/strftime v0.1.3 // indirect
-	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073
+	golang.org/x/crypto v0.0.0-20200323165209-0ec3e9974c59
 	golang.org/x/image v0.0.0-20200119044424-58c23975cae1
+	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e // indirect
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
 	gopkg.in/ini.v1 v1.52.0 // indirect
 	gopkg.in/yaml.v2 v2.2.8

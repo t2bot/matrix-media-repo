@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/minio/minio-go"
+	"github.com/minio/minio-go/v6"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"
