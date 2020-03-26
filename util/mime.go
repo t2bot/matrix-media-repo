@@ -6,10 +6,11 @@ import (
 	"strings"
 
 	"github.com/h2non/filetype"
+	"github.com/turt2live/matrix-media-repo/util/cleanup"
 )
 
 func GetMimeType(stream io.ReadCloser) (string, error) {
-	defer DumpAndCloseStream(stream)
+	defer cleanup.DumpAndCloseStream(stream)
 
 	// We only need the first 512 bytes at most to determine the file type
 	buf := make([]byte, 512)

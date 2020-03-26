@@ -15,6 +15,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/cleanup"
 )
 
 var stores = make(map[string]*s3Datastore)
@@ -121,7 +122,7 @@ func (s *s3Datastore) EnsureTempPathExists() error {
 }
 
 func (s *s3Datastore) UploadFile(file io.ReadCloser, expectedLength int64, ctx rcontext.RequestContext) (*types.ObjectInfo, error) {
-	defer util.DumpAndCloseStream(file)
+	defer cleanup.DumpAndCloseStream(file)
 
 	objectName, err := util.GenerateRandomString(512)
 	if err != nil {
@@ -162,14 +163,14 @@ func (s *s3Datastore) UploadFile(file io.ReadCloser, expectedLength int64, ctx r
 				}
 				defer os.Remove(f.Name())
 				expectedLength, uploadErr = io.Copy(f, rs3)
-				util.DumpAndCloseStream(f)
+				cleanup.DumpAndCloseStream(f)
 				f, uploadErr = os.Open(f.Name())
 				if uploadErr != nil {
 					done <- true
 					return
 				}
 				rs3 = f
-				defer util.DumpAndCloseStream(f)
+				defer cleanup.DumpAndCloseStream(f)
 			} else {
 				ctx.Log.Warn("Uploading content of unknown length to s3 - this could result in high memory usage")
 				expectedLength = -1
@@ -222,7 +223,7 @@ func (s *s3Datastore) ObjectExists(location string) bool {
 }
 
 func (s *s3Datastore) OverwriteObject(location string, stream io.ReadCloser) error {
-	defer util.DumpAndCloseStream(stream)
+	defer cleanup.DumpAndCloseStream(stream)
 	_, err := s.client.PutObject(s.bucket, location, stream, -1, minio.PutObjectOptions{})
 	return err
 }

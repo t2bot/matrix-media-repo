@@ -19,6 +19,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/templating"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/cleanup"
 )
 
 type manifestRecord struct {
@@ -340,10 +341,10 @@ func compileArchive(exportId string, entityId string, archiveDs *datastore.Datas
 			_, err = io.Copy(&b, s)
 			if err != nil {
 				ctx.Log.Error(err)
-				util.DumpAndCloseStream(s)
+				cleanup.DumpAndCloseStream(s)
 				continue
 			}
-			util.DumpAndCloseStream(s)
+			cleanup.DumpAndCloseStream(s)
 			s = util.BufferToStream(bytes.NewBuffer(b.Bytes()))
 
 			ctx.Log.Info("Archiving ", m.MxcUri())

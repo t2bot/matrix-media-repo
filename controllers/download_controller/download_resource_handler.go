@@ -20,7 +20,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/matrix"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/types"
-	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/cleanup"
 	"github.com/turt2live/matrix-media-repo/util/resource_handler"
 )
 
@@ -138,7 +138,7 @@ func downloadResourceWorkFn(request *resource_handler.WorkRequest) interface{} {
 	}
 
 	persistFile := func(fileStream io.ReadCloser) *workerDownloadResponse {
-		defer util.DumpAndCloseStream(fileStream)
+		defer cleanup.DumpAndCloseStream(fileStream)
 		userId := upload_controller.NoApplicableUploadUser
 		media, err := upload_controller.StoreDirect(nil, fileStream, downloaded.ContentLength, downloaded.ContentType, downloaded.DesiredFilename, userId, info.origin, info.mediaId, common.KindRemoteMedia, ctx)
 		if err != nil {

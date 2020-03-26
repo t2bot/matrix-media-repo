@@ -16,6 +16,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/cleanup"
 )
 
 const NoApplicableUploadUser = ""
@@ -83,7 +84,7 @@ func EstimateContentLength(contentLength int64, contentLengthHeader string) int6
 }
 
 func UploadMedia(contents io.ReadCloser, contentLength int64, contentType string, filename string, userId string, origin string, ctx rcontext.RequestContext) (*types.Media, error) {
-	defer util.DumpAndCloseStream(contents)
+	defer cleanup.DumpAndCloseStream(contents)
 
 	var data io.ReadCloser
 	if ctx.Config.Uploads.MaxSizeBytes > 0 {

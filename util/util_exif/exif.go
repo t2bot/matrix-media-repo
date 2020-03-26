@@ -8,7 +8,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/types"
-	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/cleanup"
 )
 
 type ExifOrientation struct {
@@ -26,7 +26,7 @@ func GetExifOrientation(media *types.Media) (*ExifOrientation, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer util.DumpAndCloseStream(mediaStream)
+	defer cleanup.DumpAndCloseStream(mediaStream)
 
 	exifData, err := exif.Decode(mediaStream)
 	if err != nil {

@@ -16,6 +16,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/cleanup"
 	"github.com/turt2live/matrix-media-repo/util/resource_handler"
 )
 
@@ -107,7 +108,7 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) interface{} {
 			if err != nil {
 				ctx.Log.Warn("Non-fatal error streaming datastore file: " + err.Error())
 			} else {
-				defer util.DumpAndCloseStream(mediaStream)
+				defer cleanup.DumpAndCloseStream(mediaStream)
 				img, err := imaging.Decode(mediaStream)
 				if err != nil {
 					ctx.Log.Warn("Non-fatal error getting thumbnail dimensions: " + err.Error())

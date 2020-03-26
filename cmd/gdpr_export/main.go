@@ -17,7 +17,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/types"
-	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/cleanup"
 )
 
 func main() {
@@ -111,8 +111,8 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		util.DumpAndCloseStream(f)
-		util.DumpAndCloseStream(s)
+		cleanup.DumpAndCloseStream(f)
+		cleanup.DumpAndCloseStream(s)
 	}
 
 	logrus.Info("Deleting export now that it has been dumped")

@@ -18,6 +18,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/cleanup"
 	"github.com/turt2live/matrix-media-repo/util/download_tracker"
 )
 
@@ -149,7 +150,7 @@ func (c *MediaCache) GetMedia(media *types.Media, ctx rcontext.RequestContext) (
 		if err != nil {
 			return nil, err
 		}
-		defer util.DumpAndCloseStream(mediaStream)
+		defer cleanup.DumpAndCloseStream(mediaStream)
 
 		return &cachedFile{media: media, Contents: bytes.NewBuffer(data)}, nil
 	}
@@ -172,7 +173,7 @@ func (c *MediaCache) GetThumbnail(thumbnail *types.Thumbnail, ctx rcontext.Reque
 		if err != nil {
 			return nil, err
 		}
-		defer util.DumpAndCloseStream(mediaStream)
+		defer cleanup.DumpAndCloseStream(mediaStream)
 
 		return &cachedFile{thumbnail: thumbnail, Contents: bytes.NewBuffer(data)}, nil
 	}

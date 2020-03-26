@@ -10,10 +10,11 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/cleanup"
 )
 
 func PersistFile(basePath string, file io.ReadCloser, ctx rcontext.RequestContext) (*types.ObjectInfo, error) {
-	defer util.DumpAndCloseStream(file)
+	defer cleanup.DumpAndCloseStream(file)
 
 	exists := true
 	var primaryContainer string
@@ -68,13 +69,13 @@ func PersistFile(basePath string, file io.ReadCloser, ctx rcontext.RequestContex
 }
 
 func PersistFileAtLocation(targetFile string, file io.ReadCloser, ctx rcontext.RequestContext) (int64, string, error) {
-	defer util.DumpAndCloseStream(file)
+	defer cleanup.DumpAndCloseStream(file)
 
 	f, err := os.OpenFile(targetFile, os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return 0, "", err
 	}
-	defer util.DumpAndCloseStream(f)
+	defer cleanup.DumpAndCloseStream(f)
 
 	rfile, wfile := io.Pipe()
 	tr := io.TeeReader(file, wfile)

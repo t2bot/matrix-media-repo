@@ -27,6 +27,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/cleanup"
 	"github.com/turt2live/matrix-media-repo/util/resource_handler"
 	"github.com/turt2live/matrix-media-repo/util/util_exif"
 )
@@ -152,7 +153,7 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 			ctx.Log.Error("Error getting file: ", err2)
 			return nil, err2
 		}
-		defer util.DumpAndCloseStream(mediaStream)
+		defer cleanup.DumpAndCloseStream(mediaStream)
 		src, err = imaging.Decode(mediaStream)
 	}
 
@@ -228,7 +229,7 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 			ctx.Log.Error("Error resolving datastore path: ", err)
 			return nil, err
 		}
-		defer util.DumpAndCloseStream(mediaStream)
+		defer cleanup.DumpAndCloseStream(mediaStream)
 
 		g, err := gif.DecodeAll(mediaStream)
 		if err != nil {
@@ -352,14 +353,14 @@ func svgToImage(media *types.Media, ctx rcontext.RequestContext) (image.Image, e
 		ctx.Log.Error("Error streaming file: ", err)
 		return nil, err
 	}
-	defer util.DumpAndCloseStream(mediaStream)
+	defer cleanup.DumpAndCloseStream(mediaStream)
 
 	f, err := os.OpenFile(tempFile1, os.O_RDWR|os.O_CREATE, 0640)
 	if err != nil {
 		return nil, err
 	}
 	io.Copy(f, mediaStream)
-	util.DumpAndCloseStream(f)
+	cleanup.DumpAndCloseStream(f)
 
 	err = exec.Command("convert", tempFile1, tempFile2).Run()
 	if err != nil {
@@ -381,7 +382,7 @@ func pickImageFrame(media *types.Media, ctx rcontext.RequestContext) (image.Imag
 		ctx.Log.Error("Error resolving datastore path: ", err)
 		return nil, err
 	}
-	defer util.DumpAndCloseStream(mediaStream)
+	defer cleanup.DumpAndCloseStream(mediaStream)
 
 	g, err := gif.DecodeAll(mediaStream)
 	if err != nil {

@@ -9,10 +9,11 @@ import (
 	"github.com/turt2live/matrix-media-repo/ipfs_proxy"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/cleanup"
 )
 
 func UploadFile(file io.ReadCloser, ctx rcontext.RequestContext) (*types.ObjectInfo, error) {
-	defer util.DumpAndCloseStream(file)
+	defer cleanup.DumpAndCloseStream(file)
 
 	b, err := ioutil.ReadAll(file)
 	if err != nil {
