@@ -9,6 +9,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 *Nothing yet*.
 
+## [1.1.1] - March 26th, 2020
+
+### Added
+
+* Added pprof endpoints for debugging performance. Only enabled with a `MEDIA_PPROF_SECRET_KEY` environment variable.
+
+### Fixed
+
+* Fixed a few very slow memory leaks when using S3 datastores.
+
 ## [1.1.0] - March 19th, 2020
 
 ### Added
@@ -88,7 +98,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Various other features that would be expected like maximum/minimum size controls, rate limiting, etc. Check out the
   sample config for a better idea of what else is possible.
 
-[unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.1.0...HEAD
+[unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/turt2live/matrix-media-repo/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/turt2live/matrix-media-repo/compare/v1.0.2...v1.1.0
 [1.0.2]: https://github.com/turt2live/matrix-media-repo/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/turt2live/matrix-media-repo/compare/v1.0.0...v1.0.1
