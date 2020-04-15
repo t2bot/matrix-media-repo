@@ -21,6 +21,7 @@ func GetSafeAddress(addr string, ctx rcontext.RequestContext) (net.IP, string, e
 	if realHost != "localhost" {
 		addrs, err := net.LookupIP(realHost)
 		if err != nil {
+			ctx.Log.Warn("Error looking up DNS record for preview - assuming invalid host:", err)
 			return nil, "", common.ErrInvalidHost
 		}
 		if len(addrs) == 0 {
