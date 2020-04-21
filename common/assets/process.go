@@ -1,6 +1,8 @@
 package assets
 
 import (
+	"bytes"
+	"compress/gzip"
 	"encoding/hex"
 	"io/ioutil"
 	"os"
@@ -69,9 +71,21 @@ func extractPrefixTo(pathName string, destination string) {
 			panic(err)
 		}
 
+		logrus.Infof("Decompressing %s", f)
+		gr, err := gzip.NewReader(bytes.NewBuffer(b))
+		if err != nil {
+			panic(err)
+		}
+		//noinspection GoDeferInLoop,GoUnhandledErrorResult
+		defer gr.Close()
+		uncompressedBytes, err := ioutil.ReadAll(gr)
+		if err != nil {
+			panic(err)
+		}
+
 		dest := path.Join(destination, filepath.Base(f))
 		logrus.Infof("Writing %s to %s", f, dest)
-		err = ioutil.WriteFile(dest, b, 0644)
+		err = ioutil.WriteFile(dest, uncompressedBytes, 0644)
 		if err != nil {
 			panic(err)
 		}
