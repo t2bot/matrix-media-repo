@@ -23,6 +23,12 @@ func main() {
 	filesDir := flag.String("directory", "./gdpr-data", "The directory for where the entity's exported files are")
 	flag.Parse()
 
+	// Override config path with config for Docker users
+	configEnv := os.Getenv("REPO_CONFIG")
+	if configEnv != "" {
+		configPath = &configEnv
+	}
+
 	config.Path = *configPath
 	assets.SetupTemplatesAndMigrations(*migrationsPath, "")
 

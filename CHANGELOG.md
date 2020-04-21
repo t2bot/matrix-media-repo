@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Fixed
 
 * Fixed templates being corrupt in the Docker image.
+* Fixed `REPO_CONFIG` environment variable not being respected for auxiliary binaries in the Docker image.
 
 ## [1.1.1] - March 26th, 2020
 

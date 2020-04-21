@@ -45,6 +45,12 @@ func main() {
 	numWorkers := flag.Int("workers", 1, "The number of workers to use when downloading media. Using multiple workers risks deduplication not working as efficiently.")
 	flag.Parse()
 
+	// Override config path with config for Docker users
+	configEnv := os.Getenv("REPO_CONFIG")
+	if configEnv != "" {
+		configPath = &configEnv
+	}
+
 	config.Path = *configPath
 	assets.SetupTemplatesAndMigrations(*migrationsPath, "")
 
