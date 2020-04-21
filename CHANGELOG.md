@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 *Nothing yet.*
 
-## [1.1.2] - April 21, 2020
+## [1.1.2] - April 21st, 2020
 
 ### Fixed
 
