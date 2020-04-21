@@ -22,7 +22,6 @@ RUN apk add --no-cache \
         dos2unix
 
 COPY ./config.sample.yaml /etc/media-repo.yaml.sample
-COPY ./migrations /var/lib/media-repo-migrations
 COPY ./docker/run.sh /usr/local/bin/
 RUN dos2unix /usr/local/bin/run.sh
 

@@ -5,4 +5,4 @@ if [ ! -f media-repo.yaml ]; then
 fi
 chown -R ${UID}:${GID} /data
 
-exec su-exec ${UID}:${GID} media_repo -migrations /var/lib/media-repo-migrations
+exec su-exec ${UID}:${GID} media_repo
