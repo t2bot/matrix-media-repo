@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Changed
 
 * The Docker image now uses the migrations packed into the binary instead of the in-image ones.
+* Reduced log spam when someone views an export.
 
 ## [1.1.1] - March 26th, 2020
 

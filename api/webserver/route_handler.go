@@ -126,7 +126,12 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		break
 	}
 
-	contextLog.Info(fmt.Sprintf("Replying with result: %T %+v", res, res))
+	htmlRes, isHtml := res.(*api.HtmlResponse)
+	if isHtml {
+		contextLog.Info(fmt.Sprintf("Replying with result: %T %+v", res, fmt.Sprintf("<%d chars of html>", len(htmlRes.HTML))))
+	} else {
+		contextLog.Info(fmt.Sprintf("Replying with result: %T %+v", res, res))
+	}
 
 	statusCode := http.StatusOK
 	switch result := res.(type) {
