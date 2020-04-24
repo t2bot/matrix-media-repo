@@ -156,7 +156,7 @@ func fetchMedia(req interface{}) interface{} {
 	}
 	defer cleanup.DumpAndCloseStream(body)
 
-	_, err = upload_controller.StoreDirect(nil, body, -1, record.ContentType, record.UploadName, record.UserId, payload.serverName, record.MediaId, common.KindLocalMedia, ctx)
+	_, err = upload_controller.StoreDirect(nil, body, -1, record.ContentType, record.UploadName, record.UserId, payload.serverName, record.MediaId, common.KindLocalMedia, ctx, false)
 	if err != nil {
 		logrus.Error(err.Error())
 		return nil
