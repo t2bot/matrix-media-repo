@@ -10,6 +10,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 
 * Added options to cache access tokens for users. This prevents excessive calls to `/account/whoami` on your homeserver, particularly for appservices.
+* [Documentation](https://github.com/turt2live/matrix-media-repo/blob/master/docs/contrib/delegation.md) on how to set up delegation with the media repo and Traefik. Thanks @derEisele!
+
+### Fixed
+
+* Fixed federation with some homeserver setups (delegation with ports). Thanks @MatMaul!
+* Fixed the Synapse import script to not skip duplicated media. Thanks @jaywink!
 
 ## [1.1.2] - April 21st, 2020
 
