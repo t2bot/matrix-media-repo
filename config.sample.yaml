@@ -272,7 +272,12 @@ downloads:
     minDownloads: 5
 
     # The minimum amount of time an item should remain in the cache. This prevents the cache
-    # from cycling out the file if it needs more room during this time.
+    # from cycling out the file if it needs more room during this time. Note that the media
+    # repo regularly cleans out media which is past this point from the cache, so this number
+    # may need increasing depending on your use case. If the maxSizeBytes is reached for the
+    # media repo, and some cached items are still under this timer, new items will not be able
+    # to enter the cache. When this happens, consider raising maxSizeBytes or lowering this
+    # timer.
     minCacheTimeSeconds: 300
 
     # The minimum amount of time an item should remain outside the cache once it is removed.
