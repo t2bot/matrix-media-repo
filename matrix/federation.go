@@ -130,7 +130,8 @@ func GetServerApiUrl(hostname string) (string, string, error) {
 					// Step 3b: if the delegated host is not an IP and an explicit port is given, use that
 					logrus.Debug("Checking if WK is using default port? ", wkDefPort)
 					if !wkDefPort {
-						url := fmt.Sprintf("https://%s:%s", wkHost, wkPort)
+						wkHost = fmt.Sprintf("%s:%s", wkHost, wkPort)
+						url := fmt.Sprintf("https://%s", wkHost)
 						server := cachedServer{url, wkHost}
 						apiUrlCacheInstance.Set(hostname, server, cache.DefaultExpiration)
 						logrus.Info("Server API URL for " + hostname + " is " + url + " (WK; explicit port)")
@@ -216,6 +217,12 @@ func FederatedGet(url string, realHost string, ctx rcontext.RequestContext) (*ht
 		// HTTP client doesn't verify against the req.Host certificate, but it does
 		// handle it off the req.URL.Host. So, we need to tell it which certificate
 		// to verify.
+
+		h, _, err := net.SplitHostPort(realHost)
+		if err == nil {
+			// Strip the port first, certs are port-insensitive
+			realHost = h
+		}
 		client := http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{
