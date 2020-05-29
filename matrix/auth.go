@@ -10,14 +10,13 @@ import (
 
 var ErrInvalidToken = errors.New("Missing or invalid access token")
 
-func GetUserIdFromToken(ctx rcontext.RequestContext, serverName string, accessToken string, appserviceUserId string, ipAddr string) (string, error) {
+func doBreakerRequest(ctx rcontext.RequestContext, serverName string, accessToken string, appserviceUserId string, ipAddr string, method string, path string, resp interface{}) error {
 	if accessToken == "" {
-		return "", ErrInvalidToken
+		return ErrInvalidToken
 	}
 
 	hs, cb := getBreakerAndConfig(serverName)
 
-	userId := ""
 	var replyError error
 	var authError error
 	replyError = cb.CallContext(ctx, func() error {
@@ -26,26 +25,50 @@ func GetUserIdFromToken(ctx rcontext.RequestContext, serverName string, accessTo
 			query["user_id"] = appserviceUserId
 		}
 
-		response := &userIdResponse{}
-		target, _ := url.Parse(makeUrl(hs.ClientServerApi, "/_matrix/client/r0/account/whoami"))
+		target, _ := url.Parse(makeUrl(hs.ClientServerApi, path))
 		q := target.Query()
 		for k, v := range query {
 			q.Set(k, v)
 		}
 		target.RawQuery = q.Encode()
-		err := doRequest(ctx, "GET", target.String(), nil, response, accessToken, ipAddr)
+		err := doRequest(ctx, method, target.String(), nil, resp, accessToken, ipAddr)
 		if err != nil {
 			ctx.Log.Warn("Error from homeserver: ", err)
 			err, authError = filterError(err)
 			return err
 		}
-
-		userId = response.UserId
 		return nil
 	}, 1*time.Minute)
 
 	if authError != nil {
-		return userId, authError
+		return authError
 	}
-	return userId, replyError
+	return replyError
+}
+
+func GetUserIdFromToken(ctx rcontext.RequestContext, serverName string, accessToken string, appserviceUserId string, ipAddr string) (string, error) {
+	response := &userIdResponse{}
+	err := doBreakerRequest(ctx, serverName, accessToken, appserviceUserId, ipAddr, "GET", "/_matrix/client/r0/account/whoami", response)
+	if err != nil {
+		return "", err
+	}
+	return response.UserId, nil
+}
+
+func Logout(ctx rcontext.RequestContext, serverName string, accessToken string, appserviceUserId string, ipAddr string) error {
+	response := &emptyResponse{}
+	err := doBreakerRequest(ctx, serverName, accessToken, appserviceUserId, ipAddr, "POST", "/_matrix/client/r0/logout", response)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func LogoutAll(ctx rcontext.RequestContext, serverName string, accessToken string, appserviceUserId string, ipAddr string) error {
+	response := &emptyResponse{}
+	err := doBreakerRequest(ctx, serverName, accessToken, appserviceUserId, ipAddr, "POST", "/_matrix/client/r0/logout/all", response)
+	if err != nil {
+		return err
+	}
+	return nil
 }

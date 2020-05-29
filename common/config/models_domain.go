@@ -99,3 +99,20 @@ type IPFSDaemonConfig struct {
 	Enabled  bool   `yaml:"enabled"`
 	RepoPath string `yaml:"repoPath"`
 }
+
+type AccessTokenConfig struct {
+	MaxCacheTimeSeconds int                `yaml:"maxCacheTimeSeconds"`
+	UseAppservices      bool               `yaml:"useLocalAppserviceConfig"`
+	Appservices         []AppserviceConfig `yaml:"appservices,flow"`
+}
+
+type AppserviceConfig struct {
+	Id              string                          `yaml:"id"`
+	AppserviceToken string                          `yaml:"asToken"`
+	SenderUserId    string                          `yaml:"senderUserId"`
+	UserNamespaces  []AppserviceUserNamespaceConfig `yaml:"userNamespaces,flow"`
+}
+
+type AppserviceUserNamespaceConfig struct {
+	Regex string `yaml:"regex"`
+}

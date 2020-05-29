@@ -94,6 +94,10 @@ func onFileChanged() {
 		globals.IPFSReloadChan <- true
 	}
 
+	// Always flush the access token cache
+	logrus.Warn("Flushing access token cache")
+	globals.AccessTokenReloadChan <- true
+
 	// Always update the datastores
 	logrus.Warn("Updating datastores to ensure accuracy")
 	globals.DatastoresReloadChan <- true

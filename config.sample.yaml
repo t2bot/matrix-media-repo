@@ -59,6 +59,53 @@ homeservers:
                            # endpoints will be used instead. Unknown values are treated as the
                            # default, "matrix".
 
+# Options for controlling how access tokens work with the media repo. It is recommended that if
+# you are going to use these options that the `/logout` and `/logout/all` client-server endpoints
+# be proxied through this process. They will also be called on the homeserver, and the response
+# sent straight through the client - they are simply used to invalidate the cache faster for
+# a particular user. Without these, the access tokens might still work for a short period of time
+# after the user has already invalidated them.
+#
+# This will also cache errors from the homeserver.
+#
+# Note that when this config block is used outside of a per-domain config, all hosts will be
+# subject to the same cache. This also means that application services on limited homeservers
+# could be authorized on the wrong domain.
+#
+# ***************************************************************************
+# *  IT IS HIGHLY RECOMMENDED TO USE PER-DOMAIN CONFIGS WITH THIS FEATURE.  *
+# ***************************************************************************
+accessTokens:
+  # The maximum time a cached access token will be considered valid. Set to zero (the default)
+  # to disable the cache and constantly hit the homeserver. This is recommended to be set to
+  # 43200 (12 hours) on servers with the logout endpoints proxied through the media repo, and
+  # zero for servers who do not proxy the endpoints through.
+  maxCacheTimeSeconds: 0
+
+  # Whether or not to use the `appservices` config option below. If disabled (the default),
+  # the regular access token cache will be used for each user, potentially leading to high
+  # memory usage.
+  useLocalAppserviceConfig: false
+
+  # The application services (and their namespaces) registered on the homeserver. Only used
+  # if `useLocalAppserviceConfig` is enabled (recommended).
+  #
+  # Usually the appservice will provide you with these config details - they'll just need
+  # translating from the appservice registration to here. Note that this does not require
+  # all options from the registration, and only requires the bare minimum required to run
+  # the media repo.
+  appservices:
+    - id: Name_of_appservice_for_your_reference
+      asToken: Secret_token_for_appservices_to_use
+      senderUserId: "@_example_bridge:yourdomain.com"
+      userNamespaces:
+        - regex: "@_example_bridge_.+:yourdomain.com"
+          # A note about regexes: it is best to suffix *all* namespaces with the homeserver
+          # domain users are valid for, as otherwise the appservice can use any user with
+          # any domain name it feels like, even if that domain is not configured with the
+          # media repo. This will lead to inaccurate reporting in the case of the media
+          # repo, and potentially leading to media being considered "remote".
+
 # These users have full access to the administrative functions of the media repository.
 # See docs/admin.md for information on what these people can do. They must belong to one of the
 # configured homeservers above.

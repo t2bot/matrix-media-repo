@@ -79,6 +79,8 @@ func Init() *sync.WaitGroup {
 	blurhashRenderHandler := handler{api.AccessTokenRequiredRoute(unstable.RenderBlurhash), "render_blurhash", counter, false}
 	blurhashCalcHandler := handler{api.AccessTokenRequiredRoute(unstable.GetBlurhash), "calculate_blurhash", counter, false}
 	ipfsDownloadHandler := handler{api.AccessTokenOptionalRoute(unstable.IPFSDownload), "ipfs_download", counter, false}
+	logoutHandler := handler{api.AccessTokenRequiredRoute(r0.Logout), "logout", counter, false}
+	logoutAllHandler := handler{api.AccessTokenRequiredRoute(r0.LogoutAll), "logout_all", counter, false}
 
 	routes := make(map[string]route)
 	// r0 is typically clients and v1 is typically servers. v1 is deprecated.
@@ -97,6 +99,8 @@ func Init() *sync.WaitGroup {
 		routes["/_matrix/media/"+version+"/preview_url"] = route{"GET", previewUrlHandler}
 		routes["/_matrix/media/"+version+"/identicon/{seed:.*}"] = route{"GET", identiconHandler}
 		routes["/_matrix/media/"+version+"/config"] = route{"GET", configHandler}
+		routes["/_matrix/client/"+version+"/logout"] = route{"POST", logoutHandler}
+		routes["/_matrix/client/"+version+"/logout/all"] = route{"POST", logoutAllHandler}
 
 		// Routes that we define but are not part of the spec (management)
 		routes["/_matrix/media/"+version+"/admin/purge_remote"] = route{"POST", purgeRemote} // deprecated

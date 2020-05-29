@@ -8,6 +8,7 @@ type MinimumRepoConfig struct {
 	Quarantine     QuarantineConfig  `yaml:"quarantine"`
 	TimeoutSeconds TimeoutsConfig    `yaml:"timeouts"`
 	Features       FeatureConfig     `yaml:"featureSupport"`
+	AccessTokens   AccessTokenConfig `yaml:"accessTokens"`
 }
 
 func NewDefaultMinimumRepoConfig() MinimumRepoConfig {
@@ -52,11 +53,16 @@ func NewDefaultMinimumRepoConfig() MinimumRepoConfig {
 			},
 			IPFS: IPFSConfig{
 				Enabled: false,
-				Daemon:  IPFSDaemonConfig{
+				Daemon: IPFSDaemonConfig{
 					Enabled:  true,
 					RepoPath: "./ipfs",
 				},
 			},
+		},
+		AccessTokens: AccessTokenConfig{
+			MaxCacheTimeSeconds: 0,
+			UseAppservices:      false,
+			Appservices:         []AppserviceConfig{},
 		},
 	}
 }

@@ -4,6 +4,9 @@ import (
 	"fmt"
 )
 
+type emptyResponse struct {
+}
+
 type userIdResponse struct {
 	UserId string `json:"user_id"`
 }

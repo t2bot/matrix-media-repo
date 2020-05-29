@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/api/auth_cache"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
@@ -35,7 +36,7 @@ func AccessTokenRequiredRoute(next func(r *http.Request, rctx rcontext.RequestCo
 			return callUserNext(next, r, rctx, UserInfo{UserId: "@sharedsecret", AccessToken: accessToken, IsShared: true})
 		}
 		appserviceUserId := util.GetAppserviceUserIdFromRequest(r)
-		userId, err := matrix.GetUserIdFromToken(rctx, r.Host, accessToken, appserviceUserId, r.RemoteAddr)
+		userId, err := auth_cache.GetUserId(rctx, accessToken, appserviceUserId)
 		if err != nil || userId == "" {
 			if err != nil && err != matrix.ErrInvalidToken {
 				rctx.Log.Error("Error verifying token (fatal): ", err)
@@ -63,7 +64,7 @@ func AccessTokenOptionalRoute(next func(r *http.Request, rctx rcontext.RequestCo
 			return callUserNext(next, r, rctx, UserInfo{UserId: "@sharedsecret", AccessToken: accessToken, IsShared: true})
 		}
 		appserviceUserId := util.GetAppserviceUserIdFromRequest(r)
-		userId, err := matrix.GetUserIdFromToken(rctx, r.Host, accessToken, appserviceUserId, r.RemoteAddr)
+		userId, err := auth_cache.GetUserId(rctx, accessToken, appserviceUserId)
 		if err != nil {
 			if err != matrix.ErrInvalidToken {
 				rctx.Log.Error("Error verifying token: ", err)

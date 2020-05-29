@@ -141,6 +141,7 @@ func reloadConfig() (*MainRepoConfig, map[string]*DomainRepoConfig, error) {
 
 	// Start building domain configs
 	dMaps := make(map[string]map[string]interface{})
+	logrus.Info(c.AccessTokens)
 	for _, d := range c.Homeservers {
 		dc := DomainConfigFrom(c)
 		dc.Name = d.Name
@@ -175,14 +176,14 @@ func reloadConfig() (*MainRepoConfig, map[string]*DomainRepoConfig, error) {
 		}
 	}
 	for hs, m := range dMaps {
-		c := DomainRepoConfig{}
-		err = mapToObjYaml(m, &c)
+		drc := DomainRepoConfig{}
+		err = mapToObjYaml(m, &drc)
 		if err != nil {
 			return nil, nil, err
 		}
 
 		// For good measure...
-		domainConfs[hs] = &c
+		domainConfs[hs] = &drc
 		domainConfs[hs].Name = hs
 	}
 
@@ -228,6 +229,7 @@ func DomainConfigFrom(c MainRepoConfig) DomainRepoConfig {
 	dc.Downloads = c.Downloads.DownloadsConfig
 	dc.Thumbnails = c.Thumbnails.ThumbnailsConfig
 	dc.UrlPreviews = c.UrlPreviews.UrlPreviewsConfig
+	dc.AccessTokens = c.AccessTokens
 	return dc
 }
 

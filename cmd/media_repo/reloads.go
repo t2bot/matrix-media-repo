@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/turt2live/matrix-media-repo/api/auth_cache"
 	"github.com/turt2live/matrix-media-repo/api/webserver"
 	"github.com/turt2live/matrix-media-repo/common/globals"
 	"github.com/turt2live/matrix-media-repo/common/runtime"
@@ -17,6 +18,7 @@ func setupReloads() {
 	reloadDatastoresOnChan(globals.DatastoresReloadChan)
 	reloadRecurringTasksOnChan(globals.RecurringTasksReloadChan)
 	reloadIpfsOnChan(globals.IPFSReloadChan)
+	reloadAccessTokensOnChan(globals.AccessTokenReloadChan)
 }
 
 func stopReloads() {
@@ -25,6 +27,7 @@ func stopReloads() {
 	globals.MetricsReloadChan <- false
 	globals.DatabaseReloadChan <- false
 	globals.DatastoresReloadChan <- false
+	globals.AccessTokenReloadChan <- false
 	globals.RecurringTasksReloadChan <- false
 	globals.IPFSReloadChan <- false
 }
@@ -111,6 +114,18 @@ func reloadIpfsOnChan(reloadChan chan bool) {
 				ipfs_proxy.Reload()
 			} else {
 				ipfs_proxy.Stop()
+			}
+		}
+	}()
+}
+
+func reloadAccessTokensOnChan(reloadChan chan bool) {
+	go func() {
+		defer close(reloadChan)
+		for {
+			shouldReload := <-reloadChan
+			if shouldReload {
+				auth_cache.FlushCache()
 			}
 		}
 	}()

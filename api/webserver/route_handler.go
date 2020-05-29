@@ -94,7 +94,8 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		ctx = context.WithValue(ctx, "mr.logger", contextLog)
 		ctx = context.WithValue(ctx, "mr.serverConfig", cfg)
-		rctx := rcontext.RequestContext{Context: ctx, Log: contextLog, Config: *cfg}
+		ctx = context.WithValue(ctx, "mr.request", r)
+		rctx := rcontext.RequestContext{Context: ctx, Log: contextLog, Config: *cfg, Request: r}
 		r = r.WithContext(rctx)
 
 		metrics.HttpRequests.With(prometheus.Labels{
