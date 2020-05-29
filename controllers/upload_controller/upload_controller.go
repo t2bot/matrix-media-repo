@@ -149,7 +149,7 @@ func UploadMedia(contents io.ReadCloser, contentLength int64, contentType string
 		mediaId = fmt.Sprintf("ipfs:%s", info.Location[len("ipfs/"):])
 	}
 
-	return StoreDirect(existingFile, data, contentLength, contentType, filename, userId, origin, mediaId, common.KindLocalMedia, ctx)
+	return StoreDirect(existingFile, data, contentLength, contentType, filename, userId, origin, mediaId, common.KindLocalMedia, ctx, true)
 }
 
 func trackUploadAsLastAccess(ctx rcontext.RequestContext, media *types.Media) {
@@ -202,7 +202,7 @@ func IsAllowed(contentType string, reportedContentType string, userId string, ct
 	return allowed
 }
 
-func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize int64, contentType string, filename string, userId string, origin string, mediaId string, kind string, ctx rcontext.RequestContext) (*types.Media, error) {
+func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize int64, contentType string, filename string, userId string, origin string, mediaId string, kind string, ctx rcontext.RequestContext, filterUserDuplicates bool) (*types.Media, error) {
 	var ds *datastore.DatastoreRef
 	var info *types.ObjectInfo
 	if f == nil {
@@ -255,7 +255,7 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 		// If the user is a real user (ie: actually uploaded media), then we'll see if there's
 		// an exact duplicate that we can return. Otherwise we'll just pick the first record and
 		// clone that.
-		if userId != NoApplicableUploadUser {
+		if filterUserDuplicates && userId != NoApplicableUploadUser {
 			for _, record := range records {
 				if record.Quarantined {
 					ctx.Log.Warn("User attempted to upload quarantined content - rejecting")
