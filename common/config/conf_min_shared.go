@@ -23,7 +23,6 @@ func NewDefaultMinimumRepoConfig() MinimumRepoConfig {
 			MaxSizeBytes:         104857600, // 100mb
 			MinSizeBytes:         100,
 			ReportedMaxSizeBytes: 0,
-			StoragePaths:         []string{},
 			AllowedTypes:         []string{"*/*"},
 		},
 		Identicons: IdenticonsConfig{

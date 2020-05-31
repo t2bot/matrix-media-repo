@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Changed
 
 * Deprecated support for restricting uploads to certain mime types, due to inability to make it work correctly with encrypted media.
+* Removed deprecated `storagePaths` config option. Please use datastores.
 
 ### Fixed
 

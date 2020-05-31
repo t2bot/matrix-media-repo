@@ -7,7 +7,6 @@ type ArchivingConfig struct {
 }
 
 type UploadsConfig struct {
-	StoragePaths         []string            `yaml:"storagePaths,flow"` // deprecated
 	MaxSizeBytes         int64               `yaml:"maxBytes"`
 	MinSizeBytes         int64               `yaml:"minBytes"`
 	AllowedTypes         []string            `yaml:"allowedTypes,flow"`

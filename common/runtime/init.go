@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/common/version"
@@ -31,25 +30,6 @@ func LoadDatabase() {
 }
 
 func LoadDatastores() {
-	if len(config.Get().Uploads.StoragePaths) > 0 {
-		logrus.Warn("storagePaths usage is deprecated - please use datastores instead")
-		for _, p := range config.Get().Uploads.StoragePaths {
-			ctx := rcontext.Initial().LogWithFields(logrus.Fields{"path": p})
-			ds, err := storage.GetOrCreateDatastoreOfType(ctx, "file", p)
-			if err != nil {
-				logrus.Fatal(err)
-			}
-
-			fakeConfig := config.DatastoreConfig{
-				Type:       "file",
-				Enabled:    true,
-				MediaKinds: common.AllKinds,
-				Options:    map[string]string{"path": ds.Uri},
-			}
-			config.Get().DataStores = append(config.Get().DataStores, fakeConfig)
-		}
-	}
-
 	mediaStore := storage.GetDatabase().GetMediaStore(rcontext.Initial())
 
 	logrus.Info("Initializing datastores...")
@@ -96,9 +76,5 @@ func LoadDatastores() {
 				logrus.Warn("\t\tTemporary path does not exist!")
 			}
 		}
-	}
-
-	if len(config.Get().Uploads.StoragePaths) > 0 {
-		logrus.Warn("You are using `storagePaths` in your configuration - in a future update, this will be removed. Please use datastores instead (see sample config).")
 	}
 }
