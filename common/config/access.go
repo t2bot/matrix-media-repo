@@ -270,3 +270,25 @@ func PrintDomainInfo() {
 		logrus.Info(fmt.Sprintf("\t%s (%s)", d.Name, d.ClientServerApi))
 	}
 }
+
+func CheckDeprecations() {
+	numAllowedTypes := len(Get().Uploads.AllowedTypes)
+	if numAllowedTypes > 1 || (numAllowedTypes > 0 && Get().Uploads.AllowedTypes[0] != "*/*") {
+		logrus.Warn("**************************************************")
+		logrus.Warn("*              DEPRECATION WARNING               *")
+		logrus.Warn("**************************************************")
+		logrus.Warn("* The `allowedTypes` option in the config is     *")
+		logrus.Warn("* deprecated. See the sample config for details. *")
+		logrus.Warn("**************************************************")
+	}
+
+	numExclusions := len(Get().Uploads.PerUserExclusions)
+	if numExclusions > 0 {
+		logrus.Warn("**************************************************")
+		logrus.Warn("*              DEPRECATION WARNING               *")
+		logrus.Warn("**************************************************")
+		logrus.Warn("* The `exclusions` option in the config is       *")
+		logrus.Warn("* deprecated. See the sample config for details. *")
+		logrus.Warn("**************************************************")
+	}
+}

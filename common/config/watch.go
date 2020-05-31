@@ -55,6 +55,7 @@ func onFileChanged() {
 	instance = configNew
 	domains = domainsNew
 	PrintDomainInfo()
+	CheckDeprecations()
 
 	bindAddressChange := configNew.General.BindAddress != configNow.General.BindAddress
 	bindPortChange := configNew.General.Port != configNow.General.Port

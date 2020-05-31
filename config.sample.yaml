@@ -219,6 +219,10 @@ uploads:
   # supplied here, then all file types are allowed. Asterisks (*) are wildcards and can be
   # placed anywhere to match everything (eg: "image/*" matches all images). This will also
   # restrict which file types are downloaded from remote servers.
+  #
+  # Caution: the media repo cannot tell the difference between encrypted media and arbitrary
+  # binary data. For this reason, this option is deprecated and to be removed in a future
+  # version.
   allowedTypes:
     - "*/*"
 
@@ -228,6 +232,10 @@ uploads:
   # allows for entire servers to have different allowed types by setting a rule similar to
   # "@*:example.org". Users will be allowed to upload a file if the type matches any of
   # the policies that match the user ID.
+  #
+  # Caution: the media repo cannot tell the difference between encrypted media and arbitrary
+  # binary data. For this reason, this option is deprecated and to be removed in a future
+  # version.
   #exclusions:
   #  "@someone:example.org":
   #     - "application/pdf"

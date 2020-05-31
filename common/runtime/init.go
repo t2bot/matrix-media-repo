@@ -17,6 +17,7 @@ import (
 func RunStartupSequence() {
 	version.Print(true)
 	config.PrintDomainInfo()
+	config.CheckDeprecations()
 	LoadDatabase()
 	LoadDatastores()
 

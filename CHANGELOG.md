@@ -12,6 +12,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Added options to cache access tokens for users. This prevents excessive calls to `/account/whoami` on your homeserver, particularly for appservices.
 * [Documentation](https://github.com/turt2live/matrix-media-repo/blob/master/docs/contrib/delegation.md) on how to set up delegation with the media repo and Traefik. Thanks @derEisele!
 
+### Changed
+
+* Deprecated support for restricting uploads to certain mime types, due to inability to make it work correctly with encrypted media.
+
 ### Fixed
 
 * Fixed federation with some homeserver setups (delegation with ports). Thanks @MatMaul!
