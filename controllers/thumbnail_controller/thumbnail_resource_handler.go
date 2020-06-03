@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"image"
-	"image/color"
 	"image/draw"
 	"image/gif"
 	"io"
@@ -240,23 +239,29 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 
 		// Prepare a blank frame to use as swap space
 		frameImg := image.NewRGBA(image.Rectangle{image.Point{0, 0}, image.Point{g.Config.Width, g.Config.Height}})
-		// make sure the image is transparent at the start
-		draw.Draw(frameImg, frameImg.Bounds(), image.Transparent, image.ZP, draw.Src)
 
 		for i := range g.Image {
 			img := g.Image[i]
 			var disposal byte
 			if g.Disposal == nil {
-				// go 1.14
 				disposal = 0
 			} else {
 				disposal = g.Disposal[i]
 			}
 
-			var previousImg draw.Image
+			// if disposal type is 1 (preserve previous frame) we can get artifacts from re-scaling
+			// as such, we re-render those frames to disposal type 0 (start with a transparent frame)
+			// see https://www.w3.org/Graphics/GIF/spec-gif89a.txt
+			if disposal == 1 {
+				g.Disposal[i] = 0
+			} else {
+				draw.Draw(frameImg, frameImg.Bounds(), image.Transparent, image.ZP, draw.Src)
+			}
+
+			var previousFrameImg draw.Image
 			if disposal == 3 {
-				previousImg = image.NewRGBA(g.Image[0].Bounds())
-				draw.Draw(previousImg, frameImg.Bounds(), frameImg, image.ZP, draw.Over)
+				previousFrameImg = image.NewRGBA(frameImg.Bounds())
+				draw.Draw(previousFrameImg, frameImg.Bounds(), frameImg, image.ZP, draw.Over)
 			}
 
 			// Copy the frame to a new image and use that
@@ -274,24 +279,6 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 			targetImg := image.NewPaletted(frameThumb.Bounds(), img.Palette)
 			draw.FloydSteinberg.Draw(targetImg, frameThumb.Bounds(), frameThumb, image.ZP)
 			g.Image[i] = targetImg
-
-			// determine how to dispose the frame
-			// see https://www.w3.org/Graphics/GIF/spec-gif89a.txt
-			if disposal == 0 {
-				// Clear the transparency of the previous frame
-				draw.Draw(frameImg, frameImg.Bounds(), image.Transparent, image.ZP, draw.Src)
-			} else if disposal == 1 {
-				// do nothing
-			} else if disposal == 2 && g.Config.ColorModel != nil {
-				// restore background color
-				background := g.Config.ColorModel.(color.Palette)[g.BackgroundIndex]
-				if background != nil {
-					draw.Draw(frameImg, frameImg.Bounds(), image.NewUniform(background), image.ZP, draw.Src)
-				}
-			} else if disposal == 3 && previousImg != nil {
-				// restore previous frame
-				draw.Draw(frameImg, frameImg.Bounds(), previousImg, image.ZP, draw.Over)
-			}
 		}
 
 		// Set the image size to the first frame's size
