@@ -242,9 +242,12 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 
 		for i := range g.Image {
 			img := g.Image[i]
+			disposal := g.Disposal[i]
 
 			// Clear the transparency of the previous frame
-			draw.Draw(frameImg, frameImg.Bounds(), image.Transparent, image.ZP, draw.Src)
+			if disposal == 0 {
+				draw.Draw(frameImg, frameImg.Bounds(), image.Transparent, image.ZP, draw.Src)
+			}
 
 			// Copy the frame to a new image and use that
 			draw.Draw(frameImg, frameImg.Bounds(), img, image.ZP, draw.Over)
