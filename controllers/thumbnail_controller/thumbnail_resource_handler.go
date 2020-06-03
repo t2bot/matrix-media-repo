@@ -245,7 +245,13 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 
 		for i := range g.Image {
 			img := g.Image[i]
-			disposal := g.Disposal[i]
+			var disposal byte
+			if g.Disposal == nil {
+				// go 1.14
+				disposal = 0
+			} else {
+				disposal = g.Disposal[i]
+			}
 
 			var previousImg draw.Image
 			if disposal == 3 {
