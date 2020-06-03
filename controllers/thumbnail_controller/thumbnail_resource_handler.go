@@ -258,12 +258,6 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 				draw.Draw(frameImg, frameImg.Bounds(), image.Transparent, image.ZP, draw.Src)
 			}
 
-			var previousFrameImg draw.Image
-			if disposal == 3 {
-				previousFrameImg = image.NewRGBA(frameImg.Bounds())
-				draw.Draw(previousFrameImg, frameImg.Bounds(), frameImg, image.ZP, draw.Over)
-			}
-
 			// Copy the frame to a new image and use that
 			draw.Draw(frameImg, frameImg.Bounds(), img, image.ZP, draw.Over)
 
