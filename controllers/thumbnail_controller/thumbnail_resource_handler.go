@@ -243,13 +243,14 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 		for i := range g.Image {
 			img := g.Image[i]
 			var disposal byte
+			// use disposal method 0 by default
 			if g.Disposal == nil {
 				disposal = 0
 			} else {
 				disposal = g.Disposal[i]
 			}
 
-			// if disposal type is 1 (preserve previous frame) we can get artifacts from re-scaling
+			// if disposal type is 1 (preserve previous frame) we can get artifacts from re-scaling.
 			// as such, we re-render those frames to disposal type 0 (start with a transparent frame)
 			// see https://www.w3.org/Graphics/GIF/spec-gif89a.txt
 			if disposal == 1 {
