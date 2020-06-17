@@ -297,7 +297,6 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 
 		widthRatio := float64(width) / float64(p.Frames[0].Image.Bounds().Dx())
 		heightRatio := float64(width) / float64(p.Frames[0].Image.Bounds().Dy())
-		ctx.Log.Warn("widthRatio", widthRatio, "heightRatio", heightRatio);
 
 		for i := range p.Frames {
 			frame := p.Frames[i]
