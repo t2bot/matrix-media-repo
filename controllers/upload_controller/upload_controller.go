@@ -1,12 +1,13 @@
 package upload_controller
 
 import (
-	"database/sql"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"strconv"
+	"time"
 
+	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
 	"github.com/ryanuber/go-glob"
 	"github.com/sirupsen/logrus"
@@ -20,6 +21,8 @@ import (
 )
 
 const NoApplicableUploadUser = ""
+
+var recentMediaIds = cache.New(30 * time.Second, 60 * time.Second)
 
 type AlreadyUploadedFile struct {
 	DS         *datastore.DatastoreRef
@@ -94,7 +97,6 @@ func UploadMedia(contents io.ReadCloser, contentLength int64, contentType string
 	}
 
 	metadataDb := storage.GetDatabase().GetMetadataStore(ctx)
-	mediaDb := storage.GetDatabase().GetMediaStore(ctx)
 
 	mediaTaken := true
 	var mediaId string
@@ -110,26 +112,25 @@ func UploadMedia(contents io.ReadCloser, contentLength int64, contentType string
 		if err != nil {
 			return nil, err
 		}
+		mediaId, err = util.GetSha1OfString(mediaId + strconv.FormatInt(util.NowMillis(), 10))
+		if err != nil {
+			return nil, err
+		}
+
+		// Because we use the current time in the media ID, we don't need to worry about
+		// collisions from the database.
+		if _, present := recentMediaIds.Get(mediaId); present {
+			mediaTaken = true
+			continue
+		}
 
 		mediaTaken, err = metadataDb.IsReserved(origin, mediaId)
 		if err != nil {
 			return nil, err
 		}
-
-		if !mediaTaken {
-			// Double check it isn't already in use
-			var media *types.Media
-			media, err = mediaDb.Get(origin, mediaId)
-			if err == sql.ErrNoRows {
-				mediaTaken = false
-				continue
-			}
-			if err != nil {
-				return nil, err
-			}
-			mediaTaken = media != nil
-		}
 	}
+
+	_ = recentMediaIds.Add(mediaId, true, cache.DefaultExpiration)
 
 	var existingFile *AlreadyUploadedFile = nil
 	ds, err := datastore.PickDatastore(common.KindLocalMedia, ctx)
