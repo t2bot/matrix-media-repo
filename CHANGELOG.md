@@ -22,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Fixed federation with some homeserver setups (delegation with ports). Thanks @MatMaul!
 * Fixed the Synapse import script to not skip duplicated media. Thanks @jaywink!
 * Fixed requests to IPv6 hosts. Thanks @MatMaul!
+* Fixed listening on IPv6 addresses.
 * Removed excessive calls to the database during upload.
 
 ## [1.1.2] - April 21st, 2020
