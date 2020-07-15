@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+*Nothing yet!*
+
+## [1.1.3] - July 15th, 2020
+
 ### Added
 
 * Added options to cache access tokens for users. This prevents excessive calls to `/account/whoami` on your homeserver, particularly for appservices.
@@ -125,7 +129,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Various other features that would be expected like maximum/minimum size controls, rate limiting, etc. Check out the
   sample config for a better idea of what else is possible.
 
-[unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.1.2...HEAD
+[unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.1.3...HEAD
+[1.1.3]: https://github.com/turt2live/matrix-media-repo/compare/v1.1.2...v1.1.3
 [1.1.2]: https://github.com/turt2live/matrix-media-repo/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/turt2live/matrix-media-repo/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/turt2live/matrix-media-repo/compare/v1.0.2...v1.1.0
