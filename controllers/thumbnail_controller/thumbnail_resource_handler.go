@@ -18,6 +18,7 @@ import (
 
 	"github.com/chai2010/webp"
 	"github.com/disintegration/imaging"
+	"github.com/kettek/apng"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
@@ -222,8 +223,8 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 
 	contentType := "image/png"
 	imgData := &bytes.Buffer{}
-	if allowAnimated && animated {
-		ctx.Log.Info("Generating animated thumbnail")
+	if allowAnimated && animated && media.ContentType == "image/gif" {
+		ctx.Log.Info("Generating animated gif thumbnail")
 		contentType = "image/gif"
 
 		// Animated GIFs are a bit more special because we need to do it frame by frame.
@@ -286,6 +287,69 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 		g.Config.Height = g.Image[0].Bounds().Max.Y
 
 		err = gif.EncodeAll(imgData, g)
+		if err != nil {
+			ctx.Log.Error("Error generating animated thumbnail: " + err.Error())
+			return nil, err
+		}
+	} else if allowAnimated && animated && media.ContentType == "image/png" {
+		ctx.Log.Info("Generating animated png thumbnail")
+		contentType = "image/png"
+
+		// scale animated pngs frame by frame
+
+		mediaStream, err := datastore.DownloadStream(ctx, media.DatastoreId, media.Location)
+		if err != nil {
+			ctx.Log.Error("Error resolving datastore path: ", err)
+			return nil, err
+		}
+		defer cleanup.DumpAndCloseStream(mediaStream)
+
+		p, err := apng.DecodeAll(mediaStream)
+		if err != nil {
+			ctx.Log.Error("Error generating animated thumbnail: " + err.Error())
+			return nil, err
+		}
+
+		// prepare a blank frame to use as swap space
+		frameImg := image.NewRGBA(p.Frames[0].Image.Bounds())
+
+		widthRatio := float64(width) / float64(p.Frames[0].Image.Bounds().Dx())
+		heightRatio := float64(width) / float64(p.Frames[0].Image.Bounds().Dy())
+
+		for i := range p.Frames {
+			frame := p.Frames[i]
+			img := frame.Image
+
+			// Clear the transparency of the previous frame
+			if frame.DisposeOp == apng.DISPOSE_OP_NONE {
+				frame.DisposeOp = apng.DISPOSE_OP_BACKGROUND
+			} else {
+				draw.Draw(frameImg, frameImg.Bounds(), image.Transparent, image.ZP, draw.Src)
+			}
+
+			// Copy the frame to a new image and use that
+			draw.Draw(frameImg, image.Rectangle{image.Point{frame.XOffset, frame.YOffset}, image.Point{img.Bounds().Dx(), img.Bounds().Dy()}}, img, image.ZP, draw.Over)
+
+			// Do the thumbnailing on the copied frame
+			frameThumb, err := thumbnailFrame(frameImg, method, width, height, imaging.Linear, nil)
+			if err != nil {
+				ctx.Log.Error("Error generating animated thumbnail frame: " + err.Error())
+				return nil, err
+			}
+			p.Frames[i].Image = frameThumb
+			newXOffset := int(math.Floor(float64(frame.XOffset) * widthRatio))
+			newYOffset := int(math.Floor(float64(frame.YOffset) * heightRatio))
+			// we need to make sure that these are still in the image bounds
+			if p.Frames[0].Image.Bounds().Dx() <= newXOffset + frameThumb.Bounds().Dx() {
+				newXOffset = p.Frames[0].Image.Bounds().Dx() - frameThumb.Bounds().Dx()
+			}
+			if p.Frames[0].Image.Bounds().Dy() <= newYOffset + frameThumb.Bounds().Dy() {
+				newYOffset = p.Frames[0].Image.Bounds().Dy() - frameThumb.Bounds().Dy()
+			}
+			p.Frames[i].XOffset = newXOffset
+			p.Frames[i].YOffset = newYOffset
+		}
+		err = apng.Encode(imgData, p)
 		if err != nil {
 			ctx.Log.Error("Error generating animated thumbnail: " + err.Error())
 			return nil, err
@@ -402,15 +466,32 @@ func pickImageFrame(media *types.Media, ctx rcontext.RequestContext) (image.Imag
 	}
 	defer cleanup.DumpAndCloseStream(mediaStream)
 
-	g, err := gif.DecodeAll(mediaStream)
-	if err != nil {
-		ctx.Log.Error("Error picking frame: " + err.Error())
-		return nil, err
+	stillFrameRatio := float64(ctx.Config.Thumbnails.StillFrame)
+	getFrameIndex := func (numFrames int) int {
+		frameIndex := int(math.Floor(math.Min(1, math.Max(0, stillFrameRatio)) * float64(numFrames)))
+		ctx.Log.Info("Picking frame ", frameIndex, " for animated file")
+		return frameIndex
 	}
 
-	stillFrameRatio := float64(ctx.Config.Thumbnails.StillFrame)
-	frameIndex := int(math.Floor(math.Min(1, math.Max(0, stillFrameRatio)) * float64(len(g.Image))))
-	ctx.Log.Info("Picking frame ", frameIndex, " for animated file")
+	if media.ContentType == "image/gif" {
+		g, err := gif.DecodeAll(mediaStream)
+		if err != nil {
+			ctx.Log.Error("Error picking frame: " + err.Error())
+			return nil, err
+		}
 
-	return g.Image[frameIndex], nil
+		frameIndex := getFrameIndex(len(g.Image))
+		return g.Image[frameIndex], nil
+	}
+	if media.ContentType == "image/png" {
+		p, err := apng.DecodeAll(mediaStream)
+		if err != nil {
+			ctx.Log.Error("Error picking frame: " + err.Error())
+			return nil, err
+		}
+
+		frameIndex := getFrameIndex(len(p.Frames))
+		return p.Frames[frameIndex].Image, nil
+	}
+	return nil, errors.New("Unknown animation type: " + media.ContentType)
 }

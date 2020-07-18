@@ -33,7 +33,10 @@ var supportedThumbnailTypes = []string{
 }
 
 // Of the SupportedThumbnailTypes, these are the 'animated' types
-var animatedTypes = []string{"image/gif"}
+var animatedTypes = []string{
+	"image/gif",
+	"image/png",
+}
 
 var localCache = cache.New(30*time.Second, 60*time.Second)
 
