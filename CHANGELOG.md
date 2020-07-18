@@ -38,6 +38,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Fixed the Synapse import script to not skip duplicated media. Thanks @jaywink!
 * Fixed requests to IPv6 hosts. Thanks @MatMaul!
 * Removed excessive calls to the database during upload.
+* Fixed empty Content-Type header on retrieved remote media.
 
 ## [1.1.2] - April 21st, 2020
 
