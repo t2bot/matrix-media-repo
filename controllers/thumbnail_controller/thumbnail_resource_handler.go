@@ -238,13 +238,26 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 		}
 
 		// Prepare a blank frame to use as swap space
-		frameImg := image.NewRGBA(g.Image[0].Bounds())
+		frameImg := image.NewRGBA(image.Rectangle{image.Point{0, 0}, image.Point{g.Config.Width, g.Config.Height}})
 
 		for i := range g.Image {
 			img := g.Image[i]
+			var disposal byte
+			// use disposal method 0 by default
+			if g.Disposal == nil {
+				disposal = 0
+			} else {
+				disposal = g.Disposal[i]
+			}
 
-			// Clear the transparency of the previous frame
-			draw.Draw(frameImg, frameImg.Bounds(), image.Transparent, image.ZP, draw.Src)
+			// if disposal type is 1 (preserve previous frame) we can get artifacts from re-scaling.
+			// as such, we re-render those frames to disposal type 0 (start with a transparent frame)
+			// see https://www.w3.org/Graphics/GIF/spec-gif89a.txt
+			if disposal == 1 {
+				g.Disposal[i] = 0
+			} else {
+				draw.Draw(frameImg, frameImg.Bounds(), image.Transparent, image.ZP, draw.Src)
+			}
 
 			// Copy the frame to a new image and use that
 			draw.Draw(frameImg, frameImg.Bounds(), img, image.ZP, draw.Over)
