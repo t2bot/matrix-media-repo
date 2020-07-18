@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 * GIFs now thumbnail correctly. Thanks @Sorunome!
 * Fixed empty Content-Type header on retrieved remote media. Thanks @silkeh!
+* Fixed various issues with IPv6 handling. Thanks @silkeh!
 
 ## [1.1.3] - July 15th, 2020
 
@@ -38,7 +39,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Fixed federation with some homeserver setups (delegation with ports). Thanks @MatMaul!
 * Fixed the Synapse import script to not skip duplicated media. Thanks @jaywink!
 * Fixed requests to IPv6 hosts. Thanks @MatMaul!
-* Fixed listening on IPv6 addresses.
 * Removed excessive calls to the database during upload.
 
 ## [1.1.2] - April 21st, 2020
