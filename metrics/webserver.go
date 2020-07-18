@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"strconv"
 	"time"
@@ -30,7 +31,7 @@ func Init() {
 	rtr.HandleFunc("/metrics", internalHandler)
 	rtr.HandleFunc("/_media/metrics", internalHandler)
 
-	address := config.Get().Metrics.BindAddress + ":" + strconv.Itoa(config.Get().Metrics.Port)
+	address := net.JoinHostPort(config.Get().Metrics.BindAddress, strconv.Itoa(config.Get().Metrics.Port))
 	srv = &http.Server{Addr: address, Handler: rtr}
 	go func() {
 		logrus.WithField("address", address).Info("Started metrics listener. Listening at http://" + address)

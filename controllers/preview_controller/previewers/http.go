@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"mime"
@@ -59,19 +58,15 @@ func doHttpGet(urlPayload *preview_types.UrlPayload, languageHeader string, ctx 
 		}
 
 		safeIpStr := safeIp.String()
-		// IPv6 needs smthg of the form [::] because we explicitly happen the port
-		if safeIp.To4() == nil {
-			safeIpStr = "[" + safeIpStr + "]"
-		}
 
-		expectedAddr := fmt.Sprintf("%s:%s", urlPayload.ParsedUrl.Host, safePort)
-		altAddr := fmt.Sprintf("%s:%s", urlPayload.ParsedUrl.Host, altPort)
+		expectedAddr := net.JoinHostPort(urlPayload.ParsedUrl.Host, safePort)
+		altAddr := net.JoinHostPort(urlPayload.ParsedUrl.Host, altPort)
 
 		returnAddr := ""
 		if addr == expectedAddr {
-			returnAddr = fmt.Sprintf("%s:%s", safeIpStr, safePort)
+			returnAddr = net.JoinHostPort(safeIpStr, safePort)
 		} else if addr == altAddr && altPort != "" {
-			returnAddr = fmt.Sprintf("%s:%s", safeIpStr, altPort)
+			returnAddr = net.JoinHostPort(safeIpStr, altPort)
 		}
 
 		if returnAddr != "" {

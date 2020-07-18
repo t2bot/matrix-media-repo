@@ -3,6 +3,7 @@ package webserver
 import (
 	"context"
 	"encoding/json"
+	"net"
 	"net/http"
 	"os"
 	"strconv"
@@ -192,7 +193,7 @@ func Init() *sync.WaitGroup {
 		handler = tollbooth.LimitHandler(limiter, rtr)
 	}
 
-	address := config.Get().General.BindAddress + ":" + strconv.Itoa(config.Get().General.Port)
+	address := net.JoinHostPort(config.Get().General.BindAddress, strconv.Itoa(config.Get().General.Port))
 	httpMux := http.NewServeMux()
 	httpMux.Handle("/", handler)
 
