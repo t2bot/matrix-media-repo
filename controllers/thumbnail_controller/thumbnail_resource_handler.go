@@ -16,6 +16,7 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/chai2010/webp"
 	"github.com/disintegration/imaging"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
@@ -154,7 +155,11 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 			return nil, err2
 		}
 		defer cleanup.DumpAndCloseStream(mediaStream)
-		src, err = imaging.Decode(mediaStream)
+		if media.ContentType == "image/webp" {
+			src, err = webp.Decode(mediaStream)
+		} else {
+			src, err = imaging.Decode(mediaStream)
+		}
 	}
 
 	if err != nil {
