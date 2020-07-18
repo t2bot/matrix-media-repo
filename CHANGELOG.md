@@ -11,6 +11,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 * Remove deprecated support for restricting uploads to certain mime types.
 
+### Fixed
+
+* GIFs now thumbnail correctly. Thanks @Sorunome!
+
 ## [1.1.3] - July 15th, 2020
 
 ### Added
