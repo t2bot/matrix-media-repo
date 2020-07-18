@@ -9,7 +9,6 @@ import (
 
 	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
-	"github.com/ryanuber/go-glob"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
@@ -160,49 +159,6 @@ func trackUploadAsLastAccess(ctx rcontext.RequestContext, media *types.Media) {
 	}
 }
 
-func IsAllowed(contentType string, reportedContentType string, userId string, ctx rcontext.RequestContext) bool {
-	allowed := false
-	userMatched := false
-
-	if userId != NoApplicableUploadUser {
-		for user, userExcl := range ctx.Config.Uploads.PerUserExclusions {
-			if glob.Glob(user, userId) {
-				if !userMatched {
-					ctx.Log.Info("Per-user allowed types policy found for " + userId)
-					userMatched = true
-				}
-				for _, exclType := range userExcl {
-					if glob.Glob(exclType, contentType) {
-						allowed = true
-						ctx.Log.Info("Content type " + contentType + " (reported as " + reportedContentType + ") is allowed due to a per-user policy for " + userId)
-						break
-					}
-				}
-			}
-
-			if allowed {
-				break
-			}
-		}
-	}
-
-	if !userMatched && !allowed {
-		ctx.Log.Info("Checking general allowed types due to no matching per-user policy")
-		for _, allowedType := range ctx.Config.Uploads.AllowedTypes {
-			if glob.Glob(allowedType, contentType) {
-				allowed = true
-				break
-			}
-		}
-
-		if len(ctx.Config.Uploads.AllowedTypes) == 0 {
-			allowed = true
-		}
-	}
-
-	return allowed
-}
-
 func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize int64, contentType string, filename string, userId string, origin string, mediaId string, kind string, ctx rcontext.RequestContext, filterUserDuplicates bool) (*types.Media, error) {
 	var ds *datastore.DatastoreRef
 	var info *types.ObjectInfo
@@ -221,26 +177,6 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 	} else {
 		ds = f.DS
 		info = f.ObjectInfo
-	}
-
-	stream, err := ds.DownloadFile(info.Location)
-	if err != nil {
-		return nil, err
-	}
-
-	fileMime, err := util.GetMimeType(stream)
-	if err != nil {
-		ctx.Log.Error("Error while checking content type of file: ", err.Error())
-		ds.DeleteObject(info.Location) // delete temp object
-		return nil, err
-	}
-
-	allowed := IsAllowed(fileMime, contentType, userId, ctx)
-	if !allowed {
-		ctx.Log.Warn("Content type " + fileMime + " (reported as " + contentType + ") is not allowed to be uploaded")
-
-		ds.DeleteObject(info.Location) // delete temp object
-		return nil, common.ErrMediaNotAllowed
 	}
 
 	db := storage.GetDatabase().GetMediaStore(ctx)

@@ -50,9 +50,7 @@ func UploadMedia(r *http.Request, rctx rcontext.RequestContext, user api.UserInf
 	if err != nil {
 		io.Copy(ioutil.Discard, r.Body) // Ditch the entire request
 
-		if err == common.ErrMediaNotAllowed {
-			return api.BadRequest("Media content type not allowed on this server")
-		} else if err == common.ErrMediaQuarantined {
+		if err == common.ErrMediaQuarantined {
 			return api.BadRequest("This file is not permitted on this server")
 		}
 

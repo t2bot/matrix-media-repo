@@ -131,12 +131,6 @@ func downloadResourceWorkFn(request *resource_handler.WorkRequest) interface{} {
 		return &workerDownloadResponse{err: err}
 	}
 
-	ctx.Log.Info("Checking to ensure the reported content type is allowed...")
-	if downloaded.ContentType != "" && !upload_controller.IsAllowed(downloaded.ContentType, downloaded.ContentType, upload_controller.NoApplicableUploadUser, ctx) {
-		ctx.Log.Error("Remote media failed the preliminary IsAllowed check based on content type (reported as " + downloaded.ContentType + ")")
-		return &workerDownloadResponse{err: common.ErrMediaNotAllowed}
-	}
-
 	persistFile := func(fileStream io.ReadCloser) *workerDownloadResponse {
 		defer cleanup.DumpAndCloseStream(fileStream)
 		userId := upload_controller.NoApplicableUploadUser

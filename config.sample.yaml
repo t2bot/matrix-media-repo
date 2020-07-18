@@ -208,34 +208,6 @@ uploads:
   # Set this to -1 to indicate that there is no limit. Zero will force the use of maxBytes.
   #reportedMaxBytes: 104857600
 
-  # An optional list of file types that are allowed to be uploaded. If */* or nothing is
-  # supplied here, then all file types are allowed. Asterisks (*) are wildcards and can be
-  # placed anywhere to match everything (eg: "image/*" matches all images). This will also
-  # restrict which file types are downloaded from remote servers.
-  #
-  # Caution: the media repo cannot tell the difference between encrypted media and arbitrary
-  # binary data. For this reason, this option is deprecated and to be removed in a future
-  # version.
-  allowedTypes:
-    - "*/*"
-
-  # Specific users can have their own set of allowed file types. These are applied instead
-  # of those listed in the allowedTypes list when a user is found. Much like allowedTypes,
-  # asterisks may be used in the content types and may also be used in the user IDs. This
-  # allows for entire servers to have different allowed types by setting a rule similar to
-  # "@*:example.org". Users will be allowed to upload a file if the type matches any of
-  # the policies that match the user ID.
-  #
-  # Caution: the media repo cannot tell the difference between encrypted media and arbitrary
-  # binary data. For this reason, this option is deprecated and to be removed in a future
-  # version.
-  #exclusions:
-  #  "@someone:example.org":
-  #     - "application/pdf"
-  #     - "application/vnd.ms-excel"
-  #  "@*:example.org":
-  #     - "*/*"
-
 
 # Settings related to downloading files from the media repository
 downloads:

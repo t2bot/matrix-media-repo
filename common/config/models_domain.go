@@ -9,8 +9,6 @@ type ArchivingConfig struct {
 type UploadsConfig struct {
 	MaxSizeBytes         int64               `yaml:"maxBytes"`
 	MinSizeBytes         int64               `yaml:"minBytes"`
-	AllowedTypes         []string            `yaml:"allowedTypes,flow"`
-	PerUserExclusions    map[string][]string `yaml:"exclusions,flow"`
 	ReportedMaxSizeBytes int64               `yaml:"reportedMaxBytes"`
 }
 

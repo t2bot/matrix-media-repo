@@ -7,7 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
-*Nothing yet!*
+### Changed
+
+* Remove deprecated support for restricting uploads to certain mime types.
 
 ## [1.1.3] - July 15th, 2020
 

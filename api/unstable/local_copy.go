@@ -60,10 +60,6 @@ func LocalCopy(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo)
 
 	newMedia, err := upload_controller.UploadMedia(streamedMedia.Stream, streamedMedia.KnownMedia.SizeBytes, streamedMedia.KnownMedia.ContentType, streamedMedia.KnownMedia.UploadName, user.UserId, r.Host, rctx)
 	if err != nil {
-		if err == common.ErrMediaNotAllowed {
-			return api.BadRequest("Media content type not allowed on this server")
-		}
-
 		rctx.Log.Error("Unexpected error storing media: " + err.Error())
 		return api.InternalServerError("Unexpected Error")
 	}
