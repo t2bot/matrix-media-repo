@@ -141,7 +141,6 @@ func reloadConfig() (*MainRepoConfig, map[string]*DomainRepoConfig, error) {
 
 	// Start building domain configs
 	dMaps := make(map[string]map[string]interface{})
-	logrus.Info(c.AccessTokens)
 	for _, d := range c.Homeservers {
 		dc := DomainConfigFrom(c)
 		dc.Name = d.Name
