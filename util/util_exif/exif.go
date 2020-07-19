@@ -58,7 +58,7 @@ func GetExifOrientation(media *types.Media) (*ExifOrientation, error) {
 		degrees = 180
 	} else if orientation == 5 || orientation == 6 {
 		degrees = 270
-	} else if orientation == 7 || degrees == 8 {
+	} else if orientation == 7 || orientation == 8 {
 		degrees = 90
 	}
 
