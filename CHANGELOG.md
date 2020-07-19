@@ -24,6 +24,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Fixed high database usage for uploads when only one datastore is present.
 * Fixed incorrect HTTP status codes for bad thumbnail requests.
 * Fixed dimension checking on thumbnails.
+* Fixed handling of EXIF metadata. Thanks @sorunome!
 
 ## [1.1.3] - July 15th, 2020
 
