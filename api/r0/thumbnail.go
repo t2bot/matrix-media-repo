@@ -45,7 +45,7 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user api.User
 
 	width := 0
 	height := 0
-	animated := false
+	animated := rctx.Config.Thumbnails.AllowAnimated && rctx.Config.Thumbnails.DefaultAnimated
 
 	if widthStr != "" {
 		parsedWidth, err := strconv.Atoi(widthStr)
