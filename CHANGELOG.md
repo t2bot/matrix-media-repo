@@ -22,6 +22,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Fixed empty Content-Type header on retrieved remote media. Thanks @silkeh!
 * Fixed various issues with IPv6 handling. Thanks @silkeh!
 * Fixed high database usage for uploads when only one datastore is present.
+* Fixed incorrect HTTP status codes for bad thumbnail requests.
+* Fixed dimension checking on thumbnails.
 
 ## [1.1.3] - July 15th, 2020
 

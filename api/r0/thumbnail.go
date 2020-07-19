@@ -23,7 +23,7 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user api.User
 	if allowRemote != "" {
 		parsedFlag, err := strconv.ParseBool(allowRemote)
 		if err != nil {
-			return api.InternalServerError("allow_remote flag does not appear to be a boolean")
+			return api.BadRequest("allow_remote flag does not appear to be a boolean")
 		}
 		downloadRemote = parsedFlag
 	}
@@ -39,28 +39,32 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user api.User
 	method := r.URL.Query().Get("method")
 	animatedStr := r.URL.Query().Get("animated")
 
-	width := rctx.Config.Thumbnails.Sizes[0].Width
-	height := rctx.Config.Thumbnails.Sizes[0].Height
-	animated := rctx.Config.Thumbnails.AllowAnimated && rctx.Config.Thumbnails.DefaultAnimated
+	if widthStr == "" || heightStr == "" {
+		return api.BadRequest("Width and height are required")
+	}
+
+	width := 0
+	height := 0
+	animated := false
 
 	if widthStr != "" {
 		parsedWidth, err := strconv.Atoi(widthStr)
 		if err != nil {
-			return api.InternalServerError("Width does not appear to be an integer")
+			return api.BadRequest("Width does not appear to be an integer")
 		}
 		width = parsedWidth
 	}
 	if heightStr != "" {
 		parsedHeight, err := strconv.Atoi(heightStr)
 		if err != nil {
-			return api.InternalServerError("Height does not appear to be an integer")
+			return api.BadRequest("Height does not appear to be an integer")
 		}
 		height = parsedHeight
 	}
 	if animatedStr != "" {
 		parsedFlag, err := strconv.ParseBool(animatedStr)
 		if err != nil {
-			return api.InternalServerError("Animated flag does not appear to be a boolean")
+			return api.BadRequest("Animated flag does not appear to be a boolean")
 		}
 		animated = parsedFlag
 	}
@@ -74,6 +78,10 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user api.User
 		"requestedMethod":   method,
 		"requestedAnimated": animated,
 	})
+
+	if width <= 0 || height <=0 {
+		return api.BadRequest("Width and height must be greater than zero")
+	}
 
 	streamedThumbnail, err := thumbnail_controller.GetThumbnail(server, mediaId, width, height, animated, method, downloadRemote, rctx)
 	if err != nil {
