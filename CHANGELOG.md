@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 * Add webp image support. Thanks @Sorunome!
 * Add apng image support. Thanks @Sorunome!
+* Experimental support for Redis as a cache (in preparation for proper load balancing/HA support).
 
 ### Changed
 

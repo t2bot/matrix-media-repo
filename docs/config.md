@@ -55,6 +55,7 @@ Any options from the main config can then be overridden per-domain with the exce
 * `thumbnails.expireAfterDays` - because thumbnails aren't associated with any particular domain.
 * `urlPreviews.expireAfterDays` - because previews aren't associated with any particular domain.
 * `featureSupport.IPFS.builtInDaemon` - because spawning multiple daemons doesn't make sense.
+* `featureSupport.redis` - because the cache is repo-wide.
 
 To override a value, simply provide it in any valid per-domain config:
 

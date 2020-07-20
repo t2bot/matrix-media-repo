@@ -7,9 +7,9 @@ type ArchivingConfig struct {
 }
 
 type UploadsConfig struct {
-	MaxSizeBytes         int64               `yaml:"maxBytes"`
-	MinSizeBytes         int64               `yaml:"minBytes"`
-	ReportedMaxSizeBytes int64               `yaml:"reportedMaxBytes"`
+	MaxSizeBytes         int64 `yaml:"maxBytes"`
+	MinSizeBytes         int64 `yaml:"minBytes"`
+	ReportedMaxSizeBytes int64 `yaml:"reportedMaxBytes"`
 }
 
 type DatastoreConfig struct {
@@ -74,6 +74,7 @@ type TimeoutsConfig struct {
 type FeatureConfig struct {
 	MSC2448Blurhash MSC2448Config `yaml:"MSC2448"`
 	IPFS            IPFSConfig    `yaml:"IPFS"`
+	Redis           RedisConfig   `yaml:"redis"`
 }
 
 type MSC2448Config struct {
@@ -95,6 +96,16 @@ type IPFSConfig struct {
 type IPFSDaemonConfig struct {
 	Enabled  bool   `yaml:"enabled"`
 	RepoPath string `yaml:"repoPath"`
+}
+
+type RedisConfig struct {
+	Enabled bool               `yaml:"enabled"`
+	Shards  []RedisShardConfig `yaml:"shards,flow"`
+}
+
+type RedisShardConfig struct {
+	Name    string `yaml:"name"`
+	Address string `yaml:"addr"`
 }
 
 type AccessTokenConfig struct {

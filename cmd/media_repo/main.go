@@ -45,6 +45,7 @@ func main() {
 
 	logrus.Info("Starting up...")
 	runtime.RunStartupSequence()
+	internal_cache.ReplaceInstance() // init the cache as we may be using Redis, and it'd be good to get going sooner
 
 	logrus.Info("Checking background tasks...")
 	err = scanAndStartUnfinishedTasks()
@@ -74,7 +75,6 @@ func main() {
 
 		logrus.Info("Stopping recurring tasks...")
 		tasks.StopAll()
-		internal_cache.Get().Stop()
 	}
 
 	// Set up a listener for SIGINT

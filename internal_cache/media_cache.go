@@ -15,6 +15,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/metrics"
+	"github.com/turt2live/matrix-media-repo/redis_cache"
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
@@ -29,6 +30,7 @@ type MediaCache struct {
 	size          int64
 	enabled       bool
 	cleanupTimer  *time.Ticker
+	redis *redis_cache.RedisCache
 }
 
 type cachedFile struct {
@@ -52,7 +54,10 @@ func Get() *MediaCache {
 	}
 
 	lock.Do(func() {
-		if !config.Get().Downloads.Cache.Enabled {
+		if config.Get().Features.Redis.Enabled {
+			logrus.Info("Setting up Redis cache")
+			instance = &MediaCache{enabled: true, redis: redis_cache.NewCache()}
+		} else if !config.Get().Downloads.Cache.Enabled {
 			logrus.Warn("Cache is disabled - setting up a dummy instance")
 			instance = &MediaCache{enabled: false}
 		} else {
@@ -93,8 +98,24 @@ func Get() *MediaCache {
 	return instance
 }
 
+func ReplaceInstance() {
+	if instance != nil {
+		instance.Reset()
+		instance.Stop()
+		instance = nil
+	}
+
+	// call Get() to update the instance reference
+	Get()
+}
+
 func (c *MediaCache) Reset() {
 	if !c.enabled {
+		return
+	}
+
+	if c.redis != nil {
+		logrus.Warn("Not doing a cache reset - using Redis cache")
 		return
 	}
 
@@ -108,10 +129,19 @@ func (c *MediaCache) Reset() {
 }
 
 func (c *MediaCache) Stop() {
-	c.cleanupTimer.Stop()
+	if c.redis != nil {
+		_ = c.redis.Close()
+	} else {
+		c.cleanupTimer.Stop()
+	}
 }
 
 func (c *MediaCache) getUnderlyingUsedBytes() int64 {
+	if c.redis != nil {
+		// Cannot determine: return implied result
+		return 0
+	}
+
 	var size int64 = 0
 	for _, entry := range c.cache.Items() {
 		f := entry.Object.(*cachedFile)
@@ -121,11 +151,20 @@ func (c *MediaCache) getUnderlyingUsedBytes() int64 {
 }
 
 func (c *MediaCache) getUnderlyingItemCount() int {
+	if c.redis != nil {
+		// Cannot determine: return implied result
+		return 0
+	}
+
 	return c.cache.ItemCount()
 }
 
 func (c *MediaCache) IncrementDownloads(fileHash string) {
 	if !c.enabled {
+		return
+	}
+	if c.redis != nil {
+		// Irrelevant data point
 		return
 	}
 
@@ -155,7 +194,8 @@ func (c *MediaCache) GetMedia(media *types.Media, ctx rcontext.RequestContext) (
 		return &cachedFile{media: media, Contents: bytes.NewBuffer(data)}, nil
 	}
 
-	return c.updateItemInCache(media.Sha256Hash, media.SizeBytes, cacheFn, ctx)
+	tmpl := &cachedFile{media: media}
+	return c.updateItemInCache(media.Sha256Hash, media.SizeBytes, cacheFn, tmpl, ctx)
 }
 
 func (c *MediaCache) GetThumbnail(thumbnail *types.Thumbnail, ctx rcontext.RequestContext) (*cachedFile, error) {
@@ -178,10 +218,34 @@ func (c *MediaCache) GetThumbnail(thumbnail *types.Thumbnail, ctx rcontext.Reque
 		return &cachedFile{thumbnail: thumbnail, Contents: bytes.NewBuffer(data)}, nil
 	}
 
-	return c.updateItemInCache(thumbnail.Sha256Hash, thumbnail.SizeBytes, cacheFn, ctx)
+	tmpl := &cachedFile{thumbnail: thumbnail}
+	return c.updateItemInCache(thumbnail.Sha256Hash, thumbnail.SizeBytes, cacheFn, tmpl, ctx)
 }
 
-func (c *MediaCache) updateItemInCache(recordId string, mediaSize int64, cacheFn func() (*cachedFile, error), ctx rcontext.RequestContext) (*cachedFile, error) {
+func (c *MediaCache) updateItemInCache(recordId string, mediaSize int64, cacheFn func() (*cachedFile, error), template *cachedFile, ctx rcontext.RequestContext) (*cachedFile, error) {
+	if c.redis != nil {
+		b, err := c.redis.GetBytes(ctx, recordId)
+		if err == redis_cache.ErrCacheMiss || err == redis_cache.ErrCacheDown {
+			metrics.CacheMisses.With(prometheus.Labels{"cache": "media"}).Inc()
+			cf, err := cacheFn()
+			if err != nil {
+				return nil, err
+			}
+			b, err := ioutil.ReadAll(cf.Contents)
+			err = c.redis.SetStream(ctx, recordId, bytes.NewBuffer(b))
+			if err != nil && err != redis_cache.ErrCacheDown {
+				return nil, err
+			}
+			cf.Contents = bytes.NewBuffer(b)
+			return cf, nil
+		} else if err != nil {
+			return nil, err
+		}
+		metrics.CacheNumItems.With(prometheus.Labels{"cache": "media"}).Inc()
+		template.Contents = bytes.NewBuffer(b)
+		return template, nil
+	}
+
 	downloads := c.tracker.NumDownloads(recordId)
 	enoughDownloads := downloads >= config.Get().Downloads.Cache.MinDownloads
 	canCache := c.canJoinCache(recordId)

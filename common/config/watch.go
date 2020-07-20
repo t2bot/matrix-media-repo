@@ -95,6 +95,20 @@ func onFileChanged() {
 		globals.IPFSReloadChan <- true
 	}
 
+	redisEnabledChange := configNew.Features.Redis.Enabled != configNow.Features.Redis.Enabled
+	redisShardsChange := hasRedisShardConfigChanged(configNew, configNow)
+	cacheEnabledChange := configNew.Downloads.Cache.Enabled != configNow.Downloads.Cache.Enabled
+	cacheMaxSizeChange := configNew.Downloads.Cache.MaxSizeBytes != configNow.Downloads.Cache.MaxSizeBytes
+	cacheMaxFileSizeChange := configNew.Downloads.Cache.MaxFileSizeBytes != configNow.Downloads.Cache.MaxFileSizeBytes
+	cacheTrackedMinChange := configNew.Downloads.Cache.TrackedMinutes != configNow.Downloads.Cache.TrackedMinutes
+	cacheMinDownloadsChange := configNew.Downloads.Cache.MinDownloads != configNow.Downloads.Cache.MinDownloads
+	cacheMinCacheTimeChange := configNew.Downloads.Cache.MinCacheTimeSeconds != configNow.Downloads.Cache.MinCacheTimeSeconds
+	cacheMinEvictedTimeChange := configNew.Downloads.Cache.MinEvictedTimeSeconds != configNow.Downloads.Cache.MinEvictedTimeSeconds
+	if redisEnabledChange || redisShardsChange || cacheEnabledChange || cacheMaxSizeChange || cacheMaxFileSizeChange || cacheTrackedMinChange || cacheMinDownloadsChange || cacheMinCacheTimeChange || cacheMinEvictedTimeChange {
+		logrus.Warn("Cache configuration changed - reloading")
+		globals.CacheReplaceChan <- true
+	}
+
 	// Always flush the access token cache
 	logrus.Warn("Flushing access token cache")
 	globals.AccessTokenReloadChan <- true
@@ -113,6 +127,29 @@ func hasWebFeatureChanged(configNew *MainRepoConfig, configNow *MainRepoConfig) 
 	}
 	if configNew.Features.IPFS.Enabled != configNow.Features.IPFS.Enabled {
 		return true
+	}
+
+	return false
+}
+
+func hasRedisShardConfigChanged(configNew *MainRepoConfig, configNow *MainRepoConfig) bool {
+	oldShards := configNow.Features.Redis.Shards
+	newShards := configNew.Features.Redis.Shards
+	if len(oldShards) != len(newShards) {
+		return true
+	}
+
+	for _, s1 := range oldShards {
+		has := false
+		for _, s2 := range newShards {
+			if s1.Name == s2.Name && s1.Address == s2.Address {
+				has = true
+				break
+			}
+		}
+		if !has {
+			return true
+		}
 	}
 
 	return false

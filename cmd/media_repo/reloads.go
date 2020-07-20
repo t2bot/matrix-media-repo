@@ -5,6 +5,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/api/webserver"
 	"github.com/turt2live/matrix-media-repo/common/globals"
 	"github.com/turt2live/matrix-media-repo/common/runtime"
+	"github.com/turt2live/matrix-media-repo/internal_cache"
 	"github.com/turt2live/matrix-media-repo/ipfs_proxy"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/storage"
@@ -19,6 +20,7 @@ func setupReloads() {
 	reloadRecurringTasksOnChan(globals.RecurringTasksReloadChan)
 	reloadIpfsOnChan(globals.IPFSReloadChan)
 	reloadAccessTokensOnChan(globals.AccessTokenReloadChan)
+	reloadCacheOnChan(globals.CacheReplaceChan)
 }
 
 func stopReloads() {
@@ -30,6 +32,7 @@ func stopReloads() {
 	globals.AccessTokenReloadChan <- false
 	globals.RecurringTasksReloadChan <- false
 	globals.IPFSReloadChan <- false
+	globals.CacheReplaceChan <- false
 }
 
 func reloadWebOnChan(reloadChan chan bool) {
@@ -126,6 +129,20 @@ func reloadAccessTokensOnChan(reloadChan chan bool) {
 			shouldReload := <-reloadChan
 			if shouldReload {
 				auth_cache.FlushCache()
+			}
+		}
+	}()
+}
+
+func reloadCacheOnChan(reloadChan chan bool) {
+	go func() {
+		defer close(reloadChan)
+		for {
+			shouldReload := <-reloadChan
+			if shouldReload {
+				internal_cache.ReplaceInstance()
+			} else {
+				internal_cache.Get().Stop()
 			}
 		}
 	}()

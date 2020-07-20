@@ -486,3 +486,23 @@ featureSupport:
       # be stored. If you're using Docker, this should be something like "/data/ipfs"
       # so it can be mapped to a volume.
       repoPath: "./ipfs"
+
+  # Support for redis as a cache mechanism
+  #
+  # Note: Enabling Redis support will mean that the existing cache mechanism will do nothing.
+  # It can be safely disabled once Redis support is enabled.
+  #
+  # See docs/redis.md for more information on how this works and how to set it up.
+  redis:
+    # Whether or not use Redis instead of in-process caching.
+    enabled: false
+
+    # The Redis shards that should be used by the media repo in the ring. The names of the
+    # shards are for your reference and have no bearing on the connection, but must be unique.
+    shards:
+      - name: "server1"
+        addr: ":7000"
+      - name: "server2"
+        addr: ":7001"
+      - name: "server3"
+        addr: ":7002"
