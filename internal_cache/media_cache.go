@@ -30,7 +30,7 @@ type MediaCache struct {
 	size          int64
 	enabled       bool
 	cleanupTimer  *time.Ticker
-	redis *redis_cache.RedisCache
+	redis         *redis_cache.RedisCache
 }
 
 type cachedFile struct {
