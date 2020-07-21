@@ -15,7 +15,6 @@ type UploadsConfig struct {
 type DatastoreConfig struct {
 	Type       string            `yaml:"type"`
 	Enabled    bool              `yaml:"enabled"`
-	ForUploads bool              `yaml:"forUploads"` // deprecated
 	MediaKinds []string          `yaml:"forKinds,flow"`
 	Options    map[string]string `yaml:"opts,flow"`
 }

@@ -106,11 +106,6 @@ func PickDatastore(forKind string, ctx rcontext.RequestContext) (*DatastoreRef, 
 			continue
 		}
 
-		if len(dsConf.MediaKinds) == 0 && dsConf.ForUploads {
-			ctx.Log.Warnf("Datastore of type %s is using a deprecated flag (forUploads) - please use forKinds instead", dsConf.Type)
-			dsConf.MediaKinds = common.AllKinds
-		}
-
 		allowed := common.HasKind(dsConf.MediaKinds, forKind)
 		if !allowed {
 			continue
