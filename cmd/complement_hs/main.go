@@ -15,8 +15,12 @@ func main() {
 	log.Println("Preparing local server...")
 	rtr := mux.NewRouter()
 	rtr.HandleFunc("/_matrix/client/versions", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(200)
-		_, _ = w.Write([]byte("{\"versions\":[\"r0.6.0\"]}"))
+		_, err := w.Write([]byte("{\"versions\":[\"r0.6.0\"]}"))
+		if err != nil {
+			log.Fatal(err)
+		}
 	})
 
 	srv1 := &http.Server{Addr: "0.0.0.0:8008", Handler: rtr}
