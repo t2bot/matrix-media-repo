@@ -1,27 +1,34 @@
-#!/bin/sh
+#!/bin/bash
+
+rm -rfv $PWD/bin/*
+mkdir $PWD/bin/dist
 
 GOBIN=$PWD/bin go install -v ./cmd/compile_assets
 $PWD/bin/compile_assets
 
-rm -rfv $PWD/bin/win
-rm -rfv $PWD/bin/linux
-mkdir $PWD/bin/win
-mkdir $PWD/bin/linux
+arches=("amd64")
+oses=("windows" "linux")
 
-GOOS=windows GOARCH=amd64 GOBIN=$PWD/bin go build -o $PWD/bin/win -a -ldflags "-X github.com/turt2live/matrix-media-repo/common/version.GitCommit=$(git rev-list -1 HEAD) -X github.com/turt2live/matrix-media-repo/common/version.Version=$(git describe --tags)" -v ./cmd/...
-GOOS=linux GOARCH=amd64 GOBIN=$PWD/bin go build -o $PWD/bin/linux -a -ldflags "-X github.com/turt2live/matrix-media-repo/common/version.GitCommit=$(git rev-list -1 HEAD) -X github.com/turt2live/matrix-media-repo/common/version.Version=$(git describe --tags)" -v ./cmd/...
-
-rm -rfv $PWD/bin/dist
-mkdir $PWD/bin/dist
-cd $PWD/bin
-cd win
-for file in * ; do mv -v $file ../dist/${file%.*}-win-x64.exe; done;
-cd ../linux
-for file in * ; do mv -v $file ../dist/${file}-linux-x64; done;
-cd ../../
-
-rm -rfv $PWD/bin/win
-rm -rfv $PWD/bin/linux
+for os in "${oses[@]}"
+do
+  for arch in "${arches[@]}"
+  do
+    pth="$os-$arch"
+    mkdir $PWD/bin/$pth
+    GOOS=$os GOARCH=$arch GOBIN=$PWD/bin go build -o $PWD/bin/$pth -a -ldflags "-X github.com/turt2live/matrix-media-repo/common/version.GitCommit=$(git rev-list -1 HEAD) -X github.com/turt2live/matrix-media-repo/common/version.Version=$(git describe --tags)" -v ./cmd/...
+    cd $PWD/bin/$pth
+    if [ "$arch" == "amd64" ]; then
+      arch="x64"
+    fi
+    if [ "$os" == "windows" ]; then
+      for file in * ; do mv -v $file ../dist/${file%.*}-win-${arch}.exe; done;
+    else
+      for file in * ; do mv -v $file ../dist/${file}-${os}-${arch}; done;
+    fi
+    cd ../../
+    rm -rfv $PWD/bin/$pth
+  done
+done
 
 rm -rfv $PWD/bin/dist/compile_assets*
 rm -rfv $PWD/bin/dist/loadtest*
