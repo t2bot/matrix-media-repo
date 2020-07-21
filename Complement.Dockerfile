@@ -1,0 +1,42 @@
+# ---- Stage 0 ----
+# Builds media repo binaries
+FROM golang:1.14-alpine AS builder
+
+# Install build dependencies
+RUN apk add --no-cache git musl-dev dos2unix build-base
+
+WORKDIR /opt
+COPY . /opt
+RUN dos2unix ./build.sh
+RUN ./build.sh
+
+# ---- Stage 1 ----
+# Final runtime stage.
+FROM alpine
+
+COPY --from=builder /opt/bin/media_repo /opt/bin/complement_hs /usr/local/bin/
+
+RUN apk add --no-cache ca-certificates postgresql openssl dos2unix
+
+RUN mkdir -p /data/media
+COPY ./docker/complement.yaml /data/media-repo.yaml
+ENV REPO_CONFIG=/data/media-repo.yaml
+ENV SERVER_NAME=localhost
+ENV PGDATA=/data/pgdata
+
+COPY ./docker/complement.sh ./docker/complement-run.sh /usr/local/bin/
+RUN dos2unix /usr/local/bin/complement.sh /usr/local/bin/complement-run.sh
+
+EXPOSE 8008
+EXPOSE 8448
+
+RUN mkdir -p /data/pgdata
+RUN mkdir -p /run/postgresql
+RUN chown postgres:postgres /data/pgdata
+RUN chown postgres:postgres /run/postgresql
+RUN su postgres -c initdb
+RUN openssl req -new -newkey rsa:1024 -days 365 -nodes -x509 -subj "/C=US/ST=Denial/L=Springfield/O=Dis/CN=${SERVER_NAME}" -keyout /data/server.key  -out /data/server.crt
+RUN sed -i "s/SERVER_NAME/${SERVER_NAME}/g" /data/media-repo.yaml
+RUN sh /usr/local/bin/complement.sh
+
+CMD /usr/local/bin/complement-run.sh
