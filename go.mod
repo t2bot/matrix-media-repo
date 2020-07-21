@@ -11,7 +11,6 @@ require (
 	github.com/bep/debounce v1.2.0
 	github.com/buckket/go-blurhash v1.0.3
 	github.com/cenk/backoff v2.2.1+incompatible // indirect
-	github.com/chai2010/webp v1.1.0
 	github.com/cupcake/sigil v0.0.0-20131127230922-6bf9722f2ae8
 	github.com/didip/tollbooth v4.0.2+incompatible
 	github.com/disintegration/imaging v1.6.2

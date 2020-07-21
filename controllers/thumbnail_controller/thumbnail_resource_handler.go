@@ -16,7 +16,6 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/chai2010/webp"
 	"github.com/disintegration/imaging"
 	"github.com/kettek/apng"
 	"github.com/prometheus/client_golang/prometheus"
@@ -32,6 +31,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/util/cleanup"
 	"github.com/turt2live/matrix-media-repo/util/resource_handler"
 	"github.com/turt2live/matrix-media-repo/util/util_exif"
+	"golang.org/x/image/webp"
 )
 
 type thumbnailResourceHandler struct {
