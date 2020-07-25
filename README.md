@@ -1,7 +1,6 @@
 # matrix-media-repo
 
-[![AppVeyor badge](https://ci.appveyor.com/api/projects/status/github/turt2live/matrix-media-repo?branch=master&svg=true)](https://ci.appveyor.com/project/turt2live/matrix-media-repo)
-[![CircleCI](https://circleci.com/gh/turt2live/matrix-media-repo/tree/master.svg?style=svg)](https://circleci.com/gh/turt2live/matrix-media-repo/tree/master)
+[![Build status](https://badge.buildkite.com/4205079064098cf0abf5179ea4784f1c9113e875b8fcbde1a2.svg)](https://buildkite.com/t2bot/matrix-media-repo)
 
 matrix-media-repo is a highly customizable multi-domain media repository for Matrix. Intended for medium to large environments
 consisting of several homeservers, this media repo de-duplicates media (including remote media) while being fully compliant
