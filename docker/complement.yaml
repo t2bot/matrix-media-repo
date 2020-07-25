@@ -1,0 +1,21 @@
+repo:
+  bindAddress: '127.0.0.1'
+  port: 8228
+database:
+  postgres: "postgres://mediarepo:mediarepo@127.0.0.1/mediarepo?sslmode=disable"
+homeservers:
+  - name: SERVER_NAME
+    csApi: "http://127.0.0.1:8008/"
+datastores:
+  - type: file
+    enabled: true
+    forKinds: ["all"]
+    opts:
+      path: /data/media
+urlPreviews:
+  disallowedNetworks:
+    - "192.168.0.0/16" # Don't limit localhost
+  allowedNetworks:
+    - "0.0.0.0/0"
+rateLimit:
+  enabled: false
