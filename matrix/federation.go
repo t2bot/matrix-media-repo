@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -211,26 +212,55 @@ func FederatedGet(url string, realHost string, ctx rcontext.RequestContext) (*ht
 		req.Header.Set("User-Agent", "matrix-media-repo")
 		req.Host = realHost
 
-		// This is how we verify the certificate is valid for the host we expect.
-		// Previously using `req.URL.Host` we'd end up changing which server we were
-		// connecting to (ie: matrix.org instead of matrix.org.cdn.cloudflare.net),
-		// which obviously doesn't help us. We needed to do that though because the
-		// HTTP client doesn't verify against the req.Host certificate, but it does
-		// handle it off the req.URL.Host. So, we need to tell it which certificate
-		// to verify.
+		var client *http.Client
+		if os.Getenv("MEDIA_REPO_UNSAFE_FEDERATION") != "true" {
+			// This is how we verify the certificate is valid for the host we expect.
+			// Previously using `req.URL.Host` we'd end up changing which server we were
+			// connecting to (ie: matrix.org instead of matrix.org.cdn.cloudflare.net),
+			// which obviously doesn't help us. We needed to do that though because the
+			// HTTP client doesn't verify against the req.Host certificate, but it does
+			// handle it off the req.URL.Host. So, we need to tell it which certificate
+			// to verify.
 
-		h, _, err := net.SplitHostPort(realHost)
-		if err == nil {
-			// Strip the port first, certs are port-insensitive
-			realHost = h
-		}
-		client := http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{
-					ServerName: realHost,
+			h, _, err := net.SplitHostPort(realHost)
+			if err == nil {
+				// Strip the port first, certs are port-insensitive
+				realHost = h
+			}
+			client = &http.Client{
+				Transport: &http.Transport{
+					TLSClientConfig: &tls.Config{
+						ServerName: realHost,
+					},
 				},
-			},
-			Timeout: time.Duration(ctx.Config.TimeoutSeconds.Federation) * time.Second,
+				Timeout: time.Duration(ctx.Config.TimeoutSeconds.Federation) * time.Second,
+			}
+		} else {
+			ctx.Log.Warn("Ignoring any certificate errors while making request")
+			tr := &http.Transport{
+				DisableKeepAlives: true,
+				TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
+				// Based on https://github.com/matrix-org/gomatrixserverlib/blob/51152a681e69a832efcd934b60080b92bc98b286/client.go#L74-L90
+				DialTLS: func(network, addr string) (net.Conn, error) {
+					rawconn, err := net.Dial(network, addr)
+					if err != nil {
+						return nil, err
+					}
+					// Wrap a raw connection ourselves since tls.Dial defaults the SNI
+					conn := tls.Client(rawconn, &tls.Config{
+						ServerName:         "",
+						InsecureSkipVerify: true,
+					})
+					if err := conn.Handshake(); err != nil {
+						return nil, err
+					}
+					return conn, nil
+				},
+			}
+			client = &http.Client{
+				Transport: tr,
+				Timeout:   time.Duration(ctx.Config.TimeoutSeconds.UrlPreviews) * time.Second,
+			}
 		}
 
 		resp, err = client.Do(req)

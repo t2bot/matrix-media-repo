@@ -1,23 +1,109 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/gorilla/mux"
+	"github.com/turt2live/matrix-media-repo/util/cleanup"
 )
+
+type VersionsResponse struct {
+	CSAPIVersions []string `json:"versions,flow"`
+}
+
+type RegisterRequest struct {
+	DesiredUsername string `json:"username"`
+}
+
+type RegisterResponse struct {
+	UserID string `json:"user_id"`
+	AccessToken string `json:"access_token"`
+}
+
+type WhoamiResponse struct {
+	UserID string `json:"user_id"`
+}
+
+func requestJson(r *http.Request, i interface{}) error {
+	b, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(b, &i)
+}
+
+func respondJson(w http.ResponseWriter, i interface{}) error {
+	resp, err := json.Marshal(i)
+	if err != nil {
+		return err
+	}
+	w.Header().Set("Content-Length",strconv.Itoa(len(resp)))
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err = w.Write(resp)
+	return err
+}
 
 func main() {
 	// Prepare local server
 	log.Println("Preparing local server...")
 	rtr := mux.NewRouter()
 	rtr.HandleFunc("/_matrix/client/versions", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(200)
-		_, err := w.Write([]byte("{\"versions\":[\"r0.6.0\"]}"))
+		defer cleanup.DumpAndCloseStream(r.Body)
+		err := respondJson(w, &VersionsResponse{CSAPIVersions: []string{"r0.6.0"}})
+		if err != nil {
+			log.Fatal(err)
+		}
+	})
+	rtr.HandleFunc("/_matrix/client/r0/register", func(w http.ResponseWriter, r *http.Request) {
+		rr := &RegisterRequest{}
+		err := requestJson(r, &rr)
+		if err != nil {
+			log.Fatal(err)
+		}
+		userId := fmt.Sprintf("@%s:%s", rr.DesiredUsername, os.Getenv("SERVER_NAME"))
+		err = respondJson(w, &RegisterResponse{
+			AccessToken: userId,
+			UserID: userId,
+		})
+		if err != nil {
+			log.Fatal(err)
+		}
+	})
+	rtr.HandleFunc("/_matrix/client/r0/account/whoami", func(w http.ResponseWriter, r *http.Request) {
+		defer cleanup.DumpAndCloseStream(r.Body)
+		userId := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ") // including space after Bearer.
+		err := respondJson(w, &WhoamiResponse{UserID: userId})
+		if err != nil {
+			log.Fatal(err)
+		}
+	})
+	rtr.PathPrefix("/_matrix/media/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Proxy to the media repo running within the container
+		r2, err := http.NewRequest(r.Method, "http://127.0.0.1:8228" + r.RequestURI, r.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+		r2.Host = os.Getenv("SERVER_NAME")
+		resp, err := http.DefaultClient.Do(r2)
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = resp.Header.Write(w)
+		if err != nil {
+			log.Fatal(err)
+		}
+		_, err = io.Copy(w, resp.Body)
 		if err != nil {
 			log.Fatal(err)
 		}

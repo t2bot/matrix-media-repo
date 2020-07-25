@@ -23,6 +23,7 @@ COPY ./docker/complement.yaml /data/media-repo.yaml
 ENV REPO_CONFIG=/data/media-repo.yaml
 ENV SERVER_NAME=localhost
 ENV PGDATA=/data/pgdata
+ENV MEDIA_REPO_UNSAFE_FEDERATION=true
 
 COPY ./docker/complement.sh ./docker/complement-run.sh /usr/local/bin/
 RUN dos2unix /usr/local/bin/complement.sh /usr/local/bin/complement-run.sh
@@ -35,8 +36,6 @@ RUN mkdir -p /run/postgresql
 RUN chown postgres:postgres /data/pgdata
 RUN chown postgres:postgres /run/postgresql
 RUN su postgres -c initdb
-RUN openssl req -new -newkey rsa:1024 -days 365 -nodes -x509 -subj "/C=US/ST=Denial/L=Springfield/O=Dis/CN=${SERVER_NAME}" -keyout /data/server.key  -out /data/server.crt
-RUN sed -i "s/SERVER_NAME/${SERVER_NAME}/g" /data/media-repo.yaml
 RUN sh /usr/local/bin/complement.sh
 
 CMD /usr/local/bin/complement-run.sh
