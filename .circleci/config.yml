@@ -14,6 +14,9 @@ jobs:
           name: build complement image
           command: 'docker build -t complement-media-repo -f Complement.Dockerfile .'
       - run:
+          name: fix script
+          command: 'chmod +x ci-complement.sh'
+      - run:
           name: run complement
           command: './ci-complement.sh'
   build:
