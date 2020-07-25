@@ -14,6 +14,10 @@ RUN ./build.sh
 # Final runtime stage.
 FROM alpine
 
+ARG UID=999
+ARG GID=999
+USER ${UID}:${GID}
+
 COPY --from=builder /opt/bin/media_repo /opt/bin/complement_hs /usr/local/bin/
 
 RUN apk add --no-cache ca-certificates postgresql openssl dos2unix
