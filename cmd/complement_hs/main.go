@@ -95,6 +95,9 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		for k, v := range r.Header {
+			r2.Header.Set(k, v[0])
+		}
 		r2.Host = os.Getenv("SERVER_NAME")
 		resp, err := http.DefaultClient.Do(r2)
 		if err != nil {
