@@ -1,5 +1,21 @@
 version: 2
 jobs:
+  complement:
+    docker:
+      - image: circleci/golang:1.14
+        environment:
+          GO111MODULE: "on"
+          COMPLEMENT_BASE_IMAGE: complement-media-repo
+          COMPLEMENT_VERSION_CHECK_ITERATIONS: 400
+    steps:
+      - setup_remote_docker
+      - checkout
+      - run:
+          name: build complement image
+          command: 'docker build -t complement-media-repo -f Complement.Dockerfile .'
+      - run:
+          name: run complement
+          command: './ci-complement.sh'
   build:
     docker:
       - image: circleci/golang:1.14
