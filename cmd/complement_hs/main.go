@@ -90,6 +90,7 @@ func main() {
 	})
 	rtr.PathPrefix("/_matrix/media/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Proxy to the media repo running within the container
+		defer cleanup.DumpAndCloseStream(r.Body)
 		r2, err := http.NewRequest(r.Method, "http://127.0.0.1:8228" + r.RequestURI, r.Body)
 		if err != nil {
 			log.Fatal(err)
@@ -99,10 +100,10 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		err = resp.Header.Write(w)
-		if err != nil {
-			log.Fatal(err)
+		for k, v := range resp.Header {
+			w.Header().Set(k, v[0])
 		}
+		defer cleanup.DumpAndCloseStream(resp.Body)
 		_, err = io.Copy(w, resp.Body)
 		if err != nil {
 			log.Fatal(err)
