@@ -2,12 +2,10 @@ package util_exif
 
 import (
 	"fmt"
+	"io"
 
 	"github.com/pkg/errors"
 	"github.com/rwcarlsen/goexif/exif"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/storage/datastore"
-	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util/cleanup"
 )
 
@@ -17,30 +15,26 @@ type ExifOrientation struct {
 	FlipHorizontal bool
 }
 
-func GetExifOrientation(media *types.Media) (*ExifOrientation, error) {
-	if media.ContentType != "image/jpeg" && media.ContentType != "image/jpg" {
-		return nil, errors.New("image is not a jpeg")
-	}
+func GetExifOrientation(img io.ReadCloser) (*ExifOrientation, error) {
+	defer cleanup.DumpAndCloseStream(img)
 
-	mediaStream, err := datastore.DownloadStream(rcontext.Initial(), media.DatastoreId, media.Location)
+	exifData, err := exif.Decode(img)
 	if err != nil {
-		return nil, err
-	}
-	defer cleanup.DumpAndCloseStream(mediaStream)
-
-	exifData, err := exif.Decode(mediaStream)
-	if err != nil {
-		return nil, err
+		// EOF means we probably just don't have info in the file
+		if err == io.EOF {
+			return nil, nil
+		}
+		return nil, errors.New("exif: error decoding orientation: " + err.Error())
 	}
 
 	rawValue, err := exifData.Get(exif.Orientation)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("exif: error getting orientation: " + err.Error())
 	}
 
 	orientation, err := rawValue.Int(0)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("exif: error parsing orientation: " + err.Error())
 	}
 
 	if orientation < 1 || orientation > 8 {

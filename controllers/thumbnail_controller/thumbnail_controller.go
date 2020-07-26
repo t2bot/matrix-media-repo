@@ -17,26 +17,10 @@ import (
 	"github.com/turt2live/matrix-media-repo/internal_cache"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
+	"github.com/turt2live/matrix-media-repo/thumbnailing"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 )
-
-// These are the content types that we can actually thumbnail
-var supportedThumbnailTypes = []string{
-	"image/jpeg",
-	"image/jpg",
-	"image/png",
-	"image/gif",
-	"image/svg+xml",
-	"image/heif",
-	"image/webp",
-}
-
-// Of the SupportedThumbnailTypes, these are the 'animated' types
-var animatedTypes = []string{
-	"image/gif",
-	"image/png",
-}
 
 var localCache = cache.New(30*time.Second, 60*time.Second)
 
@@ -46,13 +30,15 @@ func GetThumbnail(origin string, mediaId string, desiredWidth int, desiredHeight
 		return nil, err
 	}
 
-	if !util.ArrayContains(supportedThumbnailTypes, media.ContentType) {
-		ctx.Log.Warn("Cannot generate thumbnail for " + media.ContentType + " because it is not supported")
+	mediaContentType := util.FixContentType(media.ContentType)
+
+	if !thumbnailing.IsSupported(mediaContentType) {
+		ctx.Log.Warn("Cannot generate thumbnail for " + mediaContentType + " because it is not supported")
 		return nil, errors.New("cannot generate thumbnail for this media's content type")
 	}
 
-	if !util.ArrayContains(ctx.Config.Thumbnails.Types, media.ContentType) {
-		ctx.Log.Warn("Cannot generate thumbnail for " + media.ContentType + " because it is not listed in the config")
+	if !util.ArrayContains(ctx.Config.Thumbnails.Types, mediaContentType) {
+		ctx.Log.Warn("Cannot generate thumbnail for " + mediaContentType + " because it is not listed in the config")
 		return nil, errors.New("cannot generate thumbnail for this media's content type")
 	}
 
@@ -68,7 +54,7 @@ func GetThumbnail(origin string, mediaId string, desiredWidth int, desiredHeight
 			}
 
 			data := &bytes.Buffer{}
-			imaging.Encode(data, img, imaging.PNG)
+			_ = imaging.Encode(data, img, imaging.PNG)
 			return &types.StreamedThumbnail{
 				Stream: util.BufferToStream(data),
 				Thumbnail: &types.Thumbnail{
@@ -95,7 +81,7 @@ func GetThumbnail(origin string, mediaId string, desiredWidth int, desiredHeight
 		animated = false
 	}
 
-	if animated && !util.ArrayContains(animatedTypes, media.ContentType) {
+	if animated && !thumbnailing.IsAnimationSupported(mediaContentType) {
 		ctx.Log.Warn("Attempted to animate a media record that isn't an animated type. Assuming animated=false")
 		animated = false
 	}
