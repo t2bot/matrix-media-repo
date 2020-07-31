@@ -82,6 +82,14 @@ func thumbnailWorkFn(request *resource_handler.WorkRequest) interface{} {
 		return &thumbnailResponse{err: err}
 	}
 
+
+	if info.animated != generated.Animated {
+		ctx.Log.Warn("Animation state changed to ", generated.Animated)
+
+		// Update the animation state to ensure that the record gets persisted with the right flag.
+		generated.Animated = info.animated
+	}
+
 	newThumb := &types.Thumbnail{
 		Origin:      info.media.Origin,
 		MediaId:     info.media.MediaId,
