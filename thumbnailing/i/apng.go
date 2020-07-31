@@ -3,7 +3,6 @@ package i
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"image"
 	"image/draw"
 	"io/ioutil"
@@ -26,7 +25,6 @@ func (d apngGenerator) supportsAnimation() bool {
 }
 
 func (d apngGenerator) matches(img []byte, contentType string) bool {
-	fmt.Println(contentType, util.IsAnimatedPNG(img))
 	return contentType == "image/png" && util.IsAnimatedPNG(img)
 }
 
