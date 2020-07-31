@@ -28,6 +28,9 @@ func GetExifOrientation(img io.ReadCloser) (*ExifOrientation, error) {
 	}
 
 	rawValue, err := exifData.Get(exif.Orientation)
+	if exif.IsTagNotPresentError(err) {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, errors.New("exif: error getting orientation: " + err.Error())
 	}
