@@ -122,9 +122,6 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case *api.DoNotCacheResponse:
 		res = result.Payload
 		break
-	default:
-		w.Header().Set("Cache-Control", "public,max-age=86400,s-maxage=86400")
-		break
 	}
 
 	htmlRes, isHtml := res.(*api.HtmlResponse)
@@ -199,6 +196,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			"method":     r.Method,
 			"statusCode": strconv.Itoa(http.StatusOK),
 		}).Inc()
+		w.Header().Set("Cache-Control", "private, max-age=259200") // 3 days
 		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
 		w.Header().Set("Content-Security-Policy", "") // We're serving HTML, so take away the CSP
 		io.Copy(w, bytes.NewBuffer([]byte(result.HTML)))

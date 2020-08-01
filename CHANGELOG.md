@@ -29,6 +29,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Fixed dimension checking on thumbnails.
 * Fixed handling of EXIF metadata. Thanks @sorunome!
 * Fixed handling of URL previews for some encodings.
+* Fixed `Cache-Control` headers being present on errors.
 
 ## [1.1.3] - July 15th, 2020
 
