@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 * Remove deprecated support for restricting uploads to certain mime types.
 * Remove deprecated support for `forUploads`.
+* Clarified what `uploads.minBytes` is intended to be used for.
 
 ### Fixed
 

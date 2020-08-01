@@ -197,7 +197,10 @@ archiving:
 uploads:
   maxBytes: 104857600 # 100MB default, 0 to disable
 
-  # The minimum number of bytes to let people upload
+  # The minimum number of bytes to let people upload. This is recommended to be non-zero to
+  # ensure that the "cost" of running the media repo is worthwhile - small file uploads tend
+  # to waste more CPU and database resources than small files, thus a default of 100 bytes
+  # is applied here as an approximate break-even point.
   minBytes: 100 # 100 bytes by default
 
   # The number of bytes to claim as the maximum size for uploads for the limits API. If this
