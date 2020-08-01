@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Add apng image support. Thanks @Sorunome!
 * Experimental support for Redis as a cache (in preparation for proper load balancing/HA support).
 * Added oEmbed URL preview support.
+* Added support for dynamic thumbnails.
 
 ### Changed
 

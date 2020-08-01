@@ -29,6 +29,7 @@ type ThumbnailsConfig struct {
 	Types               []string        `yaml:"types,flow"`
 	MaxAnimateSizeBytes int64           `yaml:"maxAnimateSizeBytes"`
 	Sizes               []ThumbnailSize `yaml:"sizes,flow"`
+	DynamicSizing bool `yaml:"dynamicSizing"`
 	AllowAnimated       bool            `yaml:"allowAnimated"`
 	DefaultAnimated     bool            `yaml:"defaultAnimated"`
 	StillFrame          float32         `yaml:"stillFrame"`

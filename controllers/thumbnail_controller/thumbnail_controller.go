@@ -241,6 +241,10 @@ func pickThumbnailDimensions(desiredWidth int, desiredHeight int, desiredMethod 
 		}
 	}
 
+	if ctx.Config.Thumbnails.DynamicSizing {
+		return util.MinInt(largestWidth, desiredWidth), util.MinInt(largestHeight, desiredHeight), desiredMethod, nil
+	}
+
 	// Use the largest dimensions available if we didn't find anything
 	if !foundSize {
 		targetWidth = largestWidth

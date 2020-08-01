@@ -96,6 +96,7 @@ func NewDefaultMainConfig() MainRepoConfig {
 					{640, 480},
 					{800, 600},
 				},
+				DynamicSizing: false,
 				Types: []string{
 					"image/jpeg",
 					"image/jpg",

@@ -350,6 +350,12 @@ thumbnails:
     - width: 800
       height: 600
 
+  # To allow for thumbnails to be any size, not just in the sizes specified above, set this to
+  # true (default false). When enabled, whatever size requested by the client will be generated
+  # up to a maximum of the largest possible dimensions in the `sizes` list. For best results,
+  # specify only one size in the `sizes` list when this option is enabled.
+  dynamicSizing: false
+
   # The content types to thumbnail when requested. Types that are not supported by the media repo
   # will not be thumbnailed (adding application/json here won't work). Clients may still not request
   # thumbnails for these types - this won't make clients automatically thumbnail these file types.
