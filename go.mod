@@ -51,13 +51,14 @@ require (
 	github.com/rubyist/circuitbreaker v2.2.1+incompatible
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
 	github.com/ryanuber/go-glob v1.0.0
+	github.com/saintfish/chardet v0.0.0-20120816061221-3af4cd4741ca
 	github.com/sebest/xff v0.0.0-20160910043805-6c115e0ffa35
 	github.com/sirupsen/logrus v1.4.2
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/tebeka/strftime v0.1.3 // indirect
 	golang.org/x/crypto v0.0.0-20200323165209-0ec3e9974c59
 	golang.org/x/image v0.0.0-20200119044424-58c23975cae1
-	golang.org/x/net v0.0.0-20200513185701-a91f0712d120 // indirect
+	golang.org/x/net v0.0.0-20200513185701-a91f0712d120
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
 	gopkg.in/ini.v1 v1.52.0 // indirect
 	gopkg.in/yaml.v2 v2.2.8

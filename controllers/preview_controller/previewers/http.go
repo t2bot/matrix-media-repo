@@ -17,6 +17,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/acl"
 	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/preview_types"
+	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/cleanup"
 )
 
@@ -168,10 +169,10 @@ func downloadRawContent(urlPayload *preview_types.UrlPayload, supportedTypes []s
 }
 
 func downloadHtmlContent(urlPayload *preview_types.UrlPayload, supportedTypes []string, languageHeader string, ctx rcontext.RequestContext) (string, error) {
-	raw, _, _, _, err := downloadRawContent(urlPayload, supportedTypes, languageHeader, ctx)
+	raw, _, contentType, _, err := downloadRawContent(urlPayload, supportedTypes, languageHeader, ctx)
 	html := ""
 	if raw != nil {
-		html = string(raw)
+		html = util.ToUtf8(string(raw), contentType)
 	}
 	return html, err
 }
