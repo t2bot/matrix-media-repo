@@ -62,7 +62,7 @@ func GetPreview(urlStr string, onHost string, forUserId string, atTs int64, lang
 
 		ctx.Log.Info("Preview not cached - fetching resource")
 
-		previewChan := getResourceHandler().GeneratePreview(urlToPreview, forUserId, onHost, languageHeader)
+		previewChan := getResourceHandler().GeneratePreview(urlToPreview, forUserId, onHost, languageHeader, ctx.Config.UrlPreviews.OEmbed)
 		defer close(previewChan)
 
 		result := <-previewChan

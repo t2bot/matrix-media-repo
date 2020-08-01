@@ -77,6 +77,7 @@ func NewDefaultMainConfig() MainRepoConfig {
 					"0.0.0.0/0", // "Everything"
 				},
 				DefaultLanguage: "en-US,en",
+				OEmbed: false,
 			},
 			NumWorkers: 10,
 			ExpireDays: 0,

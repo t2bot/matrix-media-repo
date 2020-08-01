@@ -48,6 +48,22 @@ func SetupTemplatesAndMigrations(givenMigrationsPath string, givenTemplatesPath 
 	config.Runtime.TemplatesPath = givenTemplatesPath
 }
 
+func SetupAssets(givenAssetsPath string) {
+	_, err := os.Stat(givenAssetsPath)
+	exists := err == nil || !os.IsNotExist(err)
+	if !exists {
+		tempAssets, err := ioutil.TempDir(os.TempDir(), "media-repo-assets")
+		if err != nil {
+			panic(err)
+		}
+		logrus.Info("Assets path doesn't exist - attempting to unpack from compiled data")
+		extractPrefixTo("assets", tempAssets)
+		givenAssetsPath = tempAssets
+	}
+
+	config.Runtime.AssetsPath = givenAssetsPath
+}
+
 func Cleanup() {
 	if tempMigrations != "" {
 		logrus.Info("Cleaning up temporary assets directory: ", tempMigrations)

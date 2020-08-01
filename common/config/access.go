@@ -16,10 +16,12 @@ import (
 type runtimeConfig struct {
 	MigrationsPath string
 	TemplatesPath  string
+	AssetsPath     string
 }
 
 const DefaultMigrationsPath = "./migrations"
 const DefaultTemplatesPath = "./templates"
+const DefaultAssetsPath = "./assets"
 
 var Runtime = &runtimeConfig{}
 var Path = "media-repo.yaml"

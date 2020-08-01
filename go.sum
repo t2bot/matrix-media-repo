@@ -12,6 +12,8 @@ github.com/DataDog/sketches-go v0.0.0-20190923095040-43f19ad77ff7 h1:qELHH0AWCvf
 github.com/DataDog/sketches-go v0.0.0-20190923095040-43f19ad77ff7/go.mod h1:Q5DbzQ+3AkgGwymQO7aZFNP7ns2lZKGtvRBzRXfdi60=
 github.com/DavidHuie/gomigrate v0.0.0-20190826182718-4adc4b3de142 h1:pfeJevnIXt4KJShhkTp8uRU0evDkRaFkAdmaNmzHMIQ=
 github.com/DavidHuie/gomigrate v0.0.0-20190826182718-4adc4b3de142/go.mod h1:F3GZLX+VN44AjFiyKD8++nq8sVE0Sw3bOhhQ3mUffnM=
+github.com/Jeffail/gabs v1.4.0 h1://5fYRRTq1edjfIrQGvdkcd22pkYUrHZ5YC/H2GJVAo=
+github.com/Jeffail/gabs v1.4.0/go.mod h1:6xMvQMK4k33lb7GUUpaAPh6nKMmemQeg5d4gn7/bOXc=
 github.com/Jeffail/tunny v0.0.0-20190930221602-f13eb662a36a h1:sk14oPN106XTe3WzOIaVGq+cFh1sh4z++2pAg2j4XCo=
 github.com/Jeffail/tunny v0.0.0-20190930221602-f13eb662a36a/go.mod h1:BX3q3G70XX0UmIkDWfDHoDRquDS1xFJA5VTbMf+14wM=
 github.com/Kubuxu/go-os-helper v0.0.1/go.mod h1:N8B+I7vPCT80IcP58r50u4+gEEcsZETFUpAzWW2ep1Y=
@@ -109,6 +111,8 @@ github.com/djherbis/stream v1.3.0 h1:ajZRF5faW45daiKVMEP60i0kdsTwMDVBvZ3b1oaAH74
 github.com/djherbis/stream v1.3.0/go.mod h1:ZNVKPVRCmrwhCwQHZUpVHHrq2rtGLrG1t3T/TThYLP8=
 github.com/dustin/go-humanize v1.0.0 h1:VSnTsYCnlFHaM2/igO1h6X3HA71jcobQuxemgkq4zYo=
 github.com/dustin/go-humanize v1.0.0/go.mod h1:HtrtbFcZ19U5GC7JDqmcUSB87Iq5E25KnS6fMYU6eOk=
+github.com/dyatlov/go-oembed v0.0.0-20191103150536-a57c85b3b37c h1:MEV1LrQtCBGacXajlT4CSuYWbZuLl/qaZVqwoOmwAbU=
+github.com/dyatlov/go-oembed v0.0.0-20191103150536-a57c85b3b37c/go.mod h1:DjlDZiZGRRKbiJZmiEiiXozsBQAQzHmxwHKFeXifL2g=
 github.com/dyatlov/go-opengraph v0.0.0-20180429202543-816b6608b3c8 h1:6muCmMJat6z7qptVrIf/+OWPxsjAfvhw5/6t+FwEkgg=
 github.com/dyatlov/go-opengraph v0.0.0-20180429202543-816b6608b3c8/go.mod h1:nYia/MIs9OyvXXYboPmNOj0gVWo97Wx0sde+ZuKkoM4=
 github.com/elgris/jsondiff v0.0.0-20160530203242-765b5c24c302/go.mod h1:qBlWZqWeVx9BjvqBsnC/8RUlAYpIFmPvgROcw0n1scE=

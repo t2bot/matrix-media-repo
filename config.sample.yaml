@@ -318,6 +318,11 @@ urlPreviews:
   # Reference: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Language
   defaultLanguage: "en-US,en"
 
+  # When true, oEmbed previews will be enabled. Typically these kinds of previews are used for
+  # sites that do not support OpenGraph or page scraping, such as Twitter. For information on
+  # specifying providers for oEmbed, including your own, see the README.md. Defaults to disabled.
+  oEmbed: false
+
 # The thumbnail configuration for the media repository.
 thumbnails:
   # The maximum number of bytes an image can be before the thumbnailer refuses.

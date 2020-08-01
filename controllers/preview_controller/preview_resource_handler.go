@@ -25,10 +25,11 @@ type urlResourceHandler struct {
 }
 
 type urlPreviewRequest struct {
-	urlPayload *preview_types.UrlPayload
-	forUserId  string
-	onHost     string
+	urlPayload     *preview_types.UrlPayload
+	forUserId      string
+	onHost         string
 	languageHeader string
+	allowOEmbed    bool
 }
 
 type urlPreviewResponse struct {
@@ -59,19 +60,34 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) interface{} {
 	ctx := rcontext.Initial().LogWithFields(logrus.Fields{
 		"worker_requestId": request.Id,
 		"worker_url":       info.urlPayload.UrlString,
-		"worker_previewer": "OpenGraph",
 	})
 	ctx.Log.Info("Processing url preview request")
 
 	db := storage.GetDatabase().GetUrlStore(ctx)
 
-	preview, err := previewers.GenerateOpenGraphPreview(info.urlPayload, info.languageHeader, ctx)
-	if err == preview_types.ErrPreviewUnsupported {
-		ctx.Log.Info("OpenGraph preview for this URL is unsupported - treating it as a file")
-		ctx = ctx.LogWithFields(logrus.Fields{"worker_previewer": "File"})
+	var preview preview_types.PreviewResult
+	err := preview_types.ErrPreviewUnsupported
 
+	// Try oEmbed first
+	if info.allowOEmbed {
+		ctx = ctx.LogWithFields(logrus.Fields{"worker_previewer": "oEmbed"})
+		preview, err = previewers.GenerateOEmbedPreview(info.urlPayload, info.languageHeader, ctx)
+	}
+
+	// Then try OpenGraph
+	if err == preview_types.ErrPreviewUnsupported {
+		ctx = ctx.LogWithFields(logrus.Fields{"worker_previewer": "OpenGraph"})
+		ctx.Log.Info("oEmbed preview for this URL is unsupported or disabled - treating it as a OpenGraph")
+		preview, err = previewers.GenerateOpenGraphPreview(info.urlPayload, info.languageHeader, ctx)
+	}
+
+	// Finally try scraping
+	if err == preview_types.ErrPreviewUnsupported {
+		ctx = ctx.LogWithFields(logrus.Fields{"worker_previewer": "File"})
+		ctx.Log.Info("OpenGraph preview for this URL is unsupported - treating it as a file")
 		preview, err = previewers.GenerateCalculatedPreview(info.urlPayload, info.languageHeader, ctx)
 	}
+
 	if err != nil {
 		// Transparently convert "unsupported" to "not found" for processing
 		if err == preview_types.ErrPreviewUnsupported {
@@ -87,12 +103,12 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) interface{} {
 	}
 
 	result := &types.UrlPreview{
-		Url:         preview.Url,
-		SiteName:    preview.SiteName,
-		Type:        preview.Type,
-		Description: preview.Description,
-		Title:       preview.Title,
-		LanguageHeader:info.languageHeader,
+		Url:            preview.Url,
+		SiteName:       preview.SiteName,
+		Type:           preview.Type,
+		Description:    preview.Description,
+		Title:          preview.Title,
+		LanguageHeader: info.languageHeader,
 	}
 
 	// Store the thumbnail, if there is one
@@ -138,15 +154,16 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) interface{} {
 	return &urlPreviewResponse{preview: result}
 }
 
-func (h *urlResourceHandler) GeneratePreview(urlPayload *preview_types.UrlPayload, forUserId string, onHost string, languageHeader string) chan *urlPreviewResponse {
+func (h *urlResourceHandler) GeneratePreview(urlPayload *preview_types.UrlPayload, forUserId string, onHost string, languageHeader string, allowOEmbed bool) chan *urlPreviewResponse {
 	resultChan := make(chan *urlPreviewResponse)
 	go func() {
 		reqId := fmt.Sprintf("preview_%s", urlPayload.UrlString) // don't put the user id or host in the ID string
 		c := h.resourceHandler.GetResource(reqId, &urlPreviewRequest{
-			urlPayload: urlPayload,
-			forUserId:  forUserId,
-			onHost:     onHost,
+			urlPayload:     urlPayload,
+			forUserId:      forUserId,
+			onHost:         onHost,
 			languageHeader: languageHeader,
+			allowOEmbed:    allowOEmbed,
 		})
 		defer close(c)
 		result := <-c

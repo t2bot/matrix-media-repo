@@ -15,18 +15,23 @@ import (
 func main() {
 	migrationsPath := flag.String("migrations", config.DefaultMigrationsPath, "The absolute path for the migrations folder")
 	templatesPath := flag.String("templates", config.DefaultTemplatesPath, "The absolute path for the templates folder")
+	assetsPath := flag.String("assets", config.DefaultAssetsPath, "The absolute path for the assets folder")
 	outputFile := flag.String("output", "./common/assets/assets.bin.go", "The output Go file to dump the files into")
 	flag.Parse()
 
 	fmt.Println("Reading migrations into memory...")
 	migrations := readDir(*migrationsPath, "migrations")
 	templates := readDir(*templatesPath, "templates")
+	assets := readDir(*assetsPath, "assets")
 
 	fileMap := make(map[string][]byte)
 	for k, v := range migrations {
 		fileMap[k] = v
 	}
 	for k, v := range templates {
+		fileMap[k] = v
+	}
+	for k, v := range assets {
 		fileMap[k] = v
 	}
 
