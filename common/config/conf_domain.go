@@ -46,7 +46,7 @@ func NewDefaultDomainConfig() DomainRepoConfig {
 				"0.0.0.0/0", // "Everything"
 			},
 			DefaultLanguage: "en-US,en",
-			OEmbed: false,
+			OEmbed:          false,
 		},
 		Thumbnails: ThumbnailsConfig{
 			MaxSourceBytes:      10485760, // 10mb

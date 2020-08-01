@@ -58,7 +58,7 @@ func NewDefaultMinimumRepoConfig() MinimumRepoConfig {
 			},
 			Redis: RedisConfig{
 				Enabled: false,
-				Shards: []RedisShardConfig{},
+				Shards:  []RedisShardConfig{},
 			},
 		},
 		AccessTokens: AccessTokenConfig{
