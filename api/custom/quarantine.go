@@ -197,6 +197,18 @@ func doQuarantine(ctx rcontext.RequestContext, origin string, mediaId string, al
 }
 
 func doQuarantineOn(media *types.Media, allowOtherHosts bool, ctx rcontext.RequestContext) (interface{}, bool) {
+	// Check to make sure the media doesn't have a purpose in staying
+	attrDb := storage.GetDatabase().GetMediaAttributesStore(ctx)
+	attr, err := attrDb.GetAttributesDefaulted(media.Origin, media.MediaId)
+	if err != nil {
+		ctx.Log.Error("Error while getting attributes for media: " + err.Error())
+		return api.InternalServerError("Error quarantining media"), false
+	}
+	if attr.Purpose == types.PurposePinned {
+		ctx.Log.Warn("Refusing to quarantine media due to it being pinned")
+		return &MediaQuarantinedResponse{NumQuarantined: 0}, true
+	}
+
 	// We reset the entire cache to avoid any lingering links floating around, such as thumbnails or other media.
 	// The reset is done before actually quarantining the media because that could fail for some reason
 	internal_cache.Get().Reset()

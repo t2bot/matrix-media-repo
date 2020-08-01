@@ -82,6 +82,8 @@ func Init() *sync.WaitGroup {
 	ipfsDownloadHandler := handler{api.AccessTokenOptionalRoute(unstable.IPFSDownload), "ipfs_download", counter, false}
 	logoutHandler := handler{api.AccessTokenRequiredRoute(r0.Logout), "logout", counter, false}
 	logoutAllHandler := handler{api.AccessTokenRequiredRoute(r0.LogoutAll), "logout_all", counter, false}
+	getMediaAttrsHandler := handler{api.AccessTokenRequiredRoute(custom.GetAttributes), "get_media_attributes", counter, false}
+	setMediaAttrsHandler := handler{api.AccessTokenRequiredRoute(custom.SetAttributes), "set_media_attributes", counter, false}
 
 	routes := make(map[string]route)
 	// r0 is typically clients and v1 is typically servers. v1 is deprecated.
@@ -136,6 +138,8 @@ func Init() *sync.WaitGroup {
 		routes["/_matrix/media/"+version+"/admin/import"] = route{"POST", startImportHandler}
 		routes["/_matrix/media/"+version+"/admin/import/{importId:[a-zA-Z0-9.:\\-_]+}/part"] = route{"POST", appendToImportHandler}
 		routes["/_matrix/media/"+version+"/admin/import/{importId:[a-zA-Z0-9.:\\-_]+}/close"] = route{"POST", stopImportHandler}
+		routes["/_matrix/media/"+version+"/admin/media/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}/attributes"] = route{"GET", getMediaAttrsHandler}
+		routes["/_matrix/media/"+version+"/admin/media/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}/attributes/set"] = route{"POST", setMediaAttrsHandler}
 
 		// Routes that we should handle but aren't in the media namespace (synapse compat)
 		routes["/_matrix/client/"+version+"/admin/purge_media_cache"] = route{"POST", purgeRemote}

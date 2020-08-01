@@ -18,11 +18,12 @@ type Database struct {
 }
 
 type repos struct {
-	mediaStore     *stores.MediaStoreFactory
-	thumbnailStore *stores.ThumbnailStoreFactory
-	urlStore       *stores.UrlStoreFactory
-	metadataStore  *stores.MetadataStoreFactory
-	exportStore    *stores.ExportStoreFactory
+	mediaStore           *stores.MediaStoreFactory
+	thumbnailStore       *stores.ThumbnailStoreFactory
+	urlStore             *stores.UrlStoreFactory
+	metadataStore        *stores.MetadataStoreFactory
+	exportStore          *stores.ExportStoreFactory
+	mediaAttributesStore *stores.MediaAttributesStoreFactory
 }
 
 var dbInstance *Database
@@ -96,6 +97,10 @@ func OpenDatabase(connectionString string, maxConns int, maxIdleConns int) error
 	if d.repos.exportStore, err = stores.InitExportStore(d.db); err != nil {
 		return err
 	}
+	logrus.Info("Setting up media attributes DB store...")
+	if d.repos.mediaAttributesStore, err = stores.InitMediaAttributesStore(d.db); err != nil {
+		return err
+	}
 
 	// Run some tasks that should always be done on startup
 	if err = populateDatastores(d); err != nil {
@@ -127,4 +132,8 @@ func (d *Database) GetMetadataStore(ctx rcontext.RequestContext) *stores.Metadat
 
 func (d *Database) GetExportStore(ctx rcontext.RequestContext) *stores.ExportStore {
 	return d.repos.exportStore.Create(ctx)
+}
+
+func (d *Database) GetMediaAttributesStore(ctx rcontext.RequestContext) *stores.MediaAttributesStore {
+	return d.repos.mediaAttributesStore.Create(ctx)
 }

@@ -2,6 +2,26 @@
 
 All the API calls here require your user ID to be listed in the configuration as an administrator. After that, your access token for your homeserver will grant you access to these APIs. The URLs should be hit against a configured homeserver. For example, if you have `t2bot.io` configured as a homeserver, then the admin API can be used at `https://t2bot.io/_matrix/media/unstable/admin/...`.
 
+## Media attributes
+
+Media in the media repo can have attributes associated with it.
+
+Currently the only attribute is a purpose, which defines how the media repo is to treat the media. By default this is set
+to `none`, meaning the media repo will not treat it as special in any way. Setting the purpose to `pinned` will prevent
+the media from being quarantined, but not purged.
+
+#### Get media attributes
+
+URL: `GET /_matrix/media/unstable/admin/media/<server>/<media id>/attributes?access_token=your_access_token`
+
+The response will be the current attributes for the media.
+
+#### Set media attributes
+
+URL: `POST /_matrix/media/unstable/admin/media/<server>/<media id>/attributes/set?access_token=your_access_token`
+
+The request body will be the new attributes for the media. It is recommended to first get the attributes before setting them.
+
 ## Media purge
 
 Sometimes you just want your disk space back - purging media is the best way to do that. **Be careful about what you're purging.** The media repo will happily purge a local media object, making it highly unlikely to ever exist in Matrix again. When the media repo deletes remote media, it is only deleting its copy of it - it cannot delete media on the remote server itself. Thumbnails will also be deleted for the media.

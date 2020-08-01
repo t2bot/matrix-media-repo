@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Experimental support for Redis as a cache (in preparation for proper load balancing/HA support).
 * Added oEmbed URL preview support.
 * Added support for dynamic thumbnails.
+* Added a way to prevent certain media from being quarantined (attributes API).
 
 ### Changed
 
