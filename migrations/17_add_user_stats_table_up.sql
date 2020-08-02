@@ -30,11 +30,3 @@ END;
 $$;
 DROP TRIGGER IF EXISTS media_change_for_user ON media;
 CREATE TRIGGER media_change_for_user AFTER INSERT OR UPDATE OR DELETE ON media FOR EACH ROW EXECUTE PROCEDURE track_update_user_media();
-
--- Populate the new table
-DO $$
-BEGIN
-    IF ((SELECT COUNT(*) FROM user_stats)) = 0 THEN
-        INSERT INTO user_stats SELECT user_id, SUM(size_bytes) FROM media GROUP BY user_id;
-    END IF;
-END $$;
