@@ -18,6 +18,12 @@ a large database (more than about 100k uploaded files), run the following steps 
 2. If you have no intention of using stats or quotas, you're done (the stats table will be inaccurate). If
    you do plan on using either, run `INSERT INTO user_stats SELECT user_id, SUM(size_bytes) FROM media GROUP BY user_id;`
    which may take a while.
+3. Change the owner of the table and function to your media repo's postgresql user. For example, if your postgres
+   user is `media`, then run:
+   ```sql
+   ALTER TABLE user_stats OWNER TO media;
+   ALTER FUNCTION track_update_user_media() OWNER TO media; 
+   ```
 
 ### Added
 
