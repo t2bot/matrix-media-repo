@@ -31,6 +31,7 @@ const selectReservation = "SELECT origin, media_id, reason FROM reserved_media W
 const selectMediaLastAccessed = "SELECT m.sha256_hash, m.size_bytes, m.datastore_id, m.location, m.creation_ts, a.last_access_ts FROM media AS m JOIN last_access AS a ON m.sha256_hash = a.sha256_hash WHERE a.last_access_ts < $1;"
 const insertBlurhash = "INSERT INTO blurhashes (sha256_hash, blurhash) VALUES ($1, $2);"
 const selectBlurhash = "SELECT blurhash FROM blurhashes WHERE sha256_hash = $1;"
+const selectUserStats = "SELECT user_id, uploaded_bytes FROM user_stats WHERE user_id = $1;"
 
 type metadataStoreStatements struct {
 	upsertLastAccessed                            *sql.Stmt
@@ -51,6 +52,7 @@ type metadataStoreStatements struct {
 	selectMediaLastAccessed                       *sql.Stmt
 	insertBlurhash                                *sql.Stmt
 	selectBlurhash                                *sql.Stmt
+	selectUserStats                               *sql.Stmt
 }
 
 type MetadataStoreFactory struct {
@@ -122,6 +124,9 @@ func InitMetadataStore(sqlDb *sql.DB) (*MetadataStoreFactory, error) {
 		return nil, err
 	}
 	if store.stmts.selectBlurhash, err = store.sqlDb.Prepare(selectBlurhash); err != nil {
+		return nil, err
+	}
+	if store.stmts.selectUserStats, err = store.sqlDb.Prepare(selectUserStats); err != nil {
 		return nil, err
 	}
 
@@ -407,4 +412,18 @@ func (s *MetadataStore) GetBlurhash(sha256Hash string) (string, error) {
 		return "", err
 	}
 	return blurhash, nil
+}
+
+func (s *MetadataStore) GetUserStats(userId string) (*types.UserStats, error) {
+	r := s.statements.selectUserStats.QueryRowContext(s.ctx, userId)
+
+	stat := &types.UserStats{}
+	err := r.Scan(
+		&stat.UserId,
+		&stat.UploadedBytes,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return stat, nil
 }

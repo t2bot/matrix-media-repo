@@ -150,6 +150,9 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case common.ErrCodeMethodNotAllowed:
 			statusCode = http.StatusMethodNotAllowed
 			break
+		case common.ErrCodeForbidden:
+			statusCode = http.StatusForbidden
+			break
 		default: // Treat as unknown (a generic server error)
 			statusCode = http.StatusInternalServerError
 			break

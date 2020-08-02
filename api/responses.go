@@ -49,3 +49,7 @@ func AuthFailed() *ErrorResponse {
 func BadRequest(message string) *ErrorResponse {
 	return &ErrorResponse{common.ErrCodeUnknown, message, common.ErrCodeBadRequest}
 }
+
+func QuotaExceeded() *ErrorResponse {
+	return &ErrorResponse{common.ErrCodeForbidden, "Quota Exceeded", common.ErrCodeQuotaExceeded}
+}

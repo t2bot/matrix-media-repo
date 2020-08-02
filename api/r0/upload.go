@@ -13,6 +13,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/info_controller"
 	"github.com/turt2live/matrix-media-repo/controllers/upload_controller"
+	"github.com/turt2live/matrix-media-repo/quota"
 	"github.com/turt2live/matrix-media-repo/util/cleanup"
 )
 
@@ -42,6 +43,17 @@ func UploadMedia(r *http.Request, rctx rcontext.RequestContext, user api.UserInf
 	if upload_controller.IsRequestTooSmall(r.ContentLength, r.Header.Get("Content-Length"), rctx) {
 		io.Copy(ioutil.Discard, r.Body) // Ditch the entire request
 		return api.RequestTooSmall()
+	}
+
+	inQuota, err := quota.IsUserWithinQuota(rctx, user.UserId)
+	if err != nil {
+		io.Copy(ioutil.Discard, r.Body) // Ditch the entire request
+		rctx.Log.Error("Unexpected error checking quota: " + err.Error())
+		return api.InternalServerError("Unexpected Error")
+	}
+	if !inQuota {
+		io.Copy(ioutil.Discard, r.Body) // Ditch the entire request
+		return api.QuotaExceeded()
 	}
 
 	contentLength := upload_controller.EstimateContentLength(r.ContentLength, r.Header.Get("Content-Length"))

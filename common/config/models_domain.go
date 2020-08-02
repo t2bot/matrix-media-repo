@@ -6,10 +6,21 @@ type ArchivingConfig struct {
 	TargetBytesPerPart int64 `yaml:"targetBytesPerPart"`
 }
 
+type QuotaUserConfig struct {
+	Glob     string `yaml:"glob"`
+	MaxBytes int64  `yaml:"maxBytes"`
+}
+
+type QuotasConfig struct {
+	Enabled    bool              `yaml:"enabled"`
+	UserQuotas []QuotaUserConfig `yaml:"users,flow"`
+}
+
 type UploadsConfig struct {
-	MaxSizeBytes         int64 `yaml:"maxBytes"`
-	MinSizeBytes         int64 `yaml:"minBytes"`
-	ReportedMaxSizeBytes int64 `yaml:"reportedMaxBytes"`
+	MaxSizeBytes         int64        `yaml:"maxBytes"`
+	MinSizeBytes         int64        `yaml:"minBytes"`
+	ReportedMaxSizeBytes int64        `yaml:"reportedMaxBytes"`
+	Quota                QuotasConfig `yaml:"quotas"`
 }
 
 type DatastoreConfig struct {
