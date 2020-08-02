@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+*Nothing yet.*
+
+## [1.2.0] - August 2nd, 2020
+
 ### Upgrade notes
 
 **This release contains a database change which might take a while.** In order to support quotas, this
@@ -173,7 +177,8 @@ a large database (more than about 100k uploaded files), run the following steps 
 * Various other features that would be expected like maximum/minimum size controls, rate limiting, etc. Check out the
   sample config for a better idea of what else is possible.
 
-[unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.1.3...HEAD
+[unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/turt2live/matrix-media-repo/compare/v1.1.3...v1.2.0
 [1.1.3]: https://github.com/turt2live/matrix-media-repo/compare/v1.1.2...v1.1.3
 [1.1.2]: https://github.com/turt2live/matrix-media-repo/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/turt2live/matrix-media-repo/compare/v1.1.0...v1.1.1
