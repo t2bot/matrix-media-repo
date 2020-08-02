@@ -7,6 +7,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Upgrade notes
+
+**This release contains a database change which might take a while.** In order to support quotas, this
+release tracks how much a user has uploaded, which might take a while to initially calculate. If you have
+a large database (more than about 100k uploaded files), run the following steps before upgrading:
+
+1. The PostgreSQL script described [here](https://github.com/turt2live/matrix-media-repo/blob/a8951b0562debb9f8ae3b6e517bfc3a84d2e627a/migrations/17_add_user_stats_table_up.sql).
+   This can be run while the server is running.
+2. If you have no intention of using stats or quotas, you're done (the stats table will be inaccurate). If
+   you do plan on using either, run `INSERT INTO user_stats SELECT user_id, SUM(size_bytes) FROM media GROUP BY user_id;`
+   which may take a while.
+
 ### Added
 
 * Add webp image support. Thanks @Sorunome!
@@ -15,6 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Added oEmbed URL preview support.
 * Added support for dynamic thumbnails.
 * Added a way to prevent certain media from being quarantined (attributes API).
+* Added support for quotas.
 
 ### Changed
 
