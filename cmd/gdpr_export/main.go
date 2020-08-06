@@ -41,7 +41,8 @@ func main() {
 	}
 
 	config.Path = *configPath
-	assets.SetupTemplatesAndMigrations(*migrationsPath, *templatesPath)
+	assets.SetupMigrations(*migrationsPath)
+	assets.SetupTemplates(*templatesPath)
 
 	var err error
 	err = logging.Setup(config.Get().General.LogDirectory)

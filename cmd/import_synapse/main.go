@@ -52,7 +52,7 @@ func main() {
 	}
 
 	config.Path = *configPath
-	assets.SetupTemplatesAndMigrations(*migrationsPath, "")
+	assets.SetupMigrations(*migrationsPath)
 
 	var realPsqlPassword string
 	if *postgresPassword == "" {

@@ -22,7 +22,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/util/cleanup"
 )
 
-type manifestRecord struct {
+type ManifestRecord struct {
 	FileName     string `json:"name"`
 	ArchivedName string `json:"file_name"`
 	SizeBytes    int64  `json:"size_bytes"`
@@ -35,11 +35,11 @@ type manifestRecord struct {
 	Uploader     string `json:"uploader"`
 }
 
-type manifest struct {
+type Manifest struct {
 	Version   int                        `json:"version"`
 	EntityId  string                     `json:"entity_id"`
 	CreatedTs int64                      `json:"created_ts"`
-	Media     map[string]*manifestRecord `json:"media"`
+	Media     map[string]*ManifestRecord `json:"media"`
 
 	// Deprecated: for v1 manifests
 	UserId string `json:"user_id,omitempty"`
@@ -253,7 +253,7 @@ func compileArchive(exportId string, entityId string, archiveDs *datastore.Datas
 		ExportID: exportId,
 		Media:    make([]*templating.ExportIndexMediaModel, 0),
 	}
-	mediaManifest := make(map[string]*manifestRecord)
+	mediaManifest := make(map[string]*ManifestRecord)
 	for _, m := range media {
 		var s3url string
 		if s3urls {
@@ -262,7 +262,7 @@ func compileArchive(exportId string, entityId string, archiveDs *datastore.Datas
 				ctx.Log.Warn(err)
 			}
 		}
-		mediaManifest[m.MxcUri()] = &manifestRecord{
+		mediaManifest[m.MxcUri()] = &ManifestRecord{
 			ArchivedName: archivedName(m),
 			FileName:     m.UploadName,
 			SizeBytes:    m.SizeBytes,
@@ -289,7 +289,7 @@ func compileArchive(exportId string, entityId string, archiveDs *datastore.Datas
 			Uploader:        m.UserId,
 		})
 	}
-	manifest := &manifest{
+	manifest := &Manifest{
 		Version:   2,
 		EntityId:  entityId,
 		CreatedTs: util.NowMillis(),

@@ -17,7 +17,7 @@ import (
 var tempMigrations string
 var tempTemplates string
 
-func SetupTemplatesAndMigrations(givenMigrationsPath string, givenTemplatesPath string) {
+func SetupMigrations(givenMigrationsPath string) {
 	_, err := os.Stat(givenMigrationsPath)
 	exists := err == nil || !os.IsNotExist(err)
 	if !exists {
@@ -30,9 +30,13 @@ func SetupTemplatesAndMigrations(givenMigrationsPath string, givenTemplatesPath 
 		givenMigrationsPath = tempMigrations
 	}
 
+	config.Runtime.MigrationsPath = givenMigrationsPath
+}
+
+func SetupTemplates(givenTemplatesPath string) {
 	if givenTemplatesPath != "" {
-		_, err = os.Stat(givenTemplatesPath)
-		exists = err == nil || !os.IsNotExist(err)
+		_, err := os.Stat(givenTemplatesPath)
+		exists := err == nil || !os.IsNotExist(err)
 		if !exists {
 			tempTemplates, err = ioutil.TempDir(os.TempDir(), "media-repo-templates")
 			if err != nil {
@@ -44,7 +48,6 @@ func SetupTemplatesAndMigrations(givenMigrationsPath string, givenTemplatesPath 
 		}
 	}
 
-	config.Runtime.MigrationsPath = givenMigrationsPath
 	config.Runtime.TemplatesPath = givenTemplatesPath
 }
 

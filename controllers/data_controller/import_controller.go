@@ -138,7 +138,7 @@ func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx
 	ctx.Log.Info("Preparing for import...")
 	fileMap := make(map[string]*bytes.Buffer)
 	stopImport := false
-	archiveManifest := &manifest{}
+	archiveManifest := &Manifest{}
 	haveManifest := false
 	imported := make(map[string]bool)
 	db := storage.GetDatabase().GetMediaStore(ctx)
