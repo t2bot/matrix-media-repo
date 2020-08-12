@@ -15,6 +15,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/runtime"
 	"github.com/turt2live/matrix-media-repo/controllers/data_controller"
 	"github.com/turt2live/matrix-media-repo/storage"
+	"github.com/turt2live/matrix-media-repo/util"
 )
 
 func main() {
@@ -51,10 +52,30 @@ func main() {
 		files = append(files, path.Join(*filesDir, f.Name()))
 	}
 
+	// Find the manifest so we can import as soon as possible
+	manifestIdx := 0
+	for i, fname := range files {
+		logrus.Infof("Checking %s for export manifest", fname)
+		f, err := os.Open(fname)
+		if err != nil {
+			panic(err)
+		}
+		defer f.Close()
+		names, err := data_controller.GetFileNames(f)
+		if err != nil {
+			panic(err)
+		}
+
+		if util.ArrayContains(names, "manifest.json") {
+			manifestIdx = i
+			break
+		}
+	}
+
 	logrus.Info("Starting import...")
 	ctx := rcontext.Initial().LogWithFields(logrus.Fields{"flagDir": *filesDir})
 
-	f, err := os.Open(files[0])
+	f, err := os.Open(files[manifestIdx])
 	if err != nil {
 		panic(err)
 	}
@@ -66,7 +87,7 @@ func main() {
 
 	logrus.Info("Appending all other files to import")
 	for i, fname := range files {
-		if i == 0 {
+		if i == manifestIdx {
 			continue // already imported
 		}
 
@@ -76,10 +97,14 @@ func main() {
 			panic(err)
 		}
 		defer f.Close()
-		err = data_controller.AppendToImport(importId, f)
+		ch, err := data_controller.AppendToImport(importId, f, true)
 		if err != nil {
 			panic(err)
 		}
+
+		logrus.Info("Waiting for file to be processed before moving on")
+		<-ch
+		close(ch)
 	}
 
 	logrus.Info("Waiting for import to complete")

@@ -23,8 +23,9 @@ import (
 )
 
 type importUpdate struct {
-	stop    bool
-	fileMap map[string]*bytes.Buffer
+	stop       bool
+	fileMap    map[string]*bytes.Buffer
+	onDoneChan chan bool
 }
 
 var openImports = &sync.Map{} // importId => updateChan
@@ -61,21 +62,25 @@ func StartImport(data io.Reader, ctx rcontext.RequestContext) (*types.Background
 	return task, importId, nil
 }
 
-func AppendToImport(importId string, data io.Reader) error {
+func AppendToImport(importId string, data io.Reader, withReturnChan bool) (chan bool, error) {
 	runningImport, ok := openImports.Load(importId)
 	if !ok || runningImport == nil {
-		return errors.New("import not found or it has been closed")
+		return nil, errors.New("import not found or it has been closed")
 	}
 
 	results, err := processArchive(data)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
+	var doneChan chan bool
+	if withReturnChan {
+		doneChan = make(chan bool)
+	}
 	updateChan := runningImport.(chan *importUpdate)
-	updateChan <- &importUpdate{stop: false, fileMap: results}
+	updateChan <- &importUpdate{stop: false, fileMap: results, onDoneChan: doneChan}
 
-	return nil
+	return doneChan, nil
 }
 
 func StopImport(importId string) error {
@@ -88,6 +93,38 @@ func StopImport(importId string) error {
 	updateChan <- &importUpdate{stop: true, fileMap: make(map[string]*bytes.Buffer)}
 
 	return nil
+}
+
+func GetFileNames(data io.Reader) ([]string, error) {
+	archiver, err := gzip.NewReader(data)
+	if err != nil {
+		return nil, err
+	}
+
+	defer archiver.Close()
+
+	tarFile := tar.NewReader(archiver)
+	names := make([]string, 0)
+	for {
+		header, err := tarFile.Next()
+		if err == io.EOF {
+			break // we're done
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		if header == nil {
+			continue // skip this weird file
+		}
+		if header.Typeflag != tar.TypeReg {
+			continue // skip directories and other stuff
+		}
+
+		names = append(names, header.Name)
+	}
+
+	return names, nil
 }
 
 func processArchive(data io.Reader) (map[string]*bytes.Buffer, error) {
@@ -142,9 +179,14 @@ func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx
 	haveManifest := false
 	imported := make(map[string]bool)
 	db := storage.GetDatabase().GetMediaStore(ctx)
+	var update *importUpdate
 
 	for !stopImport {
-		update := <-updateChannel
+		if update != nil && update.onDoneChan != nil {
+			ctx.Log.Info("Flagging tar as completed")
+			update.onDoneChan <- true
+		}
+		update = <-updateChannel
 		if update.stop {
 			ctx.Log.Info("Close requested")
 			stopImport = true
@@ -198,6 +240,8 @@ func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx
 			continue
 		}
 
+		toClear := make([]string, 0)
+		doClear := true
 		for mxc, record := range archiveManifest.Media {
 			_, found := imported[mxc]
 			if found {
@@ -232,8 +276,10 @@ func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx
 				_, err := upload_controller.StoreDirect(nil, closer, record.SizeBytes, record.ContentType, record.FileName, userId, record.Origin, record.MediaId, kind, ctx, true)
 				if err != nil {
 					ctx.Log.Errorf("Error importing file: %s", err.Error())
+					doClear = false // don't clear things on error
 					continue
 				}
+				toClear = append(toClear, record.ArchivedName)
 			} else if record.S3Url != "" {
 				ctx.Log.Info("Using S3 URL")
 				endpoint, bucket, location, err := ds_s3.ParseS3URL(record.S3Url)
@@ -327,6 +373,15 @@ func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx
 			imported[mxc] = true
 		}
 
+		if doClear {
+			ctx.Log.Info("Clearing up memory for imported files...")
+			for _, f := range toClear {
+				ctx.Log.Infof("Removing %s from memory", f)
+				delete(fileMap, f)
+			}
+		}
+
+		ctx.Log.Info("Checking for any unimported files...")
 		missingAny := false
 		for mxc, _ := range archiveManifest.Media {
 			_, found := imported[mxc]
@@ -341,6 +396,12 @@ func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx
 			ctx.Log.Info("No more files to import - closing import")
 			stopImport = true
 		}
+	}
+
+	// Clean up the last tar file
+	if update != nil && update.onDoneChan != nil {
+		ctx.Log.Info("Flagging tar as completed")
+		update.onDoneChan <- true
 	}
 
 	openImports.Delete(importId)

@@ -43,7 +43,7 @@ func AppendToImport(r *http.Request, rctx rcontext.RequestContext, user api.User
 	importId := params["importId"]
 
 	defer cleanup.DumpAndCloseStream(r.Body)
-	err := data_controller.AppendToImport(importId, r.Body)
+	_, err := data_controller.AppendToImport(importId, r.Body, false)
 	if err != nil {
 		rctx.Log.Error(err)
 		return api.InternalServerError("fatal error appending to import")
