@@ -10,93 +10,23 @@ Smaller/individual homeservers can still make use of this project's features, th
 higher than expected resource consumption - please do your research before deploying this as this project may not be useful
 for your environment.
 
-For help and support, visit [#mediarepo:t2bot.io](https://matrix.to/#/#mediarepo:t2bot.io).
+For help and support, visit [#mediarepo:t2bot.io](https://matrix.to/#/#mediarepo:t2bot.io). Administrator documentation
+can be found on [docs.t2bot.io](https://docs.t2bot.io/matrix-media-repo/).
 
-## Installing / building
+## Installing
 
-**Note**: developing on matrix-media-repo requires you to follow these steps at least once.
-
-Assuming Go 1.14+ is already installed on your PATH:
-```bash
-# Get it
-git clone https://github.com/turt2live/matrix-media-repo
-cd matrix-media-repo
-
-# Build it
-./build.sh
-
-# Edit media-repo.yaml with your favourite editor
-cp config.sample.yaml media-repo.yaml
-vi /etc/matrix-media-repo/media-repo.yaml
-
-# Run it
-bin/media_repo
-```
-
-Another option is to use a Docker container (this script might need to be modified for your environment):
-```bash
-# Create a path for the Docker volume
-mkdir -p /etc/matrix-media-repo
-
-# Using config.sample.yaml as a template, edit media-repo.yaml with your favourite editor
-vi /etc/matrix-media-repo/media-repo.yaml
-
-docker run --rm -it -p 8000:8000 -v /etc/matrix-media-repo:/data turt2live/matrix-media-repo
-```
-
-Note that using `latest` is dangerous - it is effectively the development branch for this project. Instead,
-prefer to use one of the tagged versions and update regularly.
+For installation instructions, see [docs.t2bot.io](https://docs.t2bot.io/matrix-media-repo/installing/index.html).
 
 ## Deployment
 
-This is intended to run behind a load balancer and beside your homeserver deployments. Assuming your load balancer handles SSL termination, a sample nginx config would be:
+For deployment information, see [docs.t2bot.io](https://docs.t2bot.io/matrix-media-repo/deployment/index.html).
 
-```ini
-# Federation / Client-server API
-# Both need to be reverse proxied, so if your federation and client-server API endpoints are on
-# different `server` blocks, you will need to configure that.
-server {
-  listen 443 ssl;
-  listen [::]:443 ssl;
+## Developers
 
-  # SSL options not shown - ensure the certificates are valid for your homeserver deployment.
-
-  # Redirect all traffic by default to the homeserver
-  location /_matrix {
-      proxy_read_timeout 60s;
-      proxy_set_header Host $host;
-      proxy_set_header X-Real-IP $remote_addr;
-      proxy_set_header X-Forwarded-For $remote_addr;
-      proxy_pass http://localhost:8008; # Point this towards your homeserver
-  }
-  
-  # Redirect all media endpoints to the media-repo
-  location /_matrix/media {
-      proxy_read_timeout 60s;
-      proxy_set_header Host $host; # Make sure this matches your homeserver in media-repo.yaml
-      proxy_set_header X-Real-IP $remote_addr;
-      proxy_set_header X-Forwarded-For $remote_addr;
-      proxy_pass http://localhost:8000; # Point this towards media-repo
-  }
-}
-```
-
-Your synapse listener configuration would look something like this:
-```yaml
-listeners:
-  - port: 8008
-    bind_addresses: ['127.0.0.1']
-    type: http
-    tls: false
-    x_forwarded: true
-    resources:
-      - names: [client]
-        compress: true
-      - names: [federation]
-        compress: false
-```
-
-After importing your media, setting `enable_media_repo: false` in your Synapse configuration will disable the media repository.
+To properly run the media repo in a development setting, it must be compiled manually
+once to ensure the assets are set up correctly: follow the 
+[compilation steps](https://docs.t2bot.io/matrix-media-repo/installing/method/compilation.html)
+posted on docs.t2bot.io.
 
 ## Importing media from synapse
 
