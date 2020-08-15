@@ -109,10 +109,3 @@ Usage of gdpr_import:
   -migrations string
         The absolute path for the migrations folder (default "./migrations")
 ```
-
-## oEmbed
-
-The media repo supports oEmbed for URL previews by default. The providers for the engine are regularly updated from
-https://oembed.com/providers.json in each release, however if you'd like to supply your own then define an assets
-directory with a `providers.json` file matching that format. Asset directories can be supplied as `-assets /path/to/assets`
-on some of the executables (see `-help` for information).

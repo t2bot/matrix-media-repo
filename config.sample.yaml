@@ -342,7 +342,9 @@ urlPreviews:
 
   # When true, oEmbed previews will be enabled. Typically these kinds of previews are used for
   # sites that do not support OpenGraph or page scraping, such as Twitter. For information on
-  # specifying providers for oEmbed, including your own, see the README.md. Defaults to disabled.
+  # specifying providers for oEmbed, including your own, see the following documentation:
+  # https://docs.t2bot.io/matrix-media-repo/url-previews/oembed.html
+  # Defaults to disabled.
   oEmbed: false
 
 # The thumbnail configuration for the media repository.
