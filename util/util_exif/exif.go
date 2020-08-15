@@ -40,6 +40,11 @@ func GetExifOrientation(img io.ReadCloser) (*ExifOrientation, error) {
 		return nil, errors.New("exif: error parsing orientation: " + err.Error())
 	}
 
+	// Some devices produce invalid exif data when they intend to mean "no orientation"
+	if orientation == 0 {
+		return nil, nil
+	}
+
 	if orientation < 1 || orientation > 8 {
 		return nil, errors.New(fmt.Sprintf("orientation out of range: %d", orientation))
 	}

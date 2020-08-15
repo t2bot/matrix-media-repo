@@ -12,6 +12,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Added a new tool, `export_synapse_for_import`, which can be used to do an offline import from Synapse.
   * After running this tool, use the `gdpr_import` tool to bring the export into the media repo.
 
+### Fixed
+
+* Fixed thumbnails for invalid JPEGs.
+
 ## [1.2.0] - August 2nd, 2020
 
 ### Upgrade notes
