@@ -1,0 +1,41 @@
+version: '2.0'
+services:
+  conduit:
+    container_name: "media_repo_conduit"
+    build:
+      context: '.'
+      dockerfile: 'Conduit.Dockerfile'
+    restart: unless-stopped
+    volumes:
+      - ./conduit-db:/src/conduit/.local/share/conduit
+    environment:
+      ROCKET_SERVER_NAME: "localhost"
+      ROCKET_PORT: 8004
+      ROCKET_REGISTRATION_DISABLED: "false"
+      ROCKET_ENCRYPTION_DISABLED: "false"
+    ports:
+      - "8004:8004"
+    networks:
+      - proxy
+  nginx:
+    container_name: "media_repo_nginx"
+    image: "nginx:latest"
+    restart: unless-stopped
+    volumes:
+      - ./conduit.nginx.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - "8008:80"
+    networks:
+      - proxy
+  element:
+    container_name: "media_repo_element"
+    image: "vectorim/riot-web:latest"
+    restart: unless-stopped
+    volumes:
+      - ./element-config.json:/app/config.json
+    ports:
+      - "8080:80"
+    networks:
+      - proxy
+networks:
+  proxy:

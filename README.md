@@ -28,6 +28,18 @@ once to ensure the assets are set up correctly: follow the
 [compilation steps](https://docs.t2bot.io/matrix-media-repo/installing/method/compilation.html)
 posted on docs.t2bot.io.
 
+If you'd like to use a regular Matrix client to test the media repo, `docker-compose -f dev/conduit-dev-docker-compose.yaml up`
+will give you a [Conduit](https://conduit.rs/) homeserver behind an nginx reverse proxy which routes media requests to
+`http://host.docker.internal:8001`. To test accurately, it is recommended to add the following homeserver configuration
+to your media repo config:
+```yaml
+name: "localhost"
+csApi: "http://localhost:8008" # This is exposed by the nginx container
+```
+
+Federated media requests should function normally with this setup, though the homeserver itself will be unable to federate.
+For convenience, an element-web instance is also hosted at the same port from the root. 
+
 ## Importing media from synapse
 
 Media is imported by connecting to your synapse database and downloading all the content from the homeserver. This is so 

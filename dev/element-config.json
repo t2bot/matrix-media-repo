@@ -1,0 +1,6 @@
+{
+  "default_hs_url": "http://localhost:8008",
+  "brand": "Element",
+  "dangerously_allow_unsafe_and_insecure_passwords": true,
+  "enableLabs": true
+}
