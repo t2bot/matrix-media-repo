@@ -371,6 +371,8 @@ thumbnails:
       height: 240
     - width: 640
       height: 480
+    - width: 768   # This size is primarily used for audio thumbnailing.
+      height: 240
     - width: 800
       height: 600
 
@@ -391,6 +393,10 @@ thumbnails:
     - "image/heif"
     - "image/webp"
     #- "image/svg+xml" # Be sure to have ImageMagick installed to thumbnail SVG files
+    - "audio/mpeg"
+    - "audio/ogg"
+    - "audio/wav"
+    - "audio/flac"
 
   # Animated thumbnails can be CPU intensive to generate. To disable the generation of animated
   # thumbnails, set this to false. If disabled, regular thumbnails will be returned.

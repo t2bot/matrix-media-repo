@@ -19,6 +19,7 @@ require (
 	github.com/dyatlov/go-oembed v0.0.0-20191103150536-a57c85b3b37c
 	github.com/dyatlov/go-opengraph v0.0.0-20180429202543-816b6608b3c8
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
+	github.com/faiface/beep v1.0.2
 	github.com/fastly/go-utils v0.0.0-20180712184237-d95a45783239 // indirect
 	github.com/fogleman/gg v1.3.0
 	github.com/fsnotify/fsnotify v1.4.7
