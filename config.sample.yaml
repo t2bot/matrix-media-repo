@@ -397,6 +397,7 @@ thumbnails:
     - "audio/ogg"
     - "audio/wav"
     - "audio/flac"
+    #- "video/mp4" # Be sure to have ffmpeg installed to thumbnail video files
 
   # Animated thumbnails can be CPU intensive to generate. To disable the generation of animated
   # thumbnails, set this to false. If disabled, regular thumbnails will be returned.
