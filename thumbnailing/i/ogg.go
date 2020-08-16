@@ -3,6 +3,7 @@ package i
 import (
 	"errors"
 
+	"github.com/faiface/beep"
 	"github.com/faiface/beep/vorbis"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/m"
@@ -24,10 +25,18 @@ func (d oggGenerator) matches(img []byte, contentType string) bool {
 	return contentType == "audio/ogg"
 }
 
-func (d oggGenerator) GenerateThumbnail(b []byte, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
+func (d oggGenerator) decode(b []byte) (beep.StreamSeekCloser, beep.Format, error) {
 	audio, format, err := vorbis.Decode(util.ByteCloser(b))
 	if err != nil {
-		return nil, errors.New("ogg: error decoding audio: " + err.Error())
+		return audio, format, errors.New("ogg: error decoding audio: " + err.Error())
+	}
+	return audio, format, nil
+}
+
+func (d oggGenerator) GenerateThumbnail(b []byte, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
+	audio, format, err := d.decode(b)
+	if err != nil {
+		return nil, err
 	}
 
 	defer audio.Close()
@@ -35,9 +44,9 @@ func (d oggGenerator) GenerateThumbnail(b []byte, contentType string, width int,
 }
 
 func (d oggGenerator) GetAudioData(b []byte, nKeys int, ctx rcontext.RequestContext) (*m.AudioInfo, error) {
-	audio, format, err := vorbis.Decode(util.ByteCloser(b))
+	audio, format, err := d.decode(b)
 	if err != nil {
-		return nil, errors.New("ogg: error decoding audio: " + err.Error())
+		return nil, err
 	}
 
 	defer audio.Close()

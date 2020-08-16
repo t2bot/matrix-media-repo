@@ -32,10 +32,18 @@ func (d mp3Generator) matches(img []byte, contentType string) bool {
 	return contentType == "audio/mpeg"
 }
 
-func (d mp3Generator) GenerateThumbnail(b []byte, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
+func (d mp3Generator) decode(b []byte) (beep.StreamSeekCloser, beep.Format, error) {
 	audio, format, err := mp3.Decode(util.ByteCloser(b))
 	if err != nil {
-		return nil, errors.New("mp3: error decoding audio: " + err.Error())
+		return audio, format, errors.New("mp3: error decoding audio: " + err.Error())
+	}
+	return audio, format, nil
+}
+
+func (d mp3Generator) GenerateThumbnail(b []byte, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
+	audio, format, err := d.decode(b)
+	if err != nil {
+		return nil, err
 	}
 
 	defer audio.Close()
@@ -43,9 +51,9 @@ func (d mp3Generator) GenerateThumbnail(b []byte, contentType string, width int,
 }
 
 func (d mp3Generator) GetAudioData(b []byte, nKeys int, ctx rcontext.RequestContext) (*m.AudioInfo, error) {
-	audio, format, err := mp3.Decode(util.ByteCloser(b))
+	audio, format, err := d.decode(b)
 	if err != nil {
-		return nil, errors.New("mp3: error decoding audio: " + err.Error())
+		return nil, err
 	}
 
 	defer audio.Close()
