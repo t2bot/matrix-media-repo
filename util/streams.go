@@ -50,8 +50,3 @@ func GetSha256HashOfStream(r io.ReadCloser) (string, error) {
 
 	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
-
-func ByteCloser(b []byte) io.ReadCloser {
-	buf := bytes.NewBuffer(b)
-	return ioutil.NopCloser(buf)
-}

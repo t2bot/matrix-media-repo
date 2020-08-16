@@ -6,7 +6,6 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
-	"io"
 	"io/ioutil"
 	"math"
 	"path"
@@ -20,7 +19,8 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/m"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/u"
-	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/util_audio"
+	"github.com/turt2live/matrix-media-repo/util/util_byte_seeker"
 )
 
 type mp3Generator struct {
@@ -39,7 +39,7 @@ func (d mp3Generator) matches(img []byte, contentType string) bool {
 }
 
 func (d mp3Generator) decode(b []byte) (beep.StreamSeekCloser, beep.Format, error) {
-	audio, format, err := mp3.Decode(util.ByteCloser(b))
+	audio, format, err := mp3.Decode(util_byte_seeker.NewByteSeeker(b))
 	if err != nil {
 		return audio, format, errors.New("mp3: error decoding audio: " + err.Error())
 	}
@@ -67,39 +67,16 @@ func (d mp3Generator) GetAudioData(b []byte, nKeys int, ctx rcontext.RequestCont
 }
 
 func (d mp3Generator) GetDataFromStream(audio beep.StreamSeekCloser, format beep.Format, nKeys int) (*m.AudioInfo, error) {
-	allSamples := make([][2]float64, 0)
-
-	moreSamples := true
-	samples := make([][2]float64, 100000) // a 3 minute mp3 has roughly 7 million samples, so reduce the number of iterations we have to do
-	for moreSamples {
-		n, ok := audio.Stream(*&samples)
-		if n == 0 {
-			moreSamples = false
-		}
-		if !ok && audio.Err() != nil && audio.Err() != io.EOF {
-			return nil, errors.New("beep-visual: error sampling audio: " + audio.Err().Error())
-		}
-		for i, v := range samples {
-			if i >= n {
-				break
-			}
-			allSamples = append(allSamples, v)
-		}
-	}
-
-	downsampled := make([][2]float64, 0)
-	everyNth := int(math.Round(float64(len(allSamples)) / float64(nKeys)))
-	for i, s := range allSamples {
-		if i%everyNth != 0 {
-			continue
-		}
-		downsampled = append(downsampled, s)
+	totalSamples := audio.Len()
+	downsampled, err := util_audio.FastSampleAudio(audio, nKeys)
+	if err != nil {
+		return nil, err
 	}
 
 	return &m.AudioInfo{
-		Duration:     format.SampleRate.D(len(allSamples)),
+		Duration:     format.SampleRate.D(totalSamples),
 		Channels:     format.NumChannels,
-		TotalSamples: len(allSamples),
+		TotalSamples: totalSamples,
 		KeySamples:   downsampled,
 	}, nil
 }

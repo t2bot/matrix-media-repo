@@ -18,8 +18,8 @@ import (
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/thumbnailing"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/i"
-	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/cleanup"
+	"github.com/turt2live/matrix-media-repo/util/util_byte_seeker"
 )
 
 type mediaInfoHashes struct {
@@ -123,7 +123,7 @@ func MediaInfo(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo)
 	}
 
 	if strings.HasPrefix(response.ContentType, "audio/") {
-		generator, err := thumbnailing.GetGenerator(util.ByteCloser(b), response.ContentType, false)
+		generator, err := thumbnailing.GetGenerator(util_byte_seeker.NewByteSeeker(b), response.ContentType, false)
 		if err == nil {
 			if audiogenerator, ok := generator.(i.AudioGenerator); ok {
 				audioInfo, err := audiogenerator.GetAudioData(b, 768, rctx)

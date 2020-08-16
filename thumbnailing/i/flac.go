@@ -8,7 +8,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/m"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/u"
-	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/util_byte_seeker"
 )
 
 type flacGenerator struct {
@@ -27,7 +27,7 @@ func (d flacGenerator) matches(img []byte, contentType string) bool {
 }
 
 func (d flacGenerator) decode(b []byte) (beep.StreamSeekCloser, beep.Format, error) {
-	audio, format, err := flac.Decode(util.ByteCloser(b))
+	audio, format, err := flac.Decode(util_byte_seeker.NewByteSeeker(b))
 	if err != nil {
 		return audio, format, errors.New("flac: error decoding audio: " + err.Error())
 	}
