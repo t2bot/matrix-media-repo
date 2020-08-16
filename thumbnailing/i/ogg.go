@@ -34,6 +34,16 @@ func (d oggGenerator) GenerateThumbnail(b []byte, contentType string, width int,
 	return mp3Generator{}.GenerateFromStream(audio, format, width, height)
 }
 
+func (d oggGenerator) GetAudioData(b []byte, nKeys int, ctx rcontext.RequestContext) (*m.AudioInfo, error) {
+	audio, format, err := vorbis.Decode(util.ByteCloser(b))
+	if err != nil {
+		return nil, errors.New("ogg: error decoding audio: " + err.Error())
+	}
+
+	defer audio.Close()
+	return mp3Generator{}.GetDataFromStream(audio, format, nKeys)
+}
+
 func init() {
 	generators = append(generators, oggGenerator{})
 }

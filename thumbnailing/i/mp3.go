@@ -42,7 +42,17 @@ func (d mp3Generator) GenerateThumbnail(b []byte, contentType string, width int,
 	return d.GenerateFromStream(audio, format, width, height)
 }
 
-func (d mp3Generator) GenerateFromStream(audio beep.StreamSeekCloser, format beep.Format, width int, height int) (*m.Thumbnail, error) {
+func (d mp3Generator) GetAudioData(b []byte, nKeys int, ctx rcontext.RequestContext) (*m.AudioInfo, error) {
+	audio, format, err := mp3.Decode(util.ByteCloser(b))
+	if err != nil {
+		return nil, errors.New("mp3: error decoding audio: " + err.Error())
+	}
+
+	defer audio.Close()
+	return d.GetDataFromStream(audio, format, nKeys)
+}
+
+func (d mp3Generator) GetDataFromStream(audio beep.StreamSeekCloser, format beep.Format, nKeys int) (*m.AudioInfo, error) {
 	allSamples := make([][2]float64, 0)
 
 	moreSamples := true
@@ -63,15 +73,34 @@ func (d mp3Generator) GenerateFromStream(audio beep.StreamSeekCloser, format bee
 		}
 	}
 
-	// Figure out a resolution that will work for us
-	everyNth := int(math.Round(float64(len(allSamples)) / float64(width)))
-	averagedSamples := make([]float64, 0)
+	downsampled := make([][2]float64, 0)
+	everyNth := int(math.Round(float64(len(allSamples)) / float64(nKeys)))
 	for i, s := range allSamples {
 		if i%everyNth != 0 {
 			continue
 		}
+		downsampled = append(downsampled, s)
+	}
+
+	return &m.AudioInfo{
+		Duration:     format.SampleRate.D(len(allSamples)),
+		Channels:     format.NumChannels,
+		TotalSamples: len(allSamples),
+		KeySamples:   downsampled,
+	}, nil
+}
+
+func (d mp3Generator) GenerateFromStream(audio beep.StreamSeekCloser, format beep.Format, width int, height int) (*m.Thumbnail, error) {
+	info, err := d.GetDataFromStream(audio, format, width)
+	if err != nil {
+		return nil, errors.New("beep-visual: error sampling audio: " + err.Error())
+	}
+
+	// Average out all the samples
+	averagedSamples := make([]float64, 0)
+	for _, s := range info.KeySamples {
 		avg := (s[0] + s[1]) / 2
-		if format.NumChannels == 1 {
+		if info.Channels == 1 {
 			avg = s[0]
 		}
 		averagedSamples = append(averagedSamples, avg)
@@ -104,7 +133,7 @@ func (d mp3Generator) GenerateFromStream(audio beep.StreamSeekCloser, format bee
 
 	// Encode to a png
 	imgData := &bytes.Buffer{}
-	err := imaging.Encode(imgData, img, imaging.PNG)
+	err = imaging.Encode(imgData, img, imaging.PNG)
 	if err != nil {
 		return nil, errors.New("beep-visual: error encoding thumbnail: " + err.Error())
 	}

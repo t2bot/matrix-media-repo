@@ -34,6 +34,16 @@ func (d wavGenerator) GenerateThumbnail(b []byte, contentType string, width int,
 	return mp3Generator{}.GenerateFromStream(audio, format, width, height)
 }
 
+func (d wavGenerator) GetAudioData(b []byte, nKeys int, ctx rcontext.RequestContext) (*m.AudioInfo, error) {
+	audio, format, err := wav.Decode(util.ByteCloser(b))
+	if err != nil {
+		return nil, errors.New("wav: error decoding audio: " + err.Error())
+	}
+
+	defer audio.Close()
+	return mp3Generator{}.GetDataFromStream(audio, format, nKeys)
+}
+
 func init() {
 	generators = append(generators, wavGenerator{})
 }

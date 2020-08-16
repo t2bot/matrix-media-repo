@@ -42,3 +42,18 @@ func GenerateThumbnail(imgStream io.ReadCloser, contentType string, width int, h
 
 	return generator.GenerateThumbnail(b, contentType, width, height, method, animated, ctx)
 }
+
+func GetGenerator(imgStream io.ReadCloser, contentType string, animated bool) (i.Generator, error) {
+	defer cleanup.DumpAndCloseStream(imgStream)
+	b, err := ioutil.ReadAll(imgStream)
+	if err != nil {
+		return nil, err
+	}
+
+	generator := i.GetGenerator(b, contentType, animated)
+	if generator == nil {
+		return nil, ErrUnsupported
+	}
+
+	return generator, nil
+}

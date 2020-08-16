@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Added a new tool, `export_synapse_for_import`, which can be used to do an offline import from Synapse.
   * After running this tool, use the `gdpr_import` tool to bring the export into the media repo.
 * Added thumbnailing support for some audio waveforms (MP3, WAV, OGG, and FLAC).
+* Added audio metadata (duration, etc) to the unstable `/info` endpoint. Aligns with [MSC2380](https://github.com/matrix-org/matrix-doc/pull/2380).
 
 ### Fixed
 

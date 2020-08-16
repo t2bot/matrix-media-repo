@@ -12,6 +12,10 @@ type Generator interface {
 	GenerateThumbnail(b []byte, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error)
 }
 
+type AudioGenerator interface {
+	GetAudioData(b []byte, nKeys int, ctx rcontext.RequestContext) (*m.AudioInfo, error)
+}
+
 var generators = make([]Generator, 0)
 
 func GetGenerator(img []byte, contentType string, needsAnimation bool) Generator {
