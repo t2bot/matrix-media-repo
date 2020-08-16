@@ -7,7 +7,7 @@ services:
       dockerfile: 'Conduit.Dockerfile'
     restart: unless-stopped
     volumes:
-      - ./conduit-db:/src/conduit/.local/share/conduit
+      - ./conduit-db:/srv/conduit/.local/share/conduit
     environment:
       ROCKET_SERVER_NAME: "localhost"
       ROCKET_PORT: 8004
