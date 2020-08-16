@@ -12,6 +12,7 @@ require (
 	github.com/buckket/go-blurhash v1.0.3
 	github.com/cenk/backoff v2.2.1+incompatible // indirect
 	github.com/cupcake/sigil v0.0.0-20131127230922-6bf9722f2ae8
+	github.com/dhowden/tag v0.0.0-20200412032933-5d76b8eaae27
 	github.com/didip/tollbooth v4.0.2+incompatible
 	github.com/disintegration/imaging v1.6.2
 	github.com/djherbis/stream v1.3.0

@@ -7,6 +7,7 @@ import (
 	"github.com/faiface/beep/vorbis"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/m"
+	"github.com/turt2live/matrix-media-repo/thumbnailing/u"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
@@ -40,7 +41,7 @@ func (d oggGenerator) GenerateThumbnail(b []byte, contentType string, width int,
 	}
 
 	defer audio.Close()
-	return mp3Generator{}.GenerateFromStream(audio, format, width, height)
+	return mp3Generator{}.GenerateFromStream(audio, format, u.GetID3Tags(b), width, height)
 }
 
 func (d oggGenerator) GetAudioData(b []byte, nKeys int, ctx rcontext.RequestContext) (*m.AudioInfo, error) {

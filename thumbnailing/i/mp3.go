@@ -5,15 +5,21 @@ import (
 	"errors"
 	"image"
 	"image/color"
+	"image/draw"
 	"io"
 	"io/ioutil"
 	"math"
+	"path"
 
+	"github.com/dhowden/tag"
 	"github.com/disintegration/imaging"
 	"github.com/faiface/beep"
 	"github.com/faiface/beep/mp3"
+	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/m"
+	"github.com/turt2live/matrix-media-repo/thumbnailing/u"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
@@ -45,9 +51,9 @@ func (d mp3Generator) GenerateThumbnail(b []byte, contentType string, width int,
 	if err != nil {
 		return nil, err
 	}
-
 	defer audio.Close()
-	return d.GenerateFromStream(audio, format, width, height)
+
+	return d.GenerateFromStream(audio, format, u.GetID3Tags(b), width, height)
 }
 
 func (d mp3Generator) GetAudioData(b []byte, nKeys int, ctx rcontext.RequestContext) (*m.AudioInfo, error) {
@@ -98,8 +104,60 @@ func (d mp3Generator) GetDataFromStream(audio beep.StreamSeekCloser, format beep
 	}, nil
 }
 
-func (d mp3Generator) GenerateFromStream(audio beep.StreamSeekCloser, format beep.Format, width int, height int) (*m.Thumbnail, error) {
-	info, err := d.GetDataFromStream(audio, format, width)
+func (d mp3Generator) GenerateFromStream(audio beep.StreamSeekCloser, format beep.Format, meta tag.Metadata, width int, height int) (*m.Thumbnail, error) {
+	bgColor := color.RGBA{A: 255, R: 41, G: 57, B: 92}
+	fgColor := color.RGBA{A: 255, R: 240, G: 240, B: 240}
+
+	img := image.NewRGBA(image.Rect(0, 0, width, height))
+	padding := 16
+
+	sq := int(math.Round(float64(height) * 0.66))
+	var artworkImg image.Image
+	if meta != nil && meta.Picture() != nil {
+		artwork, _, _ := image.Decode(bytes.NewBuffer(meta.Picture().Data))
+		if artwork != nil {
+			artworkImg, _ = pngGenerator{}.GenerateThumbnailImageOf(artwork, sq, sq, "crop", rcontext.Initial())
+		}
+	}
+
+	ax := sq
+	ay := sq
+
+	if artworkImg != nil {
+		ax = artworkImg.Bounds().Max.X
+		ay = artworkImg.Bounds().Max.Y
+	}
+
+	dy := (height / 2) - (ay / 2)
+	dx := padding
+	ddy := ay + dy
+	ddx := ax + dx
+	r := image.Rect(dx, dy, ddx, ddy)
+
+	if artworkImg == nil {
+		i, _ := ioutil.ReadFile(path.Join(config.Runtime.AssetsPath, "default-artwork.png"))
+		if i != nil {
+			tmp, _, _ := image.Decode(bytes.NewBuffer(i))
+			if tmp != nil {
+				artworkImg, _ = pngGenerator{}.GenerateThumbnailImageOf(tmp, ax, ay, "crop", rcontext.Initial())
+			}
+		}
+		if artworkImg == nil {
+			logrus.Warn("Falling back to black square for artwork")
+			tmp := image.NewRGBA(image.Rect(0, 0, ax, ay))
+			for x := 0; x < tmp.Bounds().Max.X; x++ {
+				for y := 0; y < tmp.Bounds().Max.Y; y++ {
+					tmp.Set(x, y, color.Black)
+				}
+			}
+			artworkImg = tmp
+		}
+	}
+
+	draw.Draw(img, r, artworkImg, image.Pt(0, 0), draw.Over)
+
+	waveformX := padding + r.Max.X
+	info, err := d.GetDataFromStream(audio, format, width-waveformX-padding)
 	if err != nil {
 		return nil, errors.New("beep-visual: error sampling audio: " + err.Error())
 	}
@@ -114,9 +172,7 @@ func (d mp3Generator) GenerateFromStream(audio beep.StreamSeekCloser, format bee
 		averagedSamples = append(averagedSamples, avg)
 	}
 
-	// Now that we have samples, generate a plot
-	img := image.NewRGBA(image.Rect(0, 0, width, height))
-	padding := 16
+	// Now that we have samples and artwork, generate a plot
 	center := height / 2
 	for x, s := range averagedSamples {
 		distance := int(math.Round(float64((height-padding)/2) * math.Abs(s)))
@@ -127,15 +183,25 @@ func (d mp3Generator) GenerateFromStream(audio beep.StreamSeekCloser, format bee
 			above = false
 		}
 		for y := 0; y < height; y++ {
-			col := color.RGBA{A: 255, R: 41, G: 57, B: 92}
+			col := bgColor
 			isWithin := y <= center && y >= px
 			if !above {
 				isWithin = y >= center && y <= px
 			}
 			if isWithin {
-				col = color.RGBA{A: 255, R: 240, G: 240, B: 240}
+				col = fgColor
 			}
-			img.Set(x, y, col)
+			img.Set(x+waveformX, y, col)
+		}
+	}
+
+	// Fill in the background
+	for x := 0; x < width; x++ {
+		for y := 0; y < height; y++ {
+			c := img.RGBAAt(x, y)
+			if c.A == 0 {
+				img.Set(x, y, bgColor)
+			}
 		}
 	}
 
