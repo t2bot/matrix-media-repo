@@ -2,7 +2,6 @@ package i
 
 import (
 	"errors"
-	_ "image/jpeg"
 	"io/ioutil"
 	"os"
 	"os/exec"
