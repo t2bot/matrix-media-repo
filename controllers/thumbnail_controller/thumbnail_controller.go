@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
+	"io/ioutil"
 	"time"
 
 	"github.com/disintegration/imaging"
@@ -137,14 +138,14 @@ func GetThumbnail(origin string, mediaId string, desiredWidth int, desiredHeight
 
 		localCache.Set(cacheKey, thumbnail, cache.DefaultExpiration)
 
-		cached, err := internal_cache.Get().GetThumbnail(thumbnail, ctx)
+		cached, err := internal_cache.Get().GetMedia(thumbnail.Sha256Hash, internal_cache.StreamerForThumbnail(thumbnail), ctx)
 		if err != nil {
 			return nil, err
 		}
 		if cached != nil && cached.Contents != nil {
 			return &types.StreamedThumbnail{
 				Thumbnail: thumbnail,
-				Stream:    util.BufferToStream(cached.Contents),
+				Stream:    ioutil.NopCloser(cached.Contents),
 			}, nil
 		}
 
@@ -165,7 +166,7 @@ func GetThumbnail(origin string, mediaId string, desiredWidth int, desiredHeight
 		streams := util.CloneReader(rv.Stream, count)
 
 		for i := 0; i < count; i++ {
-			internal_cache.Get().IncrementDownloads(rv.Thumbnail.Sha256Hash)
+			internal_cache.Get().MarkDownload(rv.Thumbnail.Sha256Hash)
 			vals = append(vals, &types.StreamedThumbnail{
 				Thumbnail: rv.Thumbnail,
 				Stream:    streams[i],

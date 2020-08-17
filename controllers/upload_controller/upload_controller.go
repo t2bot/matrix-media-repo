@@ -12,16 +12,18 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
+	"github.com/turt2live/matrix-media-repo/internal_cache"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/cleanup"
+	"github.com/turt2live/matrix-media-repo/util/util_byte_seeker"
 )
 
 const NoApplicableUploadUser = ""
 
-var recentMediaIds = cache.New(30 * time.Second, 60 * time.Second)
+var recentMediaIds = cache.New(30*time.Second, 60*time.Second)
 
 type AlreadyUploadedFile struct {
 	DS         *datastore.DatastoreRef
@@ -95,11 +97,15 @@ func UploadMedia(contents io.ReadCloser, contentLength int64, contentType string
 		data = contents
 	}
 
+	dataBytes, err := ioutil.ReadAll(data)
+	if err != nil {
+		return nil, err
+	}
+
 	metadataDb := storage.GetDatabase().GetMetadataStore(ctx)
 
 	mediaTaken := true
 	var mediaId string
-	var err error
 	attempts := 0
 	for mediaTaken {
 		attempts += 1
@@ -138,7 +144,7 @@ func UploadMedia(contents io.ReadCloser, contentLength int64, contentType string
 	}
 	if ds.Type == "ipfs" {
 		// Do the upload now so we can pick the media ID to point to IPFS
-		info, err := ds.UploadFile(data, contentLength, ctx)
+		info, err := ds.UploadFile(util_byte_seeker.NewByteSeeker(dataBytes), contentLength, ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -149,7 +155,17 @@ func UploadMedia(contents io.ReadCloser, contentLength int64, contentType string
 		mediaId = fmt.Sprintf("ipfs:%s", info.Location[len("ipfs/"):])
 	}
 
-	return StoreDirect(existingFile, data, contentLength, contentType, filename, userId, origin, mediaId, common.KindLocalMedia, ctx, true)
+	m, err := StoreDirect(existingFile, util_byte_seeker.NewByteSeeker(dataBytes), contentLength, contentType, filename, userId, origin, mediaId, common.KindLocalMedia, ctx, true)
+	if err != nil {
+		return m, err
+	}
+	if m != nil {
+		err = internal_cache.Get().UploadMedia(m.Sha256Hash, util_byte_seeker.NewByteSeeker(dataBytes), ctx)
+		if err != nil {
+			ctx.Log.Warn("Unexpected error trying to cache media: " + err.Error())
+		}
+	}
+	return m, err
 }
 
 func trackUploadAsLastAccess(ctx rcontext.RequestContext, media *types.Media) {

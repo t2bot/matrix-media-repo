@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Fixed
 
 * Fixed thumbnails for invalid JPEGs.
+* Fixed incorrect metrics being published when using the Redis cache.
 
 ## [1.2.0] - August 2nd, 2020
 

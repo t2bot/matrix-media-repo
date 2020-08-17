@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"time"
 
 	"github.com/disintegration/imaging"
@@ -101,13 +102,13 @@ func GetMedia(origin string, mediaId string, downloadRemote bool, blockForMedia 
 
 			localCache.Set(origin+"/"+mediaId, media, cache.DefaultExpiration)
 
-			cached, err := internal_cache.Get().GetMedia(media, ctx)
+			cached, err := internal_cache.Get().GetMedia(media.Sha256Hash, internal_cache.StreamerForMedia(media), ctx)
 			if err != nil {
 				return nil, err
 			}
 			if cached != nil && cached.Contents != nil {
 				cleanup.DumpAndCloseStream(minMedia.Stream) // close the other stream first
-				minMedia.Stream = util.BufferToStream(cached.Contents)
+				minMedia.Stream = ioutil.NopCloser(cached.Contents)
 				return minMedia, nil
 			}
 		}
@@ -141,7 +142,7 @@ func GetMedia(origin string, mediaId string, downloadRemote bool, blockForMedia 
 
 		for i := 0; i < count; i++ {
 			if rv.KnownMedia != nil {
-				internal_cache.Get().IncrementDownloads(rv.KnownMedia.Sha256Hash)
+				internal_cache.Get().MarkDownload(rv.KnownMedia.Sha256Hash)
 			}
 			vals = append(vals, &types.MinimalMedia{
 				Origin:      rv.Origin,
