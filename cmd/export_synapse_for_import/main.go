@@ -12,6 +12,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/dustin/go-humanize"
@@ -186,11 +187,21 @@ func main() {
 	for _, r := range records {
 		// For MediaID AABBCCDD :
 		// $importPath/local_content/AA/BB/CCDD
+		//
+		// For a URL MediaID 2020-08-17_AABBCCDD:
+		// $importPath/url_cache/2020-08-17/AABBCCDD
+
 		mxc := fmt.Sprintf("mxc://%s/%s", *serverName, r.MediaId)
 
 		logrus.Info("Copying " + mxc)
 
-		f, err := os.Open(path.Join(*importPath, "local_content", r.MediaId[0:2], r.MediaId[2:4], r.MediaId[4:]))
+		filePath := path.Join(*importPath, "local_content", r.MediaId[0:2], r.MediaId[2:4], r.MediaId[4:])
+		if r.UrlCache != "" {
+			dateParts := strings.Split(r.MediaId, "_")
+			filePath = path.Join(*importPath, "url_cache", dateParts[0], strings.Join(dateParts[1:], "_"))
+		}
+
+		f, err := os.Open(filePath)
 		if err != nil {
 			logrus.Fatal(err)
 		}

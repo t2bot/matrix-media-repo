@@ -6,7 +6,7 @@ import (
 	_ "github.com/lib/pq" // postgres driver
 )
 
-const selectLocalMedia = "SELECT media_id, media_type, media_length, created_ts, upload_name, user_id FROM local_media_repository;"
+const selectLocalMedia = "SELECT media_id, media_type, media_length, created_ts, upload_name, user_id, url_cache FROM local_media_repository;"
 
 type SynDatabase struct {
 	db         *sql.DB
@@ -49,6 +49,7 @@ func (d *SynDatabase) GetAllMedia() ([]*LocalMedia, error) {
 		var createdTs sql.NullInt64
 		var uploadName sql.NullString
 		var userId sql.NullString
+		var urlCache sql.NullString
 		err = rows.Scan(
 			&mediaId,
 			&contentType,
@@ -56,6 +57,7 @@ func (d *SynDatabase) GetAllMedia() ([]*LocalMedia, error) {
 			&createdTs,
 			&uploadName,
 			&userId,
+			&urlCache,
 		)
 		if err != nil {
 			return nil, err
@@ -67,6 +69,7 @@ func (d *SynDatabase) GetAllMedia() ([]*LocalMedia, error) {
 			CreatedTs:   createdTs.Int64,
 			UploadName:  uploadName.String,
 			UserId:      userId.String,
+			UrlCache:    urlCache.String,
 		})
 	}
 

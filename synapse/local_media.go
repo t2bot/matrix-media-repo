@@ -7,4 +7,5 @@ type LocalMedia struct {
 	CreatedTs   int64
 	UploadName  string
 	UserId      string
+	UrlCache    string
 }
