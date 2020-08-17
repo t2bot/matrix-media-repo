@@ -38,6 +38,7 @@ func main() {
 	exportPath := flag.String("destination", "./media-export", "The directory to export the files to (will be created if needed)")
 	importPath := flag.String("mediaDirectory", "./media_store", "The media_store_path for Synapse")
 	partSizeBytes := flag.Int64("partSize", 104857600, "The number of bytes (roughly) to split the export files into.")
+	skipMissing := flag.Bool("skipMissing", false, "If a media file can't be found, skip it.")
 	flag.Parse()
 
 	assets.SetupTemplates(*templatesPath)
@@ -184,6 +185,8 @@ func main() {
 	}
 	mediaManifest := make(map[string]*data_controller.ManifestRecord)
 
+	missing := make([]string, 0)
+
 	for _, r := range records {
 		// For MediaID AABBCCDD :
 		// $importPath/local_content/AA/BB/CCDD
@@ -202,6 +205,11 @@ func main() {
 		}
 
 		f, err := os.Open(filePath)
+		if os.IsNotExist(err) && *skipMissing {
+			logrus.Warn("File does not appear to exist, skipping: " + filePath)
+			missing = append(missing, filePath)
+			continue
+		}
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -308,6 +316,13 @@ func main() {
 
 	// Clean up
 	assets.Cleanup()
+
+	// Report missing files
+	if len(missing) > 0 {
+		for _, m := range missing {
+			logrus.Warn("Was not able to find " + m)
+		}
+	}
 
 	logrus.Info("Import completed")
 }
