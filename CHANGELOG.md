@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Added thumbnailing support for some audio waveforms (MP3, WAV, OGG, and FLAC).
 * Added audio metadata (duration, etc) to the unstable `/info` endpoint. Aligns with [MSC2380](https://github.com/matrix-org/matrix-doc/pull/2380).
 * Added simple thumbnailing for MP4 videos.
+* Added an `asAttachment` query parameter to download requests per [MSC2702](https://github.com/matrix-org/matrix-doc/pull/2702).
 
 ### Fixed
 

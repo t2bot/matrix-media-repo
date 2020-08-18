@@ -13,8 +13,6 @@ services:
       ROCKET_PORT: 8004
       ROCKET_REGISTRATION_DISABLED: "false"
       ROCKET_ENCRYPTION_DISABLED: "false"
-    ports:
-      - "8004:8004"
     networks:
       - proxy
   nginx:
@@ -33,8 +31,6 @@ services:
     restart: unless-stopped
     volumes:
       - ./element-config.json:/app/config.json
-    ports:
-      - "8080:80"
     networks:
       - proxy
 networks:

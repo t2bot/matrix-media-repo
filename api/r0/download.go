@@ -14,10 +14,11 @@ import (
 )
 
 type DownloadMediaResponse struct {
-	ContentType string
-	Filename    string
-	SizeBytes   int64
-	Data        io.ReadCloser
+	ContentType       string
+	Filename          string
+	SizeBytes         int64
+	Data              io.ReadCloser
+	TargetDisposition string
 }
 
 func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
@@ -27,6 +28,15 @@ func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user api.UserI
 	mediaId := params["mediaId"]
 	filename := params["filename"]
 	allowRemote := r.URL.Query().Get("allow_remote")
+
+	targetDisposition := r.URL.Query().Get("org.matrix.msc2702.asAttachment")
+	if targetDisposition == "true" {
+		targetDisposition = "attachment"
+	} else if targetDisposition == "false" {
+		targetDisposition = "inline"
+	} else {
+		targetDisposition = "infer"
+	}
 
 	downloadRemote := true
 	if allowRemote != "" {
@@ -62,9 +72,10 @@ func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user api.UserI
 	}
 
 	return &DownloadMediaResponse{
-		ContentType: streamedMedia.ContentType,
-		Filename:    filename,
-		SizeBytes:   streamedMedia.SizeBytes,
-		Data:        streamedMedia.Stream,
+		ContentType:       streamedMedia.ContentType,
+		Filename:          filename,
+		SizeBytes:         streamedMedia.SizeBytes,
+		Data:              streamedMedia.Stream,
+		TargetDisposition: targetDisposition,
 	}
 }

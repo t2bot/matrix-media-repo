@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime"
 	"net"
 	"net/http"
 	"net/url"
@@ -171,12 +172,37 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if result.SizeBytes > 0 {
 			w.Header().Set("Content-Length", fmt.Sprint(result.SizeBytes))
 		}
-		if result.Filename != "" {
-			if is.ASCII(result.Filename) {
-				w.Header().Set("Content-Disposition", "inline; filename="+url.QueryEscape(result.Filename))
+		disposition := result.TargetDisposition
+		if disposition == "" {
+			disposition = "inline"
+		} else if disposition == "infer" {
+			if result.ContentType == "" {
+				disposition = "attachment"
 			} else {
-				w.Header().Set("Content-Disposition", "inline; filename*=utf-8''"+url.QueryEscape(result.Filename))
+				if util.HasAnyPrefix(result.ContentType, []string{"image/", "audio/", "video/"}) {
+					disposition = "inline"
+				} else {
+					disposition = "attachment"
+				}
 			}
+		}
+		fname := result.Filename
+		if fname == "" {
+			exts, err := mime.ExtensionsByType(result.ContentType)
+			if err != nil {
+				exts = nil
+				contextLog.Warn("Unexpected error inferring file extension: " + err.Error())
+			}
+			ext := ""
+			if exts != nil && len(exts) > 0 {
+				ext = exts[0]
+			}
+			fname = "file" + ext
+		}
+		if is.ASCII(result.Filename) {
+			w.Header().Set("Content-Disposition", disposition+"; filename="+url.QueryEscape(fname))
+		} else {
+			w.Header().Set("Content-Disposition", disposition+"; filename*=utf-8''"+url.QueryEscape(fname))
 		}
 		defer result.Data.Close()
 		writeResponseData(w, result.Data, result.SizeBytes)

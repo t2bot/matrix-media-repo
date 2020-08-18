@@ -79,7 +79,7 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user api.User
 		"requestedAnimated": animated,
 	})
 
-	if width <= 0 || height <=0 {
+	if width <= 0 || height <= 0 {
 		return api.BadRequest("Width and height must be greater than zero")
 	}
 
@@ -98,6 +98,6 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user api.User
 		ContentType: streamedThumbnail.Thumbnail.ContentType,
 		SizeBytes:   streamedThumbnail.Thumbnail.SizeBytes,
 		Data:        streamedThumbnail.Stream,
-		Filename:    "thumbnail",
+		Filename:    "thumbnail.png",
 	}
 }

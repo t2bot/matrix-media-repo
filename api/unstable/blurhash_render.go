@@ -64,5 +64,6 @@ func RenderBlurhash(r *http.Request, rctx rcontext.RequestContext, user api.User
 		Filename:    "blurhash.png",
 		SizeBytes:   int64(buf.Len()),
 		Data:        util.BufferToStream(buf), // convert to stream to avoid console spam
+		TargetDisposition: "inline",
 	}
 }

@@ -260,6 +260,7 @@ func DownloadExportPart(r *http.Request, rctx rcontext.RequestContext, user api.
 		SizeBytes:   part.SizeBytes,
 		Data:        s,
 		Filename:    part.FileName,
+		TargetDisposition: "attachment",
 	}
 }
 

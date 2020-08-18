@@ -17,6 +17,15 @@ func IPFSDownload(r *http.Request, rctx rcontext.RequestContext, user api.UserIn
 	server := params["server"]
 	ipfsContentId := params["ipfsContentId"]
 
+	targetDisposition := r.URL.Query().Get("org.matrix.msc2702.asAttachment")
+	if targetDisposition == "true" {
+		targetDisposition = "attachment"
+	} else if targetDisposition == "false" {
+		targetDisposition = "inline"
+	} else {
+		targetDisposition = "infer"
+	}
+
 	rctx = rctx.LogWithFields(logrus.Fields{
 		"ipfsContentId": ipfsContentId,
 		"server":        server,
@@ -29,9 +38,10 @@ func IPFSDownload(r *http.Request, rctx rcontext.RequestContext, user api.UserIn
 	}
 
 	return &r0.DownloadMediaResponse{
-		ContentType: obj.ContentType,
-		Filename:    obj.FileName,
-		SizeBytes:   obj.SizeBytes,
-		Data:        obj.Data,
+		ContentType:       obj.ContentType,
+		Filename:          obj.FileName,
+		SizeBytes:         obj.SizeBytes,
+		Data:              obj.Data,
+		TargetDisposition: targetDisposition,
 	}
 }
