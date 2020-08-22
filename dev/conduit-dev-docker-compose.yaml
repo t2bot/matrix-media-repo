@@ -1,6 +1,6 @@
 version: '2.0'
 services:
-  conduit:
+  media_conduit:
     container_name: "media_repo_conduit"
     build:
       context: '.'
@@ -14,8 +14,8 @@ services:
       ROCKET_REGISTRATION_DISABLED: "false"
       ROCKET_ENCRYPTION_DISABLED: "false"
     networks:
-      - proxy
-  nginx:
+      - media_proxy
+  media_nginx:
     container_name: "media_repo_nginx"
     image: "nginx:latest"
     restart: unless-stopped
@@ -24,14 +24,14 @@ services:
     ports:
       - "8008:80"
     networks:
-      - proxy
-  element:
+      - media_proxy
+  media_element:
     container_name: "media_repo_element"
     image: "vectorim/riot-web:latest"
     restart: unless-stopped
     volumes:
       - ./element-config.json:/app/config.json
     networks:
-      - proxy
+      - media_proxy
 networks:
-  proxy:
+  media_proxy:
