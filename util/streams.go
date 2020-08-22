@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 
 	"github.com/turt2live/matrix-media-repo/util/cleanup"
+	"github.com/turt2live/matrix-media-repo/util/util_byte_seeker"
 )
 
 func BufferToStream(buf *bytes.Buffer) io.ReadCloser {
@@ -49,4 +50,8 @@ func GetSha256HashOfStream(r io.ReadCloser) (string, error) {
 	}
 
 	return hex.EncodeToString(hasher.Sum(nil)), nil
+}
+
+func ClonedBufReader(buf bytes.Buffer) util_byte_seeker.ByteSeeker {
+	return util_byte_seeker.NewByteSeeker(buf.Bytes())
 }

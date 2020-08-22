@@ -1,10 +1,7 @@
 package main
 
 import (
-	"archive/tar"
 	"bytes"
-	"compress/gzip"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -13,16 +10,14 @@ import (
 	"path"
 	"strconv"
 	"strings"
-	"time"
 
-	"github.com/dustin/go-humanize"
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/archival"
 	"github.com/turt2live/matrix-media-repo/common/assets"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/logging"
-	"github.com/turt2live/matrix-media-repo/controllers/data_controller"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/synapse"
-	"github.com/turt2live/matrix-media-repo/templating"
 	"github.com/turt2live/matrix-media-repo/util"
 	"golang.org/x/crypto/ssh/terminal"
 )
@@ -86,104 +81,11 @@ func main() {
 
 	logrus.Info(fmt.Sprintf("Exporting %d media records", len(records)))
 
-	// TODO: Share this logic with export_controller somehow
-	var currentTar *tar.Writer
-	var currentTarBytes bytes.Buffer
-	part := 0
-	currentSize := int64(0)
-	isManifestTar := false
-
-	persistTar := func() error {
-		_ = currentTar.Close()
-
-		// compress
-		logrus.Info("Compressing tar file...")
-		gzipBytes := bytes.Buffer{}
-		archiver := gzip.NewWriter(&gzipBytes)
-		archiver.Name = fmt.Sprintf("export-part-%d.tar", part)
-		if isManifestTar {
-			archiver.Name = fmt.Sprintf("export-manifest.tar")
-		}
-		_, err := io.Copy(archiver, bytes.NewBuffer(currentTarBytes.Bytes()))
-		if err != nil {
-			return err
-		}
-		_ = archiver.Close()
-
-		logrus.Info("Writing compressed tar to disk...")
-		name := fmt.Sprintf("export-part-%d.tgz", part)
-		if isManifestTar {
-			name = "export-manifest.tgz"
-		}
-		f, err := os.Create(path.Join(*exportPath, name))
-		if err != nil {
-			return err
-		}
-		_, _ = io.Copy(f, &gzipBytes)
-		_ = f.Close()
-
-		return nil
-	}
-
-	newTar := func() error {
-		if part > 0 {
-			logrus.Info("Persisting complete tar file...")
-			err := persistTar()
-			if err != nil {
-				return err
-			}
-		}
-
-		logrus.Info("Starting new tar file...")
-		currentTarBytes = bytes.Buffer{}
-		currentTar = tar.NewWriter(&currentTarBytes)
-		part = part + 1
-		currentSize = 0
-
-		return nil
-	}
-
-	// Start the first tar file
-	logrus.Info("Preparing first tar file...")
-	err = newTar()
+	writer := archival.NewV2ArchiveDiskWriter(*exportPath)
+	exporter, err := archival.NewV2Export("OOB", *serverName, *partSizeBytes, writer, rcontext.Initial())
 	if err != nil {
 		logrus.Fatal(err)
 	}
-
-	putFile := func(name string, size int64, creationTime time.Time, file io.Reader) error {
-		header := &tar.Header{
-			Name:    name,
-			Size:    size,
-			Mode:    int64(0644),
-			ModTime: creationTime,
-		}
-		err := currentTar.WriteHeader(header)
-		if err != nil {
-			return err
-		}
-
-		i, err := io.Copy(currentTar, file)
-		if err != nil {
-			return err
-		}
-
-		currentSize += i
-
-		return nil
-	}
-
-	archivedName := func(origin string, mediaId string) string {
-		// TODO: Pick the right extension for the file type
-		return fmt.Sprintf("%s__%s.obj", origin, mediaId)
-	}
-
-	logrus.Info("Preparing manifest...")
-	indexModel := &templating.ExportIndexModel{
-		Entity:   *serverName,
-		ExportID: "OOB",
-		Media:    make([]*templating.ExportIndexMediaModel, 0),
-	}
-	mediaManifest := make(map[string]*data_controller.ManifestRecord)
 
 	missing := make([]string, 0)
 
@@ -224,90 +126,13 @@ func main() {
 			logrus.Fatal(err)
 		}
 
-		err = putFile(archivedName(*serverName, r.MediaId), r.SizeBytes, util.FromMillis(r.CreatedTs), d)
+		err = exporter.AppendMedia(*serverName, r.MediaId, r.UploadName, r.ContentType, util.FromMillis(r.CreatedTs), d, sha256, "", r.UserId)
 		if err != nil {
 			logrus.Fatal(err)
 		}
-
-		if currentSize >= *partSizeBytes {
-			logrus.Info("Rotating tar...")
-			err = newTar()
-			if err != nil {
-				logrus.Fatal(err)
-			}
-		}
-
-		mediaManifest[mxc] = &data_controller.ManifestRecord{
-			ArchivedName: archivedName(*serverName, r.MediaId),
-			FileName:     r.UploadName,
-			SizeBytes:    r.SizeBytes,
-			ContentType:  r.ContentType,
-			S3Url:        "",
-			Sha256:       sha256,
-			Origin:       *serverName,
-			MediaId:      r.MediaId,
-			CreatedTs:    r.CreatedTs,
-			Uploader:     r.UserId,
-		}
-		indexModel.Media = append(indexModel.Media, &templating.ExportIndexMediaModel{
-			ExportID:        "OOB",
-			ArchivedName:    archivedName(*serverName, r.MediaId),
-			FileName:        r.UploadName,
-			SizeBytes:       r.SizeBytes,
-			SizeBytesHuman:  humanize.Bytes(uint64(r.SizeBytes)),
-			Origin:          *serverName,
-			MediaID:         r.MediaId,
-			Sha256Hash:      sha256,
-			ContentType:     r.ContentType,
-			UploadTs:        r.CreatedTs,
-			UploadDateHuman: util.FromMillis(r.CreatedTs).Format(time.UnixDate),
-			Uploader:        r.UserId,
-		})
 	}
 
-	logrus.Info("Preparing manifest-specific tar...")
-	err = newTar()
-	if err != nil {
-		logrus.Fatal(err)
-	}
-
-	logrus.Info("Writing manifest...")
-	isManifestTar = true
-	manifest := &data_controller.Manifest{
-		Version:   2,
-		EntityId:  *serverName,
-		CreatedTs: util.NowMillis(),
-		Media:     mediaManifest,
-	}
-	b, err := json.Marshal(manifest)
-	if err != nil {
-		logrus.Fatal(err)
-	}
-	err = putFile("manifest.json", int64(len(b)), time.Now(), bytes.NewBuffer(b))
-	if err != nil {
-		logrus.Fatal(err)
-	}
-
-	logrus.Info("Building and writing index...")
-	t, err := templating.GetTemplate("export_index")
-	if err != nil {
-		logrus.Fatal(err)
-		return
-	}
-	html := bytes.Buffer{}
-	err = t.Execute(&html, indexModel)
-	if err != nil {
-		logrus.Fatal(err)
-		return
-	}
-	err = putFile("index.html", int64(html.Len()), time.Now(), util.BufferToStream(bytes.NewBuffer(html.Bytes())))
-	if err != nil {
-		logrus.Fatal(err)
-		return
-	}
-
-	logrus.Info("Writing final tar...")
-	err = persistTar()
+	err = exporter.Finish()
 	if err != nil {
 		logrus.Fatal(err)
 	}
@@ -324,5 +149,5 @@ func main() {
 		}
 	}
 
-	logrus.Info("Import completed")
+	logrus.Info("Export completed")
 }
