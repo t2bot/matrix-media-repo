@@ -28,7 +28,7 @@ once to ensure the assets are set up correctly: follow the
 [compilation steps](https://docs.t2bot.io/matrix-media-repo/installing/method/compilation.html)
 posted on docs.t2bot.io.
 
-If you'd like to use a regular Matrix client to test the media repo, `docker-compose -f dev/conduit-dev-docker-compose.yaml up`
+If you'd like to use a regular Matrix client to test the media repo, `docker-compose -f dev/docker-compose.yaml up`
 will give you a [Conduit](https://conduit.rs/) homeserver behind an nginx reverse proxy which routes media requests to
 `http://host.docker.internal:8001`. To test accurately, it is recommended to add the following homeserver configuration
 to your media repo config:
