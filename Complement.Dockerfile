@@ -31,6 +31,9 @@ RUN dos2unix /usr/local/bin/complement.sh /usr/local/bin/complement-run.sh
 EXPOSE 8008
 EXPOSE 8448
 
+RUN chmod +x /usr/local/bin/complement.sh
+RUN chmod +x /usr/local/bin/complement-run.sh
+
 RUN mkdir -p /data/pgdata
 RUN mkdir -p /run/postgresql
 RUN chown postgres:postgres /data/pgdata
