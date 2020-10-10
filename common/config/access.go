@@ -252,6 +252,9 @@ func UniqueDatastores() []DatastoreConfig {
 					} else if dsc.Type == "s3" && edsc.Options["endpoint"] == dsc.Options["endpoint"] && edsc.Options["bucketName"] == dsc.Options["bucketName"] {
 						found = true
 						break
+					} else if dsc.Type == "gcp" && edsc.Options["jsonPath"] == dsc.Options["jsonPath"] {
+						found = true
+						break
 					}
 				}
 			}

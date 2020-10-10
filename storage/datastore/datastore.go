@@ -3,6 +3,7 @@ package datastore
 import (
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -86,8 +87,16 @@ func GetUriForDatastore(dsConf config.DatastoreConfig) string {
 		}
 	} else if dsConf.Type == "ipfs" {
 		return "ipfs://localhost"
+	} else if dsConf.Type == "gcp" {
+		jsonPath := dsConf.Options["jsonPath"]
+		_, err := os.Open(jsonPath)
+		if err != nil {
+			logrus.Fatal("could not find json file with given path!")
+		}
+		return jsonPath
 	} else {
 		logrus.Fatal("Unknown datastore type: ", dsConf.Type)
+
 	}
 
 	return ""

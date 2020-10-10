@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"fmt"
+	"github.com/turt2live/matrix-media-repo/storage/datastore/ds_gcp"
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"
@@ -72,6 +73,26 @@ func LoadDatastores() {
 			}
 
 			err = s3.EnsureTempPathExists()
+			if err != nil {
+				logrus.Warn("\t\tTemporary path does not exist!")
+			}
+		} else if ds.Type == "gcp" {
+			conf, err := datastore.GetDatastoreConfig(ds)
+			if err != nil {
+				continue
+			}
+
+			gcp, err := ds_gcp.GetOrCreateGCPDatastore(ds.DatastoreId, conf)
+			if err != nil {
+				continue
+			}
+
+			err = gcp.EnsureBucketExists()
+			if err != nil {
+				logrus.Warn("\t\tBucket does not exist!")
+			}
+
+			err = gcp.EnsureTempPathExists()
 			if err != nil {
 				logrus.Warn("\t\tTemporary path does not exist!")
 			}

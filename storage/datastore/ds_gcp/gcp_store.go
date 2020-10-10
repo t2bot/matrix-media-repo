@@ -1,14 +1,14 @@
-package ds_s3
+package ds_gcp
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
-	"strconv"
 	"strings"
 
-	"github.com/minio/minio-go/v6"
+	"cloud.google.com/go/storage"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"
@@ -16,70 +16,64 @@ import (
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/cleanup"
+	"google.golang.org/api/option"
 )
 
-var stores = make(map[string]*s3Datastore)
+var stores = make(map[string]*gcpDatastore)
 
-type s3Datastore struct {
+type gcpDatastore struct {
 	conf     config.DatastoreConfig
 	dsId     string
-	client   *minio.Client
+	client   *storage.Client
 	bucket   string
-	region   string
 	tempPath string
+	ctx      context.Context
 }
 
-func GetOrCreateS3Datastore(dsId string, conf config.DatastoreConfig) (*s3Datastore, error) {
+func GetOrCreateGCPDatastore(dsId string, conf config.DatastoreConfig) (*gcpDatastore, error) {
 	if s, ok := stores[dsId]; ok {
 		return s, nil
 	}
 
-	endpoint, epFound := conf.Options["endpoint"]
 	bucket, bucketFound := conf.Options["bucketName"]
-	accessKeyId, keyFound := conf.Options["accessKeyId"]
-	accessSecret, secretFound := conf.Options["accessSecret"]
-	region, regionFound := conf.Options["region"]
 	tempPath, tempPathFound := conf.Options["tempPath"]
-	if !epFound || !bucketFound || !keyFound || !secretFound {
-		return nil, errors.New("invalid configuration: missing s3 options")
+	jsonPath, jsonPathFound := conf.Options["jsonPath"]
+	if !jsonPathFound || !bucketFound {
+		return nil, errors.New("can't find gcp optinos")
 	}
 	if !tempPathFound {
-		logrus.Warn("Datastore ", dsId, " (s3) does not have a tempPath set "+
+		logrus.Warn("Datastore ", dsId, " (gcp) does not have a tempPath set "+
 			"- this could lead to excessive memory usage by the media repo")
 	}
 
-	useSsl := true
-	useSslStr, sslFound := conf.Options["ssl"]
-	if sslFound && useSslStr != "" {
-		useSsl, _ = strconv.ParseBool(useSslStr)
-	}
+	//useSsl := true
+	//useSslStr, sslFound := conf.Options["ssl"]
+	//if sslFound && useSslStr != "" {
+	//	useSsl, _ = strconv.ParseBool(useSslStr)
+	//}
 
-	var s3client *minio.Client
-	var err error
+	ctx := context.Background()
 
-	if regionFound {
-		s3client, err = minio.NewWithRegion(endpoint, accessKeyId, accessSecret, useSsl, region)
-	} else {
-		s3client, err = minio.New(endpoint, accessKeyId, accessSecret, useSsl)
-	}
+	gcpclient, err := storage.NewClient(ctx, option.WithCredentialsFile(jsonPath))
+
 	if err != nil {
 		return nil, err
 	}
 
-	s3ds := &s3Datastore{
+	gcpds := &gcpDatastore{
 		conf:     conf,
 		dsId:     dsId,
-		client:   s3client,
+		client:   gcpclient,
 		bucket:   bucket,
-		region:   region,
 		tempPath: tempPath,
+		ctx:      ctx,
 	}
-	stores[dsId] = s3ds
-	return s3ds, nil
+	stores[dsId] = gcpds
+	return gcpds, nil
 }
 
 func GetS3URL(datastoreId string, location string) (string, error) {
-	var store *s3Datastore
+	var store *gcpDatastore
 	var ok bool
 	if store, ok = stores[datastoreId]; !ok {
 		return "", errors.New("s3 datastore not found")
@@ -103,18 +97,15 @@ func ParseS3URL(s3url string) (string, string, string, error) {
 	return endpoint, bucket, location, nil
 }
 
-func (s *s3Datastore) EnsureBucketExists() error {
-	found, err := s.client.BucketExists(s.bucket)
-	if err != nil {
-		return err
-	}
-	if !found {
+func (s *gcpDatastore) EnsureBucketExists() error {
+	_, err := s.client.Bucket(s.bucket).Attrs(s.ctx)
+	if err == storage.ErrBucketNotExist {
 		return errors.New("bucket not found")
 	}
 	return nil
 }
 
-func (s *s3Datastore) EnsureTempPathExists() error {
+func (s *gcpDatastore) EnsureTempPathExists() error {
 	err := os.MkdirAll(s.tempPath, os.ModePerm)
 	if err != os.ErrExist && err != nil {
 		return err
@@ -122,7 +113,7 @@ func (s *s3Datastore) EnsureTempPathExists() error {
 	return nil
 }
 
-func (s *s3Datastore) UploadFile(file io.ReadCloser, expectedLength int64, ctx rcontext.RequestContext) (*types.ObjectInfo, error) {
+func (s *gcpDatastore) UploadFile(file io.ReadCloser, expectedLength int64, ctx rcontext.RequestContext) (*types.ObjectInfo, error) {
 	defer cleanup.DumpAndCloseStream(file)
 
 	objectName, err := util.GenerateRandomString(512)
@@ -130,10 +121,10 @@ func (s *s3Datastore) UploadFile(file io.ReadCloser, expectedLength int64, ctx r
 		return nil, err
 	}
 
-	var rs3 io.ReadCloser
-	var ws3 io.WriteCloser
-	rs3, ws3 = io.Pipe()
-	tr := io.TeeReader(file, ws3)
+	var rgcp io.ReadCloser
+	var wgcp io.WriteCloser
+	rgcp, wgcp = io.Pipe()
+	tr := io.TeeReader(file, wgcp)
 
 	done := make(chan bool)
 	defer close(done)
@@ -144,7 +135,7 @@ func (s *s3Datastore) UploadFile(file io.ReadCloser, expectedLength int64, ctx r
 	var uploadErr error
 
 	go func() {
-		defer ws3.Close()
+		defer wgcp.Close()
 		ctx.Log.Info("Calculating hash of stream...")
 		hash, hashErr = util.GetSha256HashOfStream(ioutil.NopCloser(tr))
 		ctx.Log.Info("Hash of file is ", hash)
@@ -158,19 +149,19 @@ func (s *s3Datastore) UploadFile(file io.ReadCloser, expectedLength int64, ctx r
 				var f *os.File
 				f, uploadErr = ioutil.TempFile(s.tempPath, "mr*")
 				if uploadErr != nil {
-					io.Copy(ioutil.Discard, rs3)
+					io.Copy(ioutil.Discard, rgcp)
 					done <- true
 					return
 				}
 				defer os.Remove(f.Name())
-				expectedLength, uploadErr = io.Copy(f, rs3)
+				expectedLength, uploadErr = io.Copy(f, rgcp)
 				cleanup.DumpAndCloseStream(f)
 				f, uploadErr = os.Open(f.Name())
 				if uploadErr != nil {
 					done <- true
 					return
 				}
-				rs3 = f
+				rgcp = f
 				defer cleanup.DumpAndCloseStream(f)
 			} else {
 				ctx.Log.Warn("Uploading content of unknown length to s3 " +
@@ -179,8 +170,25 @@ func (s *s3Datastore) UploadFile(file io.ReadCloser, expectedLength int64, ctx r
 			}
 		}
 		ctx.Log.Info("Uploading file...")
-		sizeBytes, uploadErr = s.client.PutObjectWithContext(ctx, s.bucket, objectName, rs3, expectedLength, minio.PutObjectOptions{})
-		ctx.Log.Info("Uploaded ", sizeBytes, " bytes to s3")
+		//sizeBytes, uploadErr = s.client.PutObjectWithContext(ctx, s.bucket, objectName, rgcp, expectedLength, minio.PutObjectOptions{})
+		wc := s.client.Bucket(s.bucket).Object(objectName).NewWriter(ctx)
+		//var body[] byte
+		//_, err = rgcp.Read(body)
+		//if err != nil{
+		//	ctx.Log.Info(uploadErr)
+		//}
+		//sizeInt, uploadErr := wc.Write(body)
+		//if uploadErr != nil{
+		//	ctx.Log.Info(uploadErr)
+		//}
+		//sizeBytes = int64(sizeInt)
+		if sizeBytes, err = io.Copy(wc, rgcp); err != nil {
+			fmt.Errorf("io.Copy: %v", err)
+		}
+		if err := wc.Close(); err != nil {
+			fmt.Errorf("Writer.Close: %v", err)
+		}
+		ctx.Log.Info("Uploaded ", sizeBytes, " bytes to gcp")
 		done <- true
 	}()
 
@@ -202,30 +210,39 @@ func (s *s3Datastore) UploadFile(file io.ReadCloser, expectedLength int64, ctx r
 	if uploadErr != nil {
 		return nil, uploadErr
 	}
-
 	return obj, nil
 }
 
-func (s *s3Datastore) DeleteObject(location string) error {
+func (s *gcpDatastore) DeleteObject(location string) error {
 	logrus.Info("Deleting object from bucket ", s.bucket, ": ", location)
-	return s.client.RemoveObject(s.bucket, location)
+	return s.client.Bucket(s.bucket).Object(location).Delete(s.ctx)
 }
 
-func (s *s3Datastore) DownloadObject(location string) (io.ReadCloser, error) {
+func (s *gcpDatastore) DownloadObject(location string) (io.ReadCloser, error) {
 	logrus.Info("Downloading object from bucket ", s.bucket, ": ", location)
-	return s.client.GetObject(s.bucket, location, minio.GetObjectOptions{})
+	return s.client.Bucket(s.bucket).Object(location).NewReader(s.ctx)
 }
 
-func (s *s3Datastore) ObjectExists(location string) bool {
-	stat, err := s.client.StatObject(s.bucket, location, minio.StatObjectOptions{})
+func (s *gcpDatastore) ObjectExists(location string) bool {
+	stat, err := s.client.Bucket(s.bucket).Object(location).Attrs(s.ctx)
 	if err != nil {
 		return false
 	}
 	return stat.Size > 0
 }
 
-func (s *s3Datastore) OverwriteObject(location string, stream io.ReadCloser) error {
+func (s *gcpDatastore) OverwriteObject(location string, stream io.ReadCloser) error {
 	defer cleanup.DumpAndCloseStream(stream)
-	_, err := s.client.PutObject(s.bucket, location, stream, -1, minio.PutObjectOptions{})
+	//A new object will be created unless an object with this name already exists.
+	//Otherwise any previous object with the same name will be replaced
+	wc := s.client.Bucket(s.bucket).Object(location).NewWriter(s.ctx)
+	_, err := io.Copy(wc, stream)
+	if err != nil {
+		return fmt.Errorf("io.Copy: %v", err)
+	}
+	if err := wc.Close(); err != nil {
+		return fmt.Errorf("Writer.Close: %v", err)
+	}
+
 	return err
 }
