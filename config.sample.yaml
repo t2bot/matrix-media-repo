@@ -161,6 +161,15 @@ datastores:
       # An optional region for where this S3 endpoint is located. Typically not needed, though
       # some providers will need this (like Scaleway). Uncomment to use.
       #region: "sfo2"
+  # For now we support gcp in a way `Service account key`. You need to create a service account,
+  # and download its private key as a JSON file.Put it's absolute path to below 'jsonPath' option.
+  - type: gcp
+    enabled: fasle # Enable this to set up Google Cloud Platform(GCP) uploads
+    forKinds: ["thumbnails","local_media","archives","remote_media"]
+    opts:
+      tempPath: ""
+      jsonPath: ""
+      bucketName: ""
 
   # The media repo does support an IPFS datastore, but only if the IPFS feature is enabled. If
   # the feature is not enabled, this will not work. Note that IPFS support is experimental at

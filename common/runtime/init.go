@@ -2,7 +2,6 @@ package runtime
 
 import (
 	"fmt"
-	"github.com/turt2live/matrix-media-repo/storage/datastore/ds_gcp"
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"
@@ -82,7 +81,7 @@ func LoadDatastores() {
 				continue
 			}
 
-			gcp, err := ds_gcp.GetOrCreateGCPDatastore(ds.DatastoreId, conf)
+			gcp, err := ds_s3.GetOrCreateGCPDatastore(ds.DatastoreId, conf)
 			if err != nil {
 				continue
 			}

@@ -10,7 +10,6 @@ import (
 	config2 "github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/storage/datastore/ds_file"
-	"github.com/turt2live/matrix-media-repo/storage/datastore/ds_gcp"
 	"github.com/turt2live/matrix-media-repo/storage/datastore/ds_ipfs"
 	"github.com/turt2live/matrix-media-repo/storage/datastore/ds_s3"
 	"github.com/turt2live/matrix-media-repo/types"
@@ -49,7 +48,7 @@ func (d *DatastoreRef) UploadFile(file io.ReadCloser, expectedLength int64, ctx 
 		}
 		return s3.UploadFile(file, expectedLength, ctx)
 	} else if d.Type == "gcp" {
-		gcp, err := ds_gcp.GetOrCreateGCPDatastore(d.DatastoreId, d.config)
+		gcp, err := ds_s3.GetOrCreateGCPDatastore(d.DatastoreId, d.config)
 		if err != nil {
 			return nil, err
 		}
@@ -71,7 +70,7 @@ func (d *DatastoreRef) DeleteObject(location string) error {
 		}
 		return s3.DeleteObject(location)
 	} else if d.Type == "gcp" {
-		gcp, err := ds_gcp.GetOrCreateGCPDatastore(d.Uri, d.config)
+		gcp, err := ds_s3.GetOrCreateGCPDatastore(d.Uri, d.config)
 		if err != nil {
 			return err
 		}
@@ -95,7 +94,7 @@ func (d *DatastoreRef) DownloadFile(location string) (io.ReadCloser, error) {
 		}
 		return s3.DownloadObject(location)
 	} else if d.Type == "gcp" {
-		gcp, err := ds_gcp.GetOrCreateGCPDatastore(d.DatastoreId, d.config)
+		gcp, err := ds_s3.GetOrCreateGCPDatastore(d.DatastoreId, d.config)
 		if err != nil {
 			return nil, err
 		}
@@ -121,7 +120,7 @@ func (d *DatastoreRef) ObjectExists(location string) bool {
 		}
 		return s3.ObjectExists(location)
 	} else if d.Type == "gcp" {
-		gcp, err := ds_gcp.GetOrCreateGCPDatastore(d.DatastoreId, d.config)
+		gcp, err := ds_s3.GetOrCreateGCPDatastore(d.DatastoreId, d.config)
 		if err != nil {
 			return false
 		}
@@ -146,7 +145,7 @@ func (d *DatastoreRef) OverwriteObject(location string, stream io.ReadCloser, ct
 		}
 		return s3.OverwriteObject(location, stream)
 	} else if d.Type == "gcp" {
-		gcp, err := ds_gcp.GetOrCreateGCPDatastore(d.DatastoreId, d.config)
+		gcp, err := ds_s3.GetOrCreateGCPDatastore(d.DatastoreId, d.config)
 		if err != nil {
 			return err
 		}

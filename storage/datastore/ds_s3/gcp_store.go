@@ -1,4 +1,4 @@
-package ds_gcp
+package ds_s3
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"strings"
 
 	"cloud.google.com/go/storage"
 	"github.com/pkg/errors"
@@ -19,7 +18,7 @@ import (
 	"google.golang.org/api/option"
 )
 
-var stores = make(map[string]*gcpDatastore)
+var storesGcp = make(map[string]*gcpDatastore)
 
 type gcpDatastore struct {
 	conf     config.DatastoreConfig
@@ -31,7 +30,7 @@ type gcpDatastore struct {
 }
 
 func GetOrCreateGCPDatastore(dsId string, conf config.DatastoreConfig) (*gcpDatastore, error) {
-	if s, ok := stores[dsId]; ok {
+	if s, ok := storesGcp[dsId]; ok {
 		return s, nil
 	}
 
@@ -68,33 +67,8 @@ func GetOrCreateGCPDatastore(dsId string, conf config.DatastoreConfig) (*gcpData
 		tempPath: tempPath,
 		ctx:      ctx,
 	}
-	stores[dsId] = gcpds
+	storesGcp[dsId] = gcpds
 	return gcpds, nil
-}
-
-func GetS3URL(datastoreId string, location string) (string, error) {
-	var store *gcpDatastore
-	var ok bool
-	if store, ok = stores[datastoreId]; !ok {
-		return "", errors.New("s3 datastore not found")
-	}
-
-	// HACK: Surely there's a better way...
-	return fmt.Sprintf("https://%s/%s/%s", store.conf.Options["endpoint"], store.bucket, location), nil
-}
-
-func ParseS3URL(s3url string) (string, string, string, error) {
-	trimmed := s3url[8:] // trim off https
-	parts := strings.Split(trimmed, "/")
-	if len(parts) < 3 {
-		return "", "", "", errors.New("invalid url")
-	}
-
-	endpoint := parts[0]
-	location := parts[len(parts)-1]
-	bucket := strings.Join(parts[1:len(parts)-1], "/")
-
-	return endpoint, bucket, location, nil
 }
 
 func (s *gcpDatastore) EnsureBucketExists() error {
