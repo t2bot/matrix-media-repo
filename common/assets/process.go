@@ -1,10 +1,17 @@
 package assets
 
 import (
-	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/common/config"
+	"bytes"
+	"compress/gzip"
+	"encoding/hex"
 	"io/ioutil"
 	"os"
+	"path"
+	"path/filepath"
+	"strings"
+
+	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/common/config"
 )
 
 var tempMigrations string
@@ -72,34 +79,34 @@ func Cleanup() {
 }
 
 func extractPrefixTo(pathName string, destination string) {
-	//for f, h := range compressedFiles {
-	//	if !strings.HasPrefix(f, pathName) {
-	//		continue
-	//	}
-	//
-	//	logrus.Infof("Decoding %s", f)
-	//	b, err := hex.DecodeString(h)
-	//	if err != nil {
-	//		panic(err)
-	//	}
-	//
-	//	logrus.Infof("Decompressing %s", f)
-	//	gr, err := gzip.NewReader(bytes.NewBuffer(b))
-	//	if err != nil {
-	//		panic(err)
-	//	}
-	//	//noinspection GoDeferInLoop,GoUnhandledErrorResult
-	//	defer gr.Close()
-	//	uncompressedBytes, err := ioutil.ReadAll(gr)
-	//	if err != nil {
-	//		panic(err)
-	//	}
-	//
-	//	dest := path.Join(destination, filepath.Base(f))
-	//	logrus.Infof("Writing %s to %s", f, dest)
-	//	err = ioutil.WriteFile(dest, uncompressedBytes, 0644)
-	//	if err != nil {
-	//		panic(err)
-	//	}
-	//}
+	for f, h := range compressedFiles {
+		if !strings.HasPrefix(f, pathName) {
+			continue
+		}
+
+		logrus.Infof("Decoding %s", f)
+		b, err := hex.DecodeString(h)
+		if err != nil {
+			panic(err)
+		}
+
+		logrus.Infof("Decompressing %s", f)
+		gr, err := gzip.NewReader(bytes.NewBuffer(b))
+		if err != nil {
+			panic(err)
+		}
+		//noinspection GoDeferInLoop,GoUnhandledErrorResult
+		defer gr.Close()
+		uncompressedBytes, err := ioutil.ReadAll(gr)
+		if err != nil {
+			panic(err)
+		}
+
+		dest := path.Join(destination, filepath.Base(f))
+		logrus.Infof("Writing %s to %s", f, dest)
+		err = ioutil.WriteFile(dest, uncompressedBytes, 0644)
+		if err != nil {
+			panic(err)
+		}
+	}
 }

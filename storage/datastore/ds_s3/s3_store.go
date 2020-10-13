@@ -44,8 +44,7 @@ func GetOrCreateS3Datastore(dsId string, conf config.DatastoreConfig) (*s3Datast
 		return nil, errors.New("invalid configuration: missing s3 options")
 	}
 	if !tempPathFound {
-		logrus.Warn("Datastore ", dsId, " (s3) does not have a tempPath set "+
-			"- this could lead to excessive memory usage by the media repo")
+		logrus.Warn("Datastore ", dsId, " (s3) does not have a tempPath set - this could lead to excessive memory usage by the media repo")
 	}
 
 	useSsl := true
@@ -173,8 +172,7 @@ func (s *s3Datastore) UploadFile(file io.ReadCloser, expectedLength int64, ctx r
 				rs3 = f
 				defer cleanup.DumpAndCloseStream(f)
 			} else {
-				ctx.Log.Warn("Uploading content of unknown length to s3 " +
-					"- this could result in high memory usage")
+				ctx.Log.Warn("Uploading content of unknown length to s3 - this could result in high memory usage")
 				expectedLength = -1
 			}
 		}

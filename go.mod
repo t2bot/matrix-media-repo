@@ -4,7 +4,6 @@ go 1.12
 
 require (
 	cloud.google.com/go/storage v1.12.0
-	google.golang.org/api v0.32.0
 	github.com/DavidHuie/gomigrate v0.0.0-20190826182718-4adc4b3de142
 	github.com/Jeffail/tunny v0.0.0-20190930221602-f13eb662a36a
 	github.com/PuerkitoBio/goquery v1.5.1
@@ -65,6 +64,7 @@ require (
 	golang.org/x/image v0.0.0-20200119044424-58c23975cae1
 	golang.org/x/net v0.0.0-20200904194848-62affa334b73
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
+	google.golang.org/api v0.32.0
 	gopkg.in/ini.v1 v1.52.0 // indirect
 	gopkg.in/yaml.v2 v2.2.8
 )
