@@ -96,7 +96,6 @@ func GetUriForDatastore(dsConf config.DatastoreConfig) string {
 		return jsonPath
 	} else {
 		logrus.Fatal("Unknown datastore type: ", dsConf.Type)
-
 	}
 
 	return ""
