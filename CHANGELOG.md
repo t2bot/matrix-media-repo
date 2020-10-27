@@ -20,6 +20,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 * Fixed thumbnails for invalid JPEGs.
 * Fixed incorrect metrics being published when using the Redis cache.
+* Fixed errors generating thumbnails when bad EXIF headers were provided.
+* Use `r0` instead of `v1` for federation requests. No changes should be needed to configurations or routing - it'll just work.
 
 ## [1.2.0] - August 2nd, 2020
 
