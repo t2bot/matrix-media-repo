@@ -25,7 +25,8 @@ func MakeThumbnail(src image.Image, method string, width int, height int) (image
 func IdentifyAndApplyOrientation(origBytes []byte, src image.Image) (image.Image, error) {
 	orientation, err := util_exif.GetExifOrientation(ioutil.NopCloser(bytes.NewBuffer(origBytes)))
 	if err != nil {
-		return nil, err
+		// assume no orientation if there was an error reading the exif header
+		orientation = nil
 	}
 
 	result := src
