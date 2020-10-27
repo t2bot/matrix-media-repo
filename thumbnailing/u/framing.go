@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 
 	"github.com/disintegration/imaging"
+	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/util/util_exif"
 )
 
@@ -26,6 +27,7 @@ func IdentifyAndApplyOrientation(origBytes []byte, src image.Image) (image.Image
 	orientation, err := util_exif.GetExifOrientation(ioutil.NopCloser(bytes.NewBuffer(origBytes)))
 	if err != nil {
 		// assume no orientation if there was an error reading the exif header
+		logrus.Warn("Non-fatal error reading exif headers:", err.Error())
 		orientation = nil
 	}
 
