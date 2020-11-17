@@ -391,6 +391,8 @@ thumbnails:
     - "image/png"
     - "image/gif"
     - "image/heif"
+    # Thumbnailing animated webps as still frames requires either libwebp or ImageMagick compiled with --with-webp
+    # Thumbnailing animated webps as animated webps requires both ffmpeg and ImageMagick compiled with --with-webp
     - "image/webp"
     #- "image/svg+xml" # Be sure to have ImageMagick installed to thumbnail SVG files
     - "audio/mpeg"

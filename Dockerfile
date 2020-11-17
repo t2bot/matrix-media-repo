@@ -19,7 +19,9 @@ COPY --from=builder /opt/bin/media_repo /opt/bin/import_synapse /opt/bin/gdpr_ex
 RUN apk add --no-cache \
         su-exec \
         ca-certificates \
-        dos2unix
+        dos2unix \
+        libwebp \
+        libwebp-tools
 
 COPY ./config.sample.yaml /etc/media-repo.yaml.sample
 COPY ./docker/run.sh /usr/local/bin/

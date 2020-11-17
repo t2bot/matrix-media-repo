@@ -28,3 +28,19 @@ func IsAnimatedPNG(b []byte) bool {
 
 	return false
 }
+
+func IsAnimatedWebp(b []byte) bool {
+	// https://stackoverflow.com/a/61242086
+	// first we validate the header
+	header := []byte("VP8X")
+	i := 0
+	for i < 4 {
+		if b[12 + i] != header[i] {
+			return false
+		}
+		i++
+	}
+	// now we validate the flag
+	flagByte := b[20];
+	return ((flagByte >> 1) & 1) > 0
+}
