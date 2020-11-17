@@ -7,7 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
-*Nothing yet.*
+### Fixed
+
+* Generate JPEG thumbnails for JPEG for reduced file size. Thanks @Sorunome!
 
 ## [1.2.1] - October 27th, 2020
 
