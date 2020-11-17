@@ -51,13 +51,13 @@ func (d jpgGenerator) GenerateThumbnail(b []byte, contentType string, width int,
 	}
 
 	imgData := &bytes.Buffer{}
-	err = imaging.Encode(imgData, thumb, imaging.PNG)
+	err = imaging.Encode(imgData, thumb, imaging.JPEG)
 	if err != nil {
 		return nil, errors.New("jpg: error encoding thumbnail: " + err.Error())
 	}
 	return &m.Thumbnail{
 		Animated:    false,
-		ContentType: "image/png",
+		ContentType: "image/jpeg",
 		Reader:      ioutil.NopCloser(imgData),
 	}, nil
 }
