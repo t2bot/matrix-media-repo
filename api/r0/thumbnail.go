@@ -10,6 +10,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/thumbnail_controller"
+	"github.com/turt2live/matrix-media-repo/controllers/download_controller"
 )
 
 func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
@@ -92,6 +93,20 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user api.User
 		}
 		rctx.Log.Error("Unexpected error locating media: " + err.Error())
 		return api.InternalServerError("Unexpected Error")
+	}
+
+	if method == "scale" {
+		// now we fetch the original file to check if that one is smaller
+		streamedMedia, err := download_controller.GetMedia(server, mediaId, downloadRemote, false, rctx)
+		if err == nil && streamedThumbnail.Thumbnail.SizeBytes > streamedMedia.SizeBytes {
+			// the media is smaller than the thumbnail, return that instead
+			return &DownloadMediaResponse{
+				ContentType:       streamedMedia.ContentType,
+				Filename:          streamedMedia.UploadName,
+				SizeBytes:         streamedMedia.SizeBytes,
+				Data:              streamedMedia.Stream,
+			}
+		}
 	}
 
 	return &DownloadMediaResponse{
