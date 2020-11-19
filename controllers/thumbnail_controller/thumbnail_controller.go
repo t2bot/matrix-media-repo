@@ -87,7 +87,7 @@ func GetThumbnail(origin string, mediaId string, desiredWidth int, desiredHeight
 		animated = false
 	}
 
-	if media.SizeBytes > ctx.Config.Thumbnails.MaxSourceBytes {
+	if ctx.Config.Thumbnails.MaxSourceBytes > 0 && media.SizeBytes > ctx.Config.Thumbnails.MaxSourceBytes {
 		ctx.Log.Warn("Media too large to thumbnail")
 		return nil, common.ErrMediaTooLarge
 	}
