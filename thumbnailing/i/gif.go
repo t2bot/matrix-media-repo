@@ -49,11 +49,13 @@ func (d gifGenerator) GenerateThumbnail(b []byte, contentType string, width int,
 			disposal = g.Disposal[i]
 		}
 
-		// if disposal type is 1 (preserve previous frame) we can get artifacts from re-scaling.
-		// as such, we re-render those frames to disposal type 0 (start with a transparent frame)
+		// if disposal type is 0 or 1 (preserve previous frame) we can get artifacts from re-scaling.
+		// as such, we re-render those frames to disposal type 1 (do not dispose)
+		// Importantly, we do not clear the previous frame buffer canvas
 		// see https://www.w3.org/Graphics/GIF/spec-gif89a.txt
-		if disposal == 1 {
-			g.Disposal[i] = 0
+		// This also applies to frame disposal type 0, https://legacy.imagemagick.org/Usage/anim_basics/#none
+		if disposal == 1 || disposal == 0 {
+			g.Disposal[i] = 1
 		} else {
 			draw.Draw(frameImg, frameImg.Bounds(), image.Transparent, image.Point{X: 0, Y: 0}, draw.Src)
 		}
