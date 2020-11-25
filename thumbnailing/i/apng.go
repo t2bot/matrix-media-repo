@@ -17,7 +17,7 @@ type apngGenerator struct {
 }
 
 func (d apngGenerator) supportedContentTypes() []string {
-	return []string{"image/png"}
+	return []string{"image/png", "image/apng"}
 }
 
 func (d apngGenerator) supportsAnimation() bool {
@@ -25,7 +25,7 @@ func (d apngGenerator) supportsAnimation() bool {
 }
 
 func (d apngGenerator) matches(img []byte, contentType string) bool {
-	return contentType == "image/png" && util.IsAnimatedPNG(img)
+	return (contentType == "image/png" && util.IsAnimatedPNG(img)) || contentType == "image/apng"
 }
 
 func (d apngGenerator) GenerateThumbnail(b []byte, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
@@ -44,11 +44,22 @@ func (d apngGenerator) GenerateThumbnail(b []byte, contentType string, width int
 	for i, frame := range p.Frames {
 		img := frame.Image
 
-		// Clear the transparency of the previous frame
-		draw.Draw(frameImg, frameImg.Bounds(), image.Transparent, image.Point{X: 0, Y: 0}, draw.Src)
+		// we must make sure that blend op, frame disposal etc. fit together correctly.
+		// as we re-render all frames at (0, 0) we need to keep a swap space of the preivous image
+		// For which blend op etc. is what, see https://wiki.mozilla.org/APNG_Specification#.60fcTL.60:_The_Frame_Control_Chunk
+		if p.Frames[i].DisposeOp == apng.DISPOSE_OP_BACKGROUND || p.Frames[i].BlendOp == apng.BLEND_OP_OVER {
+			// Clear the transparency of the previous frame
+			draw.Draw(frameImg, frameImg.Bounds(), image.Transparent, image.Point{X: 0, Y: 0}, draw.Src)
+		}
+
+		// preserve our frame, if the dispose method is previous
+		tmpImg := image.NewRGBA(frameImg.Bounds())
+		if p.Frames[i].DisposeOp == apng.DISPOSE_OP_PREVIOUS {
+			draw.Draw(tmpImg, frameImg.Bounds(), frameImg, image.Point{X: 0, Y: 0}, draw.Src)
+		}
 
 		// Copy the frame to a new image and use that
-		draw.Draw(frameImg, image.Rect(frame.XOffset, frame.YOffset, frameImg.Rect.Max.X, frameImg.Rect.Max.Y), img, image.Point{X: 0, Y: 0}, draw.Over)
+		draw.Draw(frameImg, image.Rect(frame.XOffset, frame.YOffset, frameImg.Rect.Max.X, frameImg.Rect.Max.Y), img, image.Point{X: 0, Y: 0}, draw.Src)
 
 		// Do the thumbnailing on the copied frame
 		frameThumb, err := pngGenerator{}.GenerateThumbnailImageOf(frameImg, width, height, method, ctx)
@@ -64,6 +75,11 @@ func (d apngGenerator) GenerateThumbnail(b []byte, contentType string, width int
 		p.Frames[i].Image = frameThumb
 		p.Frames[i].XOffset = 0
 		p.Frames[i].YOffset = 0
+
+		// restore the frame, if the dispose method is previous
+		if p.Frames[i].DisposeOp == apng.DISPOSE_OP_PREVIOUS {
+			draw.Draw(frameImg, frameImg.Bounds(), tmpImg, image.Point{X: 0, Y: 0}, draw.Src)
+		}
 	}
 
 	buf := &bytes.Buffer{}
