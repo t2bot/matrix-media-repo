@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [1.2.2] - December 8th, 2020
+
 ### Fixed
 
 * Generate JPEG thumbnails for JPEG for reduced file size. Thanks @Sorunome!
@@ -198,7 +200,8 @@ a large database (more than about 100k uploaded files), run the following steps 
 * Various other features that would be expected like maximum/minimum size controls, rate limiting, etc. Check out the
   sample config for a better idea of what else is possible.
 
-[unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.1...HEAD
+[unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.2...HEAD
+[1.2.2]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/turt2live/matrix-media-repo/compare/v1.1.3...v1.2.0
 [1.1.3]: https://github.com/turt2live/matrix-media-repo/compare/v1.1.2...v1.1.3
