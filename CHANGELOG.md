@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Fixed
 
 * Generate JPEG thumbnails for JPEG for reduced file size. Thanks @Sorunome!
+* Strip `charset` parameter off binary media for better compatibility with other homeservers.
 
 ## [1.2.1] - October 27th, 2020
 

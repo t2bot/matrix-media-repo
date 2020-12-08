@@ -167,8 +167,20 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			"statusCode": strconv.Itoa(http.StatusOK),
 		}).Inc()
 
+		contentType := result.ContentType
+		mediaType, params, err := mime.ParseMediaType(result.ContentType)
+		if err != nil {
+			contextLog.Warn("Failed to parse content type header for media on reply: " + err.Error())
+		} else {
+			// TODO: Maybe we only strip the charset from images? Is it valid to have the param on other types?
+			if !strings.HasPrefix(mediaType, "text/") && mediaType != "application/json" {
+				delete(params, "charset")
+			}
+			contentType = mime.FormatMediaType(mediaType, params)
+		}
+
 		w.Header().Set("Cache-Control", "private, max-age=259200") // 3 days
-		w.Header().Set("Content-Type", result.ContentType)
+		w.Header().Set("Content-Type", contentType)
 		if result.SizeBytes > 0 {
 			w.Header().Set("Content-Length", fmt.Sprint(result.SizeBytes))
 		}
