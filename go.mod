@@ -30,6 +30,8 @@ require (
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/gorilla/mux v1.7.4
+	github.com/hashicorp/go-hclog v0.14.1
+	github.com/hashicorp/go-plugin v1.4.0
 	github.com/ipfs/go-cid v0.0.4
 	github.com/ipfs/go-ipfs v0.4.22-0.20191119151441-b8ec598d5801
 	github.com/ipfs/go-ipfs-config v0.0.11

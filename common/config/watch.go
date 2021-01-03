@@ -117,6 +117,9 @@ func onFileChanged() {
 	logrus.Warn("Updating datastores to ensure accuracy")
 	globals.DatastoresReloadChan <- true
 
+	logrus.Info("Reloading all plugins")
+	globals.PluginReloadChan <- true
+
 	logrus.Info("Restarting recurring tasks")
 	globals.RecurringTasksReloadChan <- true
 }

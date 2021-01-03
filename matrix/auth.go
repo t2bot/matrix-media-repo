@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
+	"github.com/turt2live/matrix-media-repo/util"
 )
 
 var ErrInvalidToken = errors.New("Missing or invalid access token")
@@ -25,7 +26,7 @@ func doBreakerRequest(ctx rcontext.RequestContext, serverName string, accessToke
 			query["user_id"] = appserviceUserId
 		}
 
-		target, _ := url.Parse(makeUrl(hs.ClientServerApi, path))
+		target, _ := url.Parse(util.MakeUrl(hs.ClientServerApi, path))
 		q := target.Query()
 		for k, v := range query {
 			q.Set(k, v)

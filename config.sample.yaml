@@ -484,6 +484,40 @@ metrics:
   # The port to listen on. Cannot be the same as the general web server port.
   port: 9000
 
+# Plugins are optional pieces of the media repo used to extend the functionality offered.
+# Currently there are only antispam plugins, but in future there should be more options.
+# Plugins are not supported on per-domain paths and are instead repo-wide. For more
+# information on writing plugins, please visit #matrix-media-repo:t2bot.io on Matrix.
+plugins:
+  - exec: /path/to/plugin/executable
+    # Note: the exact config varies by plugin.
+    config:
+      hello: world
+
+  # An example OCR plugin to block images with certain text. Note that the Docker image
+  # for the media repo automatically ships this at /plugins/plugin_antispam_ocr
+#  - exec: /plugins/plugin_antispam_ocr
+#    config:
+#      # The URL to your OCR server (https://github.com/otiai10/ocrserver)
+#      ocrServer: "http://localhost:8080"
+#      # The keywords to scan for. The image must contain at least one of the keywords
+#      # from each list to qualify for spam.
+#      keywordGroups:
+#        - - elon
+#          - musk
+#          - elonmusk
+#        - - bitcoin
+#      # The minimum (and maximum) sizes of images to process.
+#      minSizeBytes: 20000
+#      maxSizeBytes: 200000
+#      # The types of files to process
+#      types: ["image/png", "image/jpeg", "image/jpg"]
+#      # The user ID regex to check against
+#      userIds: "@telegram_.*"
+#      # How much of the image's height, starting from the top, to consider before
+#      # discarding the rest. Set to 1.0 to consider the whole image.
+#      percentageOfHeight: 0.35
+
 # Options for controlling various MSCs/unstable features of the media repo
 # Sections of this config might disappear or be added over time. By default all
 # features are disabled in here and must be explicitly enabled to be used.

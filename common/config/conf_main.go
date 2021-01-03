@@ -13,6 +13,7 @@ type MainRepoConfig struct {
 	Metrics           MetricsConfig         `yaml:"metrics"`
 	SharedSecret      SharedSecretConfig    `yaml:"sharedSecretAuth"`
 	Federation        FederationConfig      `yaml:"federation"`
+	Plugins           []PluginConfig        `yaml:"plugins,flow"`
 }
 
 func NewDefaultMainConfig() MainRepoConfig {
@@ -124,5 +125,6 @@ func NewDefaultMainConfig() MainRepoConfig {
 		Federation: FederationConfig{
 			BackoffAt: 20,
 		},
+		Plugins: []PluginConfig{},
 	}
 }

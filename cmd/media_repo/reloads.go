@@ -8,6 +8,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/internal_cache"
 	"github.com/turt2live/matrix-media-repo/ipfs_proxy"
 	"github.com/turt2live/matrix-media-repo/metrics"
+	"github.com/turt2live/matrix-media-repo/plugins"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/tasks"
 )
@@ -21,6 +22,7 @@ func setupReloads() {
 	reloadIpfsOnChan(globals.IPFSReloadChan)
 	reloadAccessTokensOnChan(globals.AccessTokenReloadChan)
 	reloadCacheOnChan(globals.CacheReplaceChan)
+	reloadPluginsOnChan(globals.PluginReloadChan)
 }
 
 func stopReloads() {
@@ -33,6 +35,7 @@ func stopReloads() {
 	globals.RecurringTasksReloadChan <- false
 	globals.IPFSReloadChan <- false
 	globals.CacheReplaceChan <- false
+	globals.PluginReloadChan <- false
 }
 
 func reloadWebOnChan(reloadChan chan bool) {
@@ -143,6 +146,20 @@ func reloadCacheOnChan(reloadChan chan bool) {
 				internal_cache.ReplaceInstance()
 			} else {
 				internal_cache.Get().Stop()
+			}
+		}
+	}()
+}
+
+func reloadPluginsOnChan(reloadChan chan bool) {
+	go func() {
+		defer close(reloadChan)
+		for {
+			shouldReload := <-reloadChan
+			if shouldReload {
+				plugins.ReloadPlugins()
+			} else {
+				plugins.StopPlugins()
 			}
 		}
 	}()

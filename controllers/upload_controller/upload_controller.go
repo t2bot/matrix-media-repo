@@ -13,6 +13,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/internal_cache"
+	"github.com/turt2live/matrix-media-repo/plugins"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/types"
@@ -175,9 +176,23 @@ func trackUploadAsLastAccess(ctx rcontext.RequestContext, media *types.Media) {
 	}
 }
 
+func checkSpam(contents []byte, filename string, contentType string, userId string, origin string, mediaId string) error {
+	spam, err := plugins.CheckForSpam(contents, filename, contentType, userId, origin, mediaId)
+	if err != nil {
+		logrus.Warn("Error checking spam - assuming not spam: " + err.Error())
+		return nil
+	}
+	if spam {
+		return common.ErrMediaQuarantined
+	}
+	return nil
+}
+
 func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize int64, contentType string, filename string, userId string, origin string, mediaId string, kind string, ctx rcontext.RequestContext, filterUserDuplicates bool) (*types.Media, error) {
+	var err error
 	var ds *datastore.DatastoreRef
 	var info *types.ObjectInfo
+	var contentBytes []byte
 	if f == nil {
 		dsPicked, err := datastore.PickDatastore(kind, ctx)
 		if err != nil {
@@ -185,7 +200,12 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 		}
 		ds = dsPicked
 
-		fInfo, err := ds.UploadFile(contents, expectedSize, ctx)
+		contentBytes, err = ioutil.ReadAll(contents)
+		if err != nil {
+			return nil, err
+		}
+
+		fInfo, err := ds.UploadFile(util.BytesToStream(contentBytes), expectedSize, ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -193,6 +213,16 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 	} else {
 		ds = f.DS
 		info = f.ObjectInfo
+
+		// download the contents for antispam
+		contents, err = ds.DownloadFile(info.Location)
+		if err != nil {
+			return nil, err
+		}
+		contentBytes, err = ioutil.ReadAll(contents)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	db := storage.GetDatabase().GetMediaStore(ctx)
@@ -223,9 +253,16 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 			}
 		}
 
+		err = checkSpam(contentBytes, filename, contentType, userId, origin, mediaId)
+		if err != nil {
+			ds.DeleteObject(info.Location) // delete temp object
+			return nil, err
+		}
+
 		// We'll use the location from the first record
 		record := records[0]
 		if record.Quarantined {
+			ds.DeleteObject(info.Location) // delete temp object
 			ctx.Log.Warn("User attempted to upload quarantined content - rejecting")
 			return nil, common.ErrMediaQuarantined
 		}
@@ -274,6 +311,12 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 	if info.SizeBytes <= 0 {
 		ds.DeleteObject(info.Location)
 		return nil, errors.New("file has no contents")
+	}
+
+	err = checkSpam(contentBytes, filename, contentType, userId, origin, mediaId)
+	if err != nil {
+		ds.DeleteObject(info.Location) // delete temp object
+		return nil, err
 	}
 
 	ctx.Log.Info("Persisting new media record")

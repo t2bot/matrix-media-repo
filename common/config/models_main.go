@@ -74,3 +74,8 @@ type SharedSecretConfig struct {
 type FederationConfig struct {
 	BackoffAt int `yaml:"backoffAt"`
 }
+
+type PluginConfig struct {
+	Executable string                 `yaml:"exec"`
+	Config     map[string]interface{} `yaml:"config"`
+}

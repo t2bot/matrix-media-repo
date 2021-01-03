@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
+	"github.com/turt2live/matrix-media-repo/util"
 )
 
 func IsUserAdmin(ctx rcontext.RequestContext, serverName string, accessToken string, ipAddr string) (bool, error) {
@@ -19,7 +20,7 @@ func IsUserAdmin(ctx rcontext.RequestContext, serverName string, accessToken str
 		if hs.AdminApiKind == "synapse" {
 			path = "/_synapse/admin/v1/whois/"
 		}
-		url := makeUrl(hs.ClientServerApi, path, fakeUser)
+		url := util.MakeUrl(hs.ClientServerApi, path, fakeUser)
 		err := doRequest(ctx, "GET", url, nil, response, accessToken, ipAddr)
 		if err != nil {
 			err, replyError = filterError(err)
@@ -43,7 +44,7 @@ func ListMedia(ctx rcontext.RequestContext, serverName string, accessToken strin
 		if hs.AdminApiKind == "synapse" {
 			path = "/_synapse/admin/v1/room/"
 		}
-		url := makeUrl(hs.ClientServerApi, path, roomId, "/media")
+		url := util.MakeUrl(hs.ClientServerApi, path, roomId, "/media")
 		err := doRequest(ctx, "GET", url, nil, response, accessToken, ipAddr)
 		if err != nil {
 			err, replyError = filterError(err)

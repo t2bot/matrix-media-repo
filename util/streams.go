@@ -16,6 +16,10 @@ func BufferToStream(buf *bytes.Buffer) io.ReadCloser {
 	return ioutil.NopCloser(newBuf)
 }
 
+func BytesToStream(b []byte) io.ReadCloser {
+	return ioutil.NopCloser(bytes.NewBuffer(b))
+}
+
 func CloneReader(input io.ReadCloser, numReaders int) []io.ReadCloser {
 	readers := make([]io.ReadCloser, 0)
 	writers := make([]io.WriteCloser, 0)
