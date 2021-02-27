@@ -192,7 +192,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if result.ContentType == "" {
 				disposition = "attachment"
 			} else {
-				if util.HasAnyPrefix(result.ContentType, []string{"image/", "audio/", "video/"}) {
+				if util.HasAnyPrefix(result.ContentType, []string{"image/", "audio/", "video/", "text/plain"}) {
 					disposition = "inline"
 				} else {
 					disposition = "attachment"

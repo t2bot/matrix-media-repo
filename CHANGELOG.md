@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Changed
+
+* `Content-Disposition` of plain text files now defaults to `inline`.
+
 ## [1.2.4] - March 5th, 2021
 
 ### Fixed
