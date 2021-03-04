@@ -11,10 +11,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 * Introduced early plugin support (only for antispam for now).
   * Includes a simple OCR plugin to help mitigate text-based image spam.
+* Added an `X-Robots-Tag` header to help prevent indexing. Thanks @jellykells!
 
 ### Fixed
 
-* Some audio thumbnails would not generate at small thumbnail sizes.
+* Fixed crash when generating some thumbnails of audio.
+* Fixed various artifact problems with APNG and GIF thumbnails. Thanks @Sorunome!
+* Fixed a missing "unlimited size" check for thumbnails. Thanks @Sorunome!
 
 ## [1.2.2] - December 8th, 2020
 
