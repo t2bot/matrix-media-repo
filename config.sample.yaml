@@ -389,6 +389,7 @@ thumbnails:
     - "image/jpeg"
     - "image/jpg"
     - "image/png"
+    - "image/apng"
     - "image/gif"
     - "image/heif"
     - "image/webp"
