@@ -77,6 +77,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Security-Policy", "sandbox; default-src 'none'; script-src 'none'; plugin-types application/pdf; style-src 'unsafe-inline'; media-src 'self'; object-src 'self';")
+	w.Header().Set("X-Robots-Tag", "noindex, nofollow, noarchive, noimageindex")
 	w.Header().Set("Server", "matrix-media-repo")
 
 	// Process response
