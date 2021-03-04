@@ -134,7 +134,7 @@ func (d mp3Generator) GenerateFromStream(audio beep.StreamSeekCloser, format bee
 	draw.Draw(img, r, artworkImg, image.Pt(0, 0), draw.Over)
 
 	waveformX := padding + r.Max.X
-	info, err := d.GetDataFromStream(audio, format, width-waveformX-padding)
+	info, err := d.GetDataFromStream(audio, format, (int)(math.Max((float64)(width-waveformX-padding), 1)))
 	if err != nil {
 		return nil, errors.New("beep-visual: error sampling audio: " + err.Error())
 	}

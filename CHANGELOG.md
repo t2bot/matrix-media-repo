@@ -12,6 +12,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Introduced early plugin support (only for antispam for now).
   * Includes a simple OCR plugin to help mitigate text-based image spam.
 
+### Fixed
+
+* Some audio thumbnails would not generate at small thumbnail sizes.
+
 ## [1.2.2] - December 8th, 2020
 
 ### Fixed
