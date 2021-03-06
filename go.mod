@@ -1,6 +1,6 @@
 module github.com/turt2live/matrix-media-repo
 
-go 1.14
+go 1.16
 
 require (
 	github.com/DavidHuie/gomigrate v0.0.0-20190826182718-4adc4b3de142
