@@ -7,12 +7,10 @@ require (
 	github.com/Jeffail/tunny v0.0.0-20190930221602-f13eb662a36a
 	github.com/PuerkitoBio/goquery v1.5.1
 	github.com/ajstarks/svgo v0.0.0-20200204031535-0cbcf57ea1d8 // indirect
-	github.com/alangpierce/go-forceexport v0.0.0-20160317203124-8f1d6941cd75 // indirect
 	github.com/alioygur/is v1.0.3
 	github.com/bep/debounce v1.2.0
 	github.com/buckket/go-blurhash v1.0.3
 	github.com/cenk/backoff v2.2.1+incompatible // indirect
-	github.com/coreos/go-systemd v0.0.0-20190719114852-fd7a80b32e1f // indirect
 	github.com/cupcake/sigil v0.0.0-20131127230922-6bf9722f2ae8
 	github.com/dhowden/tag v0.0.0-20200412032933-5d76b8eaae27
 	github.com/didip/tollbooth v4.0.2+incompatible
@@ -24,17 +22,14 @@ require (
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
 	github.com/faiface/beep v1.0.2
 	github.com/fastly/go-utils v0.0.0-20180712184237-d95a45783239 // indirect
-	github.com/fd/go-nat v1.0.0 // indirect
 	github.com/fogleman/gg v1.3.0
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/gabriel-vasile/mimetype v1.1.2
-	github.com/go-bindata/go-bindata v3.1.2+incompatible // indirect
 	github.com/go-redis/redis/v8 v8.0.0-beta.6
 	github.com/go-sql-driver/mysql v1.5.0 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/gorilla/mux v1.7.4
-	github.com/gxed/pubsub v0.0.0-20180201040156-26ebdf44f824 // indirect
 	github.com/hashicorp/go-hclog v0.14.1
 	github.com/hashicorp/go-plugin v1.4.0
 	github.com/ipfs/go-cid v0.0.7
@@ -42,8 +37,6 @@ require (
 	github.com/ipfs/go-ipfs-api v0.2.0
 	github.com/ipfs/go-ipfs-config v0.12.0
 	github.com/ipfs/go-ipfs-files v0.0.8
-	github.com/ipfs/go-ipfs-flags v0.0.1 // indirect
-	github.com/ipfs/go-todocounter v0.0.1 // indirect
 	github.com/ipfs/interface-go-ipfs-core v0.4.0
 	github.com/jehiah/go-strftime v0.0.0-20171201141054-1d33003b3869 // indirect
 	github.com/jonboulle/clockwork v0.1.0 // indirect
@@ -52,9 +45,6 @@ require (
 	github.com/lestrrat/go-file-rotatelogs v0.0.0-20180223000712-d3151e2a480f
 	github.com/lestrrat/go-strftime v0.0.0-20180220042222-ba3bf9c1d042 // indirect
 	github.com/lib/pq v1.3.0
-	github.com/libp2p/go-libp2p-autonat-svc v0.1.0 // indirect
-	github.com/libp2p/go-libp2p-routing v0.1.0 // indirect
-	github.com/marten-seemann/chacha20 v0.2.0 // indirect
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible // indirect
 	github.com/minio/minio-go/v6 v6.0.50
 	github.com/olebedev/emitter v0.0.0-20190110104742-e8d1457e6aee
@@ -69,19 +59,11 @@ require (
 	github.com/saintfish/chardet v0.0.0-20120816061221-3af4cd4741ca
 	github.com/sebest/xff v0.0.0-20160910043805-6c115e0ffa35
 	github.com/sirupsen/logrus v1.4.2
-	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/tebeka/strftime v0.1.3 // indirect
-	github.com/vishvananda/netlink v1.0.0 // indirect
-	github.com/vishvananda/netns v0.0.0-20190625233234-7109fa855b0f // indirect
-	github.com/whyrusleeping/go-smux-multiplex v3.0.16+incompatible // indirect
-	github.com/whyrusleeping/go-smux-multistream v2.0.2+incompatible // indirect
-	github.com/whyrusleeping/go-smux-yamux v2.0.9+incompatible // indirect
-	github.com/whyrusleeping/yamux v1.1.5 // indirect
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
 	golang.org/x/image v0.0.0-20200119044424-58c23975cae1
 	golang.org/x/net v0.0.0-20201021035429-f5854403a974
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
-	gopkg.in/cheggaaa/pb.v1 v1.0.28 // indirect
 	gopkg.in/ini.v1 v1.52.0 // indirect
 	gopkg.in/yaml.v2 v2.3.0
 )
