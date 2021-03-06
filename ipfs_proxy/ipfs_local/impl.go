@@ -2,29 +2,24 @@ package ipfs_local
 
 import (
 	"bytes"
-	"context"
-	"io"
-	"io/ioutil"
-	"time"
-
 	"github.com/ipfs/go-cid"
-	files "github.com/ipfs/go-ipfs-files"
-	httpapi "github.com/ipfs/go-ipfs-http-client"
-	"github.com/ipfs/interface-go-ipfs-core/path"
+	httpapi "github.com/ipfs/go-ipfs-api"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/ipfs_proxy/ipfs_models"
 	"github.com/turt2live/matrix-media-repo/util"
+	"io"
+	"io/ioutil"
 )
 
 type IPFSLocal struct {
-	client *httpapi.HttpApi
+	client *httpapi.Shell
 }
 
 func NewLocalIPFSImplementation() (IPFSLocal, error) {
-	client, err := httpapi.NewLocalApi()
+	client := httpapi.NewLocalShell()
 	return IPFSLocal{
 		client: client,
-	}, err
+	}, nil
 }
 
 func (i IPFSLocal) GetObject(contentId string, ctx rcontext.RequestContext) (*ipfs_models.IPFSObject, error) {
@@ -33,16 +28,13 @@ func (i IPFSLocal) GetObject(contentId string, ctx rcontext.RequestContext) (*ip
 		return nil, err
 	}
 
-	timeoutCtx, cancel := context.WithTimeout(ctx.Context, 10*time.Second)
-	defer cancel()
-
-	ipfsPath := path.IpfsPath(ipfsCid)
-	r, err := i.client.Object().Data(timeoutCtx, ipfsPath)
+	c, err := i.client.Cat(ipfsCid.String())
 	if err != nil {
 		return nil, err
 	}
+	defer c.Close()
 
-	b, err := ioutil.ReadAll(r)
+	b, err := ioutil.ReadAll(c)
 	if err != nil {
 		return nil, err
 	}
@@ -56,12 +48,11 @@ func (i IPFSLocal) GetObject(contentId string, ctx rcontext.RequestContext) (*ip
 }
 
 func (i IPFSLocal) PutObject(data io.Reader, ctx rcontext.RequestContext) (string, error) {
-	ipfsFile := files.NewReaderFile(data)
-	p, err := i.client.Unixfs().Add(ctx.Context, ipfsFile)
+	p, err := i.client.Add(data)
 	if err != nil {
 		return "", err
 	}
-	return p.Cid().String(), nil
+	return p, nil
 }
 
 func (i IPFSLocal) Stop() {
