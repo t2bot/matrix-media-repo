@@ -141,7 +141,11 @@ func downloadResourceWorkFn(request *resource_handler.WorkRequest) interface{} {
 		}
 
 		ctx.Log.Info("Remote media persisted under datastore ", media.DatastoreId, " at ", media.Location)
-		return &workerDownloadResponse{media: media, contentType: media.ContentType}
+		return &workerDownloadResponse{
+			media: media,
+			contentType: media.ContentType,
+			filename: media.UploadName,
+		}
 	}
 
 	if info.blockForMedia {
