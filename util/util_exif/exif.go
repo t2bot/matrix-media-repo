@@ -2,11 +2,10 @@ package util_exif
 
 import (
 	"fmt"
-	"io"
-
+	"github.com/dsoprea/go-exif/v3"
 	"github.com/pkg/errors"
-	"github.com/rwcarlsen/goexif/exif"
 	"github.com/turt2live/matrix-media-repo/util/cleanup"
+	"io"
 )
 
 type ExifOrientation struct {
@@ -18,26 +17,36 @@ type ExifOrientation struct {
 func GetExifOrientation(img io.ReadCloser) (*ExifOrientation, error) {
 	defer cleanup.DumpAndCloseStream(img)
 
-	exifData, err := exif.Decode(img)
+	rawExif, err := exif.SearchAndExtractExifWithReader(img)
 	if err != nil {
-		// EOF means we probably just don't have info in the file
-		if err == io.EOF {
-			return nil, nil
+		return nil, errors.New("exif: error reading possible exif data: " + err.Error())
+	}
+
+	tags, _, err := exif.GetFlatExifData(rawExif, nil)
+	if err != nil {
+		return nil, errors.New("exif: error parsing exif data: " + err.Error())
+	}
+
+	var tag exif.ExifTag
+	for _, t := range tags {
+		if t.TagName == "Orientation" {
+			tag = t
+			break
 		}
-		return nil, errors.New("exif: error decoding orientation: " + err.Error())
+	}
+	if tag.TagName != "Orientation" {
+		return nil, nil // not found
 	}
 
-	rawValue, err := exifData.Get(exif.Orientation)
-	if exif.IsTagNotPresentError(err) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, errors.New("exif: error getting orientation: " + err.Error())
-	}
-
-	orientation, err := rawValue.Int(0)
-	if err != nil {
-		return nil, errors.New("exif: error parsing orientation: " + err.Error())
+	var orientation uint16 = 0
+	vals, ok := tag.Value.([]uint16)
+	if !ok || len(vals) <= 0 {
+		orientation, ok = tag.Value.(uint16)
+		if !ok {
+			return nil, errors.New("exif: error parsing orientation: parse error (not an int)")
+		}
+	} else {
+		orientation = vals[0]
 	}
 
 	// Some devices produce invalid exif data when they intend to mean "no orientation"

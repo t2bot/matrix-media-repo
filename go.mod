@@ -17,6 +17,8 @@ require (
 	github.com/didip/tollbooth v4.0.2+incompatible
 	github.com/disintegration/imaging v1.6.2
 	github.com/djherbis/stream v1.3.1
+	github.com/dsoprea/go-exif/v3 v3.0.0-20210131231135-d154f10435cc
+	github.com/dsoprea/go-logging v0.0.0-20200710184922-b02d349568dd // indirect
 	github.com/dustin/go-humanize v1.0.0
 	github.com/dyatlov/go-oembed v0.0.0-20191103150536-a57c85b3b37c
 	github.com/dyatlov/go-opengraph v0.0.0-20210112100619-dae8665a5b09
@@ -62,7 +64,6 @@ require (
 	github.com/prometheus/client_golang v1.9.0
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/rubyist/circuitbreaker v2.2.1+incompatible
-	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
 	github.com/ryanuber/go-glob v1.0.0
 	github.com/saintfish/chardet v0.0.0-20120816061221-3af4cd4741ca
 	github.com/sebest/xff v0.0.0-20210106013422-671bd2870b3a
