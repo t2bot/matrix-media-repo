@@ -55,6 +55,8 @@ func GenerateOEmbedPreview(urlPayload *preview_types.UrlPayload, languageHeader 
 
 	if info.Type == "rich" {
 		info.Description = html2text.HTML2Text(info.HTML)
+	} else if info.Type == "photo" {
+		info.ThumbnailURL = info.URL
 	}
 
 	graph := &preview_types.PreviewResult{

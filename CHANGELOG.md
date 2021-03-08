@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Fixed
 
 * Fixed rich oEmbed URL previews (Twitter).
+* Fixed photo oEmbed URL previews (Giphy).
 
 ## [1.2.4] - March 5th, 2021
 
