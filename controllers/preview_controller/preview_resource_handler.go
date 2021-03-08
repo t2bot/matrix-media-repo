@@ -71,6 +71,7 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) interface{} {
 	// Try oEmbed first
 	if info.allowOEmbed {
 		ctx = ctx.LogWithFields(logrus.Fields{"worker_previewer": "oEmbed"})
+		ctx.Log.Info("Trying oEmbed previewer")
 		preview, err = previewers.GenerateOEmbedPreview(info.urlPayload, info.languageHeader, ctx)
 	}
 

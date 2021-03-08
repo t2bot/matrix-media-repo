@@ -7,6 +7,7 @@ import (
 	"path"
 
 	"github.com/dyatlov/go-oembed/oembed"
+	"github.com/k3a/html2text"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"
@@ -50,6 +51,10 @@ func GenerateOEmbedPreview(urlPayload *preview_types.UrlPayload, languageHeader 
 	if err != nil {
 		ctx.Log.Error("Error getting oEmbed: " + err.Error())
 		return preview_types.PreviewResult{}, err
+	}
+
+	if info.Type == "rich" {
+		info.Description = html2text.HTML2Text(info.HTML)
 	}
 
 	graph := &preview_types.PreviewResult{
