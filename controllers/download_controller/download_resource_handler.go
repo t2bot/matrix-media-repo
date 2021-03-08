@@ -134,7 +134,18 @@ func downloadResourceWorkFn(request *resource_handler.WorkRequest) interface{} {
 	persistFile := func(fileStream io.ReadCloser) *workerDownloadResponse {
 		defer cleanup.DumpAndCloseStream(fileStream)
 		userId := upload_controller.NoApplicableUploadUser
-		media, err := upload_controller.StoreDirect(nil, fileStream, downloaded.ContentLength, downloaded.ContentType, downloaded.DesiredFilename, userId, info.origin, info.mediaId, common.KindRemoteMedia, ctx, true)
+
+		ms := stream.NewMemStream()
+		io.Copy(ms, fileStream)
+		ms.Close()
+
+		st, err := ms.NextReader()
+		if err != nil {
+			ctx.Log.Error("Unexpected error persisting file: ", err)
+			return &workerDownloadResponse{err: err}
+		}
+
+		media, err := upload_controller.StoreDirect(nil, st, downloaded.ContentLength, downloaded.ContentType, downloaded.DesiredFilename, userId, info.origin, info.mediaId, common.KindRemoteMedia, ctx, true)
 		if err != nil {
 			ctx.Log.Error("Error persisting file: ", err)
 			return &workerDownloadResponse{err: err}
@@ -145,6 +156,7 @@ func downloadResourceWorkFn(request *resource_handler.WorkRequest) interface{} {
 			media: media,
 			contentType: media.ContentType,
 			filename: media.UploadName,
+			stream: ms,
 		}
 	}
 
