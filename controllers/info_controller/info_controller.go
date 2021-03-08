@@ -54,7 +54,7 @@ func GetOrCalculateBlurhash(media *types.Media, rctx rcontext.RequestContext) (s
 	}
 
 	rctx.Log.Info("Calculating blurhash")
-	encoded, err := blurhash.Encode(rctx.Config.Features.MSC2448Blurhash.XComponents, rctx.Config.Features.MSC2448Blurhash.YComponents, &decoded)
+	encoded, err := blurhash.Encode(rctx.Config.Features.MSC2448Blurhash.XComponents, rctx.Config.Features.MSC2448Blurhash.YComponents, decoded)
 	if err != nil {
 		return "", err
 	}
