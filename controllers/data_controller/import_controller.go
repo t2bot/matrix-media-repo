@@ -62,6 +62,14 @@ func StartImport(data io.Reader, ctx rcontext.RequestContext) (*types.Background
 	return task, importId, nil
 }
 
+func IsImportWaiting(importId string) bool {
+	runningImport, ok := openImports.Load(importId)
+	if !ok || runningImport == nil {
+		return false
+	}
+	return true
+}
+
 func AppendToImport(importId string, data io.Reader, withReturnChan bool) (chan bool, error) {
 	runningImport, ok := openImports.Load(importId)
 	if !ok || runningImport == nil {
@@ -71,6 +79,12 @@ func AppendToImport(importId string, data io.Reader, withReturnChan bool) (chan 
 	results, err := processArchive(data)
 	if err != nil {
 		return nil, err
+	}
+
+	// Repeat the safety check - the archive processing can take a bit
+	runningImport, ok = openImports.Load(importId)
+	if !ok || runningImport == nil {
+		return nil, nil
 	}
 
 	var doneChan chan bool
@@ -246,6 +260,15 @@ func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx
 			_, found := imported[mxc]
 			if found {
 				continue // already imported
+			}
+
+			_, err := db.Get(record.Origin, record.MediaId)
+			if err == nil {
+				ctx.Log.Info("Media already imported: " + record.Origin + "/" + record.MediaId)
+
+				// flag as imported and move on
+				imported[mxc] = true
+				continue
 			}
 
 			userId := archiveManifest.EntityId

@@ -92,6 +92,12 @@ func main() {
 		}
 
 		logrus.Info("Appending ", fname)
+
+		if !data_controller.IsImportWaiting(importId) {
+			logrus.Info("Import claimed closed - ignoring file")
+			continue
+		}
+
 		f, err := os.Open(fname)
 		if err != nil {
 			panic(err)
@@ -100,6 +106,11 @@ func main() {
 		ch, err := data_controller.AppendToImport(importId, f, true)
 		if err != nil {
 			panic(err)
+		}
+
+		if ch == nil {
+			logrus.Info("No channel returned by data controller - moving on to next file")
+			continue
 		}
 
 		logrus.Info("Waiting for file to be processed before moving on")
