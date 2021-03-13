@@ -120,4 +120,6 @@ Usage of gdpr_import:
         The directory for where the entity's exported files are (default "./gdpr-data")
   -migrations string
         The absolute path for the migrations folder (default "./migrations")
+  -verify
+        If set, no media will be imported and instead be tested to see if they've been imported already
 ```

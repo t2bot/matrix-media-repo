@@ -30,6 +30,44 @@ type importUpdate struct {
 
 var openImports = &sync.Map{} // importId => updateChan
 
+func VerifyImport(data io.Reader, ctx rcontext.RequestContext) (int, int, []string, error) {
+	// Prepare the first update for the import (sync, so we can error)
+	// We do this before anything else because if the archive is invalid then we shouldn't
+	// even bother with an import.
+	results, err := processArchive(data)
+	if err != nil {
+		return 0, 0, nil, err
+	}
+
+	manifestFile, ok := results["manifest.json"]
+	if !ok {
+		return 0, 0, nil, errors.New("no manifest provided in data package")
+	}
+
+	archiveManifest := &Manifest{}
+	err = json.Unmarshal(manifestFile.Bytes(), archiveManifest)
+	if err != nil {
+		return 0, 0, nil, err
+	}
+
+	expected := 0
+	found := 0
+	missing := make([]string, 0)
+	db := storage.GetDatabase().GetMediaStore(ctx)
+	for mxc, r := range archiveManifest.Media {
+		ctx.Log.Info("Checking file: ", mxc)
+		expected++
+		_, err = db.Get(r.Origin, r.MediaId)
+		if err == nil {
+			found++
+		} else {
+			missing = append(missing, mxc)
+		}
+	}
+
+	return found, expected, missing, nil
+}
+
 func StartImport(data io.Reader, ctx rcontext.RequestContext) (*types.BackgroundTask, string, error) {
 	// Prepare the first update for the import (sync, so we can error)
 	// We do this before anything else because if the archive is invalid then we shouldn't

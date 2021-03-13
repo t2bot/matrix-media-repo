@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Added
+
+* Added a `-verify` mode to imports to determine if large imports were successful.
+
 ### Changed
 
 * `Content-Disposition` of plain text files now defaults to `inline`.

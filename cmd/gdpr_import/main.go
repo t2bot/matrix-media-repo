@@ -22,6 +22,7 @@ func main() {
 	configPath := flag.String("config", "media-repo.yaml", "The path to the configuration")
 	migrationsPath := flag.String("migrations", config.DefaultMigrationsPath, "The absolute path for the migrations folder")
 	filesDir := flag.String("directory", "./gdpr-data", "The directory for where the entity's exported files are")
+	verifyMode := flag.Bool("verify", false, "If set, no media will be imported and instead be tested to see if they've been imported already")
 	flag.Parse()
 
 	// Override config path with config for Docker users
@@ -72,7 +73,6 @@ func main() {
 		}
 	}
 
-	logrus.Info("Starting import...")
 	ctx := rcontext.Initial().LogWithFields(logrus.Fields{"flagDir": *filesDir})
 
 	f, err := os.Open(files[manifestIdx])
@@ -80,6 +80,27 @@ func main() {
 		panic(err)
 	}
 	defer f.Close()
+
+	if *verifyMode {
+		found, expected, missingIds, err := data_controller.VerifyImport(f, ctx)
+		if err != nil {
+			panic(err)
+		}
+		logrus.Info("Known imported media IDs: ", found)
+		logrus.Info("Expected media IDs: ", expected)
+
+		if len(missingIds) > 0 {
+			for _, mxc := range missingIds {
+				logrus.Error("Expected media ID but was not present: ", mxc)
+			}
+			logrus.Warn("Not all media is present. See logs for details.")
+			os.Exit(1)
+		}
+		logrus.Info("All media present!")
+		return // exit 0
+	}
+
+	logrus.Info("Starting import...")
 	task, importId, err := data_controller.StartImport(f, ctx)
 	if err != nil {
 		panic(err)
