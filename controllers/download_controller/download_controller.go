@@ -182,6 +182,10 @@ func FindMinimalMediaRecord(origin string, mediaId string, downloadRemote bool, 
 					ctx.Log.Warn("Media not found")
 					return nil, common.ErrMediaNotFound
 				}
+			} else {
+				// We don't even want to attempt a download - something very wrong happened
+				ctx.Log.Error("Database error trying to get media:", err.Error())
+				return nil, err
 			}
 
 			if !downloadRemote {
@@ -263,6 +267,10 @@ func FindMediaRecord(origin string, mediaId string, downloadRemote bool, ctx rco
 						ctx.Log.Warn("Media not found")
 						return nil, common.ErrMediaNotFound
 					}
+				} else {
+					// We don't even want to attempt a download - something very wrong happened
+					ctx.Log.Error("Database error trying to get media:", err.Error())
+					return nil, err
 				}
 
 				if !downloadRemote {

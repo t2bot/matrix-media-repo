@@ -267,6 +267,16 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 			return nil, common.ErrMediaQuarantined
 		}
 
+		// Double check that we're not about to try and store a record we know about
+		for _, knownRecord := range records {
+			if knownRecord.Origin == origin && knownRecord.MediaId == mediaId {
+				ctx.Log.Info("Duplicate media record found - returning unaltered record")
+				ds.DeleteObject(info.Location) // delete temp object
+				trackUploadAsLastAccess(ctx, knownRecord)
+				return knownRecord, nil
+			}
+		}
+
 		media := record
 		media.Origin = origin
 		media.MediaId = mediaId

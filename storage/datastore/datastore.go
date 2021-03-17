@@ -113,6 +113,7 @@ func PickDatastore(forKind string, ctx rcontext.RequestContext) (*DatastoreRef, 
 
 		ds, err := mediaStore.GetDatastoreByUri(GetUriForDatastore(dsConf))
 		if err != nil {
+			ctx.Log.Error("Error getting datastore: ", err.Error())
 			continue
 		}
 
@@ -121,6 +122,7 @@ func PickDatastore(forKind string, ctx rcontext.RequestContext) (*DatastoreRef, 
 		if len(confDatastores) > 1 {
 			size, err = estimatedDatastoreSize(ds, ctx)
 			if err != nil {
+				ctx.Log.Error("Error estimating datastore size for ", ds.DatastoreId, ": ", err.Error())
 				continue
 			}
 		}
