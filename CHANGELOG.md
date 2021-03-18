@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [1.2.5] - March 17th, 2021
+
 ### Added
 
 * Added a `-verify` mode to imports to determine if large imports were successful.
@@ -240,7 +242,8 @@ a large database (more than about 100k uploaded files), run the following steps 
 * Various other features that would be expected like maximum/minimum size controls, rate limiting, etc. Check out the
   sample config for a better idea of what else is possible.
 
-[unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.4...HEAD
+[unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.5...HEAD
+[1.2.5]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.4...v1.2.5
 [1.2.4]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.3...v1.2.4
 [1.2.3]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.2...v1.2.3
 [1.2.2]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.1...v1.2.2
