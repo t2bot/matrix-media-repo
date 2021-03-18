@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"github.com/getsentry/sentry-go"
 	"io"
 	"net/http"
 	"sync"
@@ -267,6 +268,7 @@ func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx
 			if err != nil {
 				ctx.Log.Error("Failed to parse manifest - giving up on import")
 				ctx.Log.Error(err)
+				sentry.CaptureException(err)
 				break
 			}
 			if archiveManifest.Version != 1 && archiveManifest.Version != 2 {
@@ -338,6 +340,7 @@ func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx
 				if err != nil {
 					ctx.Log.Errorf("Error importing file: %s", err.Error())
 					doClear = false // don't clear things on error
+					sentry.CaptureException(err)
 					continue
 				}
 				toClear = append(toClear, record.ArchivedName)
@@ -346,6 +349,7 @@ func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx
 				endpoint, bucket, location, err := ds_s3.ParseS3URL(record.S3Url)
 				if err != nil {
 					ctx.Log.Errorf("Error importing file: %s", err.Error())
+					sentry.CaptureException(err)
 					continue
 				}
 
@@ -353,6 +357,7 @@ func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx
 				datastores, err := datastore.GetAvailableDatastores(ctx)
 				if err != nil {
 					ctx.Log.Errorf("Error locating datastore: %s", err.Error())
+					sentry.CaptureException(err)
 					continue
 				}
 				imported := false
@@ -364,6 +369,7 @@ func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx
 					tmplUrl, err := ds_s3.GetS3URL(ds.DatastoreId, location)
 					if err != nil {
 						ctx.Log.Errorf("Error investigating s3 datastore: %s", err.Error())
+						sentry.CaptureException(err)
 						continue
 					}
 					if tmplUrl == record.S3Url {
@@ -372,6 +378,7 @@ func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx
 						existingRecord, err := db.Get(record.Origin, record.MediaId)
 						if err != nil && err != sql.ErrNoRows {
 							ctx.Log.Errorf("Error testing file in database: %s", err.Error())
+							sentry.CaptureException(err)
 							break
 						}
 						if err != sql.ErrNoRows && existingRecord != nil {
@@ -402,6 +409,7 @@ func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx
 						err = db.Insert(media)
 						if err != nil {
 							ctx.Log.Errorf("Error creating media record: %s", err.Error())
+							sentry.CaptureException(err)
 							break
 						}
 
@@ -416,12 +424,14 @@ func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx
 					r, err := http.DefaultClient.Get(record.S3Url)
 					if err != nil {
 						ctx.Log.Errorf("Error trying to download file from S3 via HTTP: ", err.Error())
+						sentry.CaptureException(err)
 						continue
 					}
 
 					_, err = upload_controller.StoreDirect(nil, r.Body, r.ContentLength, record.ContentType, record.FileName, userId, record.Origin, record.MediaId, kind, ctx, true)
 					if err != nil {
 						ctx.Log.Errorf("Error importing file: %s", err.Error())
+						sentry.CaptureException(err)
 						continue
 					}
 				}
@@ -473,6 +483,7 @@ func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx
 	if err != nil {
 		ctx.Log.Error(err)
 		ctx.Log.Error("Failed to flag task as finished")
+		sentry.CaptureException(err)
 	}
 	ctx.Log.Info("Finished import")
 }

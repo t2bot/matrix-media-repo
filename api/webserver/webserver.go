@@ -3,6 +3,8 @@ package webserver
 import (
 	"context"
 	"encoding/json"
+	"github.com/getsentry/sentry-go"
+	sentryhttp "github.com/getsentry/sentry-go/http"
 	"net"
 	"net/http"
 	"os"
@@ -207,12 +209,14 @@ func Init() *sync.WaitGroup {
 		debug.BindPprofEndpoints(httpMux, pprofSecret)
 	}
 
-	srv = &http.Server{Addr: address, Handler: httpMux}
+	sentryHandler := sentryhttp.New(sentryhttp.Options{})
+	srv = &http.Server{Addr: address, Handler: sentryHandler.Handle(httpMux)}
 	reload = false
 
 	go func() {
 		logrus.WithField("address", address).Info("Started up. Listening at http://" + address)
 		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+			sentry.CaptureException(err)
 			logrus.Fatal(err)
 		}
 

@@ -2,6 +2,7 @@ package unstable
 
 import (
 	"bytes"
+	"github.com/getsentry/sentry-go"
 	"image/png"
 	"net/http"
 	"strconv"
@@ -50,12 +51,14 @@ func RenderBlurhash(r *http.Request, rctx rcontext.RequestContext, user api.User
 	img, err := blurhash.Decode(hash, width, height, rctx.Config.Features.MSC2448Blurhash.Punch)
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("Unexpected error rendering blurhash")
 	}
 	buf := &bytes.Buffer{}
 	err = png.Encode(buf, img)
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("Unexpected error rendering blurhash")
 	}
 

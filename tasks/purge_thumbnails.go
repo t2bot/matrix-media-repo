@@ -1,6 +1,7 @@
 package tasks
 
 import (
+	"github.com/getsentry/sentry-go"
 	"math/rand"
 	"time"
 
@@ -52,6 +53,7 @@ func doRecurringThumbnailPurge() {
 	thumbs, err := db.GetOldThumbnails(beforeTs)
 	if err != nil {
 		ctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return
 	}
 
@@ -62,6 +64,7 @@ func doRecurringThumbnailPurge() {
 		m, err := mediaDb.GetMediaByLocation(thumb.DatastoreId, thumb.Location)
 		if err != nil {
 			ctx.Log.Error(err)
+			sentry.CaptureException(err)
 			return
 		}
 		if len(m) > 0 {
@@ -73,18 +76,21 @@ func doRecurringThumbnailPurge() {
 		err = db.DeleteWithHash(thumb.Sha256Hash)
 		if err != nil {
 			ctx.Log.Error(err)
+			sentry.CaptureException(err)
 			return
 		}
 
 		ds, err := datastore.LocateDatastore(ctx, thumb.DatastoreId)
 		if err != nil {
 			ctx.Log.Error(err)
+			sentry.CaptureException(err)
 			return
 		}
 
 		err = ds.DeleteObject(thumb.Location)
 		if err != nil {
 			ctx.Log.Error(err)
+			sentry.CaptureException(err)
 			// don't return on this one - we'll continue otherwise
 		}
 	}

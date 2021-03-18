@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/getsentry/sentry-go"
 	"time"
 
 	"github.com/bep/debounce"
@@ -12,11 +13,13 @@ import (
 func Watch() *fsnotify.Watcher {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
+		sentry.CaptureException(err)
 		logrus.Fatal(err)
 	}
 
 	err = watcher.Add(Path)
 	if err != nil {
+		sentry.CaptureException(err)
 		logrus.Fatal(err)
 	}
 
@@ -48,6 +51,7 @@ func onFileChanged() {
 	if err != nil {
 		logrus.Error("Error reloading configuration - ignoring")
 		logrus.Error(err)
+		sentry.CaptureException(err)
 		return
 	}
 

@@ -3,6 +3,7 @@ package u
 import (
 	"bytes"
 	"errors"
+	"github.com/getsentry/sentry-go"
 	"image"
 	"io/ioutil"
 
@@ -28,6 +29,7 @@ func IdentifyAndApplyOrientation(origBytes []byte, src image.Image) (image.Image
 	if err != nil {
 		// assume no orientation if there was an error reading the exif header
 		logrus.Warn("Non-fatal error reading exif headers:", err.Error())
+		sentry.CaptureException(err)
 		orientation = nil
 	}
 

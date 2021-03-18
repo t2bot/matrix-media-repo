@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"github.com/getsentry/sentry-go"
 	"path"
 
 	"github.com/sirupsen/logrus"
@@ -22,10 +23,12 @@ func populateThumbnailHashes(db *Database) error {
 		datastore, err := mediaSvc.GetDatastore(thumb.DatastoreId)
 		if err != nil {
 			logrus.Error("Error getting datastore for thumbnail ", thumb.Origin, " ", thumb.MediaId, ": ", err)
+			sentry.CaptureException(err)
 			continue
 		}
 		if datastore.Type != "file" {
 			logrus.Error("Unrecognized datastore type for thumbnail ", thumb.Origin, " ", thumb.MediaId)
+			sentry.CaptureException(err)
 			continue
 		}
 		location := path.Join(datastore.Uri, thumb.Location)
@@ -67,6 +70,7 @@ func populateDatastores(db *Database) error {
 		datastore, err := getOrCreateDatastoreWithMediaService(mediaService, basePath)
 		if err != nil {
 			logrus.Error("Error getting datastore for thumbnail path ", basePath, ": ", err)
+			sentry.CaptureException(err)
 			continue
 		}
 
@@ -76,6 +80,7 @@ func populateDatastores(db *Database) error {
 		err = thumbService.UpdateDatastoreAndLocation(thumb)
 		if err != nil {
 			logrus.Error("Failed to update datastore for thumbnail ", thumb.Origin, " ", thumb.MediaId, ": ", err)
+			sentry.CaptureException(err)
 			continue
 		}
 
@@ -94,6 +99,7 @@ func populateDatastores(db *Database) error {
 		datastore, err := getOrCreateDatastoreWithMediaService(mediaService, basePath)
 		if err != nil {
 			logrus.Error("Error getting datastore for media path ", basePath, ": ", err)
+			sentry.CaptureException(err)
 			continue
 		}
 
@@ -103,6 +109,7 @@ func populateDatastores(db *Database) error {
 		err = mediaService.UpdateDatastoreAndLocation(media)
 		if err != nil {
 			logrus.Error("Failed to update datastore for media ", media.Origin, " ", media.MediaId, ": ", err)
+			sentry.CaptureException(err)
 			continue
 		}
 

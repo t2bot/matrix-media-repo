@@ -2,6 +2,7 @@ package custom
 
 import (
 	"encoding/json"
+	"github.com/getsentry/sentry-go"
 	"io/ioutil"
 	"net/http"
 
@@ -24,6 +25,7 @@ func GetFederationInfo(r *http.Request, rctx rcontext.RequestContext, user api.U
 	url, hostname, err := matrix.GetServerApiUrl(serverName)
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError(err.Error())
 	}
 
@@ -31,12 +33,14 @@ func GetFederationInfo(r *http.Request, rctx rcontext.RequestContext, user api.U
 	versionResponse, err := matrix.FederatedGet(versionUrl, hostname, rctx)
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError(err.Error())
 	}
 
 	c, err := ioutil.ReadAll(versionResponse.Body)
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError(err.Error())
 	}
 
@@ -44,6 +48,7 @@ func GetFederationInfo(r *http.Request, rctx rcontext.RequestContext, user api.U
 	err = json.Unmarshal(c, &out)
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError(err.Error())
 	}
 

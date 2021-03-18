@@ -1,6 +1,7 @@
 package unstable
 
 import (
+	"github.com/getsentry/sentry-go"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -27,12 +28,14 @@ func GetBlurhash(r *http.Request, rctx rcontext.RequestContext, user api.UserInf
 			return api.NotFoundError() // We lie for security
 		}
 		rctx.Log.Error("Unexpected error locating media: " + err.Error())
+		sentry.CaptureException(err)
 		return api.InternalServerError("Unexpected Error")
 	}
 
 	hash, err := info_controller.GetOrCalculateBlurhash(m, rctx)
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("Unexpected Error")
 	}
 

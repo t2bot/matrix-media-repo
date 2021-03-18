@@ -1,6 +1,7 @@
 package tasks
 
 import (
+	"github.com/getsentry/sentry-go"
 	"math/rand"
 	"time"
 
@@ -51,6 +52,7 @@ func doRecurringPreviewPurge() {
 	err := db.DeleteOlderThan(beforeTs)
 	if err != nil {
 		ctx.Log.Error(err)
+		sentry.CaptureException(err)
 	}
 	ctx.Log.Info("Purge task completed")
 }

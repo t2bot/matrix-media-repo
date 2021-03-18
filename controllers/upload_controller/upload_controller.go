@@ -2,6 +2,7 @@ package upload_controller
 
 import (
 	"fmt"
+	"github.com/getsentry/sentry-go"
 	"io"
 	"io/ioutil"
 	"strconv"
@@ -42,6 +43,7 @@ func IsRequestTooLarge(contentLength int64, contentLengthHeader string, ctx rcon
 		parsed, err := strconv.ParseInt(contentLengthHeader, 10, 64)
 		if err != nil {
 			ctx.Log.Warn("Invalid content length header given; assuming too large. Value received: " + contentLengthHeader)
+			sentry.CaptureException(err)
 			return true // Invalid header
 		}
 
@@ -62,6 +64,7 @@ func IsRequestTooSmall(contentLength int64, contentLengthHeader string, ctx rcon
 		parsed, err := strconv.ParseInt(contentLengthHeader, 10, 64)
 		if err != nil {
 			ctx.Log.Warn("Invalid content length header given; assuming too small. Value received: " + contentLengthHeader)
+			sentry.CaptureException(err)
 			return true // Invalid header
 		}
 
@@ -79,6 +82,7 @@ func EstimateContentLength(contentLength int64, contentLengthHeader string) int6
 		parsed, err := strconv.ParseInt(contentLengthHeader, 10, 64)
 		if err != nil {
 			logrus.Warn("Invalid content length header given. Value received: " + contentLengthHeader)
+			sentry.CaptureException(err)
 			return -1 // unknown
 		}
 
@@ -180,6 +184,7 @@ func checkSpam(contents []byte, filename string, contentType string, userId stri
 	spam, err := plugins.CheckForSpam(contents, filename, contentType, userId, origin, mediaId)
 	if err != nil {
 		logrus.Warn("Error checking spam - assuming not spam: " + err.Error())
+		sentry.CaptureException(err)
 		return nil
 	}
 	if spam {

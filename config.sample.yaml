@@ -582,3 +582,17 @@ featureSupport:
         addr: ":7001"
       - name: "server3"
         addr: ":7002"
+
+# Optional sentry (https://sentry.io/) configuration for the media repo
+sentry:
+  # Whether or not to set up error reporting. Defaults to off.
+  enabled: false
+
+  # Get this value from the setup instructions in Sentry
+  dsn: "https://examplePublicKey@ingest.sentry.io/0"
+
+  # Optional environment flag. Defaults to an empty string.
+  environment: ""
+
+  # Whether or not to turn on sentry's built in debugging. This will increase log output.
+  debug: false

@@ -2,6 +2,7 @@ package custom
 
 import (
 	"bytes"
+	"github.com/getsentry/sentry-go"
 	"net/http"
 	"strconv"
 
@@ -64,6 +65,7 @@ func ExportUserData(r *http.Request, rctx rcontext.RequestContext, user api.User
 	task, exportId, err := data_controller.StartUserExport(userId, s3urls, includeData, rctx)
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("fatal error starting export")
 	}
 
@@ -116,6 +118,7 @@ func ExportServerData(r *http.Request, rctx rcontext.RequestContext, user api.Us
 	task, exportId, err := data_controller.StartServerExport(serverName, s3urls, includeData, rctx)
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("fatal error starting export")
 	}
 
@@ -142,18 +145,21 @@ func ViewExport(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo
 	exportInfo, err := exportDb.GetExportMetadata(exportId)
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("failed to get metadata")
 	}
 
 	parts, err := exportDb.GetExportParts(exportId)
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("failed to get export parts")
 	}
 
 	template, err := templating.GetTemplate("view_export")
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("failed to get template")
 	}
 
@@ -176,6 +182,7 @@ func ViewExport(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo
 	err = template.Execute(&html, model)
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("failed to render template")
 	}
 
@@ -199,12 +206,14 @@ func GetExportMetadata(r *http.Request, rctx rcontext.RequestContext, user api.U
 	exportInfo, err := exportDb.GetExportMetadata(exportId)
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("failed to get metadata")
 	}
 
 	parts, err := exportDb.GetExportParts(exportId)
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("failed to get export parts")
 	}
 
@@ -246,12 +255,14 @@ func DownloadExportPart(r *http.Request, rctx rcontext.RequestContext, user api.
 	part, err := db.GetExportPart(exportId, int(partId))
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("failed to get part")
 	}
 
 	s, err := datastore.DownloadStream(rctx, part.DatastoreID, part.Location)
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("failed to start download")
 	}
 
@@ -283,6 +294,7 @@ func DeleteExport(r *http.Request, rctx rcontext.RequestContext, user api.UserIn
 	parts, err := db.GetExportParts(exportId)
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("failed to delete export")
 	}
 
@@ -291,6 +303,7 @@ func DeleteExport(r *http.Request, rctx rcontext.RequestContext, user api.UserIn
 		ds, err := datastore.LocateDatastore(rctx, part.DatastoreID)
 		if err != nil {
 			rctx.Log.Error(err)
+			sentry.CaptureException(err)
 			return api.InternalServerError("failed to delete export")
 		}
 
@@ -298,6 +311,7 @@ func DeleteExport(r *http.Request, rctx rcontext.RequestContext, user api.UserIn
 		err = ds.DeleteObject(part.Location)
 		if err != nil {
 			rctx.Log.Warn(err)
+			sentry.CaptureException(err)
 		}
 	}
 
@@ -305,6 +319,7 @@ func DeleteExport(r *http.Request, rctx rcontext.RequestContext, user api.UserIn
 	err = db.DeleteExportAndParts(exportId)
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("failed to delete export")
 	}
 

@@ -1,6 +1,7 @@
 package r0
 
 import (
+	"github.com/getsentry/sentry-go"
 	"net/http"
 	"strconv"
 
@@ -91,6 +92,7 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user api.User
 			return api.RequestTooLarge()
 		}
 		rctx.Log.Error("Unexpected error locating media: " + err.Error())
+		sentry.CaptureException(err)
 		return api.InternalServerError("Unexpected Error")
 	}
 

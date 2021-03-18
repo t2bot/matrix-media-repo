@@ -2,6 +2,7 @@ package custom
 
 import (
 	"database/sql"
+	"github.com/getsentry/sentry-go"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -40,6 +41,7 @@ func QuarantineRoomMedia(r *http.Request, rctx rcontext.RequestContext, user api
 	allMedia, err := matrix.ListMedia(rctx, r.Host, user.AccessToken, roomId, r.RemoteAddr)
 	if err != nil {
 		rctx.Log.Error("Error while listing media in the room: " + err.Error())
+		sentry.CaptureException(err)
 		return api.InternalServerError("error retrieving media in room")
 	}
 
@@ -52,6 +54,7 @@ func QuarantineRoomMedia(r *http.Request, rctx rcontext.RequestContext, user api
 		server, mediaId, err := util.SplitMxc(mxc)
 		if err != nil {
 			rctx.Log.Error("Error parsing MXC URI (" + mxc + "): " + err.Error())
+			sentry.CaptureException(err)
 			return api.InternalServerError("error parsing mxc uri")
 		}
 
@@ -89,6 +92,7 @@ func QuarantineUserMedia(r *http.Request, rctx rcontext.RequestContext, user api
 	_, userDomain, err := util.SplitUserId(userId)
 	if err != nil {
 		rctx.Log.Error("Error parsing user ID (" + userId + "): " + err.Error())
+		sentry.CaptureException(err)
 		return api.InternalServerError("error parsing user ID")
 	}
 
@@ -100,6 +104,7 @@ func QuarantineUserMedia(r *http.Request, rctx rcontext.RequestContext, user api
 	userMedia, err := db.GetMediaByUser(userId)
 	if err != nil {
 		rctx.Log.Error("Error while listing media for the user: " + err.Error())
+		sentry.CaptureException(err)
 		return api.InternalServerError("error retrieving media for user")
 	}
 
@@ -139,6 +144,7 @@ func QuarantineDomainMedia(r *http.Request, rctx rcontext.RequestContext, user a
 	userMedia, err := db.GetAllMediaForServer(serverName)
 	if err != nil {
 		rctx.Log.Error("Error while listing media for the server: " + err.Error())
+		sentry.CaptureException(err)
 		return api.InternalServerError("error retrieving media for server")
 	}
 
@@ -190,6 +196,7 @@ func doQuarantine(ctx rcontext.RequestContext, origin string, mediaId string, al
 		}
 
 		ctx.Log.Error("Error fetching media: " + err.Error())
+		sentry.CaptureException(err)
 		return api.InternalServerError("error quarantining media"), false
 	}
 
@@ -202,6 +209,7 @@ func doQuarantineOn(media *types.Media, allowOtherHosts bool, ctx rcontext.Reque
 	attr, err := attrDb.GetAttributesDefaulted(media.Origin, media.MediaId)
 	if err != nil {
 		ctx.Log.Error("Error while getting attributes for media: " + err.Error())
+		sentry.CaptureException(err)
 		return api.InternalServerError("Error quarantining media"), false
 	}
 	if attr.Purpose == types.PurposePinned {
@@ -216,6 +224,7 @@ func doQuarantineOn(media *types.Media, allowOtherHosts bool, ctx rcontext.Reque
 	num, err := setMediaQuarantined(media, true, allowOtherHosts, ctx)
 	if err != nil {
 		ctx.Log.Error("Error quarantining media: " + err.Error())
+		sentry.CaptureException(err)
 		return api.InternalServerError("Error quarantining media"), false
 	}
 
@@ -259,6 +268,7 @@ func getQuarantineRequestInfo(r *http.Request, rctx rcontext.RequestContext, use
 		if rctx.Config.Quarantine.AllowLocalAdmins {
 			isLocalAdmin, err = matrix.IsUserAdmin(rctx, r.Host, user.AccessToken, r.RemoteAddr)
 			if err != nil {
+				sentry.CaptureException(err)
 				rctx.Log.Error("Error verifying local admin: " + err.Error())
 				canQuarantine = false
 				return canQuarantine, allowOtherHosts, isLocalAdmin

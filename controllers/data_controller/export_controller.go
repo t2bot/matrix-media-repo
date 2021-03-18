@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/getsentry/sentry-go"
 	"io"
 	"time"
 
@@ -71,6 +72,7 @@ func StartServerExport(serverName string, s3urls bool, includeData bool, ctx rco
 		ds, err := datastore.PickDatastore(common.KindArchives, ctx)
 		if err != nil {
 			ctx.Log.Error(err)
+			sentry.CaptureException(err)
 			return
 		}
 
@@ -78,6 +80,7 @@ func StartServerExport(serverName string, s3urls bool, includeData bool, ctx rco
 		media, err := mediaDb.GetAllMediaForServer(serverName)
 		if err != nil {
 			ctx.Log.Error(err)
+			sentry.CaptureException(err)
 			return
 		}
 
@@ -88,6 +91,7 @@ func StartServerExport(serverName string, s3urls bool, includeData bool, ctx rco
 		if err != nil {
 			ctx.Log.Error(err)
 			ctx.Log.Error("Failed to flag task as finished")
+			sentry.CaptureException(err)
 		}
 		ctx.Log.Info("Finished export")
 	}()
@@ -121,6 +125,7 @@ func StartUserExport(userId string, s3urls bool, includeData bool, ctx rcontext.
 		ds, err := datastore.PickDatastore(common.KindArchives, ctx, )
 		if err != nil {
 			ctx.Log.Error(err)
+			sentry.CaptureException(err)
 			return
 		}
 
@@ -128,6 +133,7 @@ func StartUserExport(userId string, s3urls bool, includeData bool, ctx rcontext.
 		media, err := mediaDb.GetMediaByUser(userId)
 		if err != nil {
 			ctx.Log.Error(err)
+			sentry.CaptureException(err)
 			return
 		}
 
@@ -138,6 +144,7 @@ func StartUserExport(userId string, s3urls bool, includeData bool, ctx rcontext.
 		if err != nil {
 			ctx.Log.Error(err)
 			ctx.Log.Error("Failed to flag task as finished")
+			sentry.CaptureException(err)
 		}
 		ctx.Log.Info("Finished export")
 	}()
@@ -150,6 +157,7 @@ func compileArchive(exportId string, entityId string, archiveDs *datastore.Datas
 	err := exportDb.InsertExport(exportId, entityId)
 	if err != nil {
 		ctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return
 	}
 
@@ -214,6 +222,7 @@ func compileArchive(exportId string, entityId string, archiveDs *datastore.Datas
 	err = newTar()
 	if err != nil {
 		ctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return
 	}
 
@@ -298,6 +307,7 @@ func compileArchive(exportId string, entityId string, archiveDs *datastore.Datas
 	b, err := json.Marshal(manifest)
 	if err != nil {
 		ctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return
 	}
 
@@ -305,6 +315,7 @@ func compileArchive(exportId string, entityId string, archiveDs *datastore.Datas
 	err = putFile("manifest.json", int64(len(b)), time.Now(), util.BufferToStream(bytes.NewBuffer(b)))
 	if err != nil {
 		ctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return
 	}
 
@@ -313,17 +324,20 @@ func compileArchive(exportId string, entityId string, archiveDs *datastore.Datas
 		t, err := templating.GetTemplate("export_index")
 		if err != nil {
 			ctx.Log.Error(err)
+			sentry.CaptureException(err)
 			return
 		}
 		html := bytes.Buffer{}
 		err = t.Execute(&html, indexModel)
 		if err != nil {
 			ctx.Log.Error(err)
+			sentry.CaptureException(err)
 			return
 		}
 		err = putFile("index.html", int64(html.Len()), time.Now(), util.BufferToStream(bytes.NewBuffer(html.Bytes())))
 		if err != nil {
 			ctx.Log.Error(err)
+			sentry.CaptureException(err)
 			return
 		}
 
@@ -333,6 +347,7 @@ func compileArchive(exportId string, entityId string, archiveDs *datastore.Datas
 			s, err := datastore.DownloadStream(ctx, m.DatastoreId, m.Location)
 			if err != nil {
 				ctx.Log.Error(err)
+				sentry.CaptureException(err)
 				continue
 			}
 
@@ -342,6 +357,7 @@ func compileArchive(exportId string, entityId string, archiveDs *datastore.Datas
 			if err != nil {
 				ctx.Log.Error(err)
 				cleanup.DumpAndCloseStream(s)
+				sentry.CaptureException(err)
 				continue
 			}
 			cleanup.DumpAndCloseStream(s)
@@ -351,6 +367,7 @@ func compileArchive(exportId string, entityId string, archiveDs *datastore.Datas
 			err = putFile(archivedName(m), m.SizeBytes, time.Unix(0, m.CreationTs*int64(time.Millisecond)), s)
 			if err != nil {
 				ctx.Log.Error(err)
+				sentry.CaptureException(err)
 				return
 			}
 
@@ -359,6 +376,7 @@ func compileArchive(exportId string, entityId string, archiveDs *datastore.Datas
 				err = newTar()
 				if err != nil {
 					ctx.Log.Error(err)
+					sentry.CaptureException(err)
 					return
 				}
 			}
@@ -370,6 +388,7 @@ func compileArchive(exportId string, entityId string, archiveDs *datastore.Datas
 		err = persistTar()
 		if err != nil {
 			ctx.Log.Error(err)
+			sentry.CaptureException(err)
 			return
 		}
 	}

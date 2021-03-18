@@ -2,6 +2,7 @@ package quarantine_controller
 
 import (
 	"bytes"
+	"github.com/getsentry/sentry-go"
 	"image"
 	"image/color"
 	"math"
@@ -75,6 +76,7 @@ func generateDefaultQuarantineThumbnail() (image.Image, error) {
 
 	f, err := truetype.Parse(gosmallcaps.TTF)
 	if err != nil {
+		sentry.CaptureException(err)
 		panic(err)
 	}
 

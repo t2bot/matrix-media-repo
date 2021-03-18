@@ -1,6 +1,7 @@
 package custom
 
 import (
+	"github.com/getsentry/sentry-go"
 	"net/http"
 	"strconv"
 
@@ -24,6 +25,7 @@ func GetDatastores(r *http.Request, rctx rcontext.RequestContext, user api.UserI
 	datastores, err := storage.GetDatabase().GetMediaStore(rctx).GetAllDatastores()
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("Error getting datastores")
 	}
 
@@ -81,12 +83,14 @@ func MigrateBetweenDatastores(r *http.Request, rctx rcontext.RequestContext, use
 	task, err := maintenance_controller.StartStorageMigration(sourceDatastore, targetDatastore, beforeTs, rctx)
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("Unexpected error starting migration")
 	}
 
 	estimate, err := maintenance_controller.EstimateDatastoreSizeWithAge(beforeTs, sourceDsId, rctx)
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("Unexpected error getting storage estimate")
 	}
 
@@ -121,6 +125,7 @@ func GetDatastoreStorageEstimate(r *http.Request, rctx rcontext.RequestContext, 
 	result, err := maintenance_controller.EstimateDatastoreSizeWithAge(beforeTs, datastoreId, rctx)
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("Unexpected error getting storage estimate")
 	}
 	return &api.DoNotCacheResponse{Payload: result}

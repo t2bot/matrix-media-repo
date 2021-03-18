@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/getsentry/sentry-go"
 	"io/ioutil"
 	"time"
 
@@ -97,6 +98,7 @@ func GetMedia(origin string, mediaId string, downloadRemote bool, blockForMedia 
 
 			err = storage.GetDatabase().GetMetadataStore(ctx).UpsertLastAccess(media.Sha256Hash, util.NowMillis())
 			if err != nil {
+				sentry.CaptureException(err)
 				ctx.Log.Warn("Failed to upsert the last access time: ", err)
 			}
 

@@ -2,6 +2,7 @@ package previewers
 
 import (
 	"bytes"
+	"github.com/getsentry/sentry-go"
 	"io/ioutil"
 	"net/url"
 	"path"
@@ -27,11 +28,13 @@ func getOembed() *oembed.Oembed {
 
 	data, err := ioutil.ReadFile(path.Join(config.Runtime.AssetsPath, "providers.json"))
 	if err != nil {
+		sentry.CaptureException(err)
 		logrus.Fatal(err)
 	}
 
 	err = oembedInstance.ParseProviders(bytes.NewReader(data))
 	if err != nil {
+		sentry.CaptureException(err)
 		logrus.Fatal(err)
 	}
 
@@ -71,6 +74,7 @@ func GenerateOEmbedPreview(urlPayload *preview_types.UrlPayload, languageHeader 
 		imgUrl, err := url.Parse(info.ThumbnailURL)
 		if err != nil {
 			ctx.Log.Error("Non-fatal error getting thumbnail (parsing image url): " + err.Error())
+			sentry.CaptureException(err)
 			return *graph, nil
 		}
 
@@ -83,6 +87,7 @@ func GenerateOEmbedPreview(urlPayload *preview_types.UrlPayload, languageHeader 
 		img, err := downloadImage(imgUrlPayload, languageHeader, ctx)
 		if err != nil {
 			ctx.Log.Error("Non-fatal error getting thumbnail (downloading image): " + err.Error())
+			sentry.CaptureException(err)
 			return *graph, nil
 		}
 

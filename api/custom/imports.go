@@ -1,6 +1,7 @@
 package custom
 
 import (
+	"github.com/getsentry/sentry-go"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -24,6 +25,7 @@ func StartImport(r *http.Request, rctx rcontext.RequestContext, user api.UserInf
 	task, importId, err := data_controller.StartImport(r.Body, rctx)
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("fatal error starting import")
 	}
 
@@ -46,6 +48,7 @@ func AppendToImport(r *http.Request, rctx rcontext.RequestContext, user api.User
 	_, err := data_controller.AppendToImport(importId, r.Body, false)
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("fatal error appending to import")
 	}
 
@@ -64,6 +67,7 @@ func StopImport(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo
 	err := data_controller.StopImport(importId)
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("fatal error stopping import")
 	}
 

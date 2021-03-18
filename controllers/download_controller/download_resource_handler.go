@@ -2,6 +2,7 @@ package download_controller
 
 import (
 	"errors"
+	"github.com/getsentry/sentry-go"
 	"io"
 	"io/ioutil"
 	"mime"
@@ -75,6 +76,7 @@ func getResourceHandler() *mediaResourceHandler {
 		resHandlerLock.Do(func() {
 			handler, err := resource_handler.New(config.Get().Downloads.NumWorkers, downloadResourceWorkFn)
 			if err != nil {
+				sentry.CaptureException(err)
 				panic(err)
 			}
 
@@ -106,6 +108,7 @@ func (h *mediaResourceHandler) DownloadRemoteMedia(origin string, mediaId string
 			if err != nil {
 				logrus.Error("Unexpected error in processing response for remote media download: ", err)
 				respValue = &downloadResponse{err: err}
+				sentry.CaptureException(err)
 			} else {
 				respValue.stream = s
 			}

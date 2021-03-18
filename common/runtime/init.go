@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"fmt"
+	"github.com/getsentry/sentry-go"
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"
@@ -44,6 +45,7 @@ func LoadDatastores() {
 
 		_, err := storage.GetOrCreateDatastoreOfType(rcontext.Initial(), ds.Type, uri)
 		if err != nil {
+			sentry.CaptureException(err)
 			logrus.Fatal(err)
 		}
 	}
@@ -51,6 +53,7 @@ func LoadDatastores() {
 	// Print all the known datastores at startup. Doubles as a way to initialize the database.
 	datastores, err := mediaStore.GetAllDatastores()
 	if err != nil {
+		sentry.CaptureException(err)
 		logrus.Fatal(err)
 	}
 	logrus.Info("Datastores:")

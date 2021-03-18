@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
+	"github.com/getsentry/sentry-go"
 	"io/ioutil"
 	"time"
 
@@ -158,6 +159,7 @@ func GetThumbnail(origin string, mediaId string, desiredWidth int, desiredHeight
 		return &types.StreamedThumbnail{Thumbnail: thumbnail, Stream: mediaStream}, nil
 	}, func(v interface{}, count int, err error) []interface{} {
 		if err != nil {
+			sentry.CaptureException(err)
 			return nil
 		}
 

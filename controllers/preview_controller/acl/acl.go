@@ -2,6 +2,7 @@ package acl
 
 import (
 	"fmt"
+	"github.com/getsentry/sentry-go"
 	"net"
 
 	"github.com/sirupsen/logrus"
@@ -14,6 +15,7 @@ func GetSafeAddress(addr string, ctx rcontext.RequestContext) (net.IP, string, e
 	realHost, p, err := net.SplitHostPort(addr)
 	if err != nil {
 		ctx.Log.Warn("Error parsing host and port: ", err.Error())
+		sentry.CaptureException(err)
 		realHost = addr
 	}
 
@@ -81,6 +83,7 @@ func inRange(ip net.IP, cidrs []string, ctx rcontext.RequestContext) bool {
 		_, network, err := net.ParseCIDR(cidr)
 		if err != nil {
 			ctx.Log.Error("Error checking host: " + err.Error())
+			sentry.CaptureException(err)
 			return false
 		}
 		if network.Contains(ip) {

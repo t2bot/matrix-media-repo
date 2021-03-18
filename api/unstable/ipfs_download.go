@@ -1,6 +1,7 @@
 package unstable
 
 import (
+	"github.com/getsentry/sentry-go"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -34,6 +35,7 @@ func IPFSDownload(r *http.Request, rctx rcontext.RequestContext, user api.UserIn
 	obj, err := ipfs_proxy.GetObject(ipfsContentId, rctx)
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("unexpected error")
 	}
 

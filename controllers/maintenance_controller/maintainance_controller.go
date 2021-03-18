@@ -3,6 +3,7 @@ package maintenance_controller
 import (
 	"database/sql"
 	"fmt"
+	"github.com/getsentry/sentry-go"
 	"os"
 
 	"github.com/sirupsen/logrus"
@@ -40,6 +41,7 @@ func StartStorageMigration(sourceDs *datastore.DatastoreRef, targetDs *datastore
 				if err != nil {
 					rctx.Log.Error(err)
 					rctx.Log.Error("Failed to start download from source datastore")
+					sentry.CaptureException(err)
 					continue
 				}
 
@@ -47,6 +49,7 @@ func StartStorageMigration(sourceDs *datastore.DatastoreRef, targetDs *datastore
 				if err != nil {
 					rctx.Log.Error(err)
 					rctx.Log.Error("Failed to upload file to target datastore")
+					sentry.CaptureException(err)
 					continue
 				}
 
@@ -55,6 +58,7 @@ func StartStorageMigration(sourceDs *datastore.DatastoreRef, targetDs *datastore
 				if err != nil {
 					rctx.Log.Error(err)
 					rctx.Log.Error("Failed to update database records")
+					sentry.CaptureException(err)
 					continue
 				}
 
@@ -63,6 +67,7 @@ func StartStorageMigration(sourceDs *datastore.DatastoreRef, targetDs *datastore
 				if err != nil {
 					rctx.Log.Error(err)
 					rctx.Log.Error("Failed to delete old media")
+					sentry.CaptureException(err)
 					continue
 				}
 
@@ -73,6 +78,7 @@ func StartStorageMigration(sourceDs *datastore.DatastoreRef, targetDs *datastore
 		media, err := db.GetOldMediaInDatastore(sourceDs.DatastoreId, beforeTs)
 		if err != nil {
 			ctx.Log.Error(err)
+			sentry.CaptureException(err)
 			return
 		}
 		doUpdate(media)
@@ -80,6 +86,7 @@ func StartStorageMigration(sourceDs *datastore.DatastoreRef, targetDs *datastore
 		thumbs, err := db.GetOldThumbnailsInDatastore(sourceDs.DatastoreId, beforeTs)
 		if err != nil {
 			ctx.Log.Error(err)
+			sentry.CaptureException(err)
 			return
 		}
 		doUpdate(thumbs)
@@ -88,6 +95,7 @@ func StartStorageMigration(sourceDs *datastore.DatastoreRef, targetDs *datastore
 		if err != nil {
 			ctx.Log.Error(err)
 			ctx.Log.Error("Failed to flag task as finished")
+			sentry.CaptureException(err)
 		}
 		ctx.Log.Info("Finished transfer")
 	}()
@@ -180,6 +188,7 @@ func PurgeRemoteMediaBefore(beforeTs int64, ctx rcontext.RequestContext) (int, e
 		ds, err := datastore.LocateDatastore(ctx, media.DatastoreId)
 		if err != nil {
 			ctx.Log.Error("Error finding datastore for media " + media.Origin + "/" + media.MediaId + " because: " + err.Error())
+			sentry.CaptureException(err)
 			continue
 		}
 
@@ -187,6 +196,7 @@ func PurgeRemoteMediaBefore(beforeTs int64, ctx rcontext.RequestContext) (int, e
 		err = ds.DeleteObject(media.Location)
 		if err != nil {
 			ctx.Log.Warn("Cannot remove media " + media.Origin + "/" + media.MediaId + " because: " + err.Error())
+			sentry.CaptureException(err)
 		} else {
 			removed++
 			ctx.Log.Info("Removed remote media file: " + media.Origin + "/" + media.MediaId)
@@ -196,12 +206,14 @@ func PurgeRemoteMediaBefore(beforeTs int64, ctx rcontext.RequestContext) (int, e
 		err = db.Delete(media.Origin, media.MediaId)
 		if err != nil {
 			ctx.Log.Warn("Error removing media " + media.Origin + "/" + media.MediaId + " from database: " + err.Error())
+			sentry.CaptureException(err)
 		}
 
 		// Delete the thumbnails too
 		thumbs, err := thumbsDb.GetAllForMedia(media.Origin, media.MediaId)
 		if err != nil {
 			ctx.Log.Warn("Error getting thumbnails for media " + media.Origin + "/" + media.MediaId + " from database: " + err.Error())
+			sentry.CaptureException(err)
 			continue
 		}
 		for _, thumb := range thumbs {
@@ -209,18 +221,21 @@ func PurgeRemoteMediaBefore(beforeTs int64, ctx rcontext.RequestContext) (int, e
 			ds, err := datastore.LocateDatastore(ctx, thumb.DatastoreId)
 			if err != nil {
 				ctx.Log.Warn("Error removing thumbnail for media " + media.Origin + "/" + media.MediaId + " from database: " + err.Error())
+				sentry.CaptureException(err)
 				continue
 			}
 
 			err = ds.DeleteObject(thumb.Location)
 			if err != nil {
 				ctx.Log.Warn("Error removing thumbnail for media " + media.Origin + "/" + media.MediaId + " from database: " + err.Error())
+				sentry.CaptureException(err)
 				continue
 			}
 		}
 		err = thumbsDb.DeleteAllForMedia(media.Origin, media.MediaId)
 		if err != nil {
 			ctx.Log.Warn("Error removing thumbnails for media " + media.Origin + "/" + media.MediaId + " from database: " + err.Error())
+			sentry.CaptureException(err)
 		}
 	}
 

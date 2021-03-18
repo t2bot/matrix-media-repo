@@ -2,6 +2,7 @@ package preview_controller
 
 import (
 	"fmt"
+	"github.com/getsentry/sentry-go"
 	"sync"
 
 	"github.com/disintegration/imaging"
@@ -45,6 +46,7 @@ func getResourceHandler() *urlResourceHandler {
 		resHandlerSingletonLock.Do(func() {
 			handler, err := resource_handler.New(config.Get().UrlPreviews.NumWorkers, urlPreviewWorkFn)
 			if err != nil {
+				sentry.CaptureException(err)
 				panic(err)
 			}
 
@@ -120,15 +122,18 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) interface{} {
 		media, err := upload_controller.UploadMedia(preview.Image.Data, contentLength, preview.Image.ContentType, preview.Image.Filename, info.forUserId, info.onHost, ctx)
 		if err != nil {
 			ctx.Log.Warn("Non-fatal error storing preview thumbnail: " + err.Error())
+			sentry.CaptureException(err)
 		} else {
 			mediaStream, err := datastore.DownloadStream(ctx, media.DatastoreId, media.Location)
 			if err != nil {
 				ctx.Log.Warn("Non-fatal error streaming datastore file: " + err.Error())
+				sentry.CaptureException(err)
 			} else {
 				defer cleanup.DumpAndCloseStream(mediaStream)
 				img, err := imaging.Decode(mediaStream)
 				if err != nil {
 					ctx.Log.Warn("Non-fatal error getting thumbnail dimensions: " + err.Error())
+					sentry.CaptureException(err)
 				} else {
 					result.ImageMxc = media.MxcUri()
 					result.ImageType = media.ContentType
@@ -149,6 +154,7 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) interface{} {
 	err = db.InsertPreview(dbRecord)
 	if err != nil {
 		ctx.Log.Warn("Error caching URL preview: " + err.Error())
+		sentry.CaptureException(err)
 		// Non-fatal: Just report it and move on. The worst that happens is we re-cache it.
 	}
 

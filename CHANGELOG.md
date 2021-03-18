@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 
 * Added a `-verify` mode to imports to determine if large imports were successful.
+* Added optional support for [Sentry](https://sentry.io/) (error reporting).
 
 ### Changed
 

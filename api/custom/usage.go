@@ -1,6 +1,7 @@
 package custom
 
 import (
+	"github.com/getsentry/sentry-go"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -59,12 +60,14 @@ func GetDomainUsage(r *http.Request, rctx rcontext.RequestContext, user api.User
 	mediaBytes, thumbBytes, err := db.GetByteUsageForServer(serverName)
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("Failed to get byte usage for server")
 	}
 
 	mediaCount, thumbCount, err := db.GetCountUsageForServer(serverName)
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("Failed to get count usage for server")
 	}
 
@@ -110,6 +113,7 @@ func GetUserUsage(r *http.Request, rctx rcontext.RequestContext, user api.UserIn
 
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("Failed to get media records for users")
 	}
 
@@ -166,6 +170,7 @@ func GetUploadsUsage(r *http.Request, rctx rcontext.RequestContext, user api.Use
 			o, i, err := util.SplitMxc(mxc)
 			if err != nil {
 				rctx.Log.Error(err)
+				sentry.CaptureException(err)
 				return api.InternalServerError("Error parsing MXC " + mxc)
 			}
 
@@ -180,6 +185,7 @@ func GetUploadsUsage(r *http.Request, rctx rcontext.RequestContext, user api.Use
 
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("Failed to get media records for users")
 	}
 

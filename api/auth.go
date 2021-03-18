@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/getsentry/sentry-go"
 	"net/http"
 
 	"github.com/sirupsen/logrus"
@@ -39,6 +40,7 @@ func AccessTokenRequiredRoute(next func(r *http.Request, rctx rcontext.RequestCo
 		userId, err := auth_cache.GetUserId(rctx, accessToken, appserviceUserId)
 		if err != nil || userId == "" {
 			if err != nil && err != matrix.ErrInvalidToken {
+				sentry.CaptureException(err)
 				rctx.Log.Error("Error verifying token (fatal): ", err)
 				return InternalServerError("Unexpected Error")
 			}

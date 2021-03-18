@@ -2,6 +2,7 @@ package custom
 
 import (
 	"encoding/json"
+	"github.com/getsentry/sentry-go"
 	"io/ioutil"
 	"net/http"
 
@@ -53,6 +54,7 @@ func GetAttributes(r *http.Request, rctx rcontext.RequestContext, user api.UserI
 	attrs, err := db.GetAttributes(origin, mediaId)
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("failed to get attributes")
 	}
 
@@ -80,6 +82,7 @@ func SetAttributes(r *http.Request, rctx rcontext.RequestContext, user api.UserI
 	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("failed to read attributes")
 	}
 
@@ -87,6 +90,7 @@ func SetAttributes(r *http.Request, rctx rcontext.RequestContext, user api.UserI
 	err = json.Unmarshal(b, &newAttrs)
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("failed to parse attributes")
 	}
 
@@ -95,6 +99,7 @@ func SetAttributes(r *http.Request, rctx rcontext.RequestContext, user api.UserI
 	attrs, err := db.GetAttributesDefaulted(origin, mediaId)
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("failed to get attributes")
 	}
 
@@ -105,6 +110,7 @@ func SetAttributes(r *http.Request, rctx rcontext.RequestContext, user api.UserI
 		err = db.UpsertPurpose(origin, mediaId, newAttrs.Purpose)
 		if err != nil {
 			rctx.Log.Error(err)
+			sentry.CaptureException(err)
 			return api.InternalServerError("failed to update attributes: purpose")
 		}
 	}

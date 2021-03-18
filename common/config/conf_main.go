@@ -14,6 +14,7 @@ type MainRepoConfig struct {
 	SharedSecret      SharedSecretConfig    `yaml:"sharedSecretAuth"`
 	Federation        FederationConfig      `yaml:"federation"`
 	Plugins           []PluginConfig        `yaml:"plugins,flow"`
+	Sentry            SentryConfig          `yaml:"sentry"`
 }
 
 func NewDefaultMainConfig() MainRepoConfig {
@@ -126,5 +127,11 @@ func NewDefaultMainConfig() MainRepoConfig {
 			BackoffAt: 20,
 		},
 		Plugins: []PluginConfig{},
+		Sentry: SentryConfig{
+			Enabled:     false,
+			Dsn:         "not supplied",
+			Environment: "",
+			Debug:       false,
+		},
 	}
 }

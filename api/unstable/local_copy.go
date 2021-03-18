@@ -1,6 +1,7 @@
 package unstable
 
 import (
+	"github.com/getsentry/sentry-go"
 	"net/http"
 	"strconv"
 
@@ -49,6 +50,7 @@ func LocalCopy(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo)
 			return api.NotFoundError() // We lie for security
 		}
 		rctx.Log.Error("Unexpected error locating media: " + err.Error())
+		sentry.CaptureException(err)
 		return api.InternalServerError("Unexpected Error")
 	}
 	defer cleanup.DumpAndCloseStream(streamedMedia.Stream)
@@ -61,6 +63,7 @@ func LocalCopy(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo)
 	newMedia, err := upload_controller.UploadMedia(streamedMedia.Stream, streamedMedia.KnownMedia.SizeBytes, streamedMedia.KnownMedia.ContentType, streamedMedia.KnownMedia.UploadName, user.UserId, r.Host, rctx)
 	if err != nil {
 		rctx.Log.Error("Unexpected error storing media: " + err.Error())
+		sentry.CaptureException(err)
 		return api.InternalServerError("Unexpected Error")
 	}
 

@@ -3,6 +3,7 @@ package unstable
 import (
 	"bytes"
 	"database/sql"
+	"github.com/getsentry/sentry-go"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -78,6 +79,7 @@ func MediaInfo(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo)
 			return api.NotFoundError() // We lie for security
 		}
 		rctx.Log.Error("Unexpected error locating media: " + err.Error())
+		sentry.CaptureException(err)
 		return api.InternalServerError("Unexpected Error")
 	}
 	defer cleanup.DumpAndCloseStream(streamedMedia.Stream)
@@ -85,6 +87,7 @@ func MediaInfo(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo)
 	b, err := ioutil.ReadAll(streamedMedia.Stream)
 	if err != nil {
 		rctx.Log.Error("Unexpected error processing media: " + err.Error())
+		sentry.CaptureException(err)
 		return api.InternalServerError("Unexpected Error")
 	}
 
@@ -107,6 +110,7 @@ func MediaInfo(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo)
 	thumbs, err := thumbsDb.GetAllForMedia(streamedMedia.KnownMedia.Origin, streamedMedia.KnownMedia.MediaId)
 	if err != nil && err != sql.ErrNoRows {
 		rctx.Log.Error("Unexpected error locating media: " + err.Error())
+		sentry.CaptureException(err)
 		return api.InternalServerError("Unexpected Error")
 	}
 

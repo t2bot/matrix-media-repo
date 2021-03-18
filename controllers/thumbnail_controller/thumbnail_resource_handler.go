@@ -3,6 +3,7 @@ package thumbnail_controller
 import (
 	"bytes"
 	"fmt"
+	"github.com/getsentry/sentry-go"
 	"io/ioutil"
 	"strconv"
 	"sync"
@@ -55,6 +56,7 @@ func getResourceHandler() *thumbnailResourceHandler {
 		resHandlerSingletonLock.Do(func() {
 			handler, err := resource_handler.New(config.Get().Thumbnails.NumWorkers, thumbnailWorkFn)
 			if err != nil {
+				sentry.CaptureException(err)
 				panic(err)
 			}
 

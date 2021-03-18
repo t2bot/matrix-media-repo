@@ -2,9 +2,8 @@ package main
 
 import (
 	"flag"
-	"os"
-	"os/signal"
-
+	"fmt"
+	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api/webserver"
 	"github.com/turt2live/matrix-media-repo/common/assets"
@@ -15,6 +14,9 @@ import (
 	"github.com/turt2live/matrix-media-repo/internal_cache"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/tasks"
+	"os"
+	"os/signal"
+	"time"
 )
 
 func main() {
@@ -36,7 +38,23 @@ func main() {
 		configPath = &configEnv
 	}
 
+	version.SetDefaults()
 	config.Path = *configPath
+	if config.Get().Sentry.Enabled {
+		logrus.Info("Setting up Sentry for debugging...")
+		err := sentry.Init(sentry.ClientOptions{
+			Dsn:         config.Get().Sentry.Dsn,
+			Environment: config.Get().Sentry.Environment,
+			Debug:       config.Get().Sentry.Debug,
+			Release:     fmt.Sprintf("%s-%s", version.Version, version.GitCommit),
+		})
+		if err != nil {
+			panic(err)
+		}
+	}
+	defer sentry.Flush(2 * time.Second)
+	defer sentry.Recover()
+
 	assets.SetupMigrations(*migrationsPath)
 	assets.SetupTemplates(*templatesPath)
 	assets.SetupAssets(*assetsPath)
@@ -53,6 +71,7 @@ func main() {
 	logrus.Info("Checking background tasks...")
 	err = scanAndStartUnfinishedTasks()
 	if err != nil {
+		sentry.CaptureException(err)
 		logrus.Fatal(err)
 	}
 

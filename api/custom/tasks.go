@@ -1,6 +1,7 @@
 package custom
 
 import (
+	"github.com/getsentry/sentry-go"
 	"net/http"
 	"strconv"
 
@@ -39,6 +40,7 @@ func GetTask(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) i
 	task, err := db.GetBackgroundTask(taskId)
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("failed to get task information")
 	}
 
@@ -58,6 +60,7 @@ func ListAllTasks(r *http.Request, rctx rcontext.RequestContext, user api.UserIn
 	tasks, err := db.GetAllBackgroundTasks()
 	if err != nil {
 		logrus.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("Failed to get background tasks")
 	}
 
@@ -82,6 +85,7 @@ func ListUnfinishedTasks(r *http.Request, rctx rcontext.RequestContext, user api
 	tasks, err := db.GetAllBackgroundTasks()
 	if err != nil {
 		logrus.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("Failed to get background tasks")
 	}
 

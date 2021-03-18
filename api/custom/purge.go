@@ -2,6 +2,7 @@ package custom
 
 import (
 	"database/sql"
+	"github.com/getsentry/sentry-go"
 	"net/http"
 	"strconv"
 
@@ -39,6 +40,7 @@ func PurgeRemoteMedia(r *http.Request, rctx rcontext.RequestContext, user api.Us
 	removed, err := maintenance_controller.PurgeRemoteMediaBefore(beforeTs, rctx)
 	if err != nil {
 		rctx.Log.Error("Error purging remote media: " + err.Error())
+		sentry.CaptureException(err)
 		return api.InternalServerError("Error purging remote media")
 	}
 
@@ -73,6 +75,7 @@ func PurgeIndividualRecord(r *http.Request, rctx rcontext.RequestContext, user a
 			}
 			if err != nil {
 				rctx.Log.Error("Error checking ownership of media: " + err.Error())
+				sentry.CaptureException(err)
 				return api.InternalServerError("error checking media ownership")
 			}
 			if m.UserId != user.UserId {
@@ -87,6 +90,7 @@ func PurgeIndividualRecord(r *http.Request, rctx rcontext.RequestContext, user a
 	}
 	if err != nil {
 		rctx.Log.Error("Error purging media: " + err.Error())
+		sentry.CaptureException(err)
 		return api.InternalServerError("error purging media")
 	}
 
@@ -110,6 +114,7 @@ func PurgeQuarantined(r *http.Request, rctx rcontext.RequestContext, user api.Us
 
 	if err != nil {
 		rctx.Log.Error("Error purging media: " + err.Error())
+		sentry.CaptureException(err)
 		return api.InternalServerError("error purging media")
 	}
 
@@ -150,6 +155,7 @@ func PurgeOldMedia(r *http.Request, rctx rcontext.RequestContext, user api.UserI
 
 	if err != nil {
 		rctx.Log.Error("Error purging media: " + err.Error())
+		sentry.CaptureException(err)
 		return api.InternalServerError("error purging media")
 	}
 
@@ -189,6 +195,7 @@ func PurgeUserMedia(r *http.Request, rctx rcontext.RequestContext, user api.User
 	_, userDomain, err := util.SplitUserId(userId)
 	if err != nil {
 		rctx.Log.Error("Error parsing user ID (" + userId + "): " + err.Error())
+		sentry.CaptureException(err)
 		return api.InternalServerError("error parsing user ID")
 	}
 
@@ -200,6 +207,7 @@ func PurgeUserMedia(r *http.Request, rctx rcontext.RequestContext, user api.User
 
 	if err != nil {
 		rctx.Log.Error("Error purging media: " + err.Error())
+		sentry.CaptureException(err)
 		return api.InternalServerError("error purging media")
 	}
 
@@ -239,6 +247,7 @@ func PurgeRoomMedia(r *http.Request, rctx rcontext.RequestContext, user api.User
 	allMedia, err := matrix.ListMedia(rctx, r.Host, user.AccessToken, roomId, r.RemoteAddr)
 	if err != nil {
 		rctx.Log.Error("Error while listing media in the room: " + err.Error())
+		sentry.CaptureException(err)
 		return api.InternalServerError("error retrieving media in room")
 	}
 
@@ -278,6 +287,7 @@ func PurgeRoomMedia(r *http.Request, rctx rcontext.RequestContext, user api.User
 
 	if err != nil {
 		rctx.Log.Error("Error purging media: " + err.Error())
+		sentry.CaptureException(err)
 		return api.InternalServerError("error purging media")
 	}
 
@@ -322,6 +332,7 @@ func PurgeDomainMedia(r *http.Request, rctx rcontext.RequestContext, user api.Us
 
 	if err != nil {
 		rctx.Log.Error("Error purging media: " + err.Error())
+		sentry.CaptureException(err)
 		return api.InternalServerError("error purging media")
 	}
 
@@ -337,6 +348,7 @@ func getPurgeRequestInfo(r *http.Request, rctx rcontext.RequestContext, user api
 	isGlobalAdmin := util.IsGlobalAdmin(user.UserId) || user.IsShared
 	isLocalAdmin, err := matrix.IsUserAdmin(rctx, r.Host, user.AccessToken, r.RemoteAddr)
 	if err != nil {
+		sentry.CaptureException(err)
 		rctx.Log.Error("Error verifying local admin: " + err.Error())
 		return isGlobalAdmin, false
 	}

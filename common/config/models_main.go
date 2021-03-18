@@ -79,3 +79,10 @@ type PluginConfig struct {
 	Executable string                 `yaml:"exec"`
 	Config     map[string]interface{} `yaml:"config"`
 }
+
+type SentryConfig struct {
+	Enabled     bool   `yaml:"enabled"`
+	Dsn         string `yaml:"dsn"`
+	Environment string `yaml:"environment"`
+	Debug       bool   `yaml:"debug"`
+}

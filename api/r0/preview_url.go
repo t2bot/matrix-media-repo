@@ -1,6 +1,7 @@
 package r0
 
 import (
+	"github.com/getsentry/sentry-go"
 	"net/http"
 	"strconv"
 	"strings"
@@ -65,6 +66,7 @@ func PreviewUrl(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo
 		} else if err == common.ErrInvalidHost || err == common.ErrHostBlacklisted {
 			return api.BadRequest(err.Error())
 		} else {
+			sentry.CaptureException(err)
 			return api.InternalServerError("unexpected error during request")
 		}
 	}

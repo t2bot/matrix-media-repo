@@ -1,6 +1,7 @@
 package r0
 
 import (
+	"github.com/getsentry/sentry-go"
 	"io"
 	"net/http"
 	"strconv"
@@ -64,6 +65,7 @@ func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user api.UserI
 			return api.NotFoundError() // We lie for security
 		}
 		rctx.Log.Error("Unexpected error locating media: " + err.Error())
+		sentry.CaptureException(err)
 		return api.InternalServerError("Unexpected Error")
 	}
 

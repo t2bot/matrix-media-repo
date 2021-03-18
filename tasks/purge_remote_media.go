@@ -1,6 +1,7 @@
 package tasks
 
 import (
+	"github.com/getsentry/sentry-go"
 	"math/rand"
 	"time"
 
@@ -50,6 +51,7 @@ func doRecurringRemoteMediaPurge() {
 	_, err := maintenance_controller.PurgeRemoteMediaBefore(beforeTs, ctx)
 	if err != nil {
 		ctx.Log.Error(err)
+		sentry.CaptureException(err)
 	}
 	ctx.Log.Info("Purge task completed")
 }

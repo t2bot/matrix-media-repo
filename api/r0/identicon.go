@@ -3,6 +3,7 @@ package r0
 import (
 	"bytes"
 	"crypto/md5"
+	"github.com/getsentry/sentry-go"
 	"image/color"
 	"io"
 	"net/http"
@@ -84,6 +85,7 @@ func Identicon(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo)
 	err = imaging.Encode(imgData, img, imaging.PNG)
 	if err != nil {
 		rctx.Log.Error("Error generating image:" + err.Error())
+		sentry.CaptureException(err)
 		return api.InternalServerError("error generating identicon")
 	}
 

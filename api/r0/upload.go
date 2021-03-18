@@ -1,6 +1,7 @@
 package r0
 
 import (
+	"github.com/getsentry/sentry-go"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -49,6 +50,7 @@ func UploadMedia(r *http.Request, rctx rcontext.RequestContext, user api.UserInf
 	if err != nil {
 		io.Copy(ioutil.Discard, r.Body) // Ditch the entire request
 		rctx.Log.Error("Unexpected error checking quota: " + err.Error())
+		sentry.CaptureException(err)
 		return api.InternalServerError("Unexpected Error")
 	}
 	if !inQuota {
@@ -67,6 +69,7 @@ func UploadMedia(r *http.Request, rctx rcontext.RequestContext, user api.UserInf
 		}
 
 		rctx.Log.Error("Unexpected error storing media: " + err.Error())
+		sentry.CaptureException(err)
 		return api.InternalServerError("Unexpected Error")
 	}
 
@@ -74,6 +77,7 @@ func UploadMedia(r *http.Request, rctx rcontext.RequestContext, user api.UserInf
 		hash, err := info_controller.GetOrCalculateBlurhash(media, rctx)
 		if err != nil {
 			rctx.Log.Warn("Failed to calculate blurhash: " + err.Error())
+			sentry.CaptureException(err)
 		}
 
 		return &MediaUploadedResponse{

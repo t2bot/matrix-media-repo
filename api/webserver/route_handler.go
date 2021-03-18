@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/getsentry/sentry-go"
 	"io"
 	"mime"
 	"net"
@@ -55,6 +56,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	host, _, err := net.SplitHostPort(raddr)
 	if err != nil {
 		logrus.Error(err)
+		sentry.CaptureException(err)
 		host = raddr
 	}
 	r.RemoteAddr = host
@@ -171,6 +173,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		contentType := result.ContentType
 		mediaType, params, err := mime.ParseMediaType(result.ContentType)
 		if err != nil {
+			sentry.CaptureException(err)
 			contextLog.Warn("Failed to parse content type header for media on reply: " + err.Error())
 		} else {
 			// TODO: Maybe we only strip the charset from images? Is it valid to have the param on other types?
@@ -205,6 +208,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				exts = nil
 				contextLog.Warn("Unexpected error inferring file extension: " + err.Error())
+				sentry.CaptureException(err)
 			}
 			ext := ""
 			if exts != nil && len(exts) > 0 {

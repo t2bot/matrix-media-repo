@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"fmt"
+	"github.com/getsentry/sentry-go"
 	"io"
 
 	"github.com/pkg/errors"
@@ -69,6 +70,7 @@ func GetUriForDatastore(dsConf config.DatastoreConfig) string {
 	if dsConf.Type == "file" {
 		path, pathFound := dsConf.Options["path"]
 		if !pathFound {
+			sentry.CaptureException(errors.New("Missing 'path' on file datastore"))
 			logrus.Fatal("Missing 'path' on file datastore")
 		}
 		return path
@@ -77,6 +79,7 @@ func GetUriForDatastore(dsConf config.DatastoreConfig) string {
 		bucket, bucketFound := dsConf.Options["bucketName"]
 		region, regionFound := dsConf.Options["region"]
 		if !epFound || !bucketFound {
+			sentry.CaptureException(errors.New("Missing 'endpoint' or 'bucketName' on s3 datastore"))
 			logrus.Fatal("Missing 'endpoint' or 'bucketName' on s3 datastore")
 		}
 		if regionFound {
@@ -87,6 +90,7 @@ func GetUriForDatastore(dsConf config.DatastoreConfig) string {
 	} else if dsConf.Type == "ipfs" {
 		return "ipfs://localhost"
 	} else {
+		sentry.CaptureException(errors.New("unknown datastore type: " + dsConf.Type))
 		logrus.Fatal("Unknown datastore type: ", dsConf.Type)
 	}
 
@@ -114,6 +118,7 @@ func PickDatastore(forKind string, ctx rcontext.RequestContext) (*DatastoreRef, 
 		ds, err := mediaStore.GetDatastoreByUri(GetUriForDatastore(dsConf))
 		if err != nil {
 			ctx.Log.Error("Error getting datastore: ", err.Error())
+			sentry.CaptureException(err)
 			continue
 		}
 
@@ -123,6 +128,7 @@ func PickDatastore(forKind string, ctx rcontext.RequestContext) (*DatastoreRef, 
 			size, err = estimatedDatastoreSize(ds, ctx)
 			if err != nil {
 				ctx.Log.Error("Error estimating datastore size for ", ds.DatastoreId, ": ", err.Error())
+				sentry.CaptureException(err)
 				continue
 			}
 		}

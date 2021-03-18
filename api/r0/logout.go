@@ -1,6 +1,7 @@
 package r0
 
 import (
+	"github.com/getsentry/sentry-go"
 	"net/http"
 
 	"github.com/turt2live/matrix-media-repo/api"
@@ -12,6 +13,7 @@ func Logout(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) in
 	err := auth_cache.InvalidateToken(rctx, user.AccessToken, user.UserId)
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("unable to logout")
 	}
 	return api.EmptyResponse{}
@@ -21,6 +23,7 @@ func LogoutAll(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo)
 	err := auth_cache.InvalidateAllTokens(rctx, user.AccessToken, user.UserId)
 	if err != nil {
 		rctx.Log.Error(err)
+		sentry.CaptureException(err)
 		return api.InternalServerError("unable to logout")
 	}
 	return api.EmptyResponse{}

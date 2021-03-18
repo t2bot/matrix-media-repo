@@ -1,6 +1,7 @@
 package ipfs_proxy
 
 import (
+	"github.com/getsentry/sentry-go"
 	"io"
 
 	"github.com/sirupsen/logrus"
@@ -27,6 +28,7 @@ func Reload() {
 		logrus.Info("Starting up local IPFS daemon...")
 		impl, err := ipfs_embedded.NewEmbeddedIPFSNode()
 		if err != nil {
+			sentry.CaptureException(err)
 			panic(err)
 		}
 		implementation = impl
@@ -34,6 +36,7 @@ func Reload() {
 		logrus.Info("Using localhost IPFS HTTP agent...")
 		impl, err := ipfs_local.NewLocalIPFSImplementation()
 		if err != nil {
+			sentry.CaptureException(err)
 			panic(err)
 		}
 		implementation = impl

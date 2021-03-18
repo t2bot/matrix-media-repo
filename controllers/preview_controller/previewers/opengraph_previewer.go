@@ -1,6 +1,7 @@
 package previewers
 
 import (
+	"github.com/getsentry/sentry-go"
 	"net/url"
 	"strconv"
 	"strings"
@@ -63,6 +64,7 @@ func GenerateOpenGraphPreview(urlPayload *preview_types.UrlPayload, languageHead
 		imgUrl, err := url.Parse(og.Images[0].URL)
 		if err != nil {
 			ctx.Log.Error("Non-fatal error getting thumbnail (parsing image url): " + err.Error())
+			sentry.CaptureException(err)
 			return *graph, nil
 		}
 
@@ -75,6 +77,7 @@ func GenerateOpenGraphPreview(urlPayload *preview_types.UrlPayload, languageHead
 		img, err := downloadImage(imgUrlPayload, languageHeader, ctx)
 		if err != nil {
 			ctx.Log.Error("Non-fatal error getting thumbnail (downloading image): " + err.Error())
+			sentry.CaptureException(err)
 			return *graph, nil
 		}
 

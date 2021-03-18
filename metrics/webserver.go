@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"context"
+	"github.com/getsentry/sentry-go"
 	"net"
 	"net/http"
 	"strconv"
@@ -36,6 +37,7 @@ func Init() {
 	go func() {
 		logrus.WithField("address", address).Info("Started metrics listener. Listening at http://" + address)
 		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+			sentry.CaptureException(err)
 			logrus.Fatal(err)
 		}
 	}()
