@@ -46,6 +46,10 @@ func AuthFailed() *ErrorResponse {
 	return &ErrorResponse{common.ErrCodeUnknownToken, "Authentication Failed", common.ErrCodeUnknownToken}
 }
 
+func GuestAuthFailed() *ErrorResponse {
+	return &ErrorResponse{common.ErrCodeNoGuests, "Guests cannot use this endpoint", common.ErrCodeNoGuests}
+}
+
 func BadRequest(message string) *ErrorResponse {
 	return &ErrorResponse{common.ErrCodeUnknown, message, common.ErrCodeBadRequest}
 }

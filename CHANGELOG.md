@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Fixed
+
+* Handle guest accounts properly. Previously they were still declined, though by coincidence.
+
 ## [1.2.5] - March 17th, 2021
 
 ### Added

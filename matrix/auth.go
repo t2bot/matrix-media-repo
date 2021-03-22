@@ -10,6 +10,7 @@ import (
 )
 
 var ErrInvalidToken = errors.New("Missing or invalid access token")
+var ErrGuestToken = errors.New("Token belongs to a guest")
 
 func doBreakerRequest(ctx rcontext.RequestContext, serverName string, accessToken string, appserviceUserId string, ipAddr string, method string, path string, resp interface{}) error {
 	if accessToken == "" {
@@ -52,6 +53,9 @@ func GetUserIdFromToken(ctx rcontext.RequestContext, serverName string, accessTo
 	err := doBreakerRequest(ctx, serverName, accessToken, appserviceUserId, ipAddr, "GET", "/_matrix/client/r0/account/whoami", response)
 	if err != nil {
 		return "", err
+	}
+	if response.IsGuest {
+		return "", ErrGuestToken
 	}
 	return response.UserId, nil
 }

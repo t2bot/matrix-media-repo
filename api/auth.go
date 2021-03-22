@@ -39,6 +39,9 @@ func AccessTokenRequiredRoute(next func(r *http.Request, rctx rcontext.RequestCo
 		appserviceUserId := util.GetAppserviceUserIdFromRequest(r)
 		userId, err := auth_cache.GetUserId(rctx, accessToken, appserviceUserId)
 		if err != nil || userId == "" {
+			if err == matrix.ErrGuestToken {
+				return GuestAuthFailed()
+			}
 			if err != nil && err != matrix.ErrInvalidToken {
 				sentry.CaptureException(err)
 				rctx.Log.Error("Error verifying token (fatal): ", err)

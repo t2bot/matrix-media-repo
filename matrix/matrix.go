@@ -36,9 +36,11 @@ func filterError(err error) (error, error) {
 
 	// Unknown token errors should be filtered out explicitly to ensure we don't break on bad requests
 	if httpErr, ok := err.(*errorResponse); ok {
+		// We send back our own version of errors to ensure we can filter them out elsewhere
 		if httpErr.ErrorCode == common.ErrCodeUnknownToken {
-			// We send back our own version of 'unknown token' to ensure we can filter it out elsewhere
 			return nil, ErrInvalidToken
+		} else if httpErr.ErrorCode == common.ErrCodeNoGuests {
+			return nil, ErrGuestToken
 		}
 	}
 
