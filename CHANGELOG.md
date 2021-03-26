@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [1.2.6] - March 25th, 2021
+
 ### Added
 
 * Added ffmpeg and ImageMagick to Docker image to support specialized thumbnail types.
@@ -250,7 +252,8 @@ a large database (more than about 100k uploaded files), run the following steps 
 * Various other features that would be expected like maximum/minimum size controls, rate limiting, etc. Check out the
   sample config for a better idea of what else is possible.
 
-[unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.5...HEAD
+[unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.6...HEAD
+[1.2.5]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.5...v1.2.6
 [1.2.5]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.4...v1.2.5
 [1.2.4]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.3...v1.2.4
 [1.2.3]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.2...v1.2.3
