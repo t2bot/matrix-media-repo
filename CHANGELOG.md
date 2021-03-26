@@ -253,7 +253,7 @@ a large database (more than about 100k uploaded files), run the following steps 
   sample config for a better idea of what else is possible.
 
 [unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.6...HEAD
-[1.2.5]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.5...v1.2.6
+[1.2.6]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.5...v1.2.6
 [1.2.5]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.4...v1.2.5
 [1.2.4]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.3...v1.2.4
 [1.2.3]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.2...v1.2.3
