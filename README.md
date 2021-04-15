@@ -40,6 +40,19 @@ csApi: "http://localhost:8008" # This is exposed by the nginx container
 Federated media requests should function normally with this setup, though the homeserver itself will be unable to federate.
 For convenience, an element-web instance is also hosted at the same port from the root. 
 
+A postgresql server is also created by the docker stack for ease of use. To use it, add the following to your configuration:
+
+```yaml
+database:
+  postgres: "postgres://postgres:test1234@127.0.0.1:5432/postgres?sslmode=disable"
+  pool:
+    maxConnections: 10
+    maxIdleConnections: 10
+```
+
+Note that the postgresql image is *insecure* and not recommended for production use. It also does not follow best practices
+for database management - use at your own risk.
+
 ## Importing media from synapse
 
 Media is imported by connecting to your synapse database and downloading all the content from the homeserver. This is so 

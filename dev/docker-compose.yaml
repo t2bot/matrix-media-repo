@@ -2,9 +2,7 @@ version: '2.0'
 services:
   media_conduit:
     container_name: "media_repo_conduit"
-    build:
-      context: '.'
-      dockerfile: 'Conduit.Dockerfile'
+    image: "matrixconduit/matrix-conduit:latest"
     restart: unless-stopped
     volumes:
       - ./conduit-db:/srv/conduit/.local/share/conduit
@@ -13,6 +11,7 @@ services:
       ROCKET_PORT: 8004
       ROCKET_REGISTRATION_DISABLED: "false"
       ROCKET_ENCRYPTION_DISABLED: "false"
+      ROCKET_FEDERATION_ENABLED: "false"
     networks:
       - media_proxy
   media_nginx:
@@ -27,10 +26,23 @@ services:
       - media_proxy
   media_element:
     container_name: "media_repo_element"
-    image: "vectorim/riot-web:latest"
+    image: "vectorim/element-web:latest"
     restart: unless-stopped
     volumes:
       - ./element-config.json:/app/config.json
+    networks:
+      - media_proxy
+  media_psql:
+    container_name: "media_repo_psql"
+    image: "postgres"
+    restart: unless-stopped
+    volumes:
+      - ./psql:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: "test1234"
+      PGDATA: "/var/lib/postgresql/data/pgdata"
+    ports:
+      - "5432:5432"
     networks:
       - media_proxy
 networks:
