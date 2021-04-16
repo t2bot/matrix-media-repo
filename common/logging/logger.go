@@ -19,17 +19,24 @@ func (f utcFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	return f.Formatter.Format(entry)
 }
 
-func Setup(dir string, colors bool) error {
-	formatter := &utcFormatter{
-		&logrus.TextFormatter{
+func Setup(dir string, colors bool, json bool) error {
+	var lineFormatter logrus.Formatter
+	if json {
+		lineFormatter = &logrus.JSONFormatter{
+			TimestampFormat:  "2006-01-02 15:04:05.000 Z07:00",
+			DisableTimestamp: false,
+		}
+	} else {
+		lineFormatter = &logrus.TextFormatter{
 			TimestampFormat:  "2006-01-02 15:04:05.000 Z07:00",
 			FullTimestamp:    true,
 			ForceColors:      colors,
 			DisableColors:    !colors,
 			DisableTimestamp: false,
 			QuoteEmptyFields: true,
-		},
+		}
 	}
+	formatter := &utcFormatter{lineFormatter}
 	logrus.SetFormatter(formatter)
 	logrus.SetOutput(os.Stdout)
 

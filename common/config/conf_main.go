@@ -25,6 +25,7 @@ func NewDefaultMainConfig() MainRepoConfig {
 			Port:             8000,
 			LogDirectory:     "logs",
 			LogColors:        false,
+			JsonLogs:         false,
 			TrustAnyForward:  false,
 			UseForwardedHost: true,
 		},

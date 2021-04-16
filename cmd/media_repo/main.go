@@ -59,7 +59,7 @@ func main() {
 	assets.SetupTemplates(*templatesPath)
 	assets.SetupAssets(*assetsPath)
 
-	err := logging.Setup(config.Get().General.LogDirectory, config.Get().General.LogColors)
+	err := logging.Setup(config.Get().General.LogDirectory, config.Get().General.LogColors, config.Get().General.JsonLogs)
 	if err != nil {
 		panic(err)
 	}
