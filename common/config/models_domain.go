@@ -37,6 +37,7 @@ type DownloadsConfig struct {
 
 type ThumbnailsConfig struct {
 	MaxSourceBytes      int64           `yaml:"maxSourceBytes"`
+	MaxPixels           int             `yaml:"maxPixels"`
 	Types               []string        `yaml:"types,flow"`
 	MaxAnimateSizeBytes int64           `yaml:"maxAnimateSizeBytes"`
 	Sizes               []ThumbnailSize `yaml:"sizes,flow"`

@@ -29,6 +29,10 @@ func (d gifGenerator) matches(img []byte, contentType string) bool {
 	return contentType == "image/gif"
 }
 
+func (d gifGenerator) GetOriginDimensions(b []byte, contentType string, ctx rcontext.RequestContext) (bool, int, int, error) {
+	return pngGenerator{}.GetOriginDimensions(b, contentType, ctx)
+}
+
 func (d gifGenerator) GenerateThumbnail(b []byte, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
 	g, err := gif.DecodeAll(bytes.NewBuffer(b))
 	if err != nil {

@@ -34,6 +34,10 @@ func (d wavGenerator) decode(b []byte) (beep.StreamSeekCloser, beep.Format, erro
 	return audio, format, nil
 }
 
+func (d wavGenerator) GetOriginDimensions(b []byte, contentType string, ctx rcontext.RequestContext) (bool, int, int, error) {
+	return false, 0, 0, nil
+}
+
 func (d wavGenerator) GenerateThumbnail(b []byte, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
 	audio, format, err := d.decode(b)
 	if err != nil {

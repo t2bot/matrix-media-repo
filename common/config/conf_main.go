@@ -88,6 +88,7 @@ func NewDefaultMainConfig() MainRepoConfig {
 			ThumbnailsConfig: ThumbnailsConfig{
 				MaxSourceBytes:      10485760, // 10mb
 				MaxAnimateSizeBytes: 10485760, // 10mb
+				MaxPixels:           32000000, // 32M
 				AllowAnimated:       true,
 				DefaultAnimated:     false,
 				StillFrame:          0.5,

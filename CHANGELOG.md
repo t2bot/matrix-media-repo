@@ -7,6 +7,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Security advisories
+
+This release includes a fix for [CVE-TBD](https://github.com/turt2live/matrix-media-repo/security/advisories/GHSA-j889-h476-hh9h).
+
+Server administrators are recommended to upgrade as soon as possible. This issue is considered to be exploited in the wild
+due to some deployments being affected unexpectedly.
+
+### Fixed
+
+* Fixed memory exhaustion when thumbnailing maliciously crafted images.
+
 ## [1.2.6] - March 25th, 2021
 
 ### Added

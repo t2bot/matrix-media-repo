@@ -2,6 +2,7 @@ package thumbnailing
 
 import (
 	"errors"
+	"github.com/turt2live/matrix-media-repo/common"
 	"io"
 	"io/ioutil"
 	"reflect"
@@ -39,6 +40,16 @@ func GenerateThumbnail(imgStream io.ReadCloser, contentType string, width int, h
 		return nil, ErrUnsupported
 	}
 	ctx.Log.Info("Using generator: ", reflect.TypeOf(generator).Name())
+
+	// Validate maximum megapixel values to avoid memory issues
+	// https://github.com/turt2live/matrix-media-repo/security/advisories/GHSA-j889-h476-hh9h
+	dimensional, w, h, err := generator.GetOriginDimensions(b, contentType, ctx)
+	if err != nil {
+		return nil, err
+	}
+	if dimensional && (w * h) >= ctx.Config.Thumbnails.MaxPixels {
+		return nil, common.ErrMediaTooLarge
+	}
 
 	return generator.GenerateThumbnail(b, contentType, width, height, method, animated, ctx)
 }

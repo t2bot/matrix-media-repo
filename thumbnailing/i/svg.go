@@ -28,6 +28,10 @@ func (d svgGenerator) matches(img []byte, contentType string) bool {
 	return contentType == "image/svg+xml"
 }
 
+func (d svgGenerator) GetOriginDimensions(b []byte, contentType string, ctx rcontext.RequestContext) (bool, int, int, error) {
+	return false, 0, 0, nil
+}
+
 func (d svgGenerator) GenerateThumbnail(b []byte, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
 	key, err := util.GenerateRandomString(16)
 	if err != nil {

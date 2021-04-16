@@ -28,6 +28,10 @@ func (d mp4Generator) matches(img []byte, contentType string) bool {
 	return util.ArrayContains(d.supportedContentTypes(), contentType)
 }
 
+func (d mp4Generator) GetOriginDimensions(b []byte, contentType string, ctx rcontext.RequestContext) (bool, int, int, error) {
+	return false, 0, 0, nil
+}
+
 func (d mp4Generator) GenerateThumbnail(b []byte, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
 	key, err := util.GenerateRandomString(16)
 	if err != nil {

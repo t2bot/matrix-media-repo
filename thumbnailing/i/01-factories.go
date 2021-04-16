@@ -10,6 +10,7 @@ type Generator interface {
 	supportsAnimation() bool
 	matches(img []byte, contentType string) bool
 	GenerateThumbnail(b []byte, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error)
+	GetOriginDimensions(b []byte, contentType string, ctx rcontext.RequestContext) (bool, int, int, error)
 }
 
 type AudioGenerator interface {
