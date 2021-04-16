@@ -24,6 +24,7 @@ func NewDefaultMainConfig() MainRepoConfig {
 			BindAddress:      "127.0.0.1",
 			Port:             8000,
 			LogDirectory:     "logs",
+			LogColors:        false,
 			TrustAnyForward:  false,
 			UseForwardedHost: true,
 		},

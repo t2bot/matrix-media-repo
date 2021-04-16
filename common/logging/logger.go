@@ -19,13 +19,13 @@ func (f utcFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	return f.Formatter.Format(entry)
 }
 
-func Setup(dir string) error {
+func Setup(dir string, colors bool) error {
 	formatter := &utcFormatter{
 		&logrus.TextFormatter{
 			TimestampFormat:  "2006-01-02 15:04:05.000 Z07:00",
 			FullTimestamp:    true,
-			ForceColors:      true,
-			DisableColors:    false,
+			ForceColors:      colors,
+			DisableColors:    !colors,
 			DisableTimestamp: false,
 			QuoteEmptyFields: true,
 		},

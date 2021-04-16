@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Changed
+
+* Turned color-coded logs off by default. This can be changed in the config.
+
 ## [1.2.6] - March 25th, 2021
 
 ### Added
