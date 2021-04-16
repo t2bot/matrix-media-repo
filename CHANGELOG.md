@@ -14,6 +14,14 @@ This release includes a fix for [CVE-TBD](https://github.com/turt2live/matrix-me
 Server administrators are recommended to upgrade as soon as possible. This issue is considered to be exploited in the wild
 due to some deployments being affected unexpectedly.
 
+### Added
+
+* Added support for structured logging (JSON).
+
+### Changed
+
+* Turned color-coded logs off by default. This can be changed in the config.
+
 ### Fixed
 
 * Fixed memory exhaustion when thumbnailing maliciously crafted images.

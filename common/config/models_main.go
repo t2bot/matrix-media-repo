@@ -4,6 +4,8 @@ type GeneralConfig struct {
 	BindAddress      string `yaml:"bindAddress"`
 	Port             int    `yaml:"port"`
 	LogDirectory     string `yaml:"logDirectory"`
+	LogColors        bool   `yaml:"logColors"`
+	JsonLogs         bool   `yaml:"jsonLogs"`
 	TrustAnyForward  bool   `yaml:"trustAnyForwardedAddress"`
 	UseForwardedHost bool   `yaml:"useForwardedHost"`
 }

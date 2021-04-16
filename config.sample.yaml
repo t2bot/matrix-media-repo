@@ -11,6 +11,14 @@ repo:
   # live reloaded.
   logDirectory: logs
 
+  # Set to true to enable color coding in your logs. Note that this may cause escape sequences to
+  # appear in logs which render them unreadable, which is why colors are disabled by default.
+  logColors: false
+
+  # Set to true to enable JSON logging for consumption by things like logstash. Note that this is
+  # incompatible with the log color option and will always render without colors.
+  jsonLogs: false
+
   # If true, the media repo will accept any X-Forwarded-For header without validation. In most cases
   # this option should be left as "false". Note that the media repo already expects an X-Forwarded-For
   # header, but validates it to ensure the IP being given makes sense.
