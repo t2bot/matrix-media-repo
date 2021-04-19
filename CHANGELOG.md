@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [1.2.7] - April 19th, 2021
+
 ### Security advisories
 
 This release includes a fix for [CVE-2021-29453](https://github.com/turt2live/matrix-media-repo/security/advisories/GHSA-j889-h476-hh9h).
@@ -271,7 +273,8 @@ a large database (more than about 100k uploaded files), run the following steps 
 * Various other features that would be expected like maximum/minimum size controls, rate limiting, etc. Check out the
   sample config for a better idea of what else is possible.
 
-[unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.6...HEAD
+[unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.7...HEAD
+[1.2.6]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.6...v1.2.7
 [1.2.6]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.5...v1.2.6
 [1.2.5]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.4...v1.2.5
 [1.2.4]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.3...v1.2.4
