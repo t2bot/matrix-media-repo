@@ -7,6 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Security advisories
+
+This release includes a fix for [CVE-2021-29453](https://github.com/turt2live/matrix-media-repo/security/advisories/GHSA-j889-h476-hh9h).
+
+Server administrators are recommended to upgrade as soon as possible. This issue is considered to be exploited in the wild
+due to some deployments being affected unexpectedly.
+
 ### Added
 
 * Added support for structured logging (JSON).
@@ -14,6 +21,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Changed
 
 * Turned color-coded logs off by default. This can be changed in the config.
+
+### Fixed
+
+* Fixed memory exhaustion when thumbnailing maliciously crafted images.
 
 ## [1.2.6] - March 25th, 2021
 

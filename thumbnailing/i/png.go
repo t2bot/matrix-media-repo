@@ -28,6 +28,14 @@ func (d pngGenerator) matches(img []byte, contentType string) bool {
 	return contentType == "image/png"
 }
 
+func (d pngGenerator) GetOriginDimensions(b []byte, contentType string, ctx rcontext.RequestContext) (bool, int, int, error) {
+	i, _, err := image.DecodeConfig(bytes.NewBuffer(b))
+	if err != nil {
+		return false, 0, 0, err
+	}
+	return true, i.Width, i.Height, nil
+}
+
 func (d pngGenerator) GenerateThumbnail(b []byte, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
 	src, err := imaging.Decode(bytes.NewBuffer(b))
 	if err != nil {

@@ -28,6 +28,14 @@ func (d apngGenerator) matches(img []byte, contentType string) bool {
 	return (contentType == "image/png" && util.IsAnimatedPNG(img)) || contentType == "image/apng"
 }
 
+func (d apngGenerator) GetOriginDimensions(b []byte, contentType string, ctx rcontext.RequestContext) (bool, int, int, error) {
+	i, err := apng.DecodeConfig(bytes.NewBuffer(b))
+	if err != nil {
+		return false, 0, 0, err
+	}
+	return true, i.Width, i.Height, nil
+}
+
 func (d apngGenerator) GenerateThumbnail(b []byte, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
 	if !animated {
 		return pngGenerator{}.GenerateThumbnail(b, "image/png", width, height, method, false, ctx)

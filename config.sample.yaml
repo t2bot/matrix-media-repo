@@ -360,6 +360,11 @@ thumbnails:
   # The maximum number of bytes an image can be before the thumbnailer refuses.
   maxSourceBytes: 10485760 # 10MB default, 0 to disable
 
+  # The maximum number of pixels an image can have before the thumbnailer refuses. Note that
+  # this only applies to image types: file types like audio and video are affected solely by
+  # the maxSourceBytes.
+  maxPixels: 32000000 # 32M default
+
   # The number of workers to use when generating thumbnails. Raise this number if thumbnails
   # are slow to generate or timing out.
   #

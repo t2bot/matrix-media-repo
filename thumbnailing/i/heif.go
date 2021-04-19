@@ -20,6 +20,10 @@ func (d heifGenerator) matches(img []byte, contentType string) bool {
 	return contentType == "image/heif"
 }
 
+func (d heifGenerator) GetOriginDimensions(b []byte, contentType string, ctx rcontext.RequestContext) (bool, int, int, error) {
+	return pngGenerator{}.GetOriginDimensions(b, contentType, ctx)
+}
+
 func (d heifGenerator) GenerateThumbnail(b []byte, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
 	return pngGenerator{}.GenerateThumbnail(b, "image/png", width, height, method, false, ctx)
 }

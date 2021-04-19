@@ -3,7 +3,6 @@ package i
 import (
 	"bytes"
 	"errors"
-
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/m"
 	"golang.org/x/image/webp"
@@ -22,6 +21,14 @@ func (d webpGenerator) supportsAnimation() bool {
 
 func (d webpGenerator) matches(img []byte, contentType string) bool {
 	return contentType == "image/webp"
+}
+
+func (d webpGenerator) GetOriginDimensions(b []byte, contentType string, ctx rcontext.RequestContext) (bool, int, int, error) {
+	i, err := webp.DecodeConfig(bytes.NewBuffer(b))
+	if err != nil {
+		return false, 0, 0, err
+	}
+	return true, i.Width, i.Height, nil
 }
 
 func (d webpGenerator) GenerateThumbnail(b []byte, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
