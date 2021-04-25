@@ -111,16 +111,6 @@ type IPFSDaemonConfig struct {
 	RepoPath string `yaml:"repoPath"`
 }
 
-type RedisConfig struct {
-	Enabled bool               `yaml:"enabled"`
-	Shards  []RedisShardConfig `yaml:"shards,flow"`
-}
-
-type RedisShardConfig struct {
-	Name    string `yaml:"name"`
-	Address string `yaml:"addr"`
-}
-
 type AccessTokenConfig struct {
 	MaxCacheTimeSeconds int                `yaml:"maxCacheTimeSeconds"`
 	UseAppservices      bool               `yaml:"useLocalAppserviceConfig"`

@@ -15,6 +15,7 @@ type MainRepoConfig struct {
 	Federation        FederationConfig      `yaml:"federation"`
 	Plugins           []PluginConfig        `yaml:"plugins,flow"`
 	Sentry            SentryConfig          `yaml:"sentry"`
+	Redis             RedisConfig           `yaml:"redis"`
 }
 
 func NewDefaultMainConfig() MainRepoConfig {
@@ -135,6 +136,10 @@ func NewDefaultMainConfig() MainRepoConfig {
 			Dsn:         "not supplied",
 			Environment: "",
 			Debug:       false,
+		},
+		Redis: RedisConfig{
+			Enabled: false,
+			Shards:  []RedisShardConfig{},
 		},
 	}
 }
