@@ -3,11 +3,11 @@ package datastore
 import (
 	"fmt"
 	"github.com/getsentry/sentry-go"
+	"github.com/turt2live/matrix-media-repo/common"
 	"io"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/storage"
@@ -102,9 +102,10 @@ func PickDatastore(forKind string, ctx rcontext.RequestContext) (*DatastoreRef, 
 	confDatastores := ctx.Config.DataStores
 	mediaStore := storage.GetDatabase().GetMediaStore(ctx)
 
-	var targetDs *types.Datastore
-	var targetDsConf config.DatastoreConfig
-	var dsSize int64
+	// Figure out which datastores are likely to be useful for us to check against first. This
+	// helps speed up later checks which could require significant DB resources (estimating the
+	// size of the datastore).
+	var possibleDatastores = make([]config.DatastoreConfig, 0)
 	for _, dsConf := range confDatastores {
 		if !dsConf.Enabled {
 			continue
@@ -115,6 +116,14 @@ func PickDatastore(forKind string, ctx rcontext.RequestContext) (*DatastoreRef, 
 			continue
 		}
 
+		possibleDatastores = append(possibleDatastores, dsConf)
+	}
+
+	var targetDs *types.Datastore
+	var targetDsConf config.DatastoreConfig
+	var dsSize int64
+	for _, dsConf := range possibleDatastores {
+
 		ds, err := mediaStore.GetDatastoreByUri(GetUriForDatastore(dsConf))
 		if err != nil {
 			ctx.Log.Error("Error getting datastore: ", err.Error())
@@ -124,7 +133,7 @@ func PickDatastore(forKind string, ctx rcontext.RequestContext) (*DatastoreRef, 
 
 		var size int64
 
-		if len(confDatastores) > 1 {
+		if len(possibleDatastores) > 1 {
 			size, err = estimatedDatastoreSize(ds, ctx)
 			if err != nil {
 				ctx.Log.Error("Error estimating datastore size for ", ds.DatastoreId, ": ", err.Error())

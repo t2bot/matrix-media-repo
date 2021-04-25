@@ -16,6 +16,10 @@ caching that is now supported properly by this release, or disable caching if no
 
 * Support the Redis config at the root level of the config, promoting it to a proper feature.
 
+### Fixed
+
+* Improved performance of datastore selection when only one datastore is eligible to contain media.
+
 ## [1.2.7] - April 19th, 2021
 
 ### Security advisories
