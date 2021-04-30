@@ -3,6 +3,7 @@ package download_controller
 import (
 	"errors"
 	"github.com/getsentry/sentry-go"
+	"github.com/turt2live/matrix-media-repo/util"
 	"io"
 	"io/ioutil"
 	"mime"
@@ -74,7 +75,9 @@ var downloadErrorCacheSingletonLock = &sync.Once{}
 func getResourceHandler() *mediaResourceHandler {
 	if resHandler == nil {
 		resHandlerLock.Do(func() {
-			handler, err := resource_handler.New(config.Get().Downloads.NumWorkers, downloadResourceWorkFn)
+			handler, err := resource_handler.New(config.Get().Downloads.NumWorkers, func(r *resource_handler.WorkRequest) interface{} {
+				return downloadResourceWorkFn(r)
+			})
 			if err != nil {
 				sentry.CaptureException(err)
 				panic(err)
@@ -119,7 +122,7 @@ func (h *mediaResourceHandler) DownloadRemoteMedia(origin string, mediaId string
 	return resultChan
 }
 
-func downloadResourceWorkFn(request *resource_handler.WorkRequest) interface{} {
+func downloadResourceWorkFn(request *resource_handler.WorkRequest) (resp *workerDownloadResponse) {
 	info := request.Metadata.(*downloadRequest)
 	ctx := rcontext.Initial().LogWithFields(logrus.Fields{
 		"worker_requestId":      request.Id,
@@ -127,14 +130,29 @@ func downloadResourceWorkFn(request *resource_handler.WorkRequest) interface{} {
 		"worker_requestMediaId": info.mediaId,
 		"worker_blockForMedia":  info.blockForMedia,
 	})
+
+	resp = &workerDownloadResponse{}
+	defer func() {
+		if err := recover(); err != nil {
+			ctx.Log.Error("Caught panic: ", err)
+			sentry.CurrentHub().Recover(err)
+			resp.stream = nil
+			resp.filename = ""
+			resp.contentType = ""
+			resp.media = nil
+			resp.err = util.PanicToError(err)
+		}
+	}()
+
 	ctx.Log.Info("Downloading remote media")
 
 	downloaded, err := DownloadRemoteMediaDirect(info.origin, info.mediaId, ctx)
 	if err != nil {
-		return &workerDownloadResponse{err: err}
+		resp.err = err
+		return resp
 	}
 
-	persistFile := func(fileStream io.ReadCloser) *workerDownloadResponse {
+	persistFile := func(fileStream io.ReadCloser, r *workerDownloadResponse) *workerDownloadResponse {
 		defer cleanup.DumpAndCloseStream(fileStream)
 		userId := upload_controller.NoApplicableUploadUser
 
@@ -145,27 +163,29 @@ func downloadResourceWorkFn(request *resource_handler.WorkRequest) interface{} {
 		st, err := ms.NextReader()
 		if err != nil {
 			ctx.Log.Error("Unexpected error persisting file: ", err)
-			return &workerDownloadResponse{err: err}
+			r.err = err
+			return r
 		}
 
 		media, err := upload_controller.StoreDirect(nil, st, downloaded.ContentLength, downloaded.ContentType, downloaded.DesiredFilename, userId, info.origin, info.mediaId, common.KindRemoteMedia, ctx, true)
 		if err != nil {
 			ctx.Log.Error("Error persisting file: ", err)
-			return &workerDownloadResponse{err: err}
+			r.err = err
+			return r
 		}
 
 		ctx.Log.Info("Remote media persisted under datastore ", media.DatastoreId, " at ", media.Location)
-		return &workerDownloadResponse{
-			media: media,
-			contentType: media.ContentType,
-			filename: media.UploadName,
-			stream: ms,
-		}
+		r.media = media
+		r.contentType = media.ContentType
+		r.filename = media.UploadName
+		r.stream = ms
+		return r
 	}
 
 	if info.blockForMedia {
 		ctx.Log.Warn("Not streaming remote media download request due to request for a block")
-		return persistFile(downloaded.Contents)
+		persistFile(downloaded.Contents, resp)
+		return resp
 	}
 
 	ctx.Log.Info("Streaming remote media to filesystem and requesting party at the same time")
@@ -173,18 +193,17 @@ func downloadResourceWorkFn(request *resource_handler.WorkRequest) interface{} {
 	reader, writer := io.Pipe()
 	tr := io.TeeReader(downloaded.Contents, writer)
 
-	go persistFile(ioutil.NopCloser(tr))
+	go persistFile(ioutil.NopCloser(tr), &workerDownloadResponse{})
 
 	ms := stream.NewMemStream()
 	defer ms.Close()
 	io.Copy(ms, reader)
 
-	return &workerDownloadResponse{
-		err:         nil,
-		contentType: downloaded.ContentType,
-		filename:    downloaded.DesiredFilename,
-		stream:      ms,
-	}
+	resp.err = nil
+	resp.contentType = downloaded.ContentType
+	resp.filename = downloaded.DesiredFilename
+	resp.stream = ms
+	return resp
 }
 
 func DownloadRemoteMediaDirect(server string, mediaId string, ctx rcontext.RequestContext) (*downloadedMedia, error) {
