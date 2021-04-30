@@ -20,6 +20,12 @@ caching that is now supported properly by this release, or disable caching if no
 
 * Improved performance of datastore selection when only one datastore is eligible to contain media.
 
+## [1.2.8] - April 30th, 2021
+
+### Fixed
+
+* Fixed crashes when internal workers encounter panics.
+
 ## [1.2.7] - April 19th, 2021
 
 ### Security advisories
@@ -287,6 +293,7 @@ a large database (more than about 100k uploaded files), run the following steps 
   sample config for a better idea of what else is possible.
 
 [unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.7...HEAD
+[1.2.8]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.7...v1.2.8
 [1.2.6]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.6...v1.2.7
 [1.2.6]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.5...v1.2.6
 [1.2.5]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.4...v1.2.5

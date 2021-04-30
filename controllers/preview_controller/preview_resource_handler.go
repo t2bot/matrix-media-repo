@@ -44,7 +44,9 @@ var resHandlerSingletonLock = &sync.Once{}
 func getResourceHandler() *urlResourceHandler {
 	if resHandlerInstance == nil {
 		resHandlerSingletonLock.Do(func() {
-			handler, err := resource_handler.New(config.Get().UrlPreviews.NumWorkers, urlPreviewWorkFn)
+			handler, err := resource_handler.New(config.Get().UrlPreviews.NumWorkers, func(r *resource_handler.WorkRequest) interface{} {
+				return urlPreviewWorkFn(r)
+			})
 			if err != nil {
 				sentry.CaptureException(err)
 				panic(err)
@@ -57,12 +59,23 @@ func getResourceHandler() *urlResourceHandler {
 	return resHandlerInstance
 }
 
-func urlPreviewWorkFn(request *resource_handler.WorkRequest) interface{} {
+func urlPreviewWorkFn(request *resource_handler.WorkRequest) (resp *urlPreviewResponse) {
 	info := request.Metadata.(*urlPreviewRequest)
 	ctx := rcontext.Initial().LogWithFields(logrus.Fields{
 		"worker_requestId": request.Id,
 		"worker_url":       info.urlPayload.UrlString,
 	})
+
+	resp = &urlPreviewResponse{}
+	defer func() {
+		if err := recover(); err != nil {
+			ctx.Log.Error("Caught panic: ", err)
+			sentry.CurrentHub().Recover(err)
+			resp.preview = nil
+			resp.err = util.PanicToError(err)
+		}
+	}()
+
 	ctx.Log.Info("Processing url preview request")
 
 	db := storage.GetDatabase().GetUrlStore(ctx)
@@ -102,7 +115,8 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) interface{} {
 		} else {
 			db.InsertPreviewError(info.urlPayload.UrlString, common.ErrCodeUnknown)
 		}
-		return &urlPreviewResponse{err: err}
+		resp.err = err
+		return resp
 	}
 
 	result := &types.UrlPreview{
@@ -158,7 +172,8 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) interface{} {
 		// Non-fatal: Just report it and move on. The worst that happens is we re-cache it.
 	}
 
-	return &urlPreviewResponse{preview: result}
+	resp.preview = result
+	return resp
 }
 
 func (h *urlResourceHandler) GeneratePreview(urlPayload *preview_types.UrlPayload, forUserId string, onHost string, languageHeader string, allowOEmbed bool) chan *urlPreviewResponse {

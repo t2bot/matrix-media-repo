@@ -54,7 +54,9 @@ var resHandlerSingletonLock = &sync.Once{}
 func getResourceHandler() *thumbnailResourceHandler {
 	if resHandlerInstance == nil {
 		resHandlerSingletonLock.Do(func() {
-			handler, err := resource_handler.New(config.Get().Thumbnails.NumWorkers, thumbnailWorkFn)
+			handler, err := resource_handler.New(config.Get().Thumbnails.NumWorkers, func(r *resource_handler.WorkRequest) interface{} {
+				return thumbnailWorkFn(r)
+			})
 			if err != nil {
 				sentry.CaptureException(err)
 				panic(err)
@@ -67,7 +69,7 @@ func getResourceHandler() *thumbnailResourceHandler {
 	return resHandlerInstance
 }
 
-func thumbnailWorkFn(request *resource_handler.WorkRequest) interface{} {
+func thumbnailWorkFn(request *resource_handler.WorkRequest) (resp *thumbnailResponse) {
 	info := request.Metadata.(*thumbnailRequest)
 	ctx := rcontext.Initial().LogWithFields(logrus.Fields{
 		"worker_requestId": request.Id,
@@ -77,6 +79,17 @@ func thumbnailWorkFn(request *resource_handler.WorkRequest) interface{} {
 		"worker_method":    info.method,
 		"worker_animated":  info.animated,
 	})
+
+	resp = &thumbnailResponse{}
+	defer func() {
+		if err := recover(); err != nil {
+			ctx.Log.Error("Caught panic: ", err)
+			sentry.CurrentHub().Recover(err)
+			resp.thumbnail = nil
+			resp.err = util.PanicToError(err)
+		}
+	}()
+
 	ctx.Log.Info("Processing thumbnail request")
 
 	generated, err := GenerateThumbnail(info.media, info.width, info.height, info.method, info.animated, ctx)
@@ -111,10 +124,12 @@ func thumbnailWorkFn(request *resource_handler.WorkRequest) interface{} {
 	err = db.Insert(newThumb)
 	if err != nil {
 		ctx.Log.Error("Unexpected error caching thumbnail: " + err.Error())
-		return &thumbnailResponse{err: err}
+		resp.err = err
+	} else {
+		resp.thumbnail = newThumb
 	}
 
-	return &thumbnailResponse{thumbnail: newThumb}
+	return resp
 }
 
 func (h *thumbnailResourceHandler) GenerateThumbnail(media *types.Media, width int, height int, method string, animated bool) chan *thumbnailResponse {
