@@ -198,7 +198,6 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 	var ds *datastore.DatastoreRef
 	var info *types.ObjectInfo
 	var contentBytes []byte
-	compressed := false
 	if f == nil {
 		dsPicked, err := datastore.PickDatastore(kind, ctx)
 		if err != nil {
@@ -211,14 +210,7 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 			return nil, err
 		}
 
-		// We don't assign to contentBytes because that is used for antispam & hash checks
-		var dataBytes []byte
-		dataBytes, compressed, err = util.CompressBytesIfNeeded(contentBytes, ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		fInfo, err := ds.UploadFile(util.BytesToStream(dataBytes), expectedSize, ctx)
+		fInfo, err := ds.UploadFile(util.BytesToStream(contentBytes), expectedSize, ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -238,23 +230,15 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 		}
 	}
 
-	// Do the hash on content, not on the compressed bytes
-	hash, err := util.GetSha256HashOfStream(util_byte_seeker.NewByteSeeker(contentBytes))
-	if err != nil {
-		ds.DeleteObject(info.Location) // delete temp object
-		return nil, err
-	}
-	ctx.Log.Info("Hash of file is ", hash)
-
 	db := storage.GetDatabase().GetMediaStore(ctx)
-	records, err := db.GetByHash(hash)
+	records, err := db.GetByHash(info.Sha256Hash)
 	if err != nil {
 		ds.DeleteObject(info.Location) // delete temp object
 		return nil, err
 	}
 
 	if len(records) > 0 {
-		ctx.Log.Info("Duplicate media for hash ", hash)
+		ctx.Log.Info("Duplicate media for hash ", info.Sha256Hash)
 
 		// If the user is a real user (ie: actually uploaded media), then we'll see if there's
 		// an exact duplicate that we can return. Otherwise we'll just pick the first record and
@@ -305,7 +289,6 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 		media.UploadName = filename
 		media.ContentType = contentType
 		media.CreationTs = util.NowMillis()
-		//media.Compressed = compressed // we'll be using the existing record's flag
 
 		err = db.Insert(media)
 		if err != nil {
@@ -340,7 +323,7 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 
 	// The media doesn't already exist - save it as new
 
-	if len(contentBytes) <= 0 {
+	if info.SizeBytes <= 0 {
 		ds.DeleteObject(info.Location)
 		return nil, errors.New("file has no contents")
 	}
@@ -359,12 +342,11 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 		UploadName:  filename,
 		ContentType: contentType,
 		UserId:      userId,
-		Sha256Hash:  hash,
-		SizeBytes:   int64(len(contentBytes)),
+		Sha256Hash:  info.Sha256Hash,
+		SizeBytes:   info.SizeBytes,
 		DatastoreId: ds.DatastoreId,
 		Location:    info.Location,
 		CreationTs:  util.NowMillis(),
-		Compressed:  compressed,
 	}
 
 	err = db.Insert(media)

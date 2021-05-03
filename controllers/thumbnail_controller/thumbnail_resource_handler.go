@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/getsentry/sentry-go"
-	"github.com/turt2live/matrix-media-repo/util/cleanup"
-	"github.com/turt2live/matrix-media-repo/util/util_byte_seeker"
 	"io/ioutil"
 	"strconv"
 	"sync"
@@ -48,7 +46,6 @@ type GeneratedThumbnail struct {
 	SizeBytes         int64
 	Animated          bool
 	Sha256Hash        string
-	Compressed        bool
 }
 
 var resHandlerInstance *thumbnailResourceHandler
@@ -100,6 +97,7 @@ func thumbnailWorkFn(request *resource_handler.WorkRequest) (resp *thumbnailResp
 		return &thumbnailResponse{err: err}
 	}
 
+
 	if info.animated != generated.Animated {
 		ctx.Log.Warn("Animation state changed to ", generated.Animated)
 
@@ -120,7 +118,6 @@ func thumbnailWorkFn(request *resource_handler.WorkRequest) (resp *thumbnailResp
 		Location:    generated.DatastoreLocation,
 		SizeBytes:   generated.SizeBytes,
 		Sha256Hash:  generated.Sha256Hash,
-		Compressed:  generated.Compressed,
 	}
 
 	db := storage.GetDatabase().GetThumbnailStore(ctx)
@@ -162,13 +159,6 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 		ctx.Log.Error("Error getting file: ", err)
 		return nil, err
 	}
-	defer cleanup.DumpAndCloseStream(mediaStream)
-
-	mediaStream, err = util.DecompressBytesIfNeeded(mediaStream, media.Compressed, ctx)
-	if err != nil {
-		ctx.Log.Error("Error decompressing file: ", err)
-		return nil, err
-	}
 
 	mediaContentType := util.FixContentType(media.ContentType)
 
@@ -197,7 +187,6 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 		thumb.DatastoreLocation = media.Location
 		thumb.SizeBytes = media.SizeBytes
 		thumb.Sha256Hash = media.Sha256Hash
-		thumb.Compressed = media.Compressed
 		ctx.Log.Warn("Image too small, returning raw image")
 		metric.Inc()
 		return thumb, nil
@@ -208,19 +197,6 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 	if err != nil {
 		return nil, err
 	}
-
-	hash, err := util.GetSha256HashOfStream(util_byte_seeker.NewByteSeeker(b))
-	if err != nil {
-		return nil, err
-	}
-
-	length := int64(len(b))
-
-	b, compressed, err := util.CompressBytesIfNeeded(b, ctx)
-	if err != nil {
-		return nil, err
-	}
-	thumb.Compressed = compressed
 
 	ds, err := datastore.PickDatastore(common.KindThumbnails, ctx)
 	if err != nil {
@@ -236,8 +212,8 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 	thumb.DatastoreLocation = info.Location
 	thumb.DatastoreId = ds.DatastoreId
 	thumb.ContentType = thumbImg.ContentType
-	thumb.SizeBytes = length
-	thumb.Sha256Hash = hash
+	thumb.SizeBytes = info.SizeBytes
+	thumb.Sha256Hash = info.Sha256Hash
 
 	metric.Inc()
 	return thumb, nil

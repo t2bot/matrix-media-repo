@@ -3,6 +3,7 @@ package ds_file
 import (
 	"errors"
 	"io"
+	"io/ioutil"
 	"os"
 	"path"
 
@@ -54,37 +55,68 @@ func PersistFile(basePath string, file io.ReadCloser, ctx rcontext.RequestContex
 		return nil, err
 	}
 
-	err = PersistFileAtLocation(targetFile, file, ctx)
+	sizeBytes, hash, err := PersistFileAtLocation(targetFile, file, ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	locationPath := path.Join(primaryContainer, secondaryContainer, fileName)
 	return &types.ObjectInfo{
-		Location: locationPath,
+		Location:   locationPath,
+		Sha256Hash: hash,
+		SizeBytes:  sizeBytes,
 	}, nil
 }
 
-func PersistFileAtLocation(targetFile string, file io.ReadCloser, ctx rcontext.RequestContext) error {
+func PersistFileAtLocation(targetFile string, file io.ReadCloser, ctx rcontext.RequestContext) (int64, string, error) {
 	defer cleanup.DumpAndCloseStream(file)
 
 	f, err := os.OpenFile(targetFile, os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
-		return err
+		return 0, "", err
 	}
 	defer cleanup.DumpAndCloseStream(f)
 
+	rfile, wfile := io.Pipe()
+	tr := io.TeeReader(file, wfile)
+
+	done := make(chan bool)
+	defer close(done)
+
+	var hash string
 	var sizeBytes int64
+	var hashErr error
 	var writeErr error
 
-	ctx.Log.Info("Writing file...")
-	sizeBytes, writeErr = io.Copy(f, file)
-	if writeErr != nil {
-		return writeErr
-	}
-	ctx.Log.Info("Wrote ", sizeBytes, " bytes to file")
+	go func() {
+		defer wfile.Close()
+		ctx.Log.Info("Calculating hash of stream...")
+		hash, hashErr = util.GetSha256HashOfStream(ioutil.NopCloser(tr))
+		ctx.Log.Info("Hash of file is ", hash)
+		done <- true
+	}()
 
-	return nil
+	go func() {
+		ctx.Log.Info("Writing file...")
+		sizeBytes, writeErr = io.Copy(f, rfile)
+		ctx.Log.Info("Wrote ", sizeBytes, " bytes to file")
+		done <- true
+	}()
+
+	for c := 0; c < 2; c++ {
+		<-done
+	}
+
+	if hashErr != nil {
+		defer os.Remove(targetFile)
+		return 0, "", hashErr
+	}
+
+	if writeErr != nil {
+		return 0, "", writeErr
+	}
+
+	return sizeBytes, hash, nil
 }
 
 func DeletePersistedFile(basePath string, location string) error {

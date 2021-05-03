@@ -17,7 +17,6 @@ type Thumbnail struct {
 	Location    string
 	CreationTs  int64
 	Sha256Hash  string
-	Compressed  bool
 }
 
 type StreamedThumbnail struct {

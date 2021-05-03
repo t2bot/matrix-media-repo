@@ -25,7 +25,7 @@ type s3Datastore struct {
 	dsId     string
 	client   *minio.Client
 	bucket   string
-	region   string
+	region string
 	tempPath string
 }
 
@@ -70,7 +70,7 @@ func GetOrCreateS3Datastore(dsId string, conf config.DatastoreConfig) (*s3Datast
 		dsId:     dsId,
 		client:   s3client,
 		bucket:   bucket,
-		region:   region,
+		region: region,
 		tempPath: tempPath,
 	}
 	stores[dsId] = s3ds
@@ -129,38 +129,72 @@ func (s *s3Datastore) UploadFile(file io.ReadCloser, expectedLength int64, ctx r
 		return nil, err
 	}
 
+	var rs3 io.ReadCloser
+	var ws3 io.WriteCloser
+	rs3, ws3 = io.Pipe()
+	tr := io.TeeReader(file, ws3)
+
+	done := make(chan bool)
+	defer close(done)
+
+	var hash string
 	var sizeBytes int64
+	var hashErr error
 	var uploadErr error
 
-	if expectedLength <= 0 {
-		if s.tempPath != "" {
-			ctx.Log.Info("Buffering file to temp path due to unknown file size")
-			var f *os.File
-			f, uploadErr = ioutil.TempFile(s.tempPath, "mr*")
-			if uploadErr != nil {
-				io.Copy(ioutil.Discard, file)
-				return nil, uploadErr
+	go func() {
+		defer ws3.Close()
+		ctx.Log.Info("Calculating hash of stream...")
+		hash, hashErr = util.GetSha256HashOfStream(ioutil.NopCloser(tr))
+		ctx.Log.Info("Hash of file is ", hash)
+		done <- true
+	}()
+
+	go func() {
+		if expectedLength <= 0 {
+			if s.tempPath != "" {
+				ctx.Log.Info("Buffering file to temp path due to unknown file size")
+				var f *os.File
+				f, uploadErr = ioutil.TempFile(s.tempPath, "mr*")
+				if uploadErr != nil {
+					io.Copy(ioutil.Discard, rs3)
+					done <- true
+					return
+				}
+				defer os.Remove(f.Name())
+				expectedLength, uploadErr = io.Copy(f, rs3)
+				cleanup.DumpAndCloseStream(f)
+				f, uploadErr = os.Open(f.Name())
+				if uploadErr != nil {
+					done <- true
+					return
+				}
+				rs3 = f
+				defer cleanup.DumpAndCloseStream(f)
+			} else {
+				ctx.Log.Warn("Uploading content of unknown length to s3 - this could result in high memory usage")
+				expectedLength = -1
 			}
-			defer os.Remove(f.Name())
-			expectedLength, uploadErr = io.Copy(f, file)
-			cleanup.DumpAndCloseStream(f)
-			f, uploadErr = os.Open(f.Name())
-			if uploadErr != nil {
-				return nil, uploadErr
-			}
-			file = f
-			defer cleanup.DumpAndCloseStream(f)
-		} else {
-			ctx.Log.Warn("Uploading content of unknown length to s3 - this could result in high memory usage")
-			expectedLength = -1
 		}
+		ctx.Log.Info("Uploading file...")
+		sizeBytes, uploadErr = s.client.PutObjectWithContext(ctx, s.bucket, objectName, rs3, expectedLength, minio.PutObjectOptions{})
+		ctx.Log.Info("Uploaded ", sizeBytes, " bytes to s3")
+		done <- true
+	}()
+
+	for c := 0; c < 2; c++ {
+		<-done
 	}
-	ctx.Log.Info("Uploading file...")
-	sizeBytes, uploadErr = s.client.PutObjectWithContext(ctx, s.bucket, objectName, file, expectedLength, minio.PutObjectOptions{})
-	ctx.Log.Info("Uploaded ", sizeBytes, " bytes to s3")
 
 	obj := &types.ObjectInfo{
-		Location: objectName,
+		Location:   objectName,
+		Sha256Hash: hash,
+		SizeBytes:  sizeBytes,
+	}
+
+	if hashErr != nil {
+		s.DeleteObject(obj.Location)
+		return nil, hashErr
 	}
 
 	if uploadErr != nil {

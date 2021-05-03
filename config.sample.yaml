@@ -219,20 +219,6 @@ uploads:
   # Set this to -1 to indicate that there is no limit. Zero will force the use of maxBytes.
   #reportedMaxBytes: 104857600
 
-  # Options for controlling compression on uploaded files. Compression is done through GZIP
-  # and applied to stored files. When a user is downloading a file, the uncompressed version
-  # will be used.
-  #
-  # Compression is not used for IPFS datastores.
-  compression:
-    # Set to false to disable all compression attempts. Default enabled (compressed).
-    enabled: true
-
-    # The level of compression, between 1 and 9 inclusive, to apply to files. 6 is a common
-    # default and balances compression and speed. 9 will optimize for compression and not
-    # speed.
-    level: 6
-
   # Options for limiting how much content a user can upload. Quotas are applied to content
   # associated with a user regardless of de-duplication. Quotas which affect remote servers
   # or users will not take effect. When a user exceeds their quota they will be unable to

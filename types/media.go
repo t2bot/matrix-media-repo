@@ -14,7 +14,6 @@ type Media struct {
 	Location    string
 	CreationTs  int64
 	Quarantined bool
-	Compressed  bool
 }
 
 type MinimalMedia struct {
