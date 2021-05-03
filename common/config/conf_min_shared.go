@@ -27,6 +27,10 @@ func NewDefaultMinimumRepoConfig() MinimumRepoConfig {
 				Enabled:    false,
 				UserQuotas: []QuotaUserConfig{},
 			},
+			Compression: CompressionConfig{
+				Enabled: true,
+				Level:   6,
+			},
 		},
 		Identicons: IdenticonsConfig{
 			Enabled: true,

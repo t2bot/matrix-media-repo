@@ -9,28 +9,28 @@ import (
 	"github.com/turt2live/matrix-media-repo/types"
 )
 
-const selectMedia = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE origin = $1 and media_id = $2;"
-const selectMediaByHash = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE sha256_hash = $1;"
-const insertMedia = "INSERT INTO media (origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);"
-const selectOldMedia = "SELECT m.origin, m.media_id, m.upload_name, m.content_type, m.user_id, m.sha256_hash, m.size_bytes, m.datastore_id, m.location, m.creation_ts, quarantined FROM media AS m WHERE m.origin <> ANY($1) AND m.creation_ts < $2 AND (SELECT COUNT(*) FROM media AS d WHERE d.sha256_hash = m.sha256_hash AND d.creation_ts >= $2) = 0 AND (SELECT COUNT(*) FROM media AS d WHERE d.sha256_hash = m.sha256_hash AND d.origin = ANY($1)) = 0;"
+const selectMedia = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined, compressed FROM media WHERE origin = $1 and media_id = $2;"
+const selectMediaByHash = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined, compressed FROM media WHERE sha256_hash = $1;"
+const insertMedia = "INSERT INTO media (origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined, compressed) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);"
+const selectOldMedia = "SELECT m.origin, m.media_id, m.upload_name, m.content_type, m.user_id, m.sha256_hash, m.size_bytes, m.datastore_id, m.location, m.creation_ts, m.quarantined, m.compressed FROM media AS m WHERE m.origin <> ANY($1) AND m.creation_ts < $2 AND (SELECT COUNT(*) FROM media AS d WHERE d.sha256_hash = m.sha256_hash AND d.creation_ts >= $2) = 0 AND (SELECT COUNT(*) FROM media AS d WHERE d.sha256_hash = m.sha256_hash AND d.origin = ANY($1)) = 0;"
 const selectOrigins = "SELECT DISTINCT origin FROM media;"
 const deleteMedia = "DELETE FROM media WHERE origin = $1 AND media_id = $2;"
 const updateQuarantined = "UPDATE media SET quarantined = $3 WHERE origin = $1 AND media_id = $2;"
 const selectDatastore = "SELECT datastore_id, ds_type, uri FROM datastores WHERE datastore_id = $1;"
 const selectDatastoreByUri = "SELECT datastore_id, ds_type, uri FROM datastores WHERE uri = $1;"
 const insertDatastore = "INSERT INTO datastores (datastore_id, ds_type, uri) VALUES ($1, $2, $3);"
-const selectMediaWithoutDatastore = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE datastore_id IS NULL OR datastore_id = '';"
+const selectMediaWithoutDatastore = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined, compressed FROM media WHERE datastore_id IS NULL OR datastore_id = '';"
 const updateMediaDatastoreAndLocation = "UPDATE media SET location = $4, datastore_id = $3 WHERE origin = $1 AND media_id = $2;"
 const selectAllDatastores = "SELECT datastore_id, ds_type, uri FROM datastores;"
-const selectAllMediaForServer = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE origin = $1"
-const selectAllMediaForServerUsers = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE origin = $1 AND user_id = ANY($2)"
-const selectAllMediaForServerIds = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE origin = $1 AND media_id = ANY($2)"
-const selectQuarantinedMedia = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE quarantined = true;"
-const selectServerQuarantinedMedia = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE quarantined = true AND origin = $1;"
-const selectMediaByUser = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE user_id = $1"
-const selectMediaByUserBefore = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE user_id = $1 AND creation_ts <= $2"
-const selectMediaByDomainBefore = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE origin = $1 AND creation_ts <= $2"
-const selectMediaByLocation = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE datastore_id = $1 AND location = $2"
+const selectAllMediaForServer = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined, compressed FROM media WHERE origin = $1"
+const selectAllMediaForServerUsers = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined, compressed FROM media WHERE origin = $1 AND user_id = ANY($2)"
+const selectAllMediaForServerIds = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined, compressed FROM media WHERE origin = $1 AND media_id = ANY($2)"
+const selectQuarantinedMedia = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined, compressed FROM media WHERE quarantined = true;"
+const selectServerQuarantinedMedia = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined, compressed FROM media WHERE quarantined = true AND origin = $1;"
+const selectMediaByUser = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined, compressed FROM media WHERE user_id = $1"
+const selectMediaByUserBefore = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined, compressed FROM media WHERE user_id = $1 AND creation_ts <= $2"
+const selectMediaByDomainBefore = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined, compressed FROM media WHERE origin = $1 AND creation_ts <= $2"
+const selectMediaByLocation = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined, compressed FROM media WHERE datastore_id = $1 AND location = $2"
 const selectIfQuarantined = "SELECT 1 FROM media WHERE sha256_hash = $1 AND quarantined = $2 LIMIT 1;"
 
 var dsCacheByPath = sync.Map{} // [string] => Datastore
@@ -175,6 +175,7 @@ func (s *MediaStore) Insert(media *types.Media) error {
 		media.Location,
 		media.CreationTs,
 		media.Quarantined,
+		media.Compressed,
 	)
 	return err
 }
@@ -200,6 +201,7 @@ func (s *MediaStore) GetByHash(hash string) ([]*types.Media, error) {
 			&obj.Location,
 			&obj.CreationTs,
 			&obj.Quarantined,
+			&obj.Compressed,
 		)
 		if err != nil {
 			return nil, err
@@ -224,6 +226,7 @@ func (s *MediaStore) Get(origin string, mediaId string) (*types.Media, error) {
 		&m.Location,
 		&m.CreationTs,
 		&m.Quarantined,
+		&m.Compressed,
 	)
 	return m, err
 }
@@ -249,6 +252,7 @@ func (s *MediaStore) GetOldMedia(exceptOrigins []string, beforeTs int64) ([]*typ
 			&obj.Location,
 			&obj.CreationTs,
 			&obj.Quarantined,
+			&obj.Compressed,
 		)
 		if err != nil {
 			return nil, err
@@ -396,6 +400,7 @@ func (s *MediaStore) GetAllWithoutDatastore() ([]*types.Media, error) {
 			&obj.Location,
 			&obj.CreationTs,
 			&obj.Quarantined,
+			&obj.Compressed,
 		)
 		if err != nil {
 			return nil, err
@@ -450,6 +455,7 @@ func (s *MediaStore) GetAllMediaForServer(serverName string) ([]*types.Media, er
 			&obj.Location,
 			&obj.CreationTs,
 			&obj.Quarantined,
+			&obj.Compressed,
 		)
 		if err != nil {
 			return nil, err
@@ -481,6 +487,7 @@ func (s *MediaStore) GetAllMediaForServerUsers(serverName string, userIds []stri
 			&obj.Location,
 			&obj.CreationTs,
 			&obj.Quarantined,
+			&obj.Compressed,
 		)
 		if err != nil {
 			return nil, err
@@ -512,6 +519,7 @@ func (s *MediaStore) GetAllMediaInIds(serverName string, mediaIds []string) ([]*
 			&obj.Location,
 			&obj.CreationTs,
 			&obj.Quarantined,
+			&obj.Compressed,
 		)
 		if err != nil {
 			return nil, err
@@ -543,6 +551,7 @@ func (s *MediaStore) GetAllQuarantinedMedia() ([]*types.Media, error) {
 			&obj.Location,
 			&obj.CreationTs,
 			&obj.Quarantined,
+			&obj.Compressed,
 		)
 		if err != nil {
 			return nil, err
@@ -574,6 +583,7 @@ func (s *MediaStore) GetQuarantinedMediaFor(serverName string) ([]*types.Media, 
 			&obj.Location,
 			&obj.CreationTs,
 			&obj.Quarantined,
+			&obj.Compressed,
 		)
 		if err != nil {
 			return nil, err
@@ -605,6 +615,7 @@ func (s *MediaStore) GetMediaByUser(userId string) ([]*types.Media, error) {
 			&obj.Location,
 			&obj.CreationTs,
 			&obj.Quarantined,
+			&obj.Compressed,
 		)
 		if err != nil {
 			return nil, err
@@ -636,6 +647,7 @@ func (s *MediaStore) GetMediaByUserBefore(userId string, beforeTs int64) ([]*typ
 			&obj.Location,
 			&obj.CreationTs,
 			&obj.Quarantined,
+			&obj.Compressed,
 		)
 		if err != nil {
 			return nil, err
@@ -667,6 +679,7 @@ func (s *MediaStore) GetMediaByDomainBefore(serverName string, beforeTs int64) (
 			&obj.Location,
 			&obj.CreationTs,
 			&obj.Quarantined,
+			&obj.Compressed,
 		)
 		if err != nil {
 			return nil, err
@@ -698,6 +711,7 @@ func (s *MediaStore) GetMediaByLocation(datastoreId string, location string) ([]
 			&obj.Location,
 			&obj.CreationTs,
 			&obj.Quarantined,
+			&obj.Compressed,
 		)
 		if err != nil {
 			return nil, err

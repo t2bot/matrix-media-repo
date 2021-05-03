@@ -16,11 +16,17 @@ type QuotasConfig struct {
 	UserQuotas []QuotaUserConfig `yaml:"users,flow"`
 }
 
+type CompressionConfig struct {
+	Enabled bool `yaml:"enabled"`
+	Level   int  `yaml:"level"`
+}
+
 type UploadsConfig struct {
-	MaxSizeBytes         int64        `yaml:"maxBytes"`
-	MinSizeBytes         int64        `yaml:"minBytes"`
-	ReportedMaxSizeBytes int64        `yaml:"reportedMaxBytes"`
-	Quota                QuotasConfig `yaml:"quotas"`
+	MaxSizeBytes         int64             `yaml:"maxBytes"`
+	MinSizeBytes         int64             `yaml:"minBytes"`
+	ReportedMaxSizeBytes int64             `yaml:"reportedMaxBytes"`
+	Quota                QuotasConfig      `yaml:"quotas"`
+	Compression          CompressionConfig `yaml:"compression"'`
 }
 
 type DatastoreConfig struct {

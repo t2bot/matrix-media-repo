@@ -112,8 +112,7 @@ func (d *DatastoreRef) ObjectExists(location string) bool {
 
 func (d *DatastoreRef) OverwriteObject(location string, stream io.ReadCloser, ctx rcontext.RequestContext) error {
 	if d.Type == "file" {
-		_, _, err := ds_file.PersistFileAtLocation(path.Join(d.Uri, location), stream, ctx)
-		return err
+		return ds_file.PersistFileAtLocation(path.Join(d.Uri, location), stream, ctx)
 	} else if d.Type == "s3" {
 		s3, err := ds_s3.GetOrCreateS3Datastore(d.DatastoreId, d.config)
 		if err != nil {

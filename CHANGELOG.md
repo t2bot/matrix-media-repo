@@ -12,6 +12,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 In a future version (likely the next), the in-memory cache support will be removed. Instead, please use the Redis
 caching that is now supported properly by this release, or disable caching if not applicable for your deployment.
 
+### Added
+
+* Optional configuration for compressing uploads. Enabled by default.
+
 ### Changed
 
 * Support the Redis config at the root level of the config, promoting it to a proper feature.

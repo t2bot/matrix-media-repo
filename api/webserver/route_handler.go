@@ -163,6 +163,16 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		break
 	case *r0.DownloadMediaResponse:
+		defer result.Data.Close()
+		result.Data, err = util.DecompressBytesIfNeeded(result.Data, result.Compressed, rcontext.Initial())
+		if err != nil {
+			sentry.CaptureException(err)
+			contextLog.Warn("Failed to decompress content: " + err.Error())
+			statusCode = http.StatusInternalServerError
+			res = &api.ErrorResponse{Code: common.ErrCodeUnknown, InternalCode: common.ErrCodeUnknown, Message: "Unexpected error"}
+			break
+		}
+
 		metrics.HttpResponses.With(prometheus.Labels{
 			"host":       r.Host,
 			"action":     h.action,
@@ -221,7 +231,6 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		} else {
 			w.Header().Set("Content-Disposition", disposition+"; filename*=utf-8''"+url.QueryEscape(fname))
 		}
-		defer result.Data.Close()
 		writeResponseData(w, result.Data, result.SizeBytes)
 		return // Prevent sending conflicting responses
 	case *r0.IdenticonResponse:

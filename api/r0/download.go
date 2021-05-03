@@ -20,6 +20,7 @@ type DownloadMediaResponse struct {
 	SizeBytes         int64
 	Data              io.ReadCloser
 	TargetDisposition string
+	Compressed        bool
 }
 
 func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
@@ -79,5 +80,6 @@ func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user api.UserI
 		SizeBytes:         streamedMedia.SizeBytes,
 		Data:              streamedMedia.Stream,
 		TargetDisposition: targetDisposition,
+		Compressed: streamedMedia.KnownMedia.Compressed,
 	}
 }

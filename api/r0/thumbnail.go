@@ -101,5 +101,6 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user api.User
 		SizeBytes:   streamedThumbnail.Thumbnail.SizeBytes,
 		Data:        streamedThumbnail.Stream,
 		Filename:    "thumbnail.png",
+		Compressed:  streamedThumbnail.Thumbnail.Compressed,
 	}
 }
