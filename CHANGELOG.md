@@ -19,6 +19,7 @@ caching that is now supported properly by this release, or disable caching if no
 ### Fixed
 
 * Improved performance of datastore selection when only one datastore is eligible to contain media.
+* Fixed blurhash not enabling itself.
 
 ## [1.2.8] - April 30th, 2021
 
