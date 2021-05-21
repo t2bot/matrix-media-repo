@@ -79,8 +79,6 @@ func Init() *sync.WaitGroup {
 	appendToImportHandler := handler{api.RepoAdminRoute(custom.AppendToImport), "append_to_import", counter, false}
 	stopImportHandler := handler{api.RepoAdminRoute(custom.StopImport), "stop_import", counter, false}
 	versionHandler := handler{api.AccessTokenOptionalRoute(custom.GetVersion), "get_version", counter, false}
-	blurhashRenderHandler := handler{api.AccessTokenRequiredRoute(unstable.RenderBlurhash), "render_blurhash", counter, false}
-	blurhashCalcHandler := handler{api.AccessTokenRequiredRoute(unstable.GetBlurhash), "calculate_blurhash", counter, false}
 	ipfsDownloadHandler := handler{api.AccessTokenOptionalRoute(unstable.IPFSDownload), "ipfs_download", counter, false}
 	logoutHandler := handler{api.AccessTokenRequiredRoute(r0.Logout), "logout", counter, false}
 	logoutAllHandler := handler{api.AccessTokenRequiredRoute(r0.LogoutAll), "logout_all", counter, false}
@@ -152,12 +150,6 @@ func Init() *sync.WaitGroup {
 			routes["/_matrix/media/"+version+"/info/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}"] = route{"GET", infoHandler}
 			routes["/_matrix/media/"+version+"/download/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}"] = route{"DELETE", purgeOneHandler}
 		}
-	}
-
-	if config.Get().Features.MSC2448Blurhash.Enabled {
-		routes[features.MSC2448UploadRoute] = route{"POST", uploadHandler}
-		routes[features.MSC2448GetHashRoute] = route{"GET", blurhashCalcHandler}
-		routes[features.MSC2448AltRenderRoute] = route{"GET", blurhashRenderHandler}
 	}
 
 	if config.Get().Features.IPFS.Enabled {
