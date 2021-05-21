@@ -15,6 +15,7 @@ caching that is now supported properly by this release, or disable caching if no
 ### Changed
 
 * Support the Redis config at the root level of the config, promoting it to a proper feature.
+* Fixed blurhash implementation to match MSC.
 
 ### Fixed
 
