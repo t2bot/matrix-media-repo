@@ -231,6 +231,7 @@ func DomainConfigFrom(c MainRepoConfig) DomainRepoConfig {
 	dc.Thumbnails = c.Thumbnails.ThumbnailsConfig
 	dc.UrlPreviews = c.UrlPreviews.UrlPreviewsConfig
 	dc.AccessTokens = c.AccessTokens
+	dc.Features = c.Features
 	return dc
 }
 
