@@ -9,7 +9,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
-	"github.com/turt2live/matrix-media-repo/api/features"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/info_controller"
@@ -20,7 +19,7 @@ import (
 
 type MediaUploadedResponse struct {
 	ContentUri string `json:"content_uri"`
-	Blurhash   string `json:"blurhash,omitempty"`
+	Blurhash   string `json:"xyz.amorgan.blurhash,omitempty"`
 }
 
 func UploadMedia(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
@@ -73,7 +72,7 @@ func UploadMedia(r *http.Request, rctx rcontext.RequestContext, user api.UserInf
 		return api.InternalServerError("Unexpected Error")
 	}
 
-	if rctx.Config.Features.MSC2448Blurhash.Enabled && features.IsRoute(r, features.MSC2448UploadRoute) {
+	if rctx.Config.Features.MSC2448Blurhash.Enabled {
 		hash, err := info_controller.GetOrCalculateBlurhash(media, rctx)
 		if err != nil {
 			rctx.Log.Warn("Failed to calculate blurhash: " + err.Error())
