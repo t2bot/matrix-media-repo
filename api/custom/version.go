@@ -10,7 +10,6 @@ import (
 
 func GetVersion(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
 	unstableFeatures := make(map[string]bool)
-	unstableFeatures["xyz.amorgan.blurhash"] = rctx.Config.Features.MSC2448Blurhash.Enabled
 
 	return &api.DoNotCacheResponse{
 		Payload: map[string]interface{}{
