@@ -11,6 +11,7 @@ import (
 	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+  "github.com/ryanuber/go-glob"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/internal_cache"
@@ -30,6 +31,23 @@ var recentMediaIds = cache.New(30*time.Second, 60*time.Second)
 type AlreadyUploadedFile struct {
 	DS         *datastore.DatastoreRef
 	ObjectInfo *types.ObjectInfo
+}
+
+func IsRequestTooLargeForUser(contentLength int64, contentLengthHeader string, ctx rcontext.RequestContext, userId string) bool {
+	if !ctx.Config.Uploads.MaxBytesPerUser.Enabled {
+		return false // per user max not enabled
+	}
+
+	for _, q := range ctx.Config.Uploads.MaxBytesPerUser.UserMaxBytes {
+		if glob.Glob(q.Glob, userId) {
+			if q.MaxBytes == 0 {
+				return false // no max for user
+			}
+			return contentLength > q.MaxBytes
+		}
+	}
+
+	return false // no rules == no max
 }
 
 func IsRequestTooLarge(contentLength int64, contentLengthHeader string, ctx rcontext.RequestContext) bool {
