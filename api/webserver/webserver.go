@@ -170,7 +170,7 @@ func Init() *sync.WaitGroup {
 	}
 
 	// Health check endpoints
-	rtr.Handle("/healthz", healthzHandler).Methods("OPTIONS", "GET")
+	rtr.Handle("/healthz", healthzHandler).Methods("OPTIONS", "GET", "HEAD")
 
 	rtr.NotFoundHandler = handler{api.NotFoundHandler, "not_found", counter, true}
 	rtr.MethodNotAllowedHandler = handler{api.MethodNotAllowedHandler, "method_not_allowed", counter, true}
