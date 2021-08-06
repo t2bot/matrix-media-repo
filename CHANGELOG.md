@@ -14,17 +14,18 @@ caching that is now supported properly by this release, or disable caching if no
 
 ### Added
 
+* Added support for `HEAD` at the `/healthz` endpoint.
 * Added support for setting maximum individual upload size per user
 
 ### Changed
 
 * Support the Redis config at the root level of the config, promoting it to a proper feature.
-* Fixed blurhash implementation to match MSC.
 
 ### Fixed
 
 * Improved performance of datastore selection when only one datastore is eligible to contain media.
 * Fixed blurhash not enabling itself.
+* Fixed blurhash implementation to match MSC.
 
 ## [1.2.8] - April 30th, 2021
 
