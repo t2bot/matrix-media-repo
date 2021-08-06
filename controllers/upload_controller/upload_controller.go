@@ -11,7 +11,7 @@ import (
 	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-  "github.com/ryanuber/go-glob"
+	"github.com/ryanuber/go-glob"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/internal_cache"
