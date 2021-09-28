@@ -79,6 +79,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Security-Policy", "sandbox; default-src 'none'; script-src 'none'; plugin-types application/pdf; style-src 'unsafe-inline'; media-src 'self'; object-src 'self';")
+	w.Header().Set("X-Content-Security-Policy", "sandbox;")
 	w.Header().Set("X-Robots-Tag", "noindex, nofollow, noarchive, noimageindex")
 	w.Header().Set("Server", "matrix-media-repo")
 
@@ -245,6 +246,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "private, max-age=259200") // 3 days
 		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
 		w.Header().Set("Content-Security-Policy", "") // We're serving HTML, so take away the CSP
+		w.Header().Set("X-Content-Security-Policy", "") // We're serving HTML, so take away the CSP
 		io.Copy(w, bytes.NewBuffer([]byte(result.HTML)))
 		return
 	default:
