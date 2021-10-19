@@ -44,6 +44,9 @@ due to some deployments being affected unexpectedly.
 ### Added
 
 * Added support for structured logging (JSON).
+- Added `X-Content-Security-Policy: sandbox` in contexts where the normal CSP
+  header would be served. This is a limited, pre-standard form of CSP supported
+  by IE11, in order to have at least some mitigation of XSS attacks.
 
 ### Changed
 
