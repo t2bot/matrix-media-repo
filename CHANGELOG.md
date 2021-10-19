@@ -15,6 +15,11 @@ caching that is now supported properly by this release, or disable caching if no
 ### Added
 
 * Added support for `HEAD` at the `/healthz` endpoint.
+* Added `X-Content-Security-Policy: sandbox` in contexts where the normal CSP
+  header would be served. This is a limited, pre-standard form of CSP supported
+  by IE11, in order to have at least some mitigation of XSS attacks.
+* Added support for the `org.matrix.msc2705.animated` query parameter.
+* Added support for S3 storage classes (optional).
 
 ### Changed
 
@@ -44,9 +49,6 @@ due to some deployments being affected unexpectedly.
 ### Added
 
 * Added support for structured logging (JSON).
-- Added `X-Content-Security-Policy: sandbox` in contexts where the normal CSP
-  header would be served. This is a limited, pre-standard form of CSP supported
-  by IE11, in order to have at least some mitigation of XSS attacks.
 
 ### Changed
 
