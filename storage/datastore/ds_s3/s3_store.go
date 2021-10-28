@@ -27,6 +27,7 @@ type s3Datastore struct {
 	bucket   string
 	region string
 	tempPath string
+	storageClass string
 }
 
 func GetOrCreateS3Datastore(dsId string, conf config.DatastoreConfig) (*s3Datastore, error) {
@@ -40,11 +41,15 @@ func GetOrCreateS3Datastore(dsId string, conf config.DatastoreConfig) (*s3Datast
 	accessSecret, secretFound := conf.Options["accessSecret"]
 	region, regionFound := conf.Options["region"]
 	tempPath, tempPathFound := conf.Options["tempPath"]
+	storageClass, storageClassFound := conf.Options["storageClass"]
 	if !epFound || !bucketFound || !keyFound || !secretFound {
 		return nil, errors.New("invalid configuration: missing s3 options")
 	}
 	if !tempPathFound {
 		logrus.Warn("Datastore ", dsId, " (s3) does not have a tempPath set - this could lead to excessive memory usage by the media repo")
+	}
+	if !storageClassFound {
+		storageClass = "STANDARD"
 	}
 
 	useSsl := true
@@ -72,6 +77,7 @@ func GetOrCreateS3Datastore(dsId string, conf config.DatastoreConfig) (*s3Datast
 		bucket:   bucket,
 		region: region,
 		tempPath: tempPath,
+		storageClass: storageClass,
 	}
 	stores[dsId] = s3ds
 	return s3ds, nil
@@ -177,7 +183,7 @@ func (s *s3Datastore) UploadFile(file io.ReadCloser, expectedLength int64, ctx r
 			}
 		}
 		ctx.Log.Info("Uploading file...")
-		sizeBytes, uploadErr = s.client.PutObjectWithContext(ctx, s.bucket, objectName, rs3, expectedLength, minio.PutObjectOptions{})
+		sizeBytes, uploadErr = s.client.PutObjectWithContext(ctx, s.bucket, objectName, rs3, expectedLength, minio.PutObjectOptions{StorageClass: s.storageClass})
 		ctx.Log.Info("Uploaded ", sizeBytes, " bytes to s3")
 		done <- true
 	}()
@@ -224,6 +230,6 @@ func (s *s3Datastore) ObjectExists(location string) bool {
 
 func (s *s3Datastore) OverwriteObject(location string, stream io.ReadCloser) error {
 	defer cleanup.DumpAndCloseStream(stream)
-	_, err := s.client.PutObject(s.bucket, location, stream, -1, minio.PutObjectOptions{})
+	_, err := s.client.PutObject(s.bucket, location, stream, -1, minio.PutObjectOptions{StorageClass: s.storageClass})
 	return err
 }

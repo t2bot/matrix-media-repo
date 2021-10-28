@@ -39,6 +39,9 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user api.User
 	heightStr := r.URL.Query().Get("height")
 	method := r.URL.Query().Get("method")
 	animatedStr := r.URL.Query().Get("animated")
+	if animatedStr == "" {
+		animatedStr = r.URL.Query().Get("org.matrix.msc2705.animated")
+	}
 
 	if widthStr == "" || heightStr == "" {
 		return api.BadRequest("Width and height are required")
