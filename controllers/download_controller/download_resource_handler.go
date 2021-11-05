@@ -34,6 +34,7 @@ type downloadRequest struct {
 	origin        string
 	mediaId       string
 	blockForMedia bool
+	localFile        bool
 }
 
 type downloadResponse struct {
@@ -90,11 +91,11 @@ func getResourceHandler() *mediaResourceHandler {
 	return resHandler
 }
 
-func (h *mediaResourceHandler) DownloadRemoteMedia(origin string, mediaId string, blockForMedia bool) chan *downloadResponse {
+func (h *mediaResourceHandler) DownloadRemoteMedia(origin string, mediaId string, blockForMedia bool, localFile bool) chan *downloadResponse {
 	resultChan := make(chan *downloadResponse)
 	go func() {
 		reqId := "remote_download:" + origin + "_" + mediaId
-		c := h.resourceHandler.GetResource(reqId, &downloadRequest{origin, mediaId, blockForMedia})
+		c := h.resourceHandler.GetResource(reqId, &downloadRequest{origin, mediaId, blockForMedia, localFile})
 		defer close(c)
 		result := <-c
 
@@ -129,6 +130,7 @@ func downloadResourceWorkFn(request *resource_handler.WorkRequest) (resp *worker
 		"worker_requestOrigin":  info.origin,
 		"worker_requestMediaId": info.mediaId,
 		"worker_blockForMedia":  info.blockForMedia,
+		"worker_localFile":      info.localFile,
 	})
 
 	resp = &workerDownloadResponse{}
@@ -167,7 +169,12 @@ func downloadResourceWorkFn(request *resource_handler.WorkRequest) (resp *worker
 			return r
 		}
 
-		media, err := upload_controller.StoreDirect(nil, st, downloaded.ContentLength, downloaded.ContentType, downloaded.DesiredFilename, userId, info.origin, info.mediaId, common.KindRemoteMedia, ctx, true)
+		kind := common.KindRemoteMedia
+		if info.localFile {
+			kind = common.KindLocalMedia
+		}
+
+		media, err := upload_controller.StoreDirect(nil, st, downloaded.ContentLength, downloaded.ContentType, downloaded.DesiredFilename, userId, info.origin, info.mediaId, kind, ctx, true)
 		if err != nil {
 			ctx.Log.Error("Error persisting file: ", err)
 			r.err = err

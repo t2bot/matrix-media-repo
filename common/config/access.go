@@ -149,6 +149,7 @@ func reloadConfig() (*MainRepoConfig, map[string]*DomainRepoConfig, error) {
 		dc.ClientServerApi = d.ClientServerApi
 		dc.BackoffAt = d.BackoffAt
 		dc.AdminApiKind = d.AdminApiKind
+		dc.GradualImport = d.GradualImport
 
 		m, err := objToMapYaml(dc)
 		if err != nil {

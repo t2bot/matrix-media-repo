@@ -59,6 +59,13 @@ func getFederationBreaker(hostname string) *circuit.Breaker {
 func GetServerApiUrl(hostname string) (string, string, error) {
 	logrus.Info("Getting server API URL for " + hostname)
 
+	// if it is a domain we have configured, we want to use its configured c-s api
+	// to make gradual import work
+	hsConfig := config.GetDomain(hostname)
+	if hsConfig != nil {
+		return hsConfig.ClientServerApi, hostname, nil
+	}
+
 	// Check to see if we've cached this hostname at all
 	setupCache()
 	record, found := apiUrlCacheInstance.Get(hostname)

@@ -66,6 +66,8 @@ homeservers:
                            # unstable client-server API. When this is "synapse", the new /_synapse
                            # endpoints will be used instead. Unknown values are treated as the
                            # default, "matrix".
+    # Wheather to gradually import missing files from the homeserver, defaults to false
+    # gradualImport: true
 
 # Options for controlling how access tokens work with the media repo. It is recommended that if
 # you are going to use these options that the `/logout` and `/logout/all` client-server endpoints

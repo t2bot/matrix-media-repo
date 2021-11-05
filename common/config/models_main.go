@@ -15,6 +15,7 @@ type HomeserverConfig struct {
 	ClientServerApi string `yaml:"csApi"`
 	BackoffAt       int    `yaml:"backoffAt"`
 	AdminApiKind    string `yaml:"adminApiKind"`
+	GradualImport   bool   `yaml:"gradualImport"`
 }
 
 type DatabaseConfig struct {

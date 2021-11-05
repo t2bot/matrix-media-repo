@@ -12,6 +12,7 @@ import (
 	"github.com/disintegration/imaging"
 	"github.com/patrickmn/go-cache"
 	"github.com/turt2live/matrix-media-repo/common"
+	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/globals"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/quarantine_controller"
@@ -179,10 +180,17 @@ func FindMinimalMediaRecord(origin string, mediaId string, downloadRemote bool, 
 		ctx.Log.Info("Getting media record from database")
 		dbMedia, err := db.Get(origin, mediaId)
 		if err != nil {
+			var mediaChan chan *downloadResponse
 			if err == sql.ErrNoRows {
-				if util.IsServerOurs(origin) {
-					ctx.Log.Warn("Media not found")
-					return nil, common.ErrMediaNotFound
+				hs := config.GetDomain(origin)
+				if hs != nil {
+					if hs.GradualImport {
+						ctx.Log.Info("Media not found, attempting to import it")
+						mediaChan = getResourceHandler().DownloadRemoteMedia(origin, mediaId, true, true)
+					} else {
+						ctx.Log.Warn("Media not found")
+						return nil, common.ErrMediaNotFound
+					}
 				}
 			} else {
 				// We don't even want to attempt a download - something very wrong happened
@@ -190,12 +198,14 @@ func FindMinimalMediaRecord(origin string, mediaId string, downloadRemote bool, 
 				return nil, err
 			}
 
-			if !downloadRemote {
-				ctx.Log.Warn("Remote media not being downloaded")
-				return nil, common.ErrMediaNotFound
-			}
+			if mediaChan == nil {
+				if !downloadRemote {
+					ctx.Log.Warn("Remote media not being downloaded")
+					return nil, common.ErrMediaNotFound
+				}
 
-			mediaChan := getResourceHandler().DownloadRemoteMedia(origin, mediaId, true)
+				mediaChan = getResourceHandler().DownloadRemoteMedia(origin, mediaId, true, false)
+			}
 			defer close(mediaChan)
 
 			result := <-mediaChan
@@ -264,10 +274,17 @@ func FindMediaRecord(origin string, mediaId string, downloadRemote bool, ctx rco
 			ctx.Log.Info("Getting media record from database")
 			dbMedia, err := db.Get(origin, mediaId)
 			if err != nil {
+				var mediaChan chan *downloadResponse
 				if err == sql.ErrNoRows {
-					if util.IsServerOurs(origin) {
-						ctx.Log.Warn("Media not found")
-						return nil, common.ErrMediaNotFound
+					hs := config.GetDomain(origin)
+					if hs != nil {
+						if hs.GradualImport {
+							ctx.Log.Info("Media not found, attempting to import it")
+							mediaChan = getResourceHandler().DownloadRemoteMedia(origin, mediaId, true, true)
+						} else {
+							ctx.Log.Warn("Media not found")
+							return nil, common.ErrMediaNotFound
+						}
 					}
 				} else {
 					// We don't even want to attempt a download - something very wrong happened
@@ -275,12 +292,14 @@ func FindMediaRecord(origin string, mediaId string, downloadRemote bool, ctx rco
 					return nil, err
 				}
 
-				if !downloadRemote {
-					ctx.Log.Warn("Remote media not being downloaded")
-					return nil, common.ErrMediaNotFound
-				}
+				if mediaChan == nil {
+					if !downloadRemote {
+						ctx.Log.Warn("Remote media not being downloaded")
+						return nil, common.ErrMediaNotFound
+					}
 
-				mediaChan := getResourceHandler().DownloadRemoteMedia(origin, mediaId, true)
+					mediaChan = getResourceHandler().DownloadRemoteMedia(origin, mediaId, true, false)
+				}
 				defer close(mediaChan)
 
 				result := <-mediaChan
