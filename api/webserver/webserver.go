@@ -88,7 +88,8 @@ func Init() *sync.WaitGroup {
 	routes := make(map[string]route)
 	// r0 is typically clients and v1 is typically servers. v1 is deprecated.
 	// unstable is, well, unstable. unstable/io.t2bot.media is to comply with MSC2324
-	versions := []string{"r0", "v1", "unstable", "unstable/io.t2bot.media"}
+	// v3 is Matrix 1.1 stuff
+	versions := []string{"r0", "v1", "v3", "unstable", "unstable/io.t2bot.media"}
 
 	// Things that don't need a version
 	routes["/_matrix/media/version"] = route{"GET", versionHandler}

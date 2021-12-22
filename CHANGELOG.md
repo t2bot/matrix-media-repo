@@ -20,6 +20,7 @@ caching that is now supported properly by this release, or disable caching if no
   by IE11, in order to have at least some mitigation of XSS attacks.
 * Added support for the `org.matrix.msc2705.animated` query parameter.
 * Added support for S3 storage classes (optional).
+* Added support for listening on Matrix 1.1 endpoints (`/_matrix/media/v3/*`).
 
 ### Changed
 
