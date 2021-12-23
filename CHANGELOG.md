@@ -7,7 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
-*Nothing yet*.
+### Added
+
+* Added support for setting the Redis database number.
 
 ## [1.2.9] - December 22nd, 2021
 

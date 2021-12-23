@@ -27,8 +27,9 @@ func NewCache() *RedisCache {
 		addresses[c.Name] = c.Address
 	}
 	ring := redis.NewRing(&redis.RingOptions{
-		Addrs: addresses,
+		Addrs:       addresses,
 		DialTimeout: 10 * time.Second,
+		DB:          config.Get().Features.Redis.DbNum,
 	})
 
 	logrus.Info("Contacting Redis shards...")

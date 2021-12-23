@@ -586,6 +586,9 @@ featureSupport:
     # Whether or not use Redis instead of in-process caching.
     enabled: false
 
+    # The database number to use. Leave at zero if using a dedicated Redis instance.
+    databaseNumber: 0
+
     # The Redis shards that should be used by the media repo in the ring. The names of the
     # shards are for your reference and have no bearing on the connection, but must be unique.
     shards:
