@@ -169,6 +169,9 @@ datastores:
       # An optional region for where this S3 endpoint is located. Typically not needed, though
       # some providers will need this (like Scaleway). Uncomment to use.
       #region: "sfo2"
+      # An optional storage class for tuning how the media is stored at s3.
+      # See https://aws.amazon.com/s3/storage-classes/ for details; uncomment to use.
+      #storageClass: STANDARD
 
   # The media repo does support an IPFS datastore, but only if the IPFS feature is enabled. If
   # the feature is not enabled, this will not work. Note that IPFS support is experimental at
