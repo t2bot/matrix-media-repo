@@ -7,9 +7,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Deprecation notices
+
+In a future version (likely the next), the in-memory cache support will be removed. Instead, please use the Redis
+caching that is now supported properly by this release, or disable caching if not applicable for your deployment.
+
 ### Added
 
 * Added support for setting the Redis database number.
+
+### Fixed
+
+* Fixed an issue with the Redis config not being recognized at the root level.
 
 ## [1.2.9] - December 22nd, 2021
 

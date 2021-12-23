@@ -21,15 +21,15 @@ type RedisCache struct {
 	ring *redis.Ring
 }
 
-func NewCache() *RedisCache {
+func NewCache(conf config.RedisConfig) *RedisCache {
 	addresses := make(map[string]string)
-	for _, c := range config.Get().Features.Redis.Shards {
+	for _, c := range conf.Shards {
 		addresses[c.Name] = c.Address
 	}
 	ring := redis.NewRing(&redis.RingOptions{
 		Addrs:       addresses,
 		DialTimeout: 10 * time.Second,
-		DB:          config.Get().Features.Redis.DbNum,
+		DB:          conf.DbNum,
 	})
 
 	logrus.Info("Contacting Redis shards...")

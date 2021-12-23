@@ -2,6 +2,7 @@ package internal_cache
 
 import (
 	"bytes"
+	"github.com/turt2live/matrix-media-repo/common/config"
 	"io"
 	"io/ioutil"
 
@@ -16,8 +17,8 @@ type RedisCache struct {
 	redis *redis_cache.RedisCache
 }
 
-func NewRedisCache() *RedisCache {
-	return &RedisCache{redis: redis_cache.NewCache()}
+func NewRedisCache(conf config.RedisConfig) *RedisCache {
+	return &RedisCache{redis: redis_cache.NewCache(conf)}
 }
 
 func (c *RedisCache) Reset() {

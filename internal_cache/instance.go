@@ -19,7 +19,7 @@ func Get() ContentCache {
 	lock.Do(func() {
 		if config.Get().Redis.Enabled {
 			logrus.Info("Setting up Redis cache")
-			instance = NewRedisCache()
+			instance = NewRedisCache(config.Get().Redis)
 		} else if config.Get().Features.Redis.Enabled {
 			logrus.Info("Setting up Redis cache")
 
@@ -27,7 +27,7 @@ func Get() ContentCache {
 			logrus.Warn(warnMsg)
 			sentry.CaptureMessage(warnMsg)
 
-			instance = NewRedisCache()
+			instance = NewRedisCache(config.Get().Features.Redis)
 		} else if !config.Get().Downloads.Cache.Enabled {
 			logrus.Warn("Cache is disabled - setting up a dummy instance")
 			instance = NewNoopCache()
