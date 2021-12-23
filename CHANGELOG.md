@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+*Nothing yet.*
+
+# [1.2.10] - December 23rd, 2021
+
 ### Deprecation notices
 
 In a future version (likely the next), the in-memory cache support will be removed. Instead, please use the Redis
@@ -319,7 +323,8 @@ a large database (more than about 100k uploaded files), run the following steps 
 * Various other features that would be expected like maximum/minimum size controls, rate limiting, etc. Check out the
   sample config for a better idea of what else is possible.
 
-[unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.9...HEAD
+[unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.10...HEAD
+[1.2.10]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.9...v1.2.10
 [1.2.9]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.8...v1.2.9
 [1.2.8]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.7...v1.2.8
 [1.2.6]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.6...v1.2.7
