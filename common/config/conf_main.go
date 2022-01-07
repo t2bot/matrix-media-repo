@@ -82,6 +82,7 @@ func NewDefaultMainConfig() MainRepoConfig {
 					"0.0.0.0/0", // "Everything"
 				},
 				DefaultLanguage: "en-US,en",
+				UserAgent:       "matrix-media-repo",
 				OEmbed:          false,
 			},
 			NumWorkers: 10,
