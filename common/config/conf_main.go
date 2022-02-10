@@ -45,15 +45,6 @@ func NewDefaultMainConfig() MainRepoConfig {
 				FailureCacheMinutes: 15,
 			},
 			NumWorkers: 10,
-			Cache: CacheConfig{
-				Enabled:               true,
-				MaxSizeBytes:          1048576000, // 1gb
-				MaxFileSizeBytes:      104857600,  // 100mb
-				TrackedMinutes:        30,
-				MinDownloads:          5,
-				MinCacheTimeSeconds:   300, // 5min
-				MinEvictedTimeSeconds: 60,
-			},
 			ExpireDays: 0,
 		},
 		UrlPreviews: MainUrlPreviewsConfig{

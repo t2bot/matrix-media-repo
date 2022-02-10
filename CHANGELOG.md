@@ -7,7 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
-*Nothing yet.*
+### Removed
+
+* Support for the in-memory cache has been removed. Redis or having no cache are now the only options.
+* Support for the Redis config under `features` has been removed. It is now only available at the top level of the
+  config. See the sample config for more details.
 
 # [1.2.10] - December 23rd, 2021
 

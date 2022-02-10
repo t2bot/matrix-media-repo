@@ -257,37 +257,6 @@ downloads:
   # has passed, the media is able to be re-requested.
   failureCacheMinutes: 5
 
-  # The cache control settings for downloads. This can help speed up downloads for users by
-  # keeping popular media in the cache. This cache is also used for thumbnails.
-  cache:
-    enabled: true
-
-    # The maximum size of cache to have. Higher numbers are better.
-    maxSizeBytes: 1048576000 # 1GB default
-
-    # The maximum file size to cache. This should normally be the same size as your maximum
-    # upload size.
-    maxFileSizeBytes: 104857600 # 100MB default
-
-    # The number of minutes to track how many downloads a file gets
-    trackedMinutes: 30
-
-    # The number of downloads a file must receive in the window above (trackedMinutes) in
-    # order to be cached.
-    minDownloads: 5
-
-    # The minimum amount of time an item should remain in the cache. This prevents the cache
-    # from cycling out the file if it needs more room during this time. Note that the media
-    # repo regularly cleans out media which is past this point from the cache, so this number
-    # may need increasing depending on your use case. If the maxSizeBytes is reached for the
-    # media repo, and some cached items are still under this timer, new items will not be able
-    # to enter the cache. When this happens, consider raising maxSizeBytes or lowering this
-    # timer.
-    minCacheTimeSeconds: 300
-
-    # The minimum amount of time an item should remain outside the cache once it is removed.
-    minEvictedTimeSeconds: 60
-
   # How many days after a piece of remote content is downloaded before it expires. It can be
   # re-downloaded on demand, this just helps free up space in your datastore. Set to zero or
   # negative to disable. Defaults to disabled.

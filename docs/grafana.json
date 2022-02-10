@@ -14,12 +14,12 @@
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
-      "version": "6.7.0"
+      "version": "8.1.8"
     },
     {
       "type": "panel",
       "id": "graph",
-      "name": "Graph",
+      "name": "Graph (old)",
       "version": ""
     },
     {
@@ -38,6 +38,12 @@
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
         "type": "dashboard"
       }
     ]
@@ -54,6 +60,12 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
+      "fieldConfig": {
+        "defaults": {
+          "links": []
+        },
+        "overrides": []
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -78,9 +90,10 @@
       "links": [],
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
+      "pluginVersion": "8.1.8",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -151,6 +164,12 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
+      "fieldConfig": {
+        "defaults": {
+          "links": []
+        },
+        "overrides": []
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -175,9 +194,10 @@
       "links": [],
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
+      "pluginVersion": "8.1.8",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -241,6 +261,12 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
+      "fieldConfig": {
+        "defaults": {
+          "links": []
+        },
+        "overrides": []
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -265,9 +291,10 @@
       "links": [],
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
+      "pluginVersion": "8.1.8",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -277,7 +304,8 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "go_memstats_alloc_bytes",
+          "exemplar": true,
+          "expr": "go_memstats_alloc_bytes{job=\"media_repo\"}",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -285,25 +313,29 @@
           "refId": "B"
         },
         {
-          "expr": "go_memstats_sys_bytes",
+          "exemplar": true,
+          "expr": "go_memstats_sys_bytes{job=\"media_repo\"}",
           "interval": "",
           "legendFormat": "memory usage (sys)",
           "refId": "C"
         },
         {
-          "expr": "go_memstats_heap_alloc_bytes",
+          "exemplar": true,
+          "expr": "go_memstats_heap_alloc_bytes{job=\"media_repo\"}",
           "interval": "",
           "legendFormat": "heap usage (alloc)",
           "refId": "A"
         },
         {
-          "expr": "go_memstats_heap_idle_bytes",
+          "exemplar": true,
+          "expr": "go_memstats_heap_idle_bytes{job=\"media_repo\"}",
           "interval": "",
           "legendFormat": "heap usage (idle)",
           "refId": "D"
         },
         {
-          "expr": "go_memstats_heap_inuse_bytes",
+          "exemplar": true,
+          "expr": "go_memstats_heap_inuse_bytes{job=\"media_repo\"}",
           "interval": "",
           "legendFormat": "heap usage (used)",
           "refId": "E"
@@ -329,6 +361,7 @@
       },
       "yaxes": [
         {
+          "$$hashKey": "object:101",
           "format": "bytes",
           "label": null,
           "logBase": 1,
@@ -337,6 +370,7 @@
           "show": true
         },
         {
+          "$$hashKey": "object:102",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -356,6 +390,12 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
+      "fieldConfig": {
+        "defaults": {
+          "links": []
+        },
+        "overrides": []
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -363,200 +403,6 @@
         "w": 12,
         "x": 12,
         "y": 9
-      },
-      "hiddenSeries": false,
-      "id": 4,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
-      "percentage": false,
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "media_cache_num_bytes_used",
-          "format": "time_series",
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "size of cache: {{cache}}",
-          "refId": "B"
-        },
-        {
-          "expr": "media_cache_num_live_bytes_used",
-          "interval": "",
-          "legendFormat": "live size of cache: {{cache}}",
-          "refId": "C"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Cache Size (Bytes)",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "bytes",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 0,
-        "y": 18
-      },
-      "hiddenSeries": false,
-      "id": 9,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
-      "percentage": false,
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "media_cache_num_items",
-          "format": "time_series",
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "items in cache: {{cache}}",
-          "refId": "B"
-        },
-        {
-          "expr": "media_cache_num_live_items",
-          "interval": "",
-          "legendFormat": "live items in cache: {{cache}}",
-          "refId": "C"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Cache Size (# of items)",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 12,
-        "y": 18
       },
       "hiddenSeries": false,
       "id": 5,
@@ -574,9 +420,10 @@
       "links": [],
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
+      "pluginVersion": "8.1.8",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -654,13 +501,19 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
+      "fieldConfig": {
+        "defaults": {
+          "links": []
+        },
+        "overrides": []
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 27
+        "y": 18
       },
       "hiddenSeries": false,
       "id": 6,
@@ -678,9 +531,10 @@
       "links": [],
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
+      "pluginVersion": "8.1.8",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -744,13 +598,19 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
+      "fieldConfig": {
+        "defaults": {
+          "links": []
+        },
+        "overrides": []
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 27
+        "y": 18
       },
       "hiddenSeries": false,
       "id": 7,
@@ -768,9 +628,10 @@
       "links": [],
       "nullPointMode": "null",
       "options": {
-        "dataLinks": []
+        "alertThreshold": true
       },
       "percentage": false,
+      "pluginVersion": "8.1.8",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -837,7 +698,7 @@
     }
   ],
   "refresh": "1m",
-  "schemaVersion": 22,
+  "schemaVersion": 30,
   "style": "dark",
   "tags": [],
   "templating": {
@@ -875,8 +736,5 @@
   "timezone": "",
   "title": "Media Repo Example Dashboard",
   "uid": "xJUZ3xfmk",
-  "variables": {
-    "list": []
-  },
-  "version": 2
+  "version": 3
 }
