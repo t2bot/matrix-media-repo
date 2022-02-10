@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Fixed
+
+* Fixed media being permanently lost when transferring to an (effectively) readonly S3 datastore.
+
 ### Removed
 
 * Support for the in-memory cache has been removed. Redis or having no cache are now the only options.
