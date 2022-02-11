@@ -320,6 +320,9 @@ urlPreviews:
   # Reference: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Language
   defaultLanguage: "en-US,en"
 
+  # Set the User-Agent header to supply when generating URL previews
+  userAgent: "matrix-media-repo"
+
   # When true, oEmbed previews will be enabled. Typically these kinds of previews are used for
   # sites that do not support OpenGraph or page scraping, such as Twitter. For information on
   # specifying providers for oEmbed, including your own, see the following documentation:

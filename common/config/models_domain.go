@@ -64,6 +64,7 @@ type UrlPreviewsConfig struct {
 	AllowedNetworks    []string `yaml:"allowedNetworks,flow"`
 	UnsafeCertificates bool     `yaml:"previewUnsafeCertificates"`
 	DefaultLanguage    string   `yaml:"defaultLanguage"`
+	UserAgent		   string   `yaml:"userAgent"`
 	OEmbed             bool     `yaml:"oEmbed"`
 }
 
