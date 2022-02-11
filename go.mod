@@ -10,6 +10,7 @@ require (
 	github.com/alioygur/is v1.0.3
 	github.com/andybalholm/cascadia v1.2.0 // indirect
 	github.com/bep/debounce v1.2.0
+	github.com/bobesa/go-domain-util v0.0.0-20190911083921-4033b5f7dd89 // indirect
 	github.com/buckket/go-blurhash v1.1.0
 	github.com/cenk/backoff v2.2.1+incompatible // indirect
 	github.com/cupcake/sigil v0.0.0-20131127230922-6bf9722f2ae8
