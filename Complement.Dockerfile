@@ -30,7 +30,6 @@ RUN dos2unix /usr/local/bin/complement.sh /usr/local/bin/complement-run.sh
 
 EXPOSE 8008
 EXPOSE 8448
-HEALTHCHECK CMD curl --fail http://localhost:8008/_matrix/media/version || exit 1
 
 RUN chmod +x /usr/local/bin/complement.sh
 RUN chmod +x /usr/local/bin/complement-run.sh
@@ -43,3 +42,4 @@ RUN su postgres -c initdb
 RUN sh /usr/local/bin/complement.sh
 
 CMD /usr/local/bin/complement-run.sh
+HEALTHCHECK CMD curl --fail http://localhost:8008/_matrix/media/version || exit 1
