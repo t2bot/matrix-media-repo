@@ -11,7 +11,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 * New config option to set user agent when requesting URL previews.
 * Added support for `image/jxl` thumbnailing.
-* Built-in early support for content ranges (being able to skip around in audio and video).
+* Built-in early support for content ranges (being able to skip around in audio and video). This is only available if
+  caching is enabled.
 
 ### Removed
 
@@ -19,13 +20,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Support for the Redis config under `features` has been removed. It is now only available at the top level of the
   config. See the sample config for more details.
 
-
 ### Fixed
 
 * Fixed media being permanently lost when transferring to an (effectively) readonly S3 datastore.
 * Purging non-existent files now won't cause errors.
 * Fixed HEIF/HEIC thumbnailing. Note that this thumbnail type might cause increased memory usage.
 * Ensure endpoints register in a stable way, making them predictably available.
+* Reduced download hits to datastores when using Redis cache.
 
 ### Changed
 
