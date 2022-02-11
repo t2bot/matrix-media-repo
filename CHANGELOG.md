@@ -12,6 +12,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * New config option to set user agent when requesting URL previews.
 * Added support for `image/jxl` thumbnailing.
 
+### Removed
+
+* Support for the in-memory cache has been removed. Redis or having no cache are now the only options.
+* Support for the Redis config under `features` has been removed. It is now only available at the top level of the
+  config. See the sample config for more details.
+
+
 ### Fixed
 
 * Fixed media being permanently lost when transferring to an (effectively) readonly S3 datastore.
@@ -19,11 +26,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Fixed HEIF/HEIC thumbnailing. Note that this thumbnail type might cause increased memory usage.
 * Ensure endpoints register in a stable way, making them predictably available.
 
-### Removed
+### Changed
 
-* Support for the in-memory cache has been removed. Redis or having no cache are now the only options.
-* Support for the Redis config under `features` has been removed. It is now only available at the top level of the
-  config. See the sample config for more details.
+* Updated support for post-[MSC3069](https://github.com/matrix-org/matrix-doc/pull/3069) homeservers.
 
 # [1.2.10] - December 23rd, 2021
 
