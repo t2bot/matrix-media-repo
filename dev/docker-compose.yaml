@@ -3,15 +3,13 @@ services:
   media_conduit:
     container_name: "media_repo_conduit"
     image: "matrixconduit/matrix-conduit:latest"
+    #image: "conduit-local"
     restart: unless-stopped
     volumes:
       - ./conduit-db:/srv/conduit/.local/share/conduit
-    environment:
-      ROCKET_SERVER_NAME: "localhost"
-      ROCKET_PORT: 8004
-      ROCKET_REGISTRATION_DISABLED: "false"
-      ROCKET_ENCRYPTION_DISABLED: "false"
-      ROCKET_FEDERATION_ENABLED: "false"
+      - ./conduit.toml:/srv/conduit/conduit.toml
+    ports:
+      - "6167:6167"
     networks:
       - media_proxy
   media_nginx:
