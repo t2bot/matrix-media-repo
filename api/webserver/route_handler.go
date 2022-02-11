@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"github.com/getsentry/sentry-go"
 	"io"
+	"io/ioutil"
+	"math"
 	"mime"
 	"net"
 	"net/http"
@@ -85,6 +87,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Process response
 	var res interface{} = api.AuthFailed()
+	var rctx rcontext.RequestContext
 	if util.IsServerOurs(r.Host) || h.ignoreHost {
 		contextLog.Info("Host is valid - processing request")
 		cfg := config.GetDomain(r.Host)
@@ -100,7 +103,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		ctx = context.WithValue(ctx, "mr.logger", contextLog)
 		ctx = context.WithValue(ctx, "mr.serverConfig", cfg)
 		ctx = context.WithValue(ctx, "mr.request", r)
-		rctx := rcontext.RequestContext{Context: ctx, Log: contextLog, Config: *cfg, Request: r}
+		rctx = rcontext.RequestContext{Context: ctx, Log: contextLog, Config: *cfg, Request: r}
 		r = r.WithContext(rctx)
 
 		metrics.HttpRequests.With(prometheus.Labels{
@@ -164,6 +167,91 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		break
 	case *r0.DownloadMediaResponse:
+		// XXX: This range parsing isn't perfect, but works fine enough for now
+		rangeStart := int64(0)
+		rangeEnd := int64(0)
+		grabBytes := int64(0)
+		doRange := false
+		if r.Header.Get("Range") != "" && result.SizeBytes > 0 && rctx.Request != nil && config.Get().Redis.Enabled {
+			rnge := r.Header.Get("Range")
+			if !strings.HasPrefix(rnge, "bytes=") {
+				statusCode = http.StatusRequestedRangeNotSatisfiable
+				res = api.BadRequest("Improper range units")
+				break
+			}
+			if !strings.Contains(rnge, ",") && !strings.HasPrefix(rnge, "bytes=-") {
+				parts := strings.Split(rnge[len("bytes="):], "-")
+				if len(parts) <= 2 {
+					rstart, err := strconv.ParseInt(parts[0], 10, 64)
+					if err != nil {
+						statusCode = http.StatusRequestedRangeNotSatisfiable
+						res = api.BadRequest("Improper start of range")
+						break
+					}
+
+					if rstart < 0 {
+						statusCode = http.StatusRequestedRangeNotSatisfiable
+						res = api.BadRequest("Improper start of range: negative")
+						break
+					}
+
+					rend := int64(-1)
+					if len(parts) > 1 && parts[1] != "" {
+						rend, err = strconv.ParseInt(parts[1], 10, 64)
+						if err != nil {
+							statusCode = http.StatusRequestedRangeNotSatisfiable
+							res = api.BadRequest("Improper end of range")
+							break
+						}
+
+						if rend < 1 {
+							statusCode = http.StatusRequestedRangeNotSatisfiable
+							res = api.BadRequest("Improper end of range: negative")
+							break
+						}
+
+						if rend >= result.SizeBytes {
+							statusCode = http.StatusRequestedRangeNotSatisfiable
+							res = api.BadRequest("Improper end of range: out of bounds")
+							break
+						}
+
+						if rend <= rstart {
+							statusCode = http.StatusRequestedRangeNotSatisfiable
+							res = api.BadRequest("Start must be before end")
+							break
+						}
+
+						if (rstart + rend) >= result.SizeBytes {
+							statusCode = http.StatusRequestedRangeNotSatisfiable
+							res = api.BadRequest("Range too large")
+							break
+						}
+
+						grabBytes = rend - rstart
+					} else {
+						add := int64(10485760) // 10mb default
+						if rctx.Config.Downloads.DefaultRangeChunkSizeBytes > 0 {
+							add = rctx.Config.Downloads.DefaultRangeChunkSizeBytes
+						}
+						rend = int64(math.Min(float64(rstart+add), float64(result.SizeBytes-1)))
+						grabBytes = (rend - rstart) + 1
+					}
+
+					rangeStart = rstart
+					rangeEnd = rend
+
+					if (rangeEnd-rangeStart) <= 0 || grabBytes <= 0 {
+						statusCode = http.StatusRequestedRangeNotSatisfiable
+						res = api.BadRequest("Range invalid at last pass")
+						break
+					}
+
+					doRange = true
+				}
+			}
+		}
+
 		metrics.HttpResponses.With(prometheus.Labels{
 			"host":       r.Host,
 			"action":     h.action,
@@ -187,6 +275,9 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "private, max-age=259200") // 3 days
 		w.Header().Set("Content-Type", contentType)
 		if result.SizeBytes > 0 {
+			if config.Get().Redis.Enabled {
+				w.Header().Set("Accept-Ranges", "bytes")
+			}
 			w.Header().Set("Content-Length", fmt.Sprint(result.SizeBytes))
 		}
 		disposition := result.TargetDisposition
@@ -222,8 +313,36 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		} else {
 			w.Header().Set("Content-Disposition", disposition+"; filename*=utf-8''"+url.QueryEscape(fname))
 		}
+
 		defer result.Data.Close()
-		writeResponseData(w, result.Data, result.SizeBytes)
+
+		if doRange {
+			_, err = io.CopyN(ioutil.Discard, result.Data, rangeStart)
+			if err != nil {
+				// Should only blow up this request
+				panic(err)
+			}
+
+			expectedBytes := grabBytes
+			w.Header().Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", rangeStart, rangeEnd, result.SizeBytes))
+			w.Header().Set("Content-Length", fmt.Sprint(expectedBytes))
+			w.WriteHeader(http.StatusPartialContent)
+			b, err := io.CopyN(w, result.Data, expectedBytes)
+			if err != nil {
+				// Should only blow up this request
+				panic(err)
+			}
+
+			// Discard anything that remains
+			_, _ = io.Copy(ioutil.Discard, result.Data)
+
+			if expectedBytes > 0 && b != expectedBytes {
+				// Should only blow up this request
+				panic(errors.New("mismatch transfer size"))
+			}
+		} else {
+			writeResponseData(w, result.Data, result.SizeBytes)
+		}
 		return // Prevent sending conflicting responses
 	case *r0.IdenticonResponse:
 		metrics.HttpResponses.With(prometheus.Labels{
@@ -245,7 +364,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}).Inc()
 		w.Header().Set("Cache-Control", "private, max-age=259200") // 3 days
 		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
-		w.Header().Set("Content-Security-Policy", "") // We're serving HTML, so take away the CSP
+		w.Header().Set("Content-Security-Policy", "")   // We're serving HTML, so take away the CSP
 		w.Header().Set("X-Content-Security-Policy", "") // We're serving HTML, so take away the CSP
 		io.Copy(w, bytes.NewBuffer([]byte(result.HTML)))
 		return

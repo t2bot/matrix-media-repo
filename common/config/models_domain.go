@@ -31,8 +31,9 @@ type DatastoreConfig struct {
 }
 
 type DownloadsConfig struct {
-	MaxSizeBytes        int64 `yaml:"maxBytes"`
-	FailureCacheMinutes int   `yaml:"failureCacheMinutes"`
+	MaxSizeBytes               int64 `yaml:"maxBytes"`
+	FailureCacheMinutes        int   `yaml:"failureCacheMinutes"`
+	DefaultRangeChunkSizeBytes int64 `yaml:"defaultRangeChunkSizeBytes"`
 }
 
 type ThumbnailsConfig struct {

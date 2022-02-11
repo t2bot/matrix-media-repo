@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 * New config option to set user agent when requesting URL previews.
 * Added support for `image/jxl` thumbnailing.
+* Built-in early support for content ranges (being able to skip around in audio and video).
 
 ### Removed
 

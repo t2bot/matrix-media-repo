@@ -262,6 +262,12 @@ downloads:
   # negative to disable. Defaults to disabled.
   expireAfterDays: 0
 
+  # The default size, in bytes, to return for range requests on media. Range requests are used
+  # by clients when they only need part of a file, such as a video or audio element. Note that
+  # the entire file will still be cached (if enabled), but only part of it will be returned.
+  # If the client requests a larger or smaller range, that will be honoured.
+  defaultRangeChunkSizeBytes: 10485760 # 10MB default
+
 # URL Preview settings
 urlPreviews:
   enabled: true # If enabled, the preview_url routes will be accessible
