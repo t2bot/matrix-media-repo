@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Fixed media being permanently lost when transferring to an (effectively) readonly S3 datastore.
 * Purging non-existent files now won't cause errors.
 * Fixed HEIF/HEIC thumbnailing. Note that this thumbnail type might cause increased memory usage.
+* Ensure endpoints register in a stable way, making them predictably available.
 
 ### Removed
 

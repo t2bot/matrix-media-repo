@@ -30,6 +30,11 @@ type route struct {
 	handler handler
 }
 
+type definedRoute struct {
+	path  string
+	route route
+}
+
 var srv *http.Server
 var waitGroup = &sync.WaitGroup{}
 var reload = false
@@ -85,89 +90,89 @@ func Init() *sync.WaitGroup {
 	getMediaAttrsHandler := handler{api.AccessTokenRequiredRoute(custom.GetAttributes), "get_media_attributes", counter, false}
 	setMediaAttrsHandler := handler{api.AccessTokenRequiredRoute(custom.SetAttributes), "set_media_attributes", counter, false}
 
-	routes := make(map[string]route)
+	routes := make([]definedRoute, 0)
 	// r0 is typically clients and v1 is typically servers. v1 is deprecated.
 	// unstable is, well, unstable. unstable/io.t2bot.media is to comply with MSC2324
 	// v3 is Matrix 1.1 stuff
 	versions := []string{"r0", "v1", "v3", "unstable", "unstable/io.t2bot.media"}
 
 	// Things that don't need a version
-	routes["/_matrix/media/version"] = route{"GET", versionHandler}
+	routes = append(routes, definedRoute{"/_matrix/media/version", route{"GET", versionHandler}})
 
 	for _, version := range versions {
 		// Standard routes we have to handle
-		routes["/_matrix/media/"+version+"/upload"] = route{"POST", uploadHandler}
-		routes["/_matrix/media/"+version+"/download/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}"] = route{"GET", downloadHandler}
-		routes["/_matrix/media/"+version+"/download/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}/{filename:.+}"] = route{"GET", downloadHandler}
-		routes["/_matrix/media/"+version+"/thumbnail/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}"] = route{"GET", thumbnailHandler}
-		routes["/_matrix/media/"+version+"/preview_url"] = route{"GET", previewUrlHandler}
-		routes["/_matrix/media/"+version+"/identicon/{seed:.*}"] = route{"GET", identiconHandler}
-		routes["/_matrix/media/"+version+"/config"] = route{"GET", configHandler}
-		routes["/_matrix/client/"+version+"/logout"] = route{"POST", logoutHandler}
-		routes["/_matrix/client/"+version+"/logout/all"] = route{"POST", logoutAllHandler}
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/upload", route{"POST", uploadHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/download/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}/{filename:.+}", route{"GET", downloadHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/download/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}", route{"GET", downloadHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/thumbnail/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}", route{"GET", thumbnailHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/preview_url", route{"GET", previewUrlHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/identicon/{seed:.*}", route{"GET", identiconHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/config", route{"GET", configHandler}})
+		routes = append(routes, definedRoute{"/_matrix/client/" + version + "/logout", route{"POST", logoutHandler}})
+		routes = append(routes, definedRoute{"/_matrix/client/" + version + "/logout/all", route{"POST", logoutAllHandler}})
 
 		// Routes that we define but are not part of the spec (management)
-		routes["/_matrix/media/"+version+"/admin/purge_remote"] = route{"POST", purgeRemote} // deprecated
-		routes["/_matrix/media/"+version+"/admin/purge/remote"] = route{"POST", purgeRemote}
-		routes["/_matrix/media/"+version+"/admin/purge/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}"] = route{"POST", purgeOneHandler}
-		routes["/_matrix/media/"+version+"/admin/purge/quarantined"] = route{"POST", purgeQuarantinedHandler}
-		routes["/_matrix/media/"+version+"/admin/purge/user/{userId:[^/]+}"] = route{"POST", purgeUserMediaHandler}
-		routes["/_matrix/media/"+version+"/admin/purge/room/{roomId:[^/]+}"] = route{"POST", purgeRoomHandler}
-		routes["/_matrix/media/"+version+"/admin/purge/server/{serverName:[^/]+}"] = route{"POST", purgeDomainHandler}
-		routes["/_matrix/media/"+version+"/admin/purge/old"] = route{"POST", purgeOldHandler}
-		routes["/_matrix/media/"+version+"/admin/room/{roomId:[^/]+}/quarantine"] = route{"POST", quarantineRoomHandler} // deprecated
-		routes["/_matrix/media/"+version+"/admin/quarantine/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}"] = route{"POST", quarantineHandler}
-		routes["/_matrix/media/"+version+"/admin/quarantine/room/{roomId:[^/]+}"] = route{"POST", quarantineRoomHandler}
-		routes["/_matrix/media/"+version+"/admin/quarantine/user/{userId:[^/]+}"] = route{"POST", quarantineUserHandler}
-		routes["/_matrix/media/"+version+"/admin/quarantine/server/{serverName:[^/]+}"] = route{"POST", quarantineDomainHandler}
-		routes["/_matrix/media/"+version+"/admin/datastores/{datastoreId:[^/]+}/size_estimate"] = route{"GET", storageEstimateHandler}
-		routes["/_matrix/media/"+version+"/admin/datastores"] = route{"GET", datastoreListHandler}
-		routes["/_matrix/media/"+version+"/admin/datastores/{sourceDsId:[^/]+}/transfer_to/{targetDsId:[^/]+}"] = route{"POST", dsTransferHandler}
-		routes["/_matrix/media/"+version+"/admin/federation/test/{serverName:[a-zA-Z0-9.:\\-_]+}"] = route{"GET", fedTestHandler}
-		routes["/_matrix/media/"+version+"/admin/usage/{serverName:[a-zA-Z0-9.:\\-_]+}"] = route{"GET", domainUsageHandler}
-		routes["/_matrix/media/"+version+"/admin/usage/{serverName:[a-zA-Z0-9.:\\-_]+}/users"] = route{"GET", userUsageHandler}
-		routes["/_matrix/media/"+version+"/admin/usage/{serverName:[a-zA-Z0-9.:\\-_]+}/uploads"] = route{"GET", uploadsUsageHandler}
-		routes["/_matrix/media/"+version+"/admin/tasks/{taskId:[0-9]+}"] = route{"GET", getBackgroundTaskHandler}
-		routes["/_matrix/media/"+version+"/admin/tasks/all"] = route{"GET", listAllBackgroundTasksHandler}
-		routes["/_matrix/media/"+version+"/admin/tasks/unfinished"] = route{"GET", listUnfinishedBackgroundTasksHandler}
-		routes["/_matrix/media/"+version+"/admin/user/{userId:[^/]+}/export"] = route{"POST", exportUserDataHandler}
-		routes["/_matrix/media/"+version+"/admin/server/{serverName:[^/]+}/export"] = route{"POST", exportServerDataHandler}
-		routes["/_matrix/media/"+version+"/admin/export/{exportId:[a-zA-Z0-9.:\\-_]+}/view"] = route{"GET", viewExportHandler}
-		routes["/_matrix/media/"+version+"/admin/export/{exportId:[a-zA-Z0-9.:\\-_]+}/metadata"] = route{"GET", getExportMetadataHandler}
-		routes["/_matrix/media/"+version+"/admin/export/{exportId:[a-zA-Z0-9.:\\-_]+}/part/{partId:[0-9]+}"] = route{"GET", downloadExportPartHandler}
-		routes["/_matrix/media/"+version+"/admin/export/{exportId:[a-zA-Z0-9.:\\-_]+}/delete"] = route{"DELETE", deleteExportHandler}
-		routes["/_matrix/media/"+version+"/admin/import"] = route{"POST", startImportHandler}
-		routes["/_matrix/media/"+version+"/admin/import/{importId:[a-zA-Z0-9.:\\-_]+}/part"] = route{"POST", appendToImportHandler}
-		routes["/_matrix/media/"+version+"/admin/import/{importId:[a-zA-Z0-9.:\\-_]+}/close"] = route{"POST", stopImportHandler}
-		routes["/_matrix/media/"+version+"/admin/media/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}/attributes"] = route{"GET", getMediaAttrsHandler}
-		routes["/_matrix/media/"+version+"/admin/media/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}/attributes/set"] = route{"POST", setMediaAttrsHandler}
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/purge_remote", route{"POST", purgeRemote}}) // deprecated
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/purge/remote", route{"POST", purgeRemote}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/purge/quarantined", route{"POST", purgeQuarantinedHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/purge/user/{userId:[^/]+}", route{"POST", purgeUserMediaHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/purge/room/{roomId:[^/]+}", route{"POST", purgeRoomHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/purge/server/{serverName:[^/]+}", route{"POST", purgeDomainHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/purge/old", route{"POST", purgeOldHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/purge/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}", route{"POST", purgeOneHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/room/{roomId:[^/]+}/quarantine", route{"POST", quarantineRoomHandler}}) // deprecated
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/quarantine/room/{roomId:[^/]+}", route{"POST", quarantineRoomHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/quarantine/user/{userId:[^/]+}", route{"POST", quarantineUserHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/quarantine/server/{serverName:[^/]+}", route{"POST", quarantineDomainHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/quarantine/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}", route{"POST", quarantineHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/datastores/{datastoreId:[^/]+}/size_estimate", route{"GET", storageEstimateHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/datastores", route{"GET", datastoreListHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/datastores/{sourceDsId:[^/]+}/transfer_to/{targetDsId:[^/]+}", route{"POST", dsTransferHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/federation/test/{serverName:[a-zA-Z0-9.:\\-_]+}", route{"GET", fedTestHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/usage/{serverName:[a-zA-Z0-9.:\\-_]+}", route{"GET", domainUsageHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/usage/{serverName:[a-zA-Z0-9.:\\-_]+}/users", route{"GET", userUsageHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/usage/{serverName:[a-zA-Z0-9.:\\-_]+}/uploads", route{"GET", uploadsUsageHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/tasks/{taskId:[0-9]+}", route{"GET", getBackgroundTaskHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/tasks/all", route{"GET", listAllBackgroundTasksHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/tasks/unfinished", route{"GET", listUnfinishedBackgroundTasksHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/user/{userId:[^/]+}/export", route{"POST", exportUserDataHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/server/{serverName:[^/]+}/export", route{"POST", exportServerDataHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/export/{exportId:[a-zA-Z0-9.:\\-_]+}/view", route{"GET", viewExportHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/export/{exportId:[a-zA-Z0-9.:\\-_]+}/metadata", route{"GET", getExportMetadataHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/export/{exportId:[a-zA-Z0-9.:\\-_]+}/part/{partId:[0-9]+}", route{"GET", downloadExportPartHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/export/{exportId:[a-zA-Z0-9.:\\-_]+}/delete", route{"DELETE", deleteExportHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/import", route{"POST", startImportHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/import/{importId:[a-zA-Z0-9.:\\-_]+}/part", route{"POST", appendToImportHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/import/{importId:[a-zA-Z0-9.:\\-_]+}/close", route{"POST", stopImportHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/media/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}/attributes", route{"GET", getMediaAttrsHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/media/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}/attributes/set", route{"POST", setMediaAttrsHandler}})
 
 		// Routes that we should handle but aren't in the media namespace (synapse compat)
-		routes["/_matrix/client/"+version+"/admin/purge_media_cache"] = route{"POST", purgeRemote}
-		routes["/_matrix/client/"+version+"/admin/quarantine_media/{roomId:[^/]+}"] = route{"POST", quarantineRoomHandler}
+		routes = append(routes, definedRoute{"/_matrix/client/" + version + "/admin/purge_media_cache", route{"POST", purgeRemote}})
+		routes = append(routes, definedRoute{"/_matrix/client/" + version + "/admin/quarantine_media/{roomId:[^/]+}", route{"POST", quarantineRoomHandler}})
 
 		if strings.Index(version, "unstable") == 0 {
-			routes["/_matrix/media/"+version+"/local_copy/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}"] = route{"GET", localCopyHandler}
-			routes["/_matrix/media/"+version+"/info/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}"] = route{"GET", infoHandler}
-			routes["/_matrix/media/"+version+"/download/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}"] = route{"DELETE", purgeOneHandler}
+			routes = append(routes, definedRoute{"/_matrix/media/" + version + "/local_copy/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}", route{"GET", localCopyHandler}})
+			routes = append(routes, definedRoute{"/_matrix/media/" + version + "/info/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}", route{"GET", infoHandler}})
+			routes = append(routes, definedRoute{"/_matrix/media/" + version + "/download/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}", route{"DELETE", purgeOneHandler}})
 		}
 	}
 
 	if config.Get().Features.IPFS.Enabled {
-		routes[features.IPFSDownloadRoute] = route{"GET", ipfsDownloadHandler}
-		routes[features.IPFSLiveDownloadRouteR0] = route{"GET", ipfsDownloadHandler}
-		routes[features.IPFSLiveDownloadRouteV1] = route{"GET", ipfsDownloadHandler}
-		routes[features.IPFSLiveDownloadRouteUnstable] = route{"GET", ipfsDownloadHandler}
+		routes = append(routes, definedRoute{features.IPFSDownloadRoute, route{"GET", ipfsDownloadHandler}})
+		routes = append(routes, definedRoute{features.IPFSLiveDownloadRouteR0, route{"GET", ipfsDownloadHandler}})
+		routes = append(routes, definedRoute{features.IPFSLiveDownloadRouteV1, route{"GET", ipfsDownloadHandler}})
+		routes = append(routes, definedRoute{features.IPFSLiveDownloadRouteUnstable, route{"GET", ipfsDownloadHandler}})
 	}
 
-	for routePath, route := range routes {
-		logrus.Info("Registering route: " + route.method + " " + routePath)
-		rtr.Handle(routePath, route.handler).Methods(route.method)
-		rtr.Handle(routePath, optionsHandler).Methods("OPTIONS")
+	for _, def := range routes {
+		logrus.Info("Registering route: " + def.route.method + " " + def.path)
+		rtr.Handle(def.path, def.route.handler).Methods(def.route.method)
+		rtr.Handle(def.path, optionsHandler).Methods("OPTIONS")
 
 		// This is a hack to a ensure that trailing slashes also match the routes correctly
-		rtr.Handle(routePath+"/", route.handler).Methods(route.method)
-		rtr.Handle(routePath+"/", optionsHandler).Methods("OPTIONS")
+		rtr.Handle(def.path+"/", def.route.handler).Methods(def.route.method)
+		rtr.Handle(def.path+"/", optionsHandler).Methods("OPTIONS")
 	}
 
 	// Health check endpoints
