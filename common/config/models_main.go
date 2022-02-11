@@ -29,19 +29,8 @@ type DbPoolConfig struct {
 
 type MainDownloadsConfig struct {
 	DownloadsConfig `yaml:",inline"`
-	NumWorkers      int         `yaml:"numWorkers"`
-	Cache           CacheConfig `yaml:"cache"`
-	ExpireDays      int         `yaml:"expireAfterDays"`
-}
-
-type CacheConfig struct {
-	Enabled               bool  `yaml:"enabled"`
-	MaxSizeBytes          int64 `yaml:"maxSizeBytes"`
-	MaxFileSizeBytes      int64 `yaml:"maxFileSizeBytes"`
-	TrackedMinutes        int   `yaml:"trackedMinutes"`
-	MinCacheTimeSeconds   int   `yaml:"minCacheTimeSeconds"`
-	MinEvictedTimeSeconds int   `yaml:"minEvictedTimeSeconds"`
-	MinDownloads          int   `yaml:"minDownloads"`
+	NumWorkers      int `yaml:"numWorkers"`
+	ExpireDays      int `yaml:"expireAfterDays"`
 }
 
 type MainThumbnailsConfig struct {

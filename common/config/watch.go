@@ -101,14 +101,7 @@ func onFileChanged() {
 
 	redisEnabledChange := configNew.Features.Redis.Enabled != configNow.Features.Redis.Enabled
 	redisShardsChange := hasRedisShardConfigChanged(configNew, configNow)
-	cacheEnabledChange := configNew.Downloads.Cache.Enabled != configNow.Downloads.Cache.Enabled
-	cacheMaxSizeChange := configNew.Downloads.Cache.MaxSizeBytes != configNow.Downloads.Cache.MaxSizeBytes
-	cacheMaxFileSizeChange := configNew.Downloads.Cache.MaxFileSizeBytes != configNow.Downloads.Cache.MaxFileSizeBytes
-	cacheTrackedMinChange := configNew.Downloads.Cache.TrackedMinutes != configNow.Downloads.Cache.TrackedMinutes
-	cacheMinDownloadsChange := configNew.Downloads.Cache.MinDownloads != configNow.Downloads.Cache.MinDownloads
-	cacheMinCacheTimeChange := configNew.Downloads.Cache.MinCacheTimeSeconds != configNow.Downloads.Cache.MinCacheTimeSeconds
-	cacheMinEvictedTimeChange := configNew.Downloads.Cache.MinEvictedTimeSeconds != configNow.Downloads.Cache.MinEvictedTimeSeconds
-	if redisEnabledChange || redisShardsChange || cacheEnabledChange || cacheMaxSizeChange || cacheMaxFileSizeChange || cacheTrackedMinChange || cacheMinDownloadsChange || cacheMinCacheTimeChange || cacheMinEvictedTimeChange {
+	if redisEnabledChange || redisShardsChange {
 		logrus.Warn("Cache configuration changed - reloading")
 		globals.CacheReplaceChan <- true
 	}
