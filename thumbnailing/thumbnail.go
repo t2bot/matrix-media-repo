@@ -47,7 +47,8 @@ func GenerateThumbnail(imgStream io.ReadCloser, contentType string, width int, h
 	if err != nil {
 		return nil, err
 	}
-	if dimensional && (w * h) >= ctx.Config.Thumbnails.MaxPixels {
+	if dimensional && (w*h) >= ctx.Config.Thumbnails.MaxPixels {
+		ctx.Log.Warn("Image too large: too many pixels")
 		return nil, common.ErrMediaTooLarge
 	}
 

@@ -44,6 +44,7 @@ require (
 	github.com/ipfs/go-ipfs-config v0.12.0
 	github.com/ipfs/go-ipfs-files v0.0.8
 	github.com/ipfs/interface-go-ipfs-core v0.4.0
+	github.com/jdeng/goheif v0.0.0-20200323230657-a0d6a8b3e68f
 	github.com/jehiah/go-strftime v0.0.0-20171201141054-1d33003b3869 // indirect
 	github.com/k3a/html2text v1.0.7
 	github.com/kettek/apng v0.0.0-20191108220231-414630eed80f
