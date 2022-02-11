@@ -26,7 +26,7 @@ type RegisterRequest struct {
 }
 
 type RegisterResponse struct {
-	UserID string `json:"user_id"`
+	UserID      string `json:"user_id"`
 	AccessToken string `json:"access_token"`
 }
 
@@ -47,7 +47,7 @@ func respondJson(w http.ResponseWriter, i interface{}) error {
 	if err != nil {
 		return err
 	}
-	w.Header().Set("Content-Length",strconv.Itoa(len(resp)))
+	w.Header().Set("Content-Length", strconv.Itoa(len(resp)))
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 	_, err = w.Write(resp)
@@ -74,7 +74,7 @@ func main() {
 		userId := fmt.Sprintf("@%s:%s", rr.DesiredUsername, os.Getenv("SERVER_NAME"))
 		err = respondJson(w, &RegisterResponse{
 			AccessToken: userId,
-			UserID: userId,
+			UserID:      userId,
 		})
 		if err != nil {
 			log.Fatal(err)
@@ -91,7 +91,7 @@ func main() {
 	rtr.PathPrefix("/_matrix/media/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Proxy to the media repo running within the container
 		defer cleanup.DumpAndCloseStream(r.Body)
-		r2, err := http.NewRequest(r.Method, "http://127.0.0.1:8228" + r.RequestURI, r.Body)
+		r2, err := http.NewRequest(r.Method, "http://127.0.0.1:8228"+r.RequestURI, r.Body)
 		if err != nil {
 			log.Fatal(err)
 		}

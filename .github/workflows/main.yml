@@ -31,4 +31,4 @@ jobs:
         env:
           CI: "true"
           COMPLEMENT_BASE_IMAGE: "complement-media-repo"
-          COMPLEMENT_VERSION_CHECK_ITERATIONS: "400"
+          COMPLEMENT_SPAWN_HS_TIMEOUT_SECS: "120"
