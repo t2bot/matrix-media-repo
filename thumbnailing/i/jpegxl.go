@@ -2,6 +2,7 @@ package i
 
 import (
 	"errors"
+	"github.com/turt2live/matrix-media-repo/util/ids"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -9,7 +10,6 @@ import (
 
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/m"
-	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/cleanup"
 )
 
@@ -33,7 +33,7 @@ func (d jpegxlGenerator) GetOriginDimensions(b []byte, contentType string, ctx r
 }
 
 func (d jpegxlGenerator) GenerateThumbnail(b []byte, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
-	key, err := util.GenerateRandomString(16)
+	key, err := ids.NewUniqueId()
 	if err != nil {
 		return nil, errors.New("jpegxl: error generating temp key: " + err.Error())
 	}

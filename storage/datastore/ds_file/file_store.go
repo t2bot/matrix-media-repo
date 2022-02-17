@@ -2,6 +2,7 @@ package ds_file
 
 import (
 	"errors"
+	"github.com/turt2live/matrix-media-repo/util/ids"
 	"io"
 	"io/ioutil"
 	"os"
@@ -24,7 +25,7 @@ func PersistFile(basePath string, file io.ReadCloser, ctx rcontext.RequestContex
 	var targetFile string
 	attempts := 0
 	for exists {
-		fileId, err := util.GenerateRandomString(64)
+		fileId, err := ids.NewUniqueId()
 		if err != nil {
 			return nil, err
 		}

@@ -2,6 +2,7 @@ package ds_s3
 
 import (
 	"fmt"
+	"github.com/turt2live/matrix-media-repo/util/ids"
 	"io"
 	"io/ioutil"
 	"os"
@@ -132,7 +133,7 @@ func (s *s3Datastore) EnsureTempPathExists() error {
 func (s *s3Datastore) UploadFile(file io.ReadCloser, expectedLength int64, ctx rcontext.RequestContext) (*types.ObjectInfo, error) {
 	defer cleanup.DumpAndCloseStream(file)
 
-	objectName, err := util.GenerateRandomString(512)
+	objectName, err := ids.NewUniqueId()
 	if err != nil {
 		return nil, err
 	}

@@ -4,6 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/bwmarrin/snowflake"
+	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/util"
 	"net/http"
 	"os"
 	"strconv"
@@ -30,9 +32,18 @@ func main() {
 			return
 		}
 
+		// Generate a random string to pad out the returned ID
+		r, err := util.GenerateRandomString(32)
+		if err != nil {
+			logrus.Error(err)
+			w.WriteHeader(500)
+			return
+		}
+		s := r + node.Generate().String()
+
 		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusOK)
-		_, err := w.Write([]byte("mmr_" + node.Generate().String()))
+		_, err = w.Write([]byte(s))
 		if err != nil {
 			fmt.Println(err)
 			return

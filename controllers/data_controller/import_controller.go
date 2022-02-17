@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/getsentry/sentry-go"
+	"github.com/turt2live/matrix-media-repo/util/ids"
 	"io"
 	"net/http"
 	"sync"
@@ -78,7 +79,7 @@ func StartImport(data io.Reader, ctx rcontext.RequestContext) (*types.Background
 		return nil, "", err
 	}
 
-	importId, err := util.GenerateRandomString(128)
+	importId, err := ids.NewUniqueId()
 	if err != nil {
 		return nil, "", err
 	}

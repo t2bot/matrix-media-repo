@@ -12,9 +12,9 @@ func NewUniqueId() (string, error) {
 		return cluster.GetId()
 	}
 
-	s, err := util.GenerateRandomString(64)
+	b, err := util.GenerateRandomBytes(64)
 	if err != nil {
 		return "", err
 	}
-	return util.GetSha1OfString(s + strconv.FormatInt(util.NowMillis(), 10))
+	return util.GetSha1OfString(string(b) + strconv.FormatInt(util.NowMillis(), 10))
 }

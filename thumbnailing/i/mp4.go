@@ -2,6 +2,7 @@ package i
 
 import (
 	"errors"
+	"github.com/turt2live/matrix-media-repo/util/ids"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -33,7 +34,7 @@ func (d mp4Generator) GetOriginDimensions(b []byte, contentType string, ctx rcon
 }
 
 func (d mp4Generator) GenerateThumbnail(b []byte, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
-	key, err := util.GenerateRandomString(16)
+	key, err := ids.NewUniqueId()
 	if err != nil {
 		return nil, errors.New("mp4: error generating temp key: " + err.Error())
 	}

@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/getsentry/sentry-go"
+	"github.com/turt2live/matrix-media-repo/util/ids"
 	"io"
 	"time"
 
@@ -47,7 +48,7 @@ type Manifest struct {
 }
 
 func StartServerExport(serverName string, s3urls bool, includeData bool, ctx rcontext.RequestContext) (*types.BackgroundTask, string, error) {
-	exportId, err := util.GenerateRandomString(128)
+	exportId, err := ids.NewUniqueId()
 	if err != nil {
 		return nil, "", err
 	}
@@ -100,7 +101,7 @@ func StartServerExport(serverName string, s3urls bool, includeData bool, ctx rco
 }
 
 func StartUserExport(userId string, s3urls bool, includeData bool, ctx rcontext.RequestContext) (*types.BackgroundTask, string, error) {
-	exportId, err := util.GenerateRandomString(128)
+	exportId, err := ids.NewUniqueId()
 	if err != nil {
 		return nil, "", err
 	}
