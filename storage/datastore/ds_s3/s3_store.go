@@ -28,6 +28,7 @@ type s3Datastore struct {
 	region string
 	tempPath string
 	storageClass string
+	prefixLength int
 }
 
 func GetOrCreateS3Datastore(dsId string, conf config.DatastoreConfig) (*s3Datastore, error) {
@@ -58,6 +59,12 @@ func GetOrCreateS3Datastore(dsId string, conf config.DatastoreConfig) (*s3Datast
 		useSsl, _ = strconv.ParseBool(useSslStr)
 	}
 
+	prefixLength := 0
+	prefixLengthStr, prefixLengthFound := conf.Options["prefixLength"]
+	if prefixLengthFound && prefixLengthStr != "" {
+		prefixLength, _ = strconv.Atoi(prefixLengthStr)
+	}
+
 	var s3client *minio.Client
 	var err error
 
@@ -78,6 +85,7 @@ func GetOrCreateS3Datastore(dsId string, conf config.DatastoreConfig) (*s3Datast
 		region: region,
 		tempPath: tempPath,
 		storageClass: storageClass,
+		prefixLength: prefixLength,
 	}
 	stores[dsId] = s3ds
 	return s3ds, nil
@@ -130,10 +138,12 @@ func (s *s3Datastore) EnsureTempPathExists() error {
 func (s *s3Datastore) UploadFile(file io.ReadCloser, expectedLength int64, ctx rcontext.RequestContext) (*types.ObjectInfo, error) {
 	defer cleanup.DumpAndCloseStream(file)
 
-	objectName, err := util.GenerateRandomString(512)
+	objectKey, err := util.GenerateRandomString(512)
 	if err != nil {
 		return nil, err
 	}
+
+	objectName := objectKey[:s.prefixLength] + "/" + objectKey[s.prefixLength:]
 
 	var rs3 io.ReadCloser
 	var ws3 io.WriteCloser

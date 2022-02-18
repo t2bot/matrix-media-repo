@@ -172,6 +172,9 @@ datastores:
       # An optional storage class for tuning how the media is stored at s3.
       # See https://aws.amazon.com/s3/storage-classes/ for details; uncomment to use.
       #storageClass: STANDARD
+      # An optional prefix length when generating object keys, can be used to improve
+      # S3 performance
+      # prefixLength: 3
 
   # The media repo does support an IPFS datastore, but only if the IPFS feature is enabled. If
   # the feature is not enabled, this will not work. Note that IPFS support is experimental at
