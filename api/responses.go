@@ -57,3 +57,7 @@ func BadRequest(message string) *ErrorResponse {
 func QuotaExceeded() *ErrorResponse {
 	return &ErrorResponse{common.ErrCodeForbidden, "Quota Exceeded", common.ErrCodeQuotaExceeded}
 }
+
+func ServiceUnavailable() *ErrorResponse {
+	return &ErrorResponse{common.ErrCodeServiceUnavailable, "Service unavailable", common.ErrCodeServiceUnavailable}
+}

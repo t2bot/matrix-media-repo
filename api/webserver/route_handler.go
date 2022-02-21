@@ -161,6 +161,9 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case common.ErrCodeForbidden:
 			statusCode = http.StatusForbidden
 			break
+		case common.ErrCodeServiceUnavailable:
+			statusCode = http.StatusServiceUnavailable
+			break
 		default: // Treat as unknown (a generic server error)
 			statusCode = http.StatusInternalServerError
 			break
