@@ -230,6 +230,38 @@ The response is how much data the server is using:
 
 Use the same endpoint as above, but specifying one or more `?user_id=@alice:example.org` query parameters. Note that encoding the values may be required (not shown here). Users that are unknown to the media repo will not be returned.
 
+#### All known users' usage statistics
+
+Similar to [Per-user usage (all known users)](#per-user-usage-all-known-users), but with a focus on statistics, and with
+parameterized querying ability.
+
+This end-point attempts to be a loose equivalent to
+[this](https://matrix-org.github.io/synapse/develop/admin_api/statistics.html#users-media-usage-statistics) Synapse
+endpoint, with the main difference being the absence of "displayname".
+
+URL: `GET /_matrix/media/unstable/admin/usage/<server name>/users-stats?access_token=your_access_token`
+
+Example response:
+```json
+{
+  "next_token" : 100,
+  "total" : 105,
+  "users" : [
+    {
+      "media_count" : 12,
+      "media_length" : 39546,
+      "user_id" : "@alice:example.com"
+    },
+    {
+      "media_count" : 46,
+      "media_length" : 5935234,
+      "user_id" : "@bob:example.com"
+    },
+    ...
+  ]
+}
+```
+
 #### Per-upload usage (all uploads)
 
 URL: `GET /_matrix/media/unstable/admin/usage/<server name>/uploads?access_token=your_access_token`
