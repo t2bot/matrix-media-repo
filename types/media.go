@@ -35,6 +35,12 @@ type MinimalMediaMetadata struct {
 	DatastoreId  string
 }
 
+type UserUsageStats struct {
+	MediaCount  int64
+	MediaLength int64
+	UserId      string
+}
+
 func (m *Media) MxcUri() string {
 	return "mxc://" + m.Origin + "/" + m.MediaId
 }
