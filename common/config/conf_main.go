@@ -27,6 +27,7 @@ func NewDefaultMainConfig() MainRepoConfig {
 			LogDirectory:     "logs",
 			LogColors:        false,
 			JsonLogs:         false,
+			LogLevel:         "info",
 			TrustAnyForward:  false,
 			UseForwardedHost: true,
 		},

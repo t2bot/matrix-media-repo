@@ -6,6 +6,7 @@ type GeneralConfig struct {
 	LogDirectory     string `yaml:"logDirectory"`
 	LogColors        bool   `yaml:"logColors"`
 	JsonLogs         bool   `yaml:"jsonLogs"`
+	LogLevel         string `yaml:"logLevel"`
 	TrustAnyForward  bool   `yaml:"trustAnyForwardedAddress"`
 	UseForwardedHost bool   `yaml:"useForwardedHost"`
 }

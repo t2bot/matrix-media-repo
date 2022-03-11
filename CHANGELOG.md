@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Added support for `image/jxl` thumbnailing.
 * Built-in early support for content ranges (being able to skip around in audio and video). This is only available if
   caching is enabled.
+* New config option for changing the log level.
 
 ### Removed
 

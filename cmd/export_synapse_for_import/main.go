@@ -58,7 +58,12 @@ func main() {
 		realPsqlPassword = *postgresPassword
 	}
 
-	err := logging.Setup(config.Get().General.LogDirectory, config.Get().General.LogColors, config.Get().General.JsonLogs)
+	err := logging.Setup(
+		config.Get().General.LogDirectory,
+		config.Get().General.LogColors,
+		config.Get().General.JsonLogs,
+		config.Get().General.LogLevel,
+	)
 	if err != nil {
 		panic(err)
 	}
