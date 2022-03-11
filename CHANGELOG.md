@@ -32,6 +32,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Changed
 
 * Updated support for post-[MSC3069](https://github.com/matrix-org/matrix-doc/pull/3069) homeservers.
+* Updated the built-in oEmbed `providers.json`
 
 # [1.2.10] - December 23rd, 2021
 
