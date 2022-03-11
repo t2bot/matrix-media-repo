@@ -165,6 +165,10 @@ func GetServerApiUrl(hostname string) (string, string, error) {
 			}
 		}
 	}
+	if r != nil {
+		logrus.Debug("WK response code was ", r.StatusCode)
+	}
+	logrus.Debug("WK error: ", err)
 
 	// Step 4: try resolving a hostname using SRV records and use it
 	// Note: we ignore errors here because the hostname will fail elsewhere.
