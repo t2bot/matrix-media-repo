@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Added support for `image/jxl` thumbnailing.
 * Built-in early support for content ranges (being able to skip around in audio and video). This is only available if
   caching is enabled.
+* New config option for changing the log level.
 * Admin endpoint to GET users' usage statistics for a server.
 
 ### Removed
@@ -32,6 +33,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Changed
 
 * Updated support for post-[MSC3069](https://github.com/matrix-org/matrix-doc/pull/3069) homeservers.
+* Updated the built-in oEmbed `providers.json`
 
 # [1.2.10] - December 23rd, 2021
 

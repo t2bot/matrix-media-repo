@@ -19,6 +19,11 @@ repo:
   # incompatible with the log color option and will always render without colors.
   jsonLogs: false
 
+  # The log level to log at. Note that this will need to be at least "info" to receive support.
+  #
+  # Values (in increasing spam): panic | fatal | error | warn | info | debug | trace
+  logLevel: "info"
+
   # If true, the media repo will accept any X-Forwarded-For header without validation. In most cases
   # this option should be left as "false". Note that the media repo already expects an X-Forwarded-For
   # header, but validates it to ensure the IP being given makes sense.

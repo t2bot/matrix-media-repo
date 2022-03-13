@@ -19,7 +19,16 @@ func (f utcFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	return f.Formatter.Format(entry)
 }
 
-func Setup(dir string, colors bool, json bool) error {
+func Setup(dir string, colors bool, json bool, level string) error {
+	if level == "" {
+		level = "info"
+	}
+	lvl, err := logrus.ParseLevel(level)
+	if err != nil {
+		return err
+	}
+	logrus.SetLevel(lvl)
+
 	var lineFormatter logrus.Formatter
 	if json {
 		lineFormatter = &logrus.JSONFormatter{
