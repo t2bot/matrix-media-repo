@@ -71,7 +71,7 @@ func Init() *sync.WaitGroup {
 	domainUsageHandler := handler{api.RepoAdminRoute(custom.GetDomainUsage), "domain_usage", counter, false}
 	userUsageHandler := handler{api.RepoAdminRoute(custom.GetUserUsage), "user_usage", counter, false}
 	uploadsUsageHandler := handler{api.RepoAdminRoute(custom.GetUploadsUsage), "uploads_usage", counter, false}
-	usersUsageStatsHandler := handler{api.RepoAdminRoute(custom.GetUsersUsageStats), "users_usage_stats", counter, false}
+	usersUsageStatsHandler := handler{api.AccessTokenRequiredRoute(custom.GetUsersUsageStats), "users_usage_stats", counter, false}
 	getBackgroundTaskHandler := handler{api.RepoAdminRoute(custom.GetTask), "get_background_task", counter, false}
 	listAllBackgroundTasksHandler := handler{api.RepoAdminRoute(custom.ListAllTasks), "list_all_background_tasks", counter, false}
 	listUnfinishedBackgroundTasksHandler := handler{api.RepoAdminRoute(custom.ListUnfinishedTasks), "list_unfinished_background_tasks", counter, false}

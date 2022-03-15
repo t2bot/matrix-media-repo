@@ -171,7 +171,7 @@ The `task_id` can be given to the Background Tasks API described below.
 
 ## Data usage for servers/users
 
-Individual servers and users can often hoard data in the media repository. These endpoints will tell you how much. These endpoints can only be called by repository admins - they are not available to admins of the homeservers.
+Individual servers and users can often hoard data in the media repository. These endpoints will tell you how much. Unless stated otherwise (below), these endpoints can only be called by repository admins - they are not available to admins of the homeservers.
 
 **Caution**: These endpoints may return *lots* of data. Making very specific requests is recommended.
 
@@ -232,8 +232,11 @@ Use the same endpoint as above, but specifying one or more `?user_id=@alice:exam
 
 #### All known users' usage statistics
 
-Similar to [Per-user usage (all known users)](#per-user-usage-all-known-users), but with a focus on statistics, and with
-parameterized querying ability.
+Similar to [Per-user usage (all known users)](#per-user-usage-all-known-users), but with:
+
+* a focus on statistics
+* parameterized querying ability
+* relaxed authorization restrictions (to allow homeserver admins to query against their own homeserver)
 
 This end-point attempts to be a loose equivalent to
 [this](https://matrix-org.github.io/synapse/develop/admin_api/statistics.html#users-media-usage-statistics) Synapse

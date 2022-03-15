@@ -215,12 +215,17 @@ func GetUploadsUsage(r *http.Request, rctx rcontext.RequestContext, user api.Use
 
 // GetUsersUsageStats attempts to provide a loose equivalent to this Synapse admin end-point:
 // https://matrix-org.github.io/synapse/develop/admin_api/statistics.html#users-media-usage-statistics
-func GetUsersUsageStats(r *http.Request, rctx rcontext.RequestContext, _ api.UserInfo) interface{} {
+func GetUsersUsageStats(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
 	params := mux.Vars(r)
 	qs := r.URL.Query()
 	var err error
 
 	serverName := params["serverName"]
+
+	isGlobalAdmin, isLocalAdmin := api.GetRequestUserAdminStatus(r, rctx, user)
+	if !isGlobalAdmin && (!util.IsServerOurs(serverName) || !isLocalAdmin) {
+		return api.AuthFailed()
+	}
 
 	orderBy := qs.Get("order_by")
 	if len(qs["order_by"]) == 0 {
