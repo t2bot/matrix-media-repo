@@ -44,6 +44,7 @@ func Init() *sync.WaitGroup {
 	counter := &requestCounter{}
 
 	optionsHandler := handler{api.EmptyResponseHandler, "options_request", counter, false}
+	createHandler := handler{api.AccessTokenRequiredRoute(r0.CreateMedia), "create", counter, false}
 	uploadHandler := handler{api.AccessTokenRequiredRoute(r0.UploadMedia), "upload", counter, false}
 	downloadHandler := handler{api.AccessTokenOptionalRoute(r0.DownloadMedia), "download", counter, false}
 	thumbnailHandler := handler{api.AccessTokenOptionalRoute(r0.ThumbnailMedia), "thumbnail", counter, false}
@@ -156,6 +157,12 @@ func Init() *sync.WaitGroup {
 			routes = append(routes, definedRoute{"/_matrix/media/" + version + "/info/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}", route{"GET", infoHandler}})
 			routes = append(routes, definedRoute{"/_matrix/media/" + version + "/download/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}", route{"DELETE", purgeOneHandler}})
 		}
+	}
+
+	if config.Get().Features.MSC2246Async.Enabled {
+		logrus.Info("Asynchronous uploads (MSC2246) enabled")
+		routes = append(routes, definedRoute{"/_matrix/media/unstable/fi.mau.msc2246/create", route{"POST", createHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/unstable/fi.mau.msc2246/upload/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}", route{"POST", uploadHandler}})
 	}
 
 	if config.Get().Features.IPFS.Enabled {

@@ -12,6 +12,7 @@ import (
 const selectMedia = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE origin = $1 and media_id = $2;"
 const selectMediaByHash = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE sha256_hash = $1;"
 const insertMedia = "INSERT INTO media (origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);"
+const updateMedia = "UPDATE media SET upload_name = $3, content_type = $4, sha256_hash = $5, size_bytes = $6, datastore_id = $7, location = $8 WHERE origin = $1 AND media_id = $2;"
 const selectOldMedia = "SELECT m.origin, m.media_id, m.upload_name, m.content_type, m.user_id, m.sha256_hash, m.size_bytes, m.datastore_id, m.location, m.creation_ts, quarantined FROM media AS m WHERE m.origin <> ANY($1) AND m.creation_ts < $2 AND (SELECT COUNT(*) FROM media AS d WHERE d.sha256_hash = m.sha256_hash AND d.creation_ts >= $2) = 0 AND (SELECT COUNT(*) FROM media AS d WHERE d.sha256_hash = m.sha256_hash AND d.origin = ANY($1)) = 0;"
 const selectOrigins = "SELECT DISTINCT origin FROM media;"
 const deleteMedia = "DELETE FROM media WHERE origin = $1 AND media_id = $2;"
@@ -40,6 +41,7 @@ type mediaStoreStatements struct {
 	selectMedia                     *sql.Stmt
 	selectMediaByHash               *sql.Stmt
 	insertMedia                     *sql.Stmt
+	updateMedia                     *sql.Stmt
 	selectOldMedia                  *sql.Stmt
 	selectOrigins                   *sql.Stmt
 	deleteMedia                     *sql.Stmt
@@ -87,6 +89,9 @@ func InitMediaStore(sqlDb *sql.DB) (*MediaStoreFactory, error) {
 		return nil, err
 	}
 	if store.stmts.insertMedia, err = store.sqlDb.Prepare(insertMedia); err != nil {
+		return nil, err
+	}
+	if store.stmts.updateMedia, err = store.sqlDb.Prepare(updateMedia); err != nil {
 		return nil, err
 	}
 	if store.stmts.selectOldMedia, err = store.sqlDb.Prepare(selectOldMedia); err != nil {
@@ -176,6 +181,22 @@ func (s *MediaStore) Insert(media *types.Media) error {
 		media.CreationTs,
 		media.Quarantined,
 	)
+	return err
+}
+
+func (s *MediaStore) Update(media *types.Media) error {
+	_, err := s.statements.updateMedia.ExecContext(
+		s.ctx,
+		media.Origin,
+		media.MediaId,
+		media.UploadName,
+		media.ContentType,
+		media.Sha256Hash,
+		media.SizeBytes,
+		media.DatastoreId,
+		media.Location,
+	)
+
 	return err
 }
 

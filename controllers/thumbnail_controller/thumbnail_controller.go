@@ -26,8 +26,8 @@ import (
 
 var localCache = cache.New(30*time.Second, 60*time.Second)
 
-func GetThumbnail(origin string, mediaId string, desiredWidth int, desiredHeight int, animated bool, method string, downloadRemote bool, ctx rcontext.RequestContext) (*types.StreamedThumbnail, error) {
-	media, err := download_controller.FindMediaRecord(origin, mediaId, downloadRemote, ctx)
+func GetThumbnail(origin string, mediaId string, desiredWidth int, desiredHeight int, animated bool, method string, downloadRemote bool, asyncWaitMs *int, ctx rcontext.RequestContext) (*types.StreamedThumbnail, error) {
+	media, err := download_controller.FindMediaRecord(origin, mediaId, downloadRemote, asyncWaitMs, ctx)
 	if err != nil {
 		return nil, err
 	}

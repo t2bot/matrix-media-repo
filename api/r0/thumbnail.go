@@ -29,6 +29,21 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user api.User
 		downloadRemote = parsedFlag
 	}
 
+	var asyncWaitMs *int = nil
+	if rctx.Config.Features.MSC2246Async.Enabled {
+		// request default wait time if feature enabled
+		var parsedInt int = -1
+		maxStallMs := r.URL.Query().Get("fi.mau.msc2246.max_stall_ms")
+		if maxStallMs != "" {
+			var err error
+			parsedInt, err = strconv.Atoi(maxStallMs)
+			if err != nil {
+				return api.InternalServerError("fi.mau.msc2246.max_stall_ms does not appear to be a number")
+			}
+		}
+		asyncWaitMs = &parsedInt
+	}
+
 	rctx = rctx.LogWithFields(logrus.Fields{
 		"mediaId":     mediaId,
 		"server":      server,
@@ -87,12 +102,14 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user api.User
 		return api.BadRequest("Width and height must be greater than zero")
 	}
 
-	streamedThumbnail, err := thumbnail_controller.GetThumbnail(server, mediaId, width, height, animated, method, downloadRemote, rctx)
+	streamedThumbnail, err := thumbnail_controller.GetThumbnail(server, mediaId, width, height, animated, method, downloadRemote, asyncWaitMs, rctx)
 	if err != nil {
 		if err == common.ErrMediaNotFound {
 			return api.NotFoundError()
 		} else if err == common.ErrMediaTooLarge {
 			return api.RequestTooLarge()
+		} else if err == common.ErrNotYetUploaded {
+			return api.NotYetUploaded()
 		}
 		rctx.Log.Error("Unexpected error locating media: " + err.Error())
 		sentry.CaptureException(err)

@@ -147,6 +147,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			statusCode = http.StatusUnauthorized
 			break
 		case common.ErrCodeNotFound:
+		case common.ErrCodeNotYetUploaded:
 			statusCode = http.StatusNotFound
 			break
 		case common.ErrCodeMediaTooLarge:
@@ -160,6 +161,9 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			break
 		case common.ErrCodeForbidden:
 			statusCode = http.StatusForbidden
+			break
+		case common.ErrCodeCannotOverwriteMedia:
+			statusCode = http.StatusConflict
 			break
 		default: // Treat as unknown (a generic server error)
 			statusCode = http.StatusInternalServerError

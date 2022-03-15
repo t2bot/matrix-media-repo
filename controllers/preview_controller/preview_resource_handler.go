@@ -133,7 +133,7 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) (resp *urlPreviewRe
 		contentLength := upload_controller.EstimateContentLength(preview.Image.ContentLength, preview.Image.ContentLengthHeader)
 
 		// UploadMedia will close the read stream for the thumbnail and dedupe the image
-		media, err := upload_controller.UploadMedia(preview.Image.Data, contentLength, preview.Image.ContentType, preview.Image.Filename, info.forUserId, info.onHost, ctx)
+		media, err := upload_controller.UploadMedia(preview.Image.Data, contentLength, preview.Image.ContentType, preview.Image.Filename, info.forUserId, info.onHost, "", ctx)
 		if err != nil {
 			ctx.Log.Warn("Non-fatal error storing preview thumbnail: " + err.Error())
 			sentry.CaptureException(err)

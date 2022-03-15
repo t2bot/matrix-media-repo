@@ -544,6 +544,20 @@ featureSupport:
     # make the effect more subtle, larger values make it stronger.
     punch: 1
 
+  # MSC2246 - Asynchronous uploads
+  MSC2246:
+    # Whether or not this MSC is enabled for use in the media repo
+    enabled: false
+
+    # The number of seconds an asynchronous upload is valid to be started after requesting a media
+    # id. After expiring the upload endpoint will return an error for the client.
+    asyncUploadExpirySecs: 60
+
+    # The number of seconds a download request for an asynchronous upload will stall before
+    # returning an error. This affects clients that do not support async uploads by making them
+    # wait by default. Setting to zero will disable this behavior unless the client requests it.
+    asyncDownloadDefaultWaitSecs: 20
+
   # IPFS Support
   # This is currently experimental and might not work at all.
   IPFS:

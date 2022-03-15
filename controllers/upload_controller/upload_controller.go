@@ -92,7 +92,63 @@ func EstimateContentLength(contentLength int64, contentLengthHeader string) int6
 	return -1 // unknown
 }
 
-func UploadMedia(contents io.ReadCloser, contentLength int64, contentType string, filename string, userId string, origin string, ctx rcontext.RequestContext) (*types.Media, error) {
+func CreateMedia(origin string, ctx rcontext.RequestContext) (*types.Media, *datastore.DatastoreRef, error) {
+	metadataDb := storage.GetDatabase().GetMetadataStore(ctx)
+
+	mediaTaken := true
+	var mediaId string
+	var err error
+	attempts := 0
+	for mediaTaken {
+		attempts += 1
+		if attempts > 10 {
+			return nil, nil, errors.New("failed to generate a media ID after 10 rounds")
+		}
+
+		mediaId, err = util.GenerateRandomString(64)
+		if err != nil {
+			return nil, nil, err
+		}
+		mediaId, err = util.GetSha1OfString(mediaId + strconv.FormatInt(util.NowMillis(), 10))
+		if err != nil {
+			return nil, nil, err
+		}
+
+		// Because we use the current time in the media ID, we don't need to worry about
+		// collisions from the database.
+		if _, present := recentMediaIds.Get(mediaId); present {
+			mediaTaken = true
+			continue
+		}
+
+		mediaTaken, err = metadataDb.IsReserved(origin, mediaId)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
+	_ = recentMediaIds.Add(mediaId, true, cache.DefaultExpiration)
+
+	ds, err := datastore.PickDatastore(common.KindLocalMedia, ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return &types.Media{MediaId: mediaId, Origin: origin, DatastoreId: ds.DatastoreId}, ds, nil
+}
+
+func PersistMedia(media *types.Media, userId string, ctx rcontext.RequestContext) error {
+	db := storage.GetDatabase().GetMediaStore(ctx)
+
+	ctx.Log.Info("Persisting async media record")
+
+	media.UserId = userId
+	media.CreationTs = util.NowMillis()
+
+	return db.Insert(media)
+}
+
+func UploadMedia(contents io.ReadCloser, contentLength int64, contentType string, filename string, userId string, origin string, asyncMediaId string, ctx rcontext.RequestContext) (*types.Media, error) {
 	defer cleanup.DumpAndCloseStream(contents)
 
 	var data io.ReadCloser
@@ -107,46 +163,48 @@ func UploadMedia(contents io.ReadCloser, contentLength int64, contentType string
 		return nil, err
 	}
 
-	metadataDb := storage.GetDatabase().GetMetadataStore(ctx)
-
-	mediaTaken := true
 	var mediaId string
-	attempts := 0
-	for mediaTaken {
-		attempts += 1
-		if attempts > 10 {
-			return nil, errors.New("failed to generate a media ID after 10 rounds")
-		}
-
-		mediaId, err = util.GenerateRandomString(64)
-		if err != nil {
-			return nil, err
-		}
-		mediaId, err = util.GetSha1OfString(mediaId + strconv.FormatInt(util.NowMillis(), 10))
+	var ds *datastore.DatastoreRef
+	if asyncMediaId == "" {
+		media, newDs, err := CreateMedia(origin, ctx)
 		if err != nil {
 			return nil, err
 		}
 
-		// Because we use the current time in the media ID, we don't need to worry about
-		// collisions from the database.
-		if _, present := recentMediaIds.Get(mediaId); present {
-			mediaTaken = true
-			continue
+		mediaId = media.MediaId
+		ds = newDs
+	} else {
+		db := storage.GetDatabase().GetMediaStore(ctx)
+
+		media, err := db.Get(origin, asyncMediaId)
+		if err != nil {
+			return nil, err
 		}
 
-		mediaTaken, err = metadataDb.IsReserved(origin, mediaId)
+		if media == nil {
+			return nil, common.ErrMediaNotFound
+		}
+
+		if media.UserId != userId {
+			return nil, common.ErrMediaNotFound
+		}
+
+		if media.SizeBytes > 0 {
+			return nil, common.ErrCannotOverwriteMedia
+		}
+
+		if util.NowMillis()-media.CreationTs > int64(ctx.Config.Features.MSC2246Async.AsyncUploadExpirySecs*1000) {
+			return nil, common.ErrMediaNotFound
+		}
+
+		mediaId = asyncMediaId
+		ds, err = datastore.LocateDatastore(ctx, media.DatastoreId)
 		if err != nil {
 			return nil, err
 		}
 	}
-
-	_ = recentMediaIds.Add(mediaId, true, cache.DefaultExpiration)
 
 	var existingFile *AlreadyUploadedFile = nil
-	ds, err := datastore.PickDatastore(common.KindLocalMedia, ctx)
-	if err != nil {
-		return nil, err
-	}
 	if ds.Type == "ipfs" {
 		// Do the upload now so we can pick the media ID to point to IPFS
 		info, err := ds.UploadFile(util_byte_seeker.NewByteSeeker(dataBytes), contentLength, ctx)
@@ -160,11 +218,13 @@ func UploadMedia(contents io.ReadCloser, contentLength int64, contentType string
 		mediaId = fmt.Sprintf("ipfs:%s", info.Location[len("ipfs/"):])
 	}
 
-	m, err := StoreDirect(existingFile, util_byte_seeker.NewByteSeeker(dataBytes), contentLength, contentType, filename, userId, origin, mediaId, common.KindLocalMedia, ctx, true)
+	m, err := StoreDirect(existingFile, util_byte_seeker.NewByteSeeker(dataBytes), contentLength, contentType, filename, userId, origin, mediaId, common.KindLocalMedia, ctx, asyncMediaId == "")
 	if err != nil {
 		return m, err
 	}
 	if m != nil {
+		util.NotifyUpload(origin, mediaId)
+
 		err = internal_cache.Get().UploadMedia(m.Sha256Hash, util_byte_seeker.NewByteSeeker(dataBytes), ctx)
 		if err != nil {
 			ctx.Log.Warn("Unexpected error trying to cache media: " + err.Error())
@@ -193,8 +253,7 @@ func checkSpam(contents []byte, filename string, contentType string, userId stri
 	return nil
 }
 
-func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize int64, contentType string, filename string, userId string, origin string, mediaId string, kind string, ctx rcontext.RequestContext, filterUserDuplicates bool) (*types.Media, error) {
-	var err error
+func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize int64, contentType string, filename string, userId string, origin string, mediaId string, kind string, ctx rcontext.RequestContext, filterUserDuplicates bool) (ret *types.Media, err error) {
 	var ds *datastore.DatastoreRef
 	var info *types.ObjectInfo
 	var contentBytes []byte
@@ -229,11 +288,16 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 			return nil, err
 		}
 	}
+	defer func() {
+		// always delete temp object if we return an error
+		if err != nil {
+			ds.DeleteObject(info.Location)
+		}
+	}()
 
 	db := storage.GetDatabase().GetMediaStore(ctx)
 	records, err := db.GetByHash(info.Sha256Hash)
 	if err != nil {
-		ds.DeleteObject(info.Location) // delete temp object
 		return nil, err
 	}
 
@@ -260,14 +324,12 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 
 		err = checkSpam(contentBytes, filename, contentType, userId, origin, mediaId)
 		if err != nil {
-			ds.DeleteObject(info.Location) // delete temp object
 			return nil, err
 		}
 
 		// We'll use the location from the first record
 		record := records[0]
 		if record.Quarantined {
-			ds.DeleteObject(info.Location) // delete temp object
 			ctx.Log.Warn("User attempted to upload quarantined content - rejecting")
 			return nil, common.ErrMediaQuarantined
 		}
@@ -282,18 +344,40 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 			}
 		}
 
-		media := record
-		media.Origin = origin
-		media.MediaId = mediaId
-		media.UserId = userId
-		media.UploadName = filename
-		media.ContentType = contentType
-		media.CreationTs = util.NowMillis()
-
-		err = db.Insert(media)
+		// Check if we have reserved the metadata already
+		media, err := db.Get(origin, mediaId)
 		if err != nil {
-			ds.DeleteObject(info.Location) // delete temp object
 			return nil, err
+		}
+
+		if media != nil {
+			// last minute check if the file was already uploaded
+			if media.SizeBytes > 0 {
+				return nil, common.ErrCannotOverwriteMedia
+			}
+
+			media.UploadName = filename
+			media.ContentType = contentType
+			media.Sha256Hash = info.Sha256Hash
+			media.SizeBytes = info.SizeBytes
+			media.DatastoreId = ds.DatastoreId
+			media.Location = info.Location
+
+			if err = db.Update(media); err != nil {
+				return nil, err
+			}
+		} else {
+			media = record
+			media.Origin = origin
+			media.MediaId = mediaId
+			media.UserId = userId
+			media.UploadName = filename
+			media.ContentType = contentType
+			media.CreationTs = util.NowMillis()
+
+			if err = db.Insert(media); err != nil {
+				return nil, err
+			}
 		}
 
 		// If the media's file exists, we'll delete the temp file
@@ -301,7 +385,6 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 		if media.DatastoreId != ds.DatastoreId && media.Location != info.Location {
 			ds2, err := datastore.LocateDatastore(ctx, media.DatastoreId)
 			if err != nil {
-				ds.DeleteObject(info.Location) // delete temp object
 				return nil, err
 			}
 			if !ds2.ObjectExists(media.Location) {
@@ -324,35 +407,57 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 	// The media doesn't already exist - save it as new
 
 	if info.SizeBytes <= 0 {
-		ds.DeleteObject(info.Location)
 		return nil, errors.New("file has no contents")
 	}
 
 	err = checkSpam(contentBytes, filename, contentType, userId, origin, mediaId)
 	if err != nil {
-		ds.DeleteObject(info.Location) // delete temp object
 		return nil, err
 	}
 
-	ctx.Log.Info("Persisting new media record")
-
-	media := &types.Media{
-		Origin:      origin,
-		MediaId:     mediaId,
-		UploadName:  filename,
-		ContentType: contentType,
-		UserId:      userId,
-		Sha256Hash:  info.Sha256Hash,
-		SizeBytes:   info.SizeBytes,
-		DatastoreId: ds.DatastoreId,
-		Location:    info.Location,
-		CreationTs:  util.NowMillis(),
-	}
-
-	err = db.Insert(media)
+	// Check if we have reserved the metadata already, validate uploader
+	media, err := db.Get(origin, mediaId)
 	if err != nil {
-		ds.DeleteObject(info.Location) // delete temp object
 		return nil, err
+	}
+
+	if media == nil {
+		ctx.Log.Info("Persisting new media record")
+
+		media := &types.Media{
+			Origin:      origin,
+			MediaId:     mediaId,
+			UploadName:  filename,
+			ContentType: contentType,
+			UserId:      userId,
+			Sha256Hash:  info.Sha256Hash,
+			SizeBytes:   info.SizeBytes,
+			DatastoreId: ds.DatastoreId,
+			Location:    info.Location,
+			CreationTs:  util.NowMillis(),
+		}
+
+		if err = db.Insert(media); err != nil {
+			return nil, err
+		}
+	} else {
+		ctx.Log.Info("Updating existing media record")
+
+		// last minute check if the file was already uploaded
+		if media.SizeBytes > 0 {
+			return nil, common.ErrCannotOverwriteMedia
+		}
+
+		media.UploadName = filename
+		media.ContentType = contentType
+		media.Sha256Hash = info.Sha256Hash
+		media.SizeBytes = info.SizeBytes
+		media.DatastoreId = ds.DatastoreId
+		media.Location = info.Location
+
+		if err = db.Update(media); err != nil {
+			return nil, err
+		}
 	}
 
 	trackUploadAsLastAccess(ctx, media)

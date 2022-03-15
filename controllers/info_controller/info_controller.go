@@ -27,7 +27,7 @@ func GetOrCalculateBlurhash(media *types.Media, rctx rcontext.RequestContext) (s
 	}
 
 	rctx.Log.Info("Getting minimal media record to calculate blurhash")
-	minMedia, err := download_controller.FindMinimalMediaRecord(media.Origin, media.MediaId, true, rctx)
+	minMedia, err := download_controller.FindMinimalMediaRecord(media.Origin, media.MediaId, true, nil, rctx)
 	if err != nil {
 		return "", err
 	}

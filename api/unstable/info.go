@@ -69,7 +69,7 @@ func MediaInfo(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo)
 		"allowRemote": downloadRemote,
 	})
 
-	streamedMedia, err := download_controller.GetMedia(server, mediaId, downloadRemote, true, rctx)
+	streamedMedia, err := download_controller.GetMedia(server, mediaId, downloadRemote, true, nil, rctx)
 	if err != nil {
 		if err == common.ErrMediaNotFound {
 			return api.NotFoundError()

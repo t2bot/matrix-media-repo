@@ -40,7 +40,7 @@ func LocalCopy(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo)
 
 	// TODO: There's a lot of room for improvement here. Instead of re-uploading media, we should just update the DB.
 
-	streamedMedia, err := download_controller.GetMedia(server, mediaId, downloadRemote, true, rctx)
+	streamedMedia, err := download_controller.GetMedia(server, mediaId, downloadRemote, true, nil, rctx)
 	if err != nil {
 		if err == common.ErrMediaNotFound {
 			return api.NotFoundError()
@@ -60,7 +60,7 @@ func LocalCopy(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo)
 		return &r0.MediaUploadedResponse{ContentUri: streamedMedia.KnownMedia.MxcUri()}
 	}
 
-	newMedia, err := upload_controller.UploadMedia(streamedMedia.Stream, streamedMedia.KnownMedia.SizeBytes, streamedMedia.KnownMedia.ContentType, streamedMedia.KnownMedia.UploadName, user.UserId, r.Host, rctx)
+	newMedia, err := upload_controller.UploadMedia(streamedMedia.Stream, streamedMedia.KnownMedia.SizeBytes, streamedMedia.KnownMedia.ContentType, streamedMedia.KnownMedia.UploadName, user.UserId, r.Host, "", rctx)
 	if err != nil {
 		rctx.Log.Error("Unexpected error storing media: " + err.Error())
 		sentry.CaptureException(err)

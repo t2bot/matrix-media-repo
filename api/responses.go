@@ -57,3 +57,11 @@ func BadRequest(message string) *ErrorResponse {
 func QuotaExceeded() *ErrorResponse {
 	return &ErrorResponse{common.ErrCodeForbidden, "Quota Exceeded", common.ErrCodeQuotaExceeded}
 }
+
+func CannotOverwriteMedia() *ErrorResponse {
+	return &ErrorResponse{common.ErrCodeCannotOverwriteMedia, "Cannot overwrite media", common.ErrCodeCannotOverwriteMedia}
+}
+
+func NotYetUploaded() *ErrorResponse {
+	return &ErrorResponse{common.ErrCodeNotYetUploaded, "Media not yet uploaded", common.ErrCodeNotYetUploaded}
+}

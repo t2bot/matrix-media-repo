@@ -48,6 +48,21 @@ func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user api.UserI
 		downloadRemote = parsedFlag
 	}
 
+	var asyncWaitMs *int = nil
+	if rctx.Config.Features.MSC2246Async.Enabled {
+		// request default wait time if feature enabled
+		var parsedInt int = -1
+		maxStallMs := r.URL.Query().Get("fi.mau.msc2246.max_stall_ms")
+		if maxStallMs != "" {
+			var err error
+			parsedInt, err = strconv.Atoi(maxStallMs)
+			if err != nil {
+				return api.InternalServerError("fi.mau.msc2246.max_stall_ms does not appear to be a number")
+			}
+		}
+		asyncWaitMs = &parsedInt
+	}
+
 	rctx = rctx.LogWithFields(logrus.Fields{
 		"mediaId":     mediaId,
 		"server":      server,
@@ -55,7 +70,7 @@ func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user api.UserI
 		"allowRemote": downloadRemote,
 	})
 
-	streamedMedia, err := download_controller.GetMedia(server, mediaId, downloadRemote, false, rctx)
+	streamedMedia, err := download_controller.GetMedia(server, mediaId, downloadRemote, false, asyncWaitMs, rctx)
 	if err != nil {
 		if err == common.ErrMediaNotFound {
 			return api.NotFoundError()
@@ -63,6 +78,8 @@ func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user api.UserI
 			return api.RequestTooLarge()
 		} else if err == common.ErrMediaQuarantined {
 			return api.NotFoundError() // We lie for security
+		} else if err == common.ErrNotYetUploaded {
+			return api.NotYetUploaded()
 		}
 		rctx.Log.Error("Unexpected error locating media: " + err.Error())
 		sentry.CaptureException(err)

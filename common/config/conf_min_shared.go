@@ -53,6 +53,11 @@ func NewDefaultMinimumRepoConfig() MinimumRepoConfig {
 				YComponents:     3,
 				Punch:           1,
 			},
+			MSC2246Async: MSC2246Config{
+				Enabled:                      false,
+				AsyncUploadExpirySecs:        60,
+				AsyncDownloadDefaultWaitSecs: 20,
+			},
 			IPFS: IPFSConfig{
 				Enabled: false,
 				Daemon: IPFSDaemonConfig{

@@ -387,7 +387,7 @@ func PurgeDomainMedia(serverName string, beforeTs int64, ctx rcontext.RequestCon
 }
 
 func PurgeMedia(origin string, mediaId string, ctx rcontext.RequestContext) error {
-	media, err := download_controller.FindMediaRecord(origin, mediaId, false, ctx)
+	media, err := download_controller.FindMediaRecord(origin, mediaId, false, nil, ctx)
 	if err != nil {
 		return err
 	}
