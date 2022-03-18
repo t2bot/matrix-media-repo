@@ -35,3 +35,8 @@ func (n *NoopCache) UploadMedia(sha256hash string, content io.ReadCloser, ctx rc
 	// do nothing
 	return nil
 }
+
+func (n *NoopCache) NotifyUpload(origin string, mediaId string, ctx rcontext.RequestContext) error {
+	// do nothing
+	return nil
+}

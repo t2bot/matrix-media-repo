@@ -12,6 +12,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
+	"github.com/turt2live/matrix-media-repo/types"
+	"github.com/turt2live/matrix-media-repo/util"
 )
 
 var ErrCacheMiss = errors.New("missed cache")
@@ -32,14 +34,45 @@ func NewCache(conf config.RedisConfig) *RedisCache {
 		DB:          conf.DbNum,
 	})
 
+	ctx := context.Background()
+
 	logrus.Info("Contacting Redis shards...")
-	_ = ring.ForEachShard(context.Background(), func(ctx context.Context, client *redis.Client) error {
+	_ = ring.ForEachShard(ctx, func(ctx context.Context, client *redis.Client) error {
 		logrus.Infof("Pinging %s", client.String())
 		r, err := client.Ping(ctx).Result()
 		if err != nil {
 			return err
 		}
 		logrus.Infof("%s replied with: %s", client.String(), r)
+
+		psub := client.Subscribe(ctx, "upload")
+		go func() {
+			logrus.Infof("Client %s going to subscribe to uploads", client.String())
+			for {
+				for {
+					msg, err := psub.ReceiveMessage(ctx)
+					if err != nil {
+						break
+					}
+
+					ref := types.MediaRef{}
+					if err := ref.UnmarshalBinary([]byte(msg.Payload)); err != nil {
+						logrus.Warn("Failed to unmarshal published upload, ignoring")
+						continue
+					}
+
+					logrus.Infof("Client %s notified about %s/%s being uploaded", client.String(), ref.Origin, ref.MediaId)
+					util.NotifyUpload(ref.Origin, ref.MediaId)
+				}
+
+				if ctx.Done() != nil {
+					return
+				}
+
+				time.Sleep(time.Second * 1)
+			}
+		}()
+
 		return nil
 	})
 
@@ -96,4 +129,22 @@ func (c *RedisCache) GetBytes(ctx rcontext.RequestContext, key string) ([]byte, 
 
 	b, err := r.Bytes()
 	return b, err
+}
+
+func (c *RedisCache) NotifyUpload(ctx rcontext.RequestContext, origin string, mediaId string) error {
+	if c.ring.PoolStats().TotalConns == 0 {
+		return ErrCacheDown
+	}
+	r := c.ring.Publish(ctx, "upload", types.MediaRef{Origin: origin, MediaId: mediaId})
+	if r.Err() != nil {
+		if r.Err() == redis.Nil {
+			return ErrCacheMiss
+		}
+		if c.ring.PoolStats().TotalConns == 0 {
+			ctx.Log.Error(r.Err())
+			return ErrCacheDown
+		}
+		return r.Err()
+	}
+	return nil
 }

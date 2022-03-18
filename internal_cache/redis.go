@@ -67,3 +67,7 @@ func (c *RedisCache) UploadMedia(sha256hash string, content io.ReadCloser, ctx r
 	defer content.Close()
 	return c.redis.SetStream(ctx, sha256hash, content)
 }
+
+func (c *RedisCache) NotifyUpload(origin string, mediaId string, ctx rcontext.RequestContext) error {
+	return c.redis.NotifyUpload(ctx, origin, mediaId)
+}

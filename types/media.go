@@ -1,6 +1,22 @@
 package types
 
-import "io"
+import (
+	"encoding/json"
+	"io"
+)
+
+type MediaRef struct {
+	Origin  string
+	MediaId string
+}
+
+func (ref MediaRef) MarshalBinary() ([]byte, error) {
+	return json.Marshal(ref)
+}
+
+func (ref *MediaRef) UnmarshalBinary(data []byte) error {
+	return json.Unmarshal(data, ref)
+}
 
 type Media struct {
 	Origin      string

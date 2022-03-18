@@ -18,4 +18,5 @@ type ContentCache interface {
 	MarkDownload(fileHash string)
 	GetMedia(sha256hash string, contents FetchFunction, ctx rcontext.RequestContext) (*CachedContent, error)
 	UploadMedia(sha256hash string, content io.ReadCloser, ctx rcontext.RequestContext) error
+	NotifyUpload(origin string, mediaId string, ctx rcontext.RequestContext) error
 }

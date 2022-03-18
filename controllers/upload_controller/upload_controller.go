@@ -225,9 +225,12 @@ func UploadMedia(contents io.ReadCloser, contentLength int64, contentType string
 	if m != nil {
 		util.NotifyUpload(origin, mediaId)
 
-		err = internal_cache.Get().UploadMedia(m.Sha256Hash, util_byte_seeker.NewByteSeeker(dataBytes), ctx)
-		if err != nil {
+		cache := internal_cache.Get()
+		if err := cache.UploadMedia(m.Sha256Hash, util_byte_seeker.NewByteSeeker(dataBytes), ctx); err != nil {
 			ctx.Log.Warn("Unexpected error trying to cache media: " + err.Error())
+		}
+		if err := cache.NotifyUpload(origin, mediaId, ctx); err != nil {
+			ctx.Log.Warn("Unexpected error trying to notify cache about media: " + err.Error())
 		}
 	}
 	return m, err
