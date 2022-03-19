@@ -32,35 +32,37 @@ const selectMediaByUserBefore = "SELECT origin, media_id, upload_name, content_t
 const selectMediaByDomainBefore = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE origin = $1 AND creation_ts <= $2"
 const selectMediaByLocation = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE datastore_id = $1 AND location = $2"
 const selectIfQuarantined = "SELECT 1 FROM media WHERE sha256_hash = $1 AND quarantined = $2 LIMIT 1;"
+const selectMediaLocationsForDatastore = "SELECT distinct location FROM media WHERE datastore_id = $1;"
 
 var dsCacheByPath = sync.Map{} // [string] => Datastore
 var dsCacheById = sync.Map{}   // [string] => Datastore
 
 type mediaStoreStatements struct {
-	selectMedia                     *sql.Stmt
-	selectMediaByHash               *sql.Stmt
-	insertMedia                     *sql.Stmt
-	selectOldMedia                  *sql.Stmt
-	selectOrigins                   *sql.Stmt
-	deleteMedia                     *sql.Stmt
-	updateQuarantined               *sql.Stmt
-	selectDatastore                 *sql.Stmt
-	selectDatastoreByUri            *sql.Stmt
-	insertDatastore                 *sql.Stmt
-	selectMediaWithoutDatastore     *sql.Stmt
-	updateMediaDatastoreAndLocation *sql.Stmt
-	selectAllDatastores             *sql.Stmt
-	selectMediaInDatastoreOlderThan *sql.Stmt
-	selectAllMediaForServer         *sql.Stmt
-	selectAllMediaForServerUsers    *sql.Stmt
-	selectAllMediaForServerIds      *sql.Stmt
-	selectQuarantinedMedia          *sql.Stmt
-	selectServerQuarantinedMedia    *sql.Stmt
-	selectMediaByUser               *sql.Stmt
-	selectMediaByUserBefore         *sql.Stmt
-	selectMediaByDomainBefore       *sql.Stmt
-	selectMediaByLocation           *sql.Stmt
-	selectIfQuarantined             *sql.Stmt
+	selectMedia                      *sql.Stmt
+	selectMediaByHash                *sql.Stmt
+	insertMedia                      *sql.Stmt
+	selectOldMedia                   *sql.Stmt
+	selectOrigins                    *sql.Stmt
+	deleteMedia                      *sql.Stmt
+	updateQuarantined                *sql.Stmt
+	selectDatastore                  *sql.Stmt
+	selectDatastoreByUri             *sql.Stmt
+	insertDatastore                  *sql.Stmt
+	selectMediaWithoutDatastore      *sql.Stmt
+	updateMediaDatastoreAndLocation  *sql.Stmt
+	selectAllDatastores              *sql.Stmt
+	selectMediaInDatastoreOlderThan  *sql.Stmt
+	selectAllMediaForServer          *sql.Stmt
+	selectAllMediaForServerUsers     *sql.Stmt
+	selectAllMediaForServerIds       *sql.Stmt
+	selectQuarantinedMedia           *sql.Stmt
+	selectServerQuarantinedMedia     *sql.Stmt
+	selectMediaByUser                *sql.Stmt
+	selectMediaByUserBefore          *sql.Stmt
+	selectMediaByDomainBefore        *sql.Stmt
+	selectMediaByLocation            *sql.Stmt
+	selectIfQuarantined              *sql.Stmt
+	selectMediaLocationsForDatastore *sql.Stmt
 }
 
 type MediaStoreFactory struct {
@@ -147,6 +149,9 @@ func InitMediaStore(sqlDb *sql.DB) (*MediaStoreFactory, error) {
 		return nil, err
 	}
 	if store.stmts.selectIfQuarantined, err = store.sqlDb.Prepare(selectIfQuarantined); err != nil {
+		return nil, err
+	}
+	if store.stmts.selectMediaLocationsForDatastore, err = store.sqlDb.Prepare(selectMediaLocationsForDatastore); err != nil {
 		return nil, err
 	}
 
@@ -718,4 +723,23 @@ func (s *MediaStore) IsQuarantined(sha256hash string) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+func (s *MediaStore) GetDistinctLocationsForDatastore(datastoreId string) ([]string, error) {
+	rows, err := s.statements.selectMediaLocationsForDatastore.QueryContext(s.ctx, datastoreId)
+	if err != nil {
+		return nil, err
+	}
+
+	locations := make([]string, 0)
+	for rows.Next() {
+		s := ""
+		err = rows.Scan(&s)
+		if err != nil {
+			return nil, err
+		}
+		locations = append(locations, s)
+	}
+
+	return locations, nil
 }

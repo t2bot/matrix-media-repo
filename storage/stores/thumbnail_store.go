@@ -17,18 +17,20 @@ const selectThumbnailsForMedia = "SELECT origin, media_id, width, height, method
 const deleteThumbnailsForMedia = "DELETE FROM thumbnails WHERE origin = $1 AND media_id = $2;"
 const selectThumbnailsCreatedBefore = "SELECT origin, media_id, width, height, method, animated, content_type, size_bytes, datastore_id, location, creation_ts, sha256_hash FROM thumbnails WHERE creation_ts < $1;"
 const deleteThumbnailsWithHash = "DELETE FROM thumbnails WHERE sha256_hash = $1;"
+const selectThumbnailLocationsForDatastore = "SELECT distinct location FROM thumbnails WHERE datastore_id = $1;"
 
 type thumbnailStatements struct {
-	selectThumbnail                     *sql.Stmt
-	insertThumbnail                     *sql.Stmt
-	updateThumbnailHash                 *sql.Stmt
-	selectThumbnailsWithoutHash         *sql.Stmt
-	selectThumbnailsWithoutDatastore    *sql.Stmt
-	updateThumbnailDatastoreAndLocation *sql.Stmt
-	selectThumbnailsForMedia            *sql.Stmt
-	deleteThumbnailsForMedia            *sql.Stmt
-	selectThumbnailsCreatedBefore       *sql.Stmt
-	deleteThumbnailsWithHash            *sql.Stmt
+	selectThumbnail                      *sql.Stmt
+	insertThumbnail                      *sql.Stmt
+	updateThumbnailHash                  *sql.Stmt
+	selectThumbnailsWithoutHash          *sql.Stmt
+	selectThumbnailsWithoutDatastore     *sql.Stmt
+	updateThumbnailDatastoreAndLocation  *sql.Stmt
+	selectThumbnailsForMedia             *sql.Stmt
+	deleteThumbnailsForMedia             *sql.Stmt
+	selectThumbnailsCreatedBefore        *sql.Stmt
+	deleteThumbnailsWithHash             *sql.Stmt
+	selectThumbnailLocationsForDatastore *sql.Stmt
 }
 
 type ThumbnailStoreFactory struct {
@@ -76,6 +78,9 @@ func InitThumbnailStore(sqlDb *sql.DB) (*ThumbnailStoreFactory, error) {
 		return nil, err
 	}
 	if store.stmts.deleteThumbnailsWithHash, err = store.sqlDb.Prepare(deleteThumbnailsWithHash); err != nil {
+		return nil, err
+	}
+	if store.stmts.selectThumbnailLocationsForDatastore, err = store.sqlDb.Prepare(selectThumbnailLocationsForDatastore); err != nil {
 		return nil, err
 	}
 
@@ -302,4 +307,23 @@ func (s *ThumbnailStore) DeleteWithHash(sha256hash string) error {
 		return err
 	}
 	return nil
+}
+
+func (s *ThumbnailStore) GetDistinctLocationsForDatastore(datastoreId string) ([]string, error) {
+	rows, err := s.statements.selectThumbnailLocationsForDatastore.QueryContext(s.ctx, datastoreId)
+	if err != nil {
+		return nil, err
+	}
+
+	locations := make([]string, 0)
+	for rows.Next() {
+		s := ""
+		err = rows.Scan(&s)
+		if err != nil {
+			return nil, err
+		}
+		locations = append(locations, s)
+	}
+
+	return locations, nil
 }
