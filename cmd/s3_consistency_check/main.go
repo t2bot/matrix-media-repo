@@ -61,7 +61,7 @@ func main() {
 
 	mediaDb := storage.GetDatabase().GetMediaStore(ctx)
 	thumbsDb := storage.GetDatabase().GetThumbnailStore(ctx)
-	usedLocations := make([]string, 0)
+	usedLocations := make(map[string]bool)
 
 	logrus.Info("Scanning media for datastore: ", *datastoreId)
 	locations, err := mediaDb.GetDistinctLocationsForDatastore(*datastoreId)
@@ -70,7 +70,7 @@ func main() {
 	}
 
 	for _, l := range locations {
-		usedLocations = append(usedLocations, l)
+		usedLocations[l] = true
 	}
 
 	logrus.Infof("Got %d locations", len(locations))
@@ -82,7 +82,7 @@ func main() {
 	}
 
 	for _, l := range locations {
-		usedLocations = append(usedLocations, l)
+		usedLocations[l] = true
 	}
 
 	logrus.Infof("Got %d locations", len(locations))
@@ -90,13 +90,7 @@ func main() {
 	logrus.Info("Comparing locations known in DB to S3...")
 	probablyAbleToDelete := make([]string, 0)
 	for _, s3Location := range objectIds {
-		keep := false
-		for _, dbLocation := range usedLocations {
-			if dbLocation == s3Location {
-				keep = true
-				break
-			}
-		}
+		keep := usedLocations[s3Location]
 		if keep {
 			continue
 		}
