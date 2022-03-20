@@ -97,7 +97,6 @@ func thumbnailWorkFn(request *resource_handler.WorkRequest) (resp *thumbnailResp
 		return &thumbnailResponse{err: err}
 	}
 
-
 	if info.animated != generated.Animated {
 		ctx.Log.Warn("Animation state changed to ", generated.Animated)
 
