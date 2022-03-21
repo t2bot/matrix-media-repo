@@ -537,7 +537,10 @@ func (s *MediaStore) GetUsersUsageStatsForServer(
 		orderDirection,
 		limitClause,
 		offsetClause)
-	rows, err := s.factory.sqlDb.Query(paginationQuery, append(commonQueryParams, otherPaginationParams...)...)
+	rows, err := s.factory.sqlDb.QueryContext(
+		s.ctx,
+		paginationQuery,
+		append(commonQueryParams, otherPaginationParams...)...)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -564,7 +567,7 @@ func (s *MediaStore) GetUsersUsageStatsForServer(
 			") as count_user_ids; ",
 		commonQueryPortion)
 	var totalNumRows int64 = 0
-	err = s.factory.sqlDb.QueryRow(totalQuery, commonQueryParams...).Scan(&totalNumRows)
+	err = s.factory.sqlDb.QueryRowContext(s.ctx, totalQuery, commonQueryParams...).Scan(&totalNumRows)
 	if err != nil {
 		return nil, 0, err
 	}
