@@ -1,6 +1,7 @@
 package upload_controller
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/getsentry/sentry-go"
 	"io"
@@ -229,8 +230,10 @@ func UploadMedia(contents io.ReadCloser, contentLength int64, contentType string
 		if err := cache.UploadMedia(m.Sha256Hash, util_byte_seeker.NewByteSeeker(dataBytes), ctx); err != nil {
 			ctx.Log.Warn("Unexpected error trying to cache media: " + err.Error())
 		}
-		if err := cache.NotifyUpload(origin, mediaId, ctx); err != nil {
-			ctx.Log.Warn("Unexpected error trying to notify cache about media: " + err.Error())
+		if asyncMediaId != "" {
+			if err := cache.NotifyUpload(origin, mediaId, ctx); err != nil {
+				ctx.Log.Warn("Unexpected error trying to notify cache about media: " + err.Error())
+			}
 		}
 	}
 	return m, err
@@ -349,11 +352,19 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 
 		// Check if we have reserved the metadata already
 		media, err := db.Get(origin, mediaId)
-		if err != nil {
-			return nil, err
-		}
+		if err == sql.ErrNoRows {
+			media = record
+			media.Origin = origin
+			media.MediaId = mediaId
+			media.UserId = userId
+			media.UploadName = filename
+			media.ContentType = contentType
+			media.CreationTs = util.NowMillis()
 
-		if media != nil {
+			if err = db.Insert(media); err != nil {
+				return nil, err
+			}
+		} else if err == nil {
 			// last minute check if the file was already uploaded
 			if media.SizeBytes > 0 {
 				return nil, common.ErrCannotOverwriteMedia
@@ -370,17 +381,7 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 				return nil, err
 			}
 		} else {
-			media = record
-			media.Origin = origin
-			media.MediaId = mediaId
-			media.UserId = userId
-			media.UploadName = filename
-			media.ContentType = contentType
-			media.CreationTs = util.NowMillis()
-
-			if err = db.Insert(media); err != nil {
-				return nil, err
-			}
+			return nil, err
 		}
 
 		// If the media's file exists, we'll delete the temp file
@@ -420,14 +421,10 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 
 	// Check if we have reserved the metadata already, validate uploader
 	media, err := db.Get(origin, mediaId)
-	if err != nil {
-		return nil, err
-	}
-
-	if media == nil {
+	if err == sql.ErrNoRows {
 		ctx.Log.Info("Persisting new media record")
 
-		media := &types.Media{
+		media = &types.Media{
 			Origin:      origin,
 			MediaId:     mediaId,
 			UploadName:  filename,
@@ -443,7 +440,7 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 		if err = db.Insert(media); err != nil {
 			return nil, err
 		}
-	} else {
+	} else if err == nil {
 		ctx.Log.Info("Updating existing media record")
 
 		// last minute check if the file was already uploaded
@@ -461,6 +458,8 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 		if err = db.Update(media); err != nil {
 			return nil, err
 		}
+	} else {
+		return nil, err
 	}
 
 	trackUploadAsLastAccess(ctx, media)
