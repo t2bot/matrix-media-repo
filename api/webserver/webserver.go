@@ -162,7 +162,7 @@ func Init() *sync.WaitGroup {
 	if config.Get().Features.MSC2246Async.Enabled {
 		logrus.Info("Asynchronous uploads (MSC2246) enabled")
 		routes = append(routes, definedRoute{"/_matrix/media/unstable/fi.mau.msc2246/create", route{"POST", createHandler}})
-		routes = append(routes, definedRoute{"/_matrix/media/unstable/fi.mau.msc2246/upload/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}", route{"POST", uploadHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/unstable/fi.mau.msc2246/upload/{server:[a-zA-Z0-9.:\\-_]+}/{mediaId:[^/]+}", route{"PUT", uploadHandler}})
 	}
 
 	if config.Get().Features.IPFS.Enabled {
