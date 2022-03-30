@@ -233,7 +233,11 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 	db := storage.GetDatabase().GetMediaStore(ctx)
 	records, err := db.GetByHash(info.Sha256Hash)
 	if err != nil {
-		ds.DeleteObject(info.Location) // delete temp object
+		err2 := ds.DeleteObject(info.Location) // delete temp object
+		if err2 != nil {
+			ctx.Log.Warn("Error deleting temporary upload", err2)
+			sentry.CaptureException(err2)
+		}
 		return nil, err
 	}
 
@@ -251,7 +255,13 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 				}
 				if record.UserId == userId && record.Origin == origin && record.ContentType == contentType {
 					ctx.Log.Info("User has already uploaded this media before - returning unaltered media record")
-					ds.DeleteObject(info.Location) // delete temp object
+
+					err2 := ds.DeleteObject(info.Location) // delete temp object
+					if err2 != nil {
+						ctx.Log.Warn("Error deleting temporary upload", err2)
+						sentry.CaptureException(err2)
+					}
+
 					trackUploadAsLastAccess(ctx, record)
 					return record, nil
 				}
@@ -260,14 +270,22 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 
 		err = checkSpam(contentBytes, filename, contentType, userId, origin, mediaId)
 		if err != nil {
-			ds.DeleteObject(info.Location) // delete temp object
+			err2 := ds.DeleteObject(info.Location) // delete temp object
+			if err2 != nil {
+				ctx.Log.Warn("Error deleting temporary upload", err2)
+				sentry.CaptureException(err2)
+			}
 			return nil, err
 		}
 
 		// We'll use the location from the first record
 		record := records[0]
 		if record.Quarantined {
-			ds.DeleteObject(info.Location) // delete temp object
+			err2 := ds.DeleteObject(info.Location) // delete temp object
+			if err2 != nil {
+				ctx.Log.Warn("Error deleting temporary upload", err2)
+				sentry.CaptureException(err2)
+			}
 			ctx.Log.Warn("User attempted to upload quarantined content - rejecting")
 			return nil, common.ErrMediaQuarantined
 		}
@@ -276,7 +294,11 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 		for _, knownRecord := range records {
 			if knownRecord.Origin == origin && knownRecord.MediaId == mediaId {
 				ctx.Log.Info("Duplicate media record found - returning unaltered record")
-				ds.DeleteObject(info.Location) // delete temp object
+				err2 := ds.DeleteObject(info.Location) // delete temp object
+				if err2 != nil {
+					ctx.Log.Warn("Error deleting temporary upload", err2)
+					sentry.CaptureException(err2)
+				}
 				trackUploadAsLastAccess(ctx, knownRecord)
 				return knownRecord, nil
 			}
@@ -292,7 +314,11 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 
 		err = db.Insert(media)
 		if err != nil {
-			ds.DeleteObject(info.Location) // delete temp object
+			err2 := ds.DeleteObject(info.Location) // delete temp object
+			if err2 != nil {
+				ctx.Log.Warn("Error deleting temporary upload", err2)
+				sentry.CaptureException(err2)
+			}
 			return nil, err
 		}
 
@@ -301,7 +327,11 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 		if media.DatastoreId != ds.DatastoreId && media.Location != info.Location {
 			ds2, err := datastore.LocateDatastore(ctx, media.DatastoreId)
 			if err != nil {
-				ds.DeleteObject(info.Location) // delete temp object
+				err2 := ds.DeleteObject(info.Location) // delete temp object
+				if err2 != nil {
+					ctx.Log.Warn("Error deleting temporary upload", err2)
+					sentry.CaptureException(err2)
+				}
 				return nil, err
 			}
 			if !ds2.ObjectExists(media.Location) {
@@ -310,10 +340,22 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 					return nil, err
 				}
 
-				ds2.OverwriteObject(media.Location, stream, ctx)
-				ds.DeleteObject(info.Location)
+				err2 := ds2.OverwriteObject(media.Location, stream, ctx)
+				if err2 != nil {
+					ctx.Log.Warn("Error overwriting object", err2)
+					sentry.CaptureException(err2)
+				}
+				err2 = ds.DeleteObject(info.Location) // delete temp object
+				if err2 != nil {
+					ctx.Log.Warn("Error deleting temporary upload", err2)
+					sentry.CaptureException(err2)
+				}
 			} else {
-				ds.DeleteObject(info.Location)
+				err2 := ds.DeleteObject(info.Location) // delete temp object
+				if err2 != nil {
+					ctx.Log.Warn("Error deleting temporary upload", err2)
+					sentry.CaptureException(err2)
+				}
 			}
 		}
 
@@ -324,13 +366,21 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 	// The media doesn't already exist - save it as new
 
 	if info.SizeBytes <= 0 {
-		ds.DeleteObject(info.Location)
+		err2 := ds.DeleteObject(info.Location) // delete temp object
+		if err2 != nil {
+			ctx.Log.Warn("Error deleting temporary upload", err2)
+			sentry.CaptureException(err2)
+		}
 		return nil, errors.New("file has no contents")
 	}
 
 	err = checkSpam(contentBytes, filename, contentType, userId, origin, mediaId)
 	if err != nil {
-		ds.DeleteObject(info.Location) // delete temp object
+		err2 := ds.DeleteObject(info.Location) // delete temp object
+		if err2 != nil {
+			ctx.Log.Warn("Error deleting temporary upload", err2)
+			sentry.CaptureException(err2)
+		}
 		return nil, err
 	}
 
@@ -351,7 +401,11 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 
 	err = db.Insert(media)
 	if err != nil {
-		ds.DeleteObject(info.Location) // delete temp object
+		err2 := ds.DeleteObject(info.Location) // delete temp object
+		if err2 != nil {
+			ctx.Log.Warn("Error deleting temporary upload", err2)
+			sentry.CaptureException(err2)
+		}
 		return nil, err
 	}
 
