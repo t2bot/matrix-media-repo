@@ -71,6 +71,7 @@ func Init() *sync.WaitGroup {
 	domainUsageHandler := handler{api.RepoAdminRoute(custom.GetDomainUsage), "domain_usage", counter, false}
 	userUsageHandler := handler{api.RepoAdminRoute(custom.GetUserUsage), "user_usage", counter, false}
 	uploadsUsageHandler := handler{api.RepoAdminRoute(custom.GetUploadsUsage), "uploads_usage", counter, false}
+	usersUsageStatsHandler := handler{api.AccessTokenRequiredRoute(custom.GetUsersUsageStats), "users_usage_stats", counter, false}
 	getBackgroundTaskHandler := handler{api.RepoAdminRoute(custom.GetTask), "get_background_task", counter, false}
 	listAllBackgroundTasksHandler := handler{api.RepoAdminRoute(custom.ListAllTasks), "list_all_background_tasks", counter, false}
 	listUnfinishedBackgroundTasksHandler := handler{api.RepoAdminRoute(custom.ListUnfinishedTasks), "list_unfinished_background_tasks", counter, false}
@@ -131,6 +132,7 @@ func Init() *sync.WaitGroup {
 		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/federation/test/{serverName:[a-zA-Z0-9.:\\-_]+}", route{"GET", fedTestHandler}})
 		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/usage/{serverName:[a-zA-Z0-9.:\\-_]+}", route{"GET", domainUsageHandler}})
 		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/usage/{serverName:[a-zA-Z0-9.:\\-_]+}/users", route{"GET", userUsageHandler}})
+		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/usage/{serverName:[a-zA-Z0-9.:\\-_]+}/users-stats", route{"GET", usersUsageStatsHandler}})
 		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/usage/{serverName:[a-zA-Z0-9.:\\-_]+}/uploads", route{"GET", uploadsUsageHandler}})
 		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/tasks/{taskId:[0-9]+}", route{"GET", getBackgroundTaskHandler}})
 		routes = append(routes, definedRoute{"/_matrix/media/" + version + "/admin/tasks/all", route{"GET", listAllBackgroundTasksHandler}})

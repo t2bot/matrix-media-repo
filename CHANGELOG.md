@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * New config option for changing the log level.
 * New (currently undocumented) binary `s3_consistency_check` to find objects in S3 which *might* not be referenced by
   the media repo database. Note that this can include uploads in progress.
+* Admin endpoint to GET users' usage statistics for a server.
 
 ### Removed
 

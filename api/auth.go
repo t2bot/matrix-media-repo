@@ -113,3 +113,15 @@ func RepoAdminRoute(next func(r *http.Request, rctx rcontext.RequestContext, use
 		return regularFunc(r, rctx)
 	}
 }
+
+func GetRequestUserAdminStatus(r *http.Request, rctx rcontext.RequestContext, user UserInfo) (bool, bool) {
+	isGlobalAdmin := util.IsGlobalAdmin(user.UserId) || user.IsShared
+	isLocalAdmin, err := matrix.IsUserAdmin(rctx, r.Host, user.AccessToken, r.RemoteAddr)
+	if err != nil {
+		sentry.CaptureException(err)
+		rctx.Log.Error("Error verifying local admin: " + err.Error())
+		return isGlobalAdmin, false
+	}
+
+	return isGlobalAdmin, isLocalAdmin
+}
