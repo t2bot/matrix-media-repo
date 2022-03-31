@@ -223,7 +223,7 @@ func GetUsersUsageStats(r *http.Request, rctx rcontext.RequestContext, user api.
 	serverName := params["serverName"]
 
 	isGlobalAdmin, isLocalAdmin := api.GetRequestUserAdminStatus(r, rctx, user)
-	if !isGlobalAdmin && (!util.IsServerOurs(serverName) || !isLocalAdmin) {
+	if !isGlobalAdmin || !isLocalAdmin || (isLocalAdmin && r.Host != serverName) {
 		return api.AuthFailed()
 	}
 
