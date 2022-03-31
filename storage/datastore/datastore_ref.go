@@ -128,3 +128,15 @@ func (d *DatastoreRef) OverwriteObject(location string, stream io.ReadCloser, ct
 		return errors.New("unknown datastore type")
 	}
 }
+
+func (d *DatastoreRef) ListObjectIds(ctx rcontext.RequestContext) ([]string, error) {
+	if d.Type == "s3" {
+		s3, err := ds_s3.GetOrCreateS3Datastore(d.DatastoreId, d.config)
+		if err != nil {
+			return nil, err
+		}
+		return s3.ListObjects()
+	} else {
+		return nil, errors.New("cannot list objects in this datastore type")
+	}
+}
