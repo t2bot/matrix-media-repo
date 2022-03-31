@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+*Nothing yet.*
+
+## [1.2.11] - March 31, 2022
+
 ### Added
 
 * New config option to set user agent when requesting URL previews.
@@ -351,7 +355,8 @@ a large database (more than about 100k uploaded files), run the following steps 
 * Various other features that would be expected like maximum/minimum size controls, rate limiting, etc. Check out the
   sample config for a better idea of what else is possible.
 
-[unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.10...HEAD
+[unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.11...HEAD
+[1.2.11]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.10...v1.2.11
 [1.2.10]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.9...v1.2.10
 [1.2.9]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.8...v1.2.9
 [1.2.8]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.7...v1.2.8
