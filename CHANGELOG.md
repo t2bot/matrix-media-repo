@@ -9,6 +9,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 *Nothing yet.*
 
+## [1.2.12] - March 31, 2022
+
+### Fixed
+
+* Fixed a permissions check issue on the new statistics endpoint released in v1.2.11
+
 ## [1.2.11] - March 31, 2022
 
 ### Added
@@ -355,7 +361,8 @@ a large database (more than about 100k uploaded files), run the following steps 
 * Various other features that would be expected like maximum/minimum size controls, rate limiting, etc. Check out the
   sample config for a better idea of what else is possible.
 
-[unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.11...HEAD
+[unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.12...HEAD
+[1.2.12]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.11...v1.2.12
 [1.2.11]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.10...v1.2.11
 [1.2.10]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.9...v1.2.10
 [1.2.9]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.8...v1.2.9
