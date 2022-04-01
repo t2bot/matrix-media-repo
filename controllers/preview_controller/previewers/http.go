@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/bobesa/go-domain-util/domainutil"
 	"github.com/ryanuber/go-glob"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
@@ -60,13 +61,21 @@ func doHttpGet(urlPayload *preview_types.UrlPayload, languageHeader string, ctx 
 
 		safeIpStr := safeIp.String()
 
-		expectedAddr := net.JoinHostPort(urlPayload.ParsedUrl.Host, safePort)
-		altAddr := net.JoinHostPort(urlPayload.ParsedUrl.Host, altPort)
+		addrWithoutPort, addrPort, err := net.SplitHostPort(addr)
+		if err != nil {
+			return nil, err
+		}
+
+		addrDomain := net.JoinHostPort(domainutil.Domain(addrWithoutPort), addrPort)
+		expectedAddr := domainutil.Domain(urlPayload.ParsedUrl.Host)
+
+		expectedDomain := net.JoinHostPort(expectedAddr, safePort)
+		altDomain := net.JoinHostPort(expectedAddr, altPort)
 
 		returnAddr := ""
-		if addr == expectedAddr {
+		if addrDomain == expectedDomain {
 			returnAddr = net.JoinHostPort(safeIpStr, safePort)
-		} else if addr == altAddr && altPort != "" {
+		} else if addrDomain == altDomain && altPort != "" {
 			returnAddr = net.JoinHostPort(safeIpStr, altPort)
 		}
 
