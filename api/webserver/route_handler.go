@@ -146,8 +146,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case common.ErrCodeUnknownToken:
 			statusCode = http.StatusUnauthorized
 			break
-		case common.ErrCodeNotFound:
-		case common.ErrCodeNotYetUploaded:
+		case common.ErrCodeNotYetUploaded, common.ErrCodeNotFound:
 			statusCode = http.StatusNotFound
 			break
 		case common.ErrCodeMediaTooLarge:
