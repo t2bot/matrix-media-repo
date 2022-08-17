@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Added
+
+* Added the `Cross-Origin-Resource-Policy: cross-origin` header to all downloads, as per [MSC3828](https://github.com/matrix-org/matrix-spec-proposals/pull/3828).
+
 ### Changed
 
 * Swap out the HEIF library for better support towards [ARM64 Docker Images](https://github.com/turt2live/matrix-media-repo/issues/365).
