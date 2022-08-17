@@ -2,8 +2,8 @@ version: '2.0'
 services:
   media_conduit:
     container_name: "media_repo_conduit"
-    image: "matrixconduit/matrix-conduit:latest"
-    #image: "conduit-local"
+    #image: "matrixconduit/matrix-conduit:latest"
+    image: "conduit-local"
     restart: unless-stopped
     volumes:
       - ./conduit-db:/srv/conduit/.local/share/conduit

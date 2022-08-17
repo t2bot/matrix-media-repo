@@ -3,7 +3,8 @@ package i
 import (
 	"bytes"
 	"errors"
-	"github.com/jdeng/goheif"
+
+	"github.com/adrium/goheif"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/m"
 )
