@@ -28,10 +28,18 @@ once to ensure the assets are set up correctly: follow the
 [compilation steps](https://docs.t2bot.io/matrix-media-repo/installing/method/compilation.html)
 posted on docs.t2bot.io.
 
-If you'd like to use a regular Matrix client to test the media repo, `docker-compose -f dev/docker-compose.yaml up`
-will give you a [Conduit](https://conduit.rs/) homeserver behind an nginx reverse proxy which routes media requests to
-`http://host.docker.internal:8001`. To test accurately, it is recommended to add the following homeserver configuration
-to your media repo config:
+This project offers a development environment you can use to test against a client and homeserver.
+
+As a first-time setup, run:
+
+```bash
+docker run --rm -it -v ./dev/synapse-db:/data -e SYNAPSE_SERVER_NAME=localhost -e SYNAPSE_REPORT_STATS=no matrixdotorg/synapse:latest generate
+```
+
+Then you can run `docker-compose -f dev/docker-compose.yaml up` to always bring the service online. The homeserver will 
+be behind an nginx reverse proxy which routes media requests to `http://host.docker.internal:8001`. To test accurately, 
+it is recommended to add the following homeserver configuration to your media repo config:
+
 ```yaml
 name: "localhost"
 csApi: "http://localhost:8008" # This is exposed by the nginx container

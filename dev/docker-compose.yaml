@@ -1,15 +1,13 @@
 version: '2.0'
 services:
   media_conduit:
-    container_name: "media_repo_conduit"
-    #image: "matrixconduit/matrix-conduit:latest"
-    image: "conduit-local"
+    container_name: "media_repo_synapse"
+    image: "matrixdotorg/synapse:latest"
     restart: unless-stopped
     volumes:
-      - ./conduit-db:/srv/conduit/.local/share/conduit
-      - ./conduit.toml:/srv/conduit/conduit.toml
+      - ./synapse-db:/data
     ports:
-      - "6167:6167"
+      - "6167:8008"
     networks:
       - media_proxy
   media_nginx:
@@ -17,7 +15,7 @@ services:
     image: "nginx:latest"
     restart: unless-stopped
     volumes:
-      - ./conduit.nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./homeserver.nginx.conf:/etc/nginx/conf.d/default.conf
     ports:
       - "8008:80"
     networks:
