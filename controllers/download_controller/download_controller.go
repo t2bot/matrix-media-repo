@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/getsentry/sentry-go"
+	"io"
 	"io/ioutil"
 	"time"
 
@@ -103,16 +104,6 @@ func GetMedia(origin string, mediaId string, downloadRemote bool, blockForMedia 
 			}
 
 			localCache.Set(origin+"/"+mediaId, media, cache.DefaultExpiration)
-
-			cached, err := internal_cache.Get().GetMedia(media.Sha256Hash, internal_cache.StreamerForMedia(media), ctx)
-			if err != nil {
-				return nil, err
-			}
-			if cached != nil && cached.Contents != nil {
-				cleanup.DumpAndCloseStream(minMedia.Stream) // close the other stream first
-				minMedia.Stream = ioutil.NopCloser(cached.Contents)
-				return minMedia, nil
-			}
 		}
 
 		if minMedia.Stream != nil {
@@ -235,9 +226,19 @@ func FindMinimalMediaRecord(origin string, mediaId string, downloadRemote bool, 
 		return nil, common.ErrMediaNotFound
 	}
 
-	mediaStream, err := datastore.DownloadStream(ctx, media.DatastoreId, media.Location)
+	var mediaStream io.ReadCloser
+
+	cached, err := internal_cache.Get().GetMedia(media.Sha256Hash, internal_cache.StreamerForMedia(media), ctx)
 	if err != nil {
 		return nil, err
+	}
+	if cached != nil && cached.Contents != nil {
+		mediaStream = ioutil.NopCloser(cached.Contents)
+	} else {
+		mediaStream, err = datastore.DownloadStream(ctx, media.DatastoreId, media.Location)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &types.MinimalMedia{

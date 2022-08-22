@@ -1,17 +1,13 @@
 version: '2.0'
 services:
   media_conduit:
-    container_name: "media_repo_conduit"
-    image: "matrixconduit/matrix-conduit:latest"
+    container_name: "media_repo_synapse"
+    image: "matrixdotorg/synapse:latest"
     restart: unless-stopped
     volumes:
-      - ./conduit-db:/srv/conduit/.local/share/conduit
-    environment:
-      ROCKET_SERVER_NAME: "localhost"
-      ROCKET_PORT: 8004
-      ROCKET_REGISTRATION_DISABLED: "false"
-      ROCKET_ENCRYPTION_DISABLED: "false"
-      ROCKET_FEDERATION_ENABLED: "false"
+      - ./synapse-db:/data
+    ports:
+      - "6167:8008"
     networks:
       - media_proxy
   media_nginx:
@@ -19,7 +15,7 @@ services:
     image: "nginx:latest"
     restart: unless-stopped
     volumes:
-      - ./conduit.nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./homeserver.nginx.conf:/etc/nginx/conf.d/default.conf
     ports:
       - "8008:80"
     networks:

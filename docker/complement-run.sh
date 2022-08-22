@@ -4,4 +4,4 @@ sed -i "s/SERVER_NAME/${SERVER_NAME}/g" /data/media-repo.yaml
 su postgres -c "postgres -h 0.0.0.0" &
 sleep 12
 /usr/local/bin/media_repo &
-/usr/local/bin/complement_hs
+/usr/local/bin/complement_hs &

@@ -46,6 +46,7 @@ func NewDefaultDomainConfig() DomainRepoConfig {
 				"0.0.0.0/0", // "Everything"
 			},
 			DefaultLanguage: "en-US,en",
+			UserAgent:       "matrix-media-repo",
 			OEmbed:          false,
 		},
 		Thumbnails: ThumbnailsConfig{

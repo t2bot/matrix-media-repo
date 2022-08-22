@@ -1,6 +1,6 @@
 # ---- Stage 0 ----
 # Builds media repo binaries
-FROM golang:1.14-alpine AS builder
+FROM golang:1.18-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache git musl-dev dos2unix build-base
@@ -42,3 +42,4 @@ RUN su postgres -c initdb
 RUN sh /usr/local/bin/complement.sh
 
 CMD /usr/local/bin/complement-run.sh
+HEALTHCHECK CMD curl --fail http://localhost:8008/_matrix/media/version || exit 1

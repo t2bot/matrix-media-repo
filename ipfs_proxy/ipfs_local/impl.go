@@ -2,13 +2,14 @@ package ipfs_local
 
 import (
 	"bytes"
+	"io"
+	"io/ioutil"
+
 	"github.com/ipfs/go-cid"
 	httpapi "github.com/ipfs/go-ipfs-api"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/ipfs_proxy/ipfs_models"
 	"github.com/turt2live/matrix-media-repo/util"
-	"io"
-	"io/ioutil"
 )
 
 type IPFSLocal struct {

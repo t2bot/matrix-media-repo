@@ -1,6 +1,6 @@
 # ---- Stage 0 ----
 # Builds media repo binaries
-FROM golang:1.16-alpine AS builder
+FROM golang:1.18-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache git musl-dev dos2unix build-base
@@ -16,7 +16,7 @@ FROM alpine
 
 RUN mkdir /plugins
 COPY --from=builder /opt/bin/plugin_antispam_ocr /plugins/
-COPY --from=builder /opt/bin/media_repo /opt/bin/import_synapse /opt/bin/gdpr_export /opt/bin/gdpr_import /usr/local/bin/
+COPY --from=builder /opt/bin/media_repo /opt/bin/import_synapse /opt/bin/export_synapse_for_import /opt/bin/gdpr_export /opt/bin/gdpr_import /opt/bin/s3_consistency_check /usr/local/bin/
 
 RUN apk add --no-cache \
         su-exec \

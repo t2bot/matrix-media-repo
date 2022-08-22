@@ -120,5 +120,10 @@ func PersistFileAtLocation(targetFile string, file io.ReadCloser, ctx rcontext.R
 }
 
 func DeletePersistedFile(basePath string, location string) error {
-	return os.Remove(path.Join(basePath, location))
+	err := os.Remove(path.Join(basePath, location))
+	if err != nil && os.IsNotExist(err) {
+		// It didn't exist, so pretend it was successful
+		return nil
+	}
+	return err
 }

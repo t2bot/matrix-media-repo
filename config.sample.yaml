@@ -19,6 +19,11 @@ repo:
   # incompatible with the log color option and will always render without colors.
   jsonLogs: false
 
+  # The log level to log at. Note that this will need to be at least "info" to receive support.
+  #
+  # Values (in increasing spam): panic | fatal | error | warn | info | debug | trace
+  logLevel: "info"
+
   # If true, the media repo will accept any X-Forwarded-For header without validation. In most cases
   # this option should be left as "false". Note that the media repo already expects an X-Forwarded-For
   # header, but validates it to ensure the IP being given makes sense.
@@ -169,6 +174,9 @@ datastores:
       # An optional region for where this S3 endpoint is located. Typically not needed, though
       # some providers will need this (like Scaleway). Uncomment to use.
       #region: "sfo2"
+      # An optional storage class for tuning how the media is stored at s3.
+      # See https://aws.amazon.com/s3/storage-classes/ for details; uncomment to use.
+      #storageClass: STANDARD
 
   # The media repo does support an IPFS datastore, but only if the IPFS feature is enabled. If
   # the feature is not enabled, this will not work. Note that IPFS support is experimental at
@@ -264,41 +272,16 @@ downloads:
   # has passed, the media is able to be re-requested.
   failureCacheMinutes: 5
 
-  # The cache control settings for downloads. This can help speed up downloads for users by
-  # keeping popular media in the cache. This cache is also used for thumbnails.
-  cache:
-    enabled: true
-
-    # The maximum size of cache to have. Higher numbers are better.
-    maxSizeBytes: 1048576000 # 1GB default
-
-    # The maximum file size to cache. This should normally be the same size as your maximum
-    # upload size.
-    maxFileSizeBytes: 104857600 # 100MB default
-
-    # The number of minutes to track how many downloads a file gets
-    trackedMinutes: 30
-
-    # The number of downloads a file must receive in the window above (trackedMinutes) in
-    # order to be cached.
-    minDownloads: 5
-
-    # The minimum amount of time an item should remain in the cache. This prevents the cache
-    # from cycling out the file if it needs more room during this time. Note that the media
-    # repo regularly cleans out media which is past this point from the cache, so this number
-    # may need increasing depending on your use case. If the maxSizeBytes is reached for the
-    # media repo, and some cached items are still under this timer, new items will not be able
-    # to enter the cache. When this happens, consider raising maxSizeBytes or lowering this
-    # timer.
-    minCacheTimeSeconds: 300
-
-    # The minimum amount of time an item should remain outside the cache once it is removed.
-    minEvictedTimeSeconds: 60
-
   # How many days after a piece of remote content is downloaded before it expires. It can be
   # re-downloaded on demand, this just helps free up space in your datastore. Set to zero or
   # negative to disable. Defaults to disabled.
   expireAfterDays: 0
+
+  # The default size, in bytes, to return for range requests on media. Range requests are used
+  # by clients when they only need part of a file, such as a video or audio element. Note that
+  # the entire file will still be cached (if enabled), but only part of it will be returned.
+  # If the client requests a larger or smaller range, that will be honoured.
+  defaultRangeChunkSizeBytes: 10485760 # 10MB default
 
 # URL Preview settings
 urlPreviews:
@@ -357,6 +340,9 @@ urlPreviews:
   # supplied by the client.
   # Reference: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Language
   defaultLanguage: "en-US,en"
+
+  # Set the User-Agent header to supply when generating URL previews
+  userAgent: "matrix-media-repo"
 
   # When true, oEmbed previews will be enabled. Typically these kinds of previews are used for
   # sites that do not support OpenGraph or page scraping, such as Twitter. For information on
@@ -586,25 +572,28 @@ featureSupport:
       # so it can be mapped to a volume.
       repoPath: "./ipfs"
 
-  # Support for redis as a cache mechanism
-  #
-  # Note: Enabling Redis support will mean that the existing cache mechanism will do nothing.
-  # It can be safely disabled once Redis support is enabled.
-  #
-  # See docs/redis.md for more information on how this works and how to set it up.
-  redis:
-    # Whether or not use Redis instead of in-process caching.
-    enabled: false
+# Support for redis as a cache mechanism
+#
+# Note: Enabling Redis support will mean that the existing cache mechanism will do nothing.
+# It can be safely disabled once Redis support is enabled.
+#
+# See docs/redis.md for more information on how this works and how to set it up.
+redis:
+  # Whether or not use Redis instead of in-process caching.
+  enabled: false
 
-    # The Redis shards that should be used by the media repo in the ring. The names of the
-    # shards are for your reference and have no bearing on the connection, but must be unique.
-    shards:
-      - name: "server1"
-        addr: ":7000"
-      - name: "server2"
-        addr: ":7001"
-      - name: "server3"
-        addr: ":7002"
+  # The database number to use. Leave at zero if using a dedicated Redis instance.
+  databaseNumber: 0
+
+  # The Redis shards that should be used by the media repo in the ring. The names of the
+  # shards are for your reference and have no bearing on the connection, but must be unique.
+  shards:
+    - name: "server1"
+      addr: ":7000"
+    - name: "server2"
+      addr: ":7001"
+    - name: "server3"
+      addr: ":7002"
 
 # Optional sentry (https://sentry.io/) configuration for the media repo
 sentry:

@@ -6,6 +6,7 @@ type GeneralConfig struct {
 	LogDirectory     string `yaml:"logDirectory"`
 	LogColors        bool   `yaml:"logColors"`
 	JsonLogs         bool   `yaml:"jsonLogs"`
+	LogLevel         string `yaml:"logLevel"`
 	TrustAnyForward  bool   `yaml:"trustAnyForwardedAddress"`
 	UseForwardedHost bool   `yaml:"useForwardedHost"`
 }
@@ -29,19 +30,8 @@ type DbPoolConfig struct {
 
 type MainDownloadsConfig struct {
 	DownloadsConfig `yaml:",inline"`
-	NumWorkers      int         `yaml:"numWorkers"`
-	Cache           CacheConfig `yaml:"cache"`
-	ExpireDays      int         `yaml:"expireAfterDays"`
-}
-
-type CacheConfig struct {
-	Enabled               bool  `yaml:"enabled"`
-	MaxSizeBytes          int64 `yaml:"maxSizeBytes"`
-	MaxFileSizeBytes      int64 `yaml:"maxFileSizeBytes"`
-	TrackedMinutes        int   `yaml:"trackedMinutes"`
-	MinCacheTimeSeconds   int   `yaml:"minCacheTimeSeconds"`
-	MinEvictedTimeSeconds int   `yaml:"minEvictedTimeSeconds"`
-	MinDownloads          int   `yaml:"minDownloads"`
+	NumWorkers      int `yaml:"numWorkers"`
+	ExpireDays      int `yaml:"expireAfterDays"`
 }
 
 type MainThumbnailsConfig struct {
@@ -92,6 +82,7 @@ type SentryConfig struct {
 type RedisConfig struct {
 	Enabled bool               `yaml:"enabled"`
 	Shards  []RedisShardConfig `yaml:"shards,flow"`
+	DbNum   int                `default:"0" yaml:"databaseNumber"`
 }
 
 type RedisShardConfig struct {

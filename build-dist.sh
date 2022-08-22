@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -ex
+
 rm -rfv $PWD/bin/*
 mkdir $PWD/bin/dist
 

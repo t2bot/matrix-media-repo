@@ -54,7 +54,7 @@ func GetUserIdFromToken(ctx rcontext.RequestContext, serverName string, accessTo
 	if err != nil {
 		return "", err
 	}
-	if response.IsGuest {
+	if response.IsGuest || response.IsGuest2 {
 		return "", ErrGuestToken
 	}
 	return response.UserId, nil

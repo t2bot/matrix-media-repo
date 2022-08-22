@@ -64,10 +64,6 @@ func NewDefaultMinimumRepoConfig() MinimumRepoConfig {
 					RepoPath: "./ipfs",
 				},
 			},
-			Redis: RedisConfig{
-				Enabled: false,
-				Shards:  []RedisShardConfig{},
-			},
 		},
 		AccessTokens: AccessTokenConfig{
 			MaxCacheTimeSeconds: 0,

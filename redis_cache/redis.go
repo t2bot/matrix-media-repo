@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/go-redis/redis/v9"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
@@ -21,14 +21,15 @@ type RedisCache struct {
 	ring *redis.Ring
 }
 
-func NewCache() *RedisCache {
+func NewCache(conf config.RedisConfig) *RedisCache {
 	addresses := make(map[string]string)
-	for _, c := range config.Get().Features.Redis.Shards {
+	for _, c := range conf.Shards {
 		addresses[c.Name] = c.Address
 	}
 	ring := redis.NewRing(&redis.RingOptions{
-		Addrs: addresses,
+		Addrs:       addresses,
 		DialTimeout: 10 * time.Second,
+		DB:          conf.DbNum,
 	})
 
 	logrus.Info("Contacting Redis shards...")

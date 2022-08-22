@@ -21,12 +21,12 @@ import (
 var stores = make(map[string]*s3Datastore)
 
 type s3Datastore struct {
-	conf     config.DatastoreConfig
-	dsId     string
-	client   *minio.Client
-	bucket   string
-	region string
-	tempPath string
+	conf         config.DatastoreConfig
+	dsId         string
+	client       *minio.Client
+	bucket       string
+	region       string
+	tempPath     string
 	storageClass string
 }
 
@@ -71,12 +71,12 @@ func GetOrCreateS3Datastore(dsId string, conf config.DatastoreConfig) (*s3Datast
 	}
 
 	s3ds := &s3Datastore{
-		conf:     conf,
-		dsId:     dsId,
-		client:   s3client,
-		bucket:   bucket,
-		region: region,
-		tempPath: tempPath,
+		conf:         conf,
+		dsId:         dsId,
+		client:       s3client,
+		bucket:       bucket,
+		region:       region,
+		tempPath:     tempPath,
 		storageClass: storageClass,
 	}
 	stores[dsId] = s3ds
@@ -232,4 +232,14 @@ func (s *s3Datastore) OverwriteObject(location string, stream io.ReadCloser) err
 	defer cleanup.DumpAndCloseStream(stream)
 	_, err := s.client.PutObject(s.bucket, location, stream, -1, minio.PutObjectOptions{StorageClass: s.storageClass})
 	return err
+}
+
+func (s *s3Datastore) ListObjects() ([]string, error) {
+	doneCh := make(chan struct{})
+	defer close(doneCh)
+	list := make([]string, 0)
+	for message := range s.client.ListObjectsV2(s.bucket, "", true, doneCh) {
+		list = append(list, message.Key)
+	}
+	return list, nil
 }

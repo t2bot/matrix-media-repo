@@ -2,6 +2,10 @@ package stores
 
 import (
 	"database/sql"
+	"errors"
+	"fmt"
+	"github.com/turt2live/matrix-media-repo/util"
+	"strings"
 	"sync"
 
 	"github.com/lib/pq"
@@ -32,35 +36,39 @@ const selectMediaByUserBefore = "SELECT origin, media_id, upload_name, content_t
 const selectMediaByDomainBefore = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE origin = $1 AND creation_ts <= $2"
 const selectMediaByLocation = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, datastore_id, location, creation_ts, quarantined FROM media WHERE datastore_id = $1 AND location = $2"
 const selectIfQuarantined = "SELECT 1 FROM media WHERE sha256_hash = $1 AND quarantined = $2 LIMIT 1;"
+const selectMediaLocationsForDatastore = "SELECT distinct location FROM media WHERE datastore_id = $1;"
+
+var UsersUsageStatsSorts = []string{"media_count", "media_length", "user_id"}
 
 var dsCacheByPath = sync.Map{} // [string] => Datastore
 var dsCacheById = sync.Map{}   // [string] => Datastore
 
 type mediaStoreStatements struct {
-	selectMedia                     *sql.Stmt
-	selectMediaByHash               *sql.Stmt
-	insertMedia                     *sql.Stmt
-	selectOldMedia                  *sql.Stmt
-	selectOrigins                   *sql.Stmt
-	deleteMedia                     *sql.Stmt
-	updateQuarantined               *sql.Stmt
-	selectDatastore                 *sql.Stmt
-	selectDatastoreByUri            *sql.Stmt
-	insertDatastore                 *sql.Stmt
-	selectMediaWithoutDatastore     *sql.Stmt
-	updateMediaDatastoreAndLocation *sql.Stmt
-	selectAllDatastores             *sql.Stmt
-	selectMediaInDatastoreOlderThan *sql.Stmt
-	selectAllMediaForServer         *sql.Stmt
-	selectAllMediaForServerUsers    *sql.Stmt
-	selectAllMediaForServerIds      *sql.Stmt
-	selectQuarantinedMedia          *sql.Stmt
-	selectServerQuarantinedMedia    *sql.Stmt
-	selectMediaByUser               *sql.Stmt
-	selectMediaByUserBefore         *sql.Stmt
-	selectMediaByDomainBefore       *sql.Stmt
-	selectMediaByLocation           *sql.Stmt
-	selectIfQuarantined             *sql.Stmt
+	selectMedia                      *sql.Stmt
+	selectMediaByHash                *sql.Stmt
+	insertMedia                      *sql.Stmt
+	selectOldMedia                   *sql.Stmt
+	selectOrigins                    *sql.Stmt
+	deleteMedia                      *sql.Stmt
+	updateQuarantined                *sql.Stmt
+	selectDatastore                  *sql.Stmt
+	selectDatastoreByUri             *sql.Stmt
+	insertDatastore                  *sql.Stmt
+	selectMediaWithoutDatastore      *sql.Stmt
+	updateMediaDatastoreAndLocation  *sql.Stmt
+	selectAllDatastores              *sql.Stmt
+	selectMediaInDatastoreOlderThan  *sql.Stmt
+	selectAllMediaForServer          *sql.Stmt
+	selectAllMediaForServerUsers     *sql.Stmt
+	selectAllMediaForServerIds       *sql.Stmt
+	selectQuarantinedMedia           *sql.Stmt
+	selectServerQuarantinedMedia     *sql.Stmt
+	selectMediaByUser                *sql.Stmt
+	selectMediaByUserBefore          *sql.Stmt
+	selectMediaByDomainBefore        *sql.Stmt
+	selectMediaByLocation            *sql.Stmt
+	selectIfQuarantined              *sql.Stmt
+	selectMediaLocationsForDatastore *sql.Stmt
 }
 
 type MediaStoreFactory struct {
@@ -147,6 +155,9 @@ func InitMediaStore(sqlDb *sql.DB) (*MediaStoreFactory, error) {
 		return nil, err
 	}
 	if store.stmts.selectIfQuarantined, err = store.sqlDb.Prepare(selectIfQuarantined); err != nil {
+		return nil, err
+	}
+	if store.stmts.selectMediaLocationsForDatastore, err = store.sqlDb.Prepare(selectMediaLocationsForDatastore); err != nil {
 		return nil, err
 	}
 
@@ -460,6 +471,115 @@ func (s *MediaStore) GetAllMediaForServer(serverName string) ([]*types.Media, er
 	return results, nil
 }
 
+func (s *MediaStore) GetUsersUsageStatsForServer(
+	serverName string,
+	orderBy string,
+	start int64,
+	limit int64,
+	fromTS int64,
+	untilTS int64,
+	searchTerm string,
+	isAscendingOrder bool,
+) ([]*types.UserUsageStats, int64, error) {
+	if !util.ArrayContains(UsersUsageStatsSorts, orderBy) {
+		return nil, 0, errors.New("invalid orderBy")
+	}
+	if start < 0 {
+		return nil, 0, errors.New("invalid start")
+	}
+	if limit < 0 {
+		return nil, 0, errors.New("invalid limit")
+	}
+
+	orderDirection := "DESC"
+	if isAscendingOrder {
+		orderDirection = "ASC"
+	}
+
+	var queryParamIdx int64 = 1
+	var commonQueryParams = []interface{}{serverName}
+
+	var filters = []string{fmt.Sprintf("origin = $%d", queryParamIdx)}
+	queryParamIdx++
+	if fromTS >= 0 {
+		filters = append(filters, fmt.Sprintf("creation_ts >= $%d", queryParamIdx))
+		queryParamIdx++
+		commonQueryParams = append(commonQueryParams, fromTS)
+	}
+	if untilTS >= 0 {
+		filters = append(filters, fmt.Sprintf("creation_ts <= $%d", queryParamIdx))
+		queryParamIdx++
+		commonQueryParams = append(commonQueryParams, untilTS)
+	}
+	if searchTerm != "" {
+		filters = append(filters, fmt.Sprintf("user_id LIKE $%d", queryParamIdx))
+		queryParamIdx++
+		commonQueryParams = append(commonQueryParams, fmt.Sprintf("@%%%s%%:%%", searchTerm))
+	}
+
+	var otherPaginationParams []interface{}
+	limitClause := fmt.Sprintf("LIMIT $%d", queryParamIdx)
+	queryParamIdx++
+	otherPaginationParams = append(otherPaginationParams, limit)
+
+	offsetClause := fmt.Sprintf("OFFSET $%d", queryParamIdx)
+	queryParamIdx++
+	otherPaginationParams = append(otherPaginationParams, start)
+
+	commonQueryPortion := fmt.Sprintf(
+		"FROM media "+
+			"WHERE %s "+
+			"GROUP BY user_id", strings.Join(filters, " AND "))
+
+	paginationQuery := fmt.Sprintf(
+		"SELECT COUNT(user_id) AS media_count, SUM(size_bytes) AS media_length, user_id "+
+			"%s "+
+			"ORDER BY %s %s "+
+			"%s "+
+			"%s;",
+		commonQueryPortion,
+		orderBy,
+		orderDirection,
+		limitClause,
+		offsetClause)
+	rows, err := s.factory.sqlDb.QueryContext(
+		s.ctx,
+		paginationQuery,
+		append(commonQueryParams, otherPaginationParams...)...)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var results []*types.UserUsageStats
+	for rows.Next() {
+		obj := &types.UserUsageStats{}
+		err = rows.Scan(
+			&obj.MediaCount,
+			&obj.MediaLength,
+			&obj.UserId,
+		)
+		if err != nil {
+			return nil, 0, err
+		}
+		results = append(results, obj)
+	}
+
+	totalQuery := fmt.Sprintf(
+		"SELECT COUNT(*) "+
+			"FROM ("+
+			"  SELECT user_id "+
+			"  %s "+
+			") as count_user_ids; ",
+		commonQueryPortion)
+	var totalNumRows int64 = 0
+	err = s.factory.sqlDb.QueryRowContext(s.ctx, totalQuery, commonQueryParams...).Scan(&totalNumRows)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return results, totalNumRows, nil
+}
+
 func (s *MediaStore) GetAllMediaForServerUsers(serverName string, userIds []string) ([]*types.Media, error) {
 	rows, err := s.statements.selectAllMediaForServerUsers.QueryContext(s.ctx, serverName, pq.Array(userIds))
 	if err != nil {
@@ -718,4 +838,23 @@ func (s *MediaStore) IsQuarantined(sha256hash string) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+func (s *MediaStore) GetDistinctLocationsForDatastore(datastoreId string) ([]string, error) {
+	rows, err := s.statements.selectMediaLocationsForDatastore.QueryContext(s.ctx, datastoreId)
+	if err != nil {
+		return nil, err
+	}
+
+	locations := make([]string, 0)
+	for rows.Next() {
+		s := ""
+		err = rows.Scan(&s)
+		if err != nil {
+			return nil, err
+		}
+		locations = append(locations, s)
+	}
+
+	return locations, nil
 }

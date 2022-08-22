@@ -53,6 +53,13 @@ func StartStorageMigration(sourceDs *datastore.DatastoreRef, targetDs *datastore
 					continue
 				}
 
+				if newLocation.Sha256Hash != record.Sha256Hash {
+					rctx.Log.Error("sha256 hash does not match - not moving media")
+					sentry.CaptureMessage("sha256 hash does not match - not moving media")
+					targetDs.DeleteObject(newLocation.Location)
+					continue
+				}
+
 				rctx.Log.Info("Updating media records...")
 				err = db.ChangeDatastoreOfHash(targetDs.DatastoreId, newLocation.Location, record.Sha256Hash)
 				if err != nil {

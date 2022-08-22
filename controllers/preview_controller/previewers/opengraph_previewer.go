@@ -1,13 +1,15 @@
 package previewers
 
 import (
-	"github.com/getsentry/sentry-go"
 	"net/url"
 	"strconv"
 	"strings"
 
+	"github.com/getsentry/sentry-go"
+
 	"github.com/PuerkitoBio/goquery"
 	"github.com/dyatlov/go-opengraph/opengraph"
+	ogimage "github.com/dyatlov/go-opengraph/opengraph/types/image"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
@@ -140,10 +142,10 @@ func calcDescription(html string) string {
 	return doc.Find("body").Text()
 }
 
-func calcImages(html string) []*opengraph.Image {
+func calcImages(html string) []*ogimage.Image {
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
 	if err != nil {
-		return []*opengraph.Image{}
+		return []*ogimage.Image{}
 	}
 
 	imageSrc := ""
@@ -178,9 +180,9 @@ func calcImages(html string) []*opengraph.Image {
 	})
 
 	if imageSrc == "" || dimensionScore <= 0 {
-		return []*opengraph.Image{}
+		return []*ogimage.Image{}
 	}
 
-	img := opengraph.Image{URL: imageSrc}
-	return []*opengraph.Image{&img}
+	img := ogimage.Image{URL: imageSrc}
+	return []*ogimage.Image{&img}
 }

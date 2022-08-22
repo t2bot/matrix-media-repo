@@ -10,16 +10,16 @@ import (
 	"time"
 
 	"github.com/ipfs/go-cid"
-	ipfsConfig "github.com/ipfs/go-ipfs-config"
 	files "github.com/ipfs/go-ipfs-files"
-	"github.com/ipfs/go-ipfs/core"
-	"github.com/ipfs/go-ipfs/core/bootstrap"
-	"github.com/ipfs/go-ipfs/core/coreapi"
-	"github.com/ipfs/go-ipfs/core/node/libp2p"
-	"github.com/ipfs/go-ipfs/plugin/loader"
-	"github.com/ipfs/go-ipfs/repo/fsrepo"
 	icore "github.com/ipfs/interface-go-ipfs-core"
 	icorepath "github.com/ipfs/interface-go-ipfs-core/path"
+	ipfsConfig "github.com/ipfs/kubo/config"
+	"github.com/ipfs/kubo/core"
+	"github.com/ipfs/kubo/core/bootstrap"
+	"github.com/ipfs/kubo/core/coreapi"
+	"github.com/ipfs/kubo/core/node/libp2p"
+	"github.com/ipfs/kubo/plugin/loader"
+	"github.com/ipfs/kubo/repo/fsrepo"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
@@ -36,7 +36,7 @@ type IPFSEmbedded struct {
 
 func NewEmbeddedIPFSNode() (IPFSEmbedded, error) {
 	// Startup routine modified from:
-	// https://github.com/ipfs/go-ipfs/blob/083ef47ce84a5bd9a93f0ce0afaf668881dc1f35/docs/examples/go-ipfs-as-a-library/main.go
+	// https://github.com/ipfs/kubo/blob/083ef47ce84a5bd9a93f0ce0afaf668881dc1f35/docs/examples/go-ipfs-as-a-library/main.go
 
 	basePath := config.Get().Features.IPFS.Daemon.RepoPath
 	dataPath := path.Join(basePath, "data")
@@ -49,32 +49,38 @@ func NewEmbeddedIPFSNode() (IPFSEmbedded, error) {
 	logrus.Info("Loading plugins for IPFS embedded node...")
 	plugins, err := loader.NewPluginLoader(filepath.Join(basePath, "plugins"))
 	if err != nil {
+		cancel()
 		return blank, err
 	}
 	err = plugins.Initialize()
 	if err != nil {
+		cancel()
 		return blank, err
 	}
 	err = plugins.Inject()
 	if err != nil {
+		cancel()
 		return blank, err
 	}
 
 	logrus.Info("Generating config for IPFS embedded node")
 	cfg, err := ipfsConfig.Init(ioutil.Discard, 2048)
 	if err != nil {
+		cancel()
 		return blank, err
 	}
 
 	logrus.Info("Initializing IPFS embedded node")
 	err = fsrepo.Init(dataPath, cfg)
 	if err != nil {
+		cancel()
 		return blank, err
 	}
 
 	logrus.Info("Starting fsrepo for IPFS embedded node")
 	repo, err := fsrepo.Open(dataPath)
 	if err != nil {
+		cancel()
 		return blank, err
 	}
 
@@ -88,12 +94,14 @@ func NewEmbeddedIPFSNode() (IPFSEmbedded, error) {
 	logrus.Info("Building IPFS embedded node")
 	node, err := core.NewNode(ctx, nodeOptions)
 	if err != nil {
+		cancel()
 		return blank, err
 	}
 
 	logrus.Info("Generating API reference for IPFS embedded node")
 	api, err := coreapi.NewCoreAPI(node)
 	if err != nil {
+		cancel()
 		return blank, err
 	}
 
@@ -101,6 +109,7 @@ func NewEmbeddedIPFSNode() (IPFSEmbedded, error) {
 	logrus.Info("Connecting to peers for IPFS embedded node")
 	err = node.Bootstrap(bootstrap.DefaultBootstrapConfig)
 	if err != nil {
+		cancel()
 		return blank, err
 	}
 

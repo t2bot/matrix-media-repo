@@ -58,9 +58,6 @@ func getFederationBreaker(hostname string) *circuit.Breaker {
 // Note: URL lookups are not covered by the breaker because otherwise it might never close.
 func GetServerApiUrl(hostname string) (string, string, error) {
 	logrus.Info("Getting server API URL for " + hostname)
-	if hostname == "federation.matrix.org" {
-		return "https://oauth.t2host.io", "oauth.t2host.io", nil
-	}
 
 	// Check to see if we've cached this hostname at all
 	setupCache()
@@ -168,6 +165,10 @@ func GetServerApiUrl(hostname string) (string, string, error) {
 			}
 		}
 	}
+	if r != nil {
+		logrus.Debug("WK response code was ", r.StatusCode)
+	}
+	logrus.Debug("WK error: ", err)
 
 	// Step 4: try resolving a hostname using SRV records and use it
 	// Note: we ignore errors here because the hostname will fail elsewhere.

@@ -35,7 +35,12 @@ func main() {
 	assets.SetupMigrations(*migrationsPath)
 
 	var err error
-	err = logging.Setup(config.Get().General.LogDirectory, config.Get().General.LogColors, config.Get().General.JsonLogs)
+	err = logging.Setup(
+		config.Get().General.LogDirectory,
+		config.Get().General.LogColors,
+		config.Get().General.JsonLogs,
+		config.Get().General.LogLevel,
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -155,7 +160,7 @@ func main() {
 			if err != nil {
 				logrus.Error(err)
 			} else if task.EndTs > 0 {
-				waitChan<-true
+				waitChan <- true
 				return
 			}
 

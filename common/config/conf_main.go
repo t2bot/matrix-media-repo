@@ -27,6 +27,7 @@ func NewDefaultMainConfig() MainRepoConfig {
 			LogDirectory:     "logs",
 			LogColors:        false,
 			JsonLogs:         false,
+			LogLevel:         "info",
 			TrustAnyForward:  false,
 			UseForwardedHost: true,
 		},
@@ -45,15 +46,6 @@ func NewDefaultMainConfig() MainRepoConfig {
 				FailureCacheMinutes: 15,
 			},
 			NumWorkers: 10,
-			Cache: CacheConfig{
-				Enabled:               true,
-				MaxSizeBytes:          1048576000, // 1gb
-				MaxFileSizeBytes:      104857600,  // 100mb
-				TrackedMinutes:        30,
-				MinDownloads:          5,
-				MinCacheTimeSeconds:   300, // 5min
-				MinEvictedTimeSeconds: 60,
-			},
 			ExpireDays: 0,
 		},
 		UrlPreviews: MainUrlPreviewsConfig{
@@ -82,6 +74,7 @@ func NewDefaultMainConfig() MainRepoConfig {
 					"0.0.0.0/0", // "Everything"
 				},
 				DefaultLanguage: "en-US,en",
+				UserAgent:       "matrix-media-repo",
 				OEmbed:          false,
 			},
 			NumWorkers: 10,

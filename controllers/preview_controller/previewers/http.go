@@ -118,7 +118,7 @@ func doHttpGet(urlPayload *preview_types.UrlPayload, languageHeader string, ctx 
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", "matrix-media-repo")
+	req.Header.Set("User-Agent", ctx.Config.UrlPreviews.UserAgent)
 	req.Header.Set("Accept-Language", languageHeader)
 	return client.Do(req)
 }

@@ -8,8 +8,9 @@ type emptyResponse struct {
 }
 
 type userIdResponse struct {
-	UserId  string `json:"user_id"`
-	IsGuest bool   `json:"org.matrix.msc3069.is_guest"`
+	UserId   string `json:"user_id"`
+	IsGuest  bool   `json:"org.matrix.msc3069.is_guest"`
+	IsGuest2 bool   `json:"is_guest"`
 }
 
 type whoisResponse struct {

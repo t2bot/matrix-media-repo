@@ -48,7 +48,7 @@ func PurgeRemoteMedia(r *http.Request, rctx rcontext.RequestContext, user api.Us
 }
 
 func PurgeIndividualRecord(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
-	isGlobalAdmin, isLocalAdmin := getPurgeRequestInfo(r, rctx, user)
+	isGlobalAdmin, isLocalAdmin := api.GetRequestUserAdminStatus(r, rctx, user)
 	localServerName := r.Host
 
 	params := mux.Vars(r)
@@ -98,7 +98,7 @@ func PurgeIndividualRecord(r *http.Request, rctx rcontext.RequestContext, user a
 }
 
 func PurgeQuarantined(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
-	isGlobalAdmin, isLocalAdmin := getPurgeRequestInfo(r, rctx, user)
+	isGlobalAdmin, isLocalAdmin := api.GetRequestUserAdminStatus(r, rctx, user)
 	localServerName := r.Host
 
 	var affected []*types.Media
@@ -168,7 +168,7 @@ func PurgeOldMedia(r *http.Request, rctx rcontext.RequestContext, user api.UserI
 }
 
 func PurgeUserMedia(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
-	isGlobalAdmin, isLocalAdmin := getPurgeRequestInfo(r, rctx, user)
+	isGlobalAdmin, isLocalAdmin := api.GetRequestUserAdminStatus(r, rctx, user)
 	if !isGlobalAdmin && !isLocalAdmin {
 		return api.AuthFailed()
 	}
@@ -220,7 +220,7 @@ func PurgeUserMedia(r *http.Request, rctx rcontext.RequestContext, user api.User
 }
 
 func PurgeRoomMedia(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
-	isGlobalAdmin, isLocalAdmin := getPurgeRequestInfo(r, rctx, user)
+	isGlobalAdmin, isLocalAdmin := api.GetRequestUserAdminStatus(r, rctx, user)
 	if !isGlobalAdmin && !isLocalAdmin {
 		return api.AuthFailed()
 	}
@@ -300,7 +300,7 @@ func PurgeRoomMedia(r *http.Request, rctx rcontext.RequestContext, user api.User
 }
 
 func PurgeDomainMedia(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
-	isGlobalAdmin, isLocalAdmin := getPurgeRequestInfo(r, rctx, user)
+	isGlobalAdmin, isLocalAdmin := api.GetRequestUserAdminStatus(r, rctx, user)
 	if !isGlobalAdmin && !isLocalAdmin {
 		return api.AuthFailed()
 	}
@@ -342,16 +342,4 @@ func PurgeDomainMedia(r *http.Request, rctx rcontext.RequestContext, user api.Us
 	}
 
 	return &api.DoNotCacheResponse{Payload: map[string]interface{}{"purged": true, "affected": mxcs}}
-}
-
-func getPurgeRequestInfo(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) (bool, bool) {
-	isGlobalAdmin := util.IsGlobalAdmin(user.UserId) || user.IsShared
-	isLocalAdmin, err := matrix.IsUserAdmin(rctx, r.Host, user.AccessToken, r.RemoteAddr)
-	if err != nil {
-		sentry.CaptureException(err)
-		rctx.Log.Error("Error verifying local admin: " + err.Error())
-		return isGlobalAdmin, false
-	}
-
-	return isGlobalAdmin, isLocalAdmin
 }
