@@ -35,16 +35,16 @@ func IsUserWithinQuota(ctx rcontext.RequestContext, userId string) (bool, error)
 }
 
 func GetUserUploadMaxSizeBytes(ctx rcontext.RequestContext, userId string) int64 {
-	var maxValue int64 = 0
-	for _, q := range ctx.Config.Uploads.UsersMaxSizeBytes {
-		if glob.Glob(q.Glob, userId) {
-			// Use the *last* match
-			maxValue = q.MaxBytes
+	for _, u := range ctx.Config.Uploads.UsersMaxSizeBytes {
+		if glob.Glob(u.Glob, userId) {
+			if u.MaxBytes == 0 {
+				return ctx.Config.Uploads.MaxSizeBytes
+			} else if u.MaxBytes < 0 {
+				return 0
+			} else {
+				return u.MaxBytes
+			}
 		}
 	}
-	if maxValue == 0 {
-		return ctx.Config.Uploads.MaxSizeBytes
-	} else {
-		return maxValue
-	}
+
 }
