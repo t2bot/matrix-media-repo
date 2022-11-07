@@ -214,6 +214,10 @@ uploads:
   # The maximum individual file size a user can upload.
   maxBytes: 104857600 # 100MB default, 0 to disable
 
+  usersMaxBytes: 
+    - glob: "@*:*"  # Affect all users. Use asterisks (*) to match any character.
+      maxBytes: 104857600 # 100MB default, 0 to disable
+  
   # The minimum number of bytes to let people upload. This is recommended to be non-zero to
   # ensure that the "cost" of running the media repo is worthwhile - small file uploads tend
   # to waste more CPU and database resources than small files, thus a default of 100 bytes
