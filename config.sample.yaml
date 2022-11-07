@@ -214,9 +214,12 @@ uploads:
   # The maximum individual file size a user can upload.
   maxBytes: 104857600 # 100MB default, 0 to disable
 
+  # The maximum individual file size a user can upload. If a user does not match
+  # any of the globs in here, the global `maxBytes` value is used.
+  # If several globs match for a given user, the **last** matching value is used.
   usersMaxBytes: 
     - glob: "@*:*"  # Affect all users. Use asterisks (*) to match any character.
-      maxBytes: 104857600 # 100MB default, 0 to disable
+      maxBytes: 104857600 # maxBytes, by default. 0 to disable
   
   # The minimum number of bytes to let people upload. This is recommended to be non-zero to
   # ensure that the "cost" of running the media repo is worthwhile - small file uploads tend
