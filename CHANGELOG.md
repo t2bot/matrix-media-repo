@@ -17,6 +17,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * The development environment now uses Synapse as a homeserver. Test accounts will need recreating.
 * Updated to Go 1.18
 
+### Fixed
+
+* Return default media attributes if none have been explicitly set.
+
 ## [1.2.12] - March 31, 2022
 
 ### Fixed

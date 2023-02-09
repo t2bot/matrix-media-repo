@@ -1,10 +1,12 @@
 package custom
 
 import (
+	"database/sql"
 	"encoding/json"
-	"github.com/getsentry/sentry-go"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/getsentry/sentry-go"
 
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
@@ -49,9 +51,21 @@ func GetAttributes(r *http.Request, rctx rcontext.RequestContext, user api.UserI
 		return api.AuthFailed()
 	}
 
+	// Check to see if the media exists
+	mediaDb := storage.GetDatabase().GetMediaStore(rctx)
+	media, err := mediaDb.Get(origin, mediaId)
+	if err != nil && err != sql.ErrNoRows {
+		rctx.Log.Error(err)
+		sentry.CaptureException(err)
+		return api.InternalServerError("failed to get media record")
+	}
+	if media == nil || err == sql.ErrNoRows {
+		return api.NotFoundError()
+	}
+
 	db := storage.GetDatabase().GetMediaAttributesStore(rctx)
 
-	attrs, err := db.GetAttributes(origin, mediaId)
+	attrs, err := db.GetAttributesDefaulted(origin, mediaId)
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
