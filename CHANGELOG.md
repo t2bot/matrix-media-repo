@@ -21,6 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Swap out the HEIF library for better support towards [ARM64 Docker Images](https://github.com/turt2live/matrix-media-repo/issues/365).
 * The development environment now uses Synapse as a homeserver. Test accounts will need recreating.
 * Updated to Go 1.18
+* Improved error message when thumbnailer cannot determine image dimensions.
 
 ### Fixed
 

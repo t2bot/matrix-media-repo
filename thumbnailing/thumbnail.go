@@ -2,10 +2,11 @@ package thumbnailing
 
 import (
 	"errors"
-	"github.com/turt2live/matrix-media-repo/common"
 	"io"
 	"io/ioutil"
 	"reflect"
+
+	"github.com/turt2live/matrix-media-repo/common"
 
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/i"
@@ -45,7 +46,7 @@ func GenerateThumbnail(imgStream io.ReadCloser, contentType string, width int, h
 	// https://github.com/turt2live/matrix-media-repo/security/advisories/GHSA-j889-h476-hh9h
 	dimensional, w, h, err := generator.GetOriginDimensions(b, contentType, ctx)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("error getting dimensions: " + err.Error())
 	}
 	if dimensional && (w*h) >= ctx.Config.Thumbnails.MaxPixels {
 		ctx.Log.Warn("Image too large: too many pixels")
