@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Deprecations / Removals
+
+* In version 1.3.0, IPFS will no longer be supported as a datastore. Please migrate your data if you are using the IPFS support.
+
 ### Added
 
 * Added the `Cross-Origin-Resource-Policy: cross-origin` header to all downloads, as per [MSC3828](https://github.com/matrix-org/matrix-spec-proposals/pull/3828).
