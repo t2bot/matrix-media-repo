@@ -1,11 +1,12 @@
 package r0
 
 import (
-	"github.com/getsentry/sentry-go"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
+
+	"github.com/getsentry/sentry-go"
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
@@ -35,7 +36,7 @@ func UploadMedia(r *http.Request, rctx rcontext.RequestContext, user api.UserInf
 		contentType = "application/octet-stream" // binary
 	}
 
-	if upload_controller.IsRequestTooLarge(r.ContentLength, r.Header.Get("Content-Length"), rctx) {
+	if upload_controller.IsRequestTooLarge(r.ContentLength, r.Header.Get("Content-Length"), rctx, user.UserId) {
 		io.Copy(ioutil.Discard, r.Body) // Ditch the entire request
 		return api.RequestTooLarge()
 	}

@@ -5,6 +5,7 @@ import (
 
 	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
+	"github.com/turt2live/matrix-media-repo/quota"
 )
 
 type PublicConfigResponse struct {
@@ -12,15 +13,7 @@ type PublicConfigResponse struct {
 }
 
 func PublicConfig(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
-	uploadSize := rctx.Config.Uploads.ReportedMaxSizeBytes
-	if uploadSize == 0 {
-		uploadSize = rctx.Config.Uploads.MaxSizeBytes
-	}
-
-	if uploadSize < 0 {
-		uploadSize = 0 // invokes the omitEmpty
-	}
-
+	uploadSize := quota.GetUserUploadMaxSizeBytes(rctx, user.UserId)
 	return &PublicConfigResponse{
 		UploadMaxSize: uploadSize,
 	}

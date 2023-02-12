@@ -2,8 +2,9 @@ package preview_controller
 
 import (
 	"fmt"
-	"github.com/getsentry/sentry-go"
 	"sync"
+
+	"github.com/getsentry/sentry-go"
 
 	"github.com/disintegration/imaging"
 	"github.com/sirupsen/logrus"
@@ -129,7 +130,7 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) (resp *urlPreviewRe
 	}
 
 	// Store the thumbnail, if there is one
-	if preview.Image != nil && !upload_controller.IsRequestTooLarge(preview.Image.ContentLength, preview.Image.ContentLengthHeader, ctx) {
+	if preview.Image != nil && !upload_controller.IsRequestTooLarge(preview.Image.ContentLength, preview.Image.ContentLengthHeader, ctx, info.forUserId) {
 		contentLength := upload_controller.EstimateContentLength(preview.Image.ContentLength, preview.Image.ContentLengthHeader)
 
 		// UploadMedia will close the read stream for the thumbnail and dedupe the image

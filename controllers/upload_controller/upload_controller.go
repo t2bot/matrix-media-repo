@@ -2,11 +2,12 @@ package upload_controller
 
 import (
 	"fmt"
-	"github.com/getsentry/sentry-go"
 	"io"
 	"io/ioutil"
 	"strconv"
 	"time"
+
+	"github.com/getsentry/sentry-go"
 
 	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
@@ -15,6 +16,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/internal_cache"
 	"github.com/turt2live/matrix-media-repo/plugins"
+	"github.com/turt2live/matrix-media-repo/quota"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/types"
@@ -32,12 +34,13 @@ type AlreadyUploadedFile struct {
 	ObjectInfo *types.ObjectInfo
 }
 
-func IsRequestTooLarge(contentLength int64, contentLengthHeader string, ctx rcontext.RequestContext) bool {
-	if ctx.Config.Uploads.MaxSizeBytes <= 0 {
+func IsRequestTooLarge(contentLength int64, contentLengthHeader string, ctx rcontext.RequestContext, userId string) bool {
+	maxSize := quota.GetUserUploadMaxSizeBytes(ctx, userId)
+	if maxSize <= 0 {
 		return false
 	}
 	if contentLength >= 0 {
-		return contentLength > ctx.Config.Uploads.MaxSizeBytes
+		return contentLength > maxSize
 	}
 	if contentLengthHeader != "" {
 		parsed, err := strconv.ParseInt(contentLengthHeader, 10, 64)
@@ -47,7 +50,7 @@ func IsRequestTooLarge(contentLength int64, contentLengthHeader string, ctx rcon
 			return true // Invalid header
 		}
 
-		return parsed > ctx.Config.Uploads.MaxSizeBytes
+		return parsed > maxSize
 	}
 
 	return false // We can only assume
