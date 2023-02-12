@@ -1,15 +1,13 @@
 package upload_controller
 
 import (
-	"fmt"
-	"github.com/getsentry/sentry-go"
-	"github.com/turt2live/matrix-media-repo/util/ids"
 	"io"
 	"io/ioutil"
 	"strconv"
 	"time"
 
 	"github.com/getsentry/sentry-go"
+	"github.com/turt2live/matrix-media-repo/util/ids"
 
 	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
