@@ -6,7 +6,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/globals"
 	"github.com/turt2live/matrix-media-repo/common/runtime"
 	"github.com/turt2live/matrix-media-repo/internal_cache"
-	"github.com/turt2live/matrix-media-repo/ipfs_proxy"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/plugins"
 	"github.com/turt2live/matrix-media-repo/storage"
@@ -19,7 +18,6 @@ func setupReloads() {
 	reloadDatabaseOnChan(globals.DatabaseReloadChan)
 	reloadDatastoresOnChan(globals.DatastoresReloadChan)
 	reloadRecurringTasksOnChan(globals.RecurringTasksReloadChan)
-	reloadIpfsOnChan(globals.IPFSReloadChan)
 	reloadAccessTokensOnChan(globals.AccessTokenReloadChan)
 	reloadCacheOnChan(globals.CacheReplaceChan)
 	reloadPluginsOnChan(globals.PluginReloadChan)
@@ -33,7 +31,6 @@ func stopReloads() {
 	globals.DatastoresReloadChan <- false
 	globals.AccessTokenReloadChan <- false
 	globals.RecurringTasksReloadChan <- false
-	globals.IPFSReloadChan <- false
 	globals.CacheReplaceChan <- false
 	globals.PluginReloadChan <- false
 }
@@ -106,20 +103,6 @@ func reloadRecurringTasksOnChan(reloadChan chan bool) {
 				tasks.StartAll()
 			} else {
 				return // received stop
-			}
-		}
-	}()
-}
-
-func reloadIpfsOnChan(reloadChan chan bool) {
-	go func() {
-		defer close(reloadChan)
-		for {
-			shouldReload := <-reloadChan
-			if shouldReload {
-				ipfs_proxy.Reload()
-			} else {
-				ipfs_proxy.Stop()
 			}
 		}
 	}()

@@ -1,12 +1,12 @@
 package upload_controller
 
 import (
-	"fmt"
-	"github.com/getsentry/sentry-go"
 	"io"
 	"io/ioutil"
 	"strconv"
 	"time"
+
+	"github.com/getsentry/sentry-go"
 
 	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
@@ -142,25 +142,7 @@ func UploadMedia(contents io.ReadCloser, contentLength int64, contentType string
 
 	_ = recentMediaIds.Add(mediaId, true, cache.DefaultExpiration)
 
-	var existingFile *AlreadyUploadedFile = nil
-	ds, err := datastore.PickDatastore(common.KindLocalMedia, ctx)
-	if err != nil {
-		return nil, err
-	}
-	if ds.Type == "ipfs" {
-		// Do the upload now so we can pick the media ID to point to IPFS
-		info, err := ds.UploadFile(util_byte_seeker.NewByteSeeker(dataBytes), contentLength, ctx)
-		if err != nil {
-			return nil, err
-		}
-		existingFile = &AlreadyUploadedFile{
-			DS:         ds,
-			ObjectInfo: info,
-		}
-		mediaId = fmt.Sprintf("ipfs:%s", info.Location[len("ipfs/"):])
-	}
-
-	m, err := StoreDirect(existingFile, util_byte_seeker.NewByteSeeker(dataBytes), contentLength, contentType, filename, userId, origin, mediaId, common.KindLocalMedia, ctx, true)
+	m, err := StoreDirect(nil, util_byte_seeker.NewByteSeeker(dataBytes), contentLength, contentType, filename, userId, origin, mediaId, common.KindLocalMedia, ctx, true)
 	if err != nil {
 		return m, err
 	}
