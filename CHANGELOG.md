@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+*Nothing yet.*
+
+## [1.2.13] - February 12, 2023
+
 ### Deprecations
 
 * In version 1.3.0, IPFS will no longer be supported as a datastore. Please migrate your data if you are using the IPFS support.
@@ -379,7 +383,8 @@ a large database (more than about 100k uploaded files), run the following steps 
 * Various other features that would be expected like maximum/minimum size controls, rate limiting, etc. Check out the
   sample config for a better idea of what else is possible.
 
-[unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.12...HEAD
+[unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.13...HEAD
+[1.2.13]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.12...v1.2.13
 [1.2.12]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.11...v1.2.12
 [1.2.11]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.10...v1.2.11
 [1.2.10]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.9...v1.2.10
