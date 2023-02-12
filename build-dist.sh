@@ -33,5 +33,3 @@ do
 done
 
 rm -rfv $PWD/bin/dist/compile_assets*
-rm -rfv $PWD/bin/dist/loadtest*
-rm -rfv $PWD/bin/dist/complement*
