@@ -2,13 +2,12 @@ package upload_pipeline
 
 import (
 	"errors"
-	"strconv"
+	"github.com/turt2live/matrix-media-repo/util/ids"
 	"time"
 
 	"github.com/patrickmn/go-cache"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/storage"
-	"github.com/turt2live/matrix-media-repo/util"
 )
 
 var recentMediaIds = cache.New(30*time.Second, 60*time.Second)
@@ -25,14 +24,7 @@ func generateMediaID(ctx rcontext.RequestContext, origin string) (string, error)
 			return "", errors.New("failed to generate a media ID after 10 rounds")
 		}
 
-		mediaId, err = util.GenerateRandomString(64)
-		if err != nil {
-			return "", err
-		}
-		mediaId, err = util.GetSha1OfString(mediaId + strconv.FormatInt(util.NowMillis(), 10))
-		if err != nil {
-			return "", err
-		}
+		mediaId, err = ids.NewUniqueId()
 
 		// Because we use the current time in the media ID, we don't need to worry about
 		// collisions from the database.

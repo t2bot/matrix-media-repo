@@ -10,6 +10,8 @@ require (
 	github.com/alioygur/is v1.0.3
 	github.com/bep/debounce v1.2.1
 	github.com/buckket/go-blurhash v1.1.0
+	github.com/bwmarrin/snowflake v0.3.0
+	github.com/cenk/backoff v2.2.1+incompatible // indirect
 	github.com/cupcake/sigil v0.0.0-20131127230922-6bf9722f2ae8
 	github.com/dhowden/tag v0.0.0-20220618230019-adf36e896086
 	github.com/didip/tollbooth v4.0.2+incompatible

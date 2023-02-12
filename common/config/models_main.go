@@ -89,3 +89,12 @@ type RedisShardConfig struct {
 	Name    string `yaml:"name"`
 	Address string `yaml:"addr"`
 }
+
+type ClusterConfig struct {
+	IDGenerator IDGeneratorConfig `yaml:"idGenerator"`
+}
+
+type IDGeneratorConfig struct {
+	Location string `yaml:"location"`
+	Secret   string `yaml:"secret"`
+}

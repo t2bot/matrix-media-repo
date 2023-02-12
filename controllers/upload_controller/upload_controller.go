@@ -1,6 +1,9 @@
 package upload_controller
 
 import (
+	"fmt"
+	"github.com/getsentry/sentry-go"
+	"github.com/turt2live/matrix-media-repo/util/ids"
 	"io"
 	"io/ioutil"
 	"strconv"
@@ -118,11 +121,7 @@ func UploadMedia(contents io.ReadCloser, contentLength int64, contentType string
 			return nil, errors.New("failed to generate a media ID after 10 rounds")
 		}
 
-		mediaId, err = util.GenerateRandomString(64)
-		if err != nil {
-			return nil, err
-		}
-		mediaId, err = util.GetSha1OfString(mediaId + strconv.FormatInt(util.NowMillis(), 10))
+		mediaId, err = ids.NewUniqueId()
 		if err != nil {
 			return nil, err
 		}

@@ -566,3 +566,17 @@ sentry:
 
   # Whether or not to turn on sentry's built in debugging. This will increase log output.
   debug: false
+
+# Options for controlling clustering behaviour of the media repo. This requires an ID generator
+# service in your infrastructure.
+#
+# For more information see https://docs.t2bot.io/matrix-media-repo/installing/environments/clustered.html
+cluster:
+  # Options for accessing the ID generator service.
+  idGenerator:
+    # The secret being used by the ID generator service. Clustering is disabled unless this is set
+    # to a non-empty string.
+    secret: ""
+
+    # The URL for where the ID generator service can be reached.
+    location: "http://localhost:8090"
