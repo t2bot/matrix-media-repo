@@ -93,7 +93,6 @@ require (
 
 require (
 	github.com/ajstarks/svgo v0.0.0-20211024235047-1546f124cd8b // indirect
-	github.com/cenk/backoff v2.2.1+incompatible // indirect
 	github.com/dsoprea/go-logging v0.0.0-20200710184922-b02d349568dd // indirect
 	github.com/dyatlov/go-opengraph/opengraph v0.0.0-20220524092352-606d7b1e5f8a
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
