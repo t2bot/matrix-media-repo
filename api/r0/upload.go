@@ -69,7 +69,7 @@ func UploadMedia(r *http.Request, rctx rcontext.RequestContext, user api.UserInf
 
 		rctx.Log.Error("Unexpected error storing media: " + err.Error())
 		sentry.CaptureException(err)
-		return api.InternalServerError("Unexpected Error")
+		return api.ServiceUnavailable()
 	}
 
 	if rctx.Config.Features.MSC2448Blurhash.Enabled && r.URL.Query().Get("xyz.amorgan.generate_blurhash") == "true" {
