@@ -43,6 +43,9 @@ var MediaDownloaded = prometheus.NewCounterVec(prometheus.CounterOpts{
 var UrlPreviewsGenerated = prometheus.NewCounterVec(prometheus.CounterOpts{
 	Name: "media_url_previews_generated_total",
 }, []string{"type"})
+var S3Operations = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Name: "media_s3_operations_total",
+}, []string{"operation"})
 
 func init() {
 	prometheus.MustRegister(HttpRequests)
@@ -58,4 +61,5 @@ func init() {
 	prometheus.MustRegister(ThumbnailsGenerated)
 	prometheus.MustRegister(MediaDownloaded)
 	prometheus.MustRegister(UrlPreviewsGenerated)
+	prometheus.MustRegister(S3Operations)
 }

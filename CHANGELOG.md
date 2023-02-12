@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 
 * Added the `Cross-Origin-Resource-Policy: cross-origin` header to all downloads, as per [MSC3828](https://github.com/matrix-org/matrix-spec-proposals/pull/3828).
+* Added metrics for tracking which S3 operations are performed against datastores.
 
 ### Changed
 
