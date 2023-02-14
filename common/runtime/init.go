@@ -2,8 +2,8 @@ package runtime
 
 import (
 	"fmt"
-	"github.com/getsentry/sentry-go"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
@@ -73,7 +73,7 @@ func LoadDatastores() {
 
 			err = s3.EnsureBucketExists()
 			if err != nil {
-				logrus.Warn("\t\tBucket does not exist!")
+				logrus.Warn("\t\tBucket does not exist!", err)
 			}
 
 			err = s3.EnsureTempPathExists()
