@@ -171,6 +171,8 @@ datastores:
       accessSecret: ""
       ssl: true
       bucketName: "your-media-bucket"
+      # Available auth types: static, env, iam, default to static
+      #authType: static
       # An optional region for where this S3 endpoint is located. Typically not needed, though
       # some providers will need this (like Scaleway). Uncomment to use.
       #region: "sfo2"
