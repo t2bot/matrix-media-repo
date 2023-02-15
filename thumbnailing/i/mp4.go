@@ -2,16 +2,17 @@ package i
 
 import (
 	"errors"
-	"github.com/turt2live/matrix-media-repo/util/ids"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
 
+	"github.com/turt2live/matrix-media-repo/util/ids"
+	"github.com/turt2live/matrix-media-repo/util/stream_util"
+
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/m"
 	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/cleanup"
 )
 
 type mp4Generator struct {
@@ -50,7 +51,7 @@ func (d mp4Generator) GenerateThumbnail(b []byte, contentType string, width int,
 		return nil, errors.New("mp4: error writing temp video file: " + err.Error())
 	}
 	_, _ = f.Write(b)
-	cleanup.DumpAndCloseStream(f)
+	stream_util.DumpAndCloseStream(f)
 
 	err = exec.Command("ffmpeg", "-i", tempFile1, "-vf", "select=eq(n\\,0)", tempFile2).Run()
 	if err != nil {

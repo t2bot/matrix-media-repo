@@ -8,6 +8,7 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	"github.com/turt2live/matrix-media-repo/util/ids"
+	"github.com/turt2live/matrix-media-repo/util/stream_util"
 
 	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
@@ -20,7 +21,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/cleanup"
 	"github.com/turt2live/matrix-media-repo/util/util_byte_seeker"
 )
 
@@ -94,7 +94,7 @@ func EstimateContentLength(contentLength int64, contentLengthHeader string) int6
 }
 
 func UploadMedia(contents io.ReadCloser, contentLength int64, contentType string, filename string, userId string, origin string, ctx rcontext.RequestContext) (*types.Media, error) {
-	defer cleanup.DumpAndCloseStream(contents)
+	defer stream_util.DumpAndCloseStream(contents)
 
 	var data io.ReadCloser
 	if ctx.Config.Uploads.MaxSizeBytes > 0 {
@@ -189,7 +189,7 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 			return nil, err
 		}
 
-		fInfo, err := ds.UploadFile(util.BytesToStream(contentBytes), expectedSize, ctx)
+		fInfo, err := ds.UploadFile(stream_util.BytesToStream(contentBytes), expectedSize, ctx)
 		if err != nil {
 			return nil, err
 		}

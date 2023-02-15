@@ -2,8 +2,10 @@ package preview_controller
 
 import (
 	"fmt"
-	"github.com/getsentry/sentry-go"
 	"sync"
+
+	"github.com/getsentry/sentry-go"
+	"github.com/turt2live/matrix-media-repo/util/stream_util"
 
 	"github.com/disintegration/imaging"
 	"github.com/sirupsen/logrus"
@@ -17,7 +19,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/cleanup"
 	"github.com/turt2live/matrix-media-repo/util/resource_handler"
 )
 
@@ -143,7 +144,7 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) (resp *urlPreviewRe
 				ctx.Log.Warn("Non-fatal error streaming datastore file: " + err.Error())
 				sentry.CaptureException(err)
 			} else {
-				defer cleanup.DumpAndCloseStream(mediaStream)
+				defer stream_util.DumpAndCloseStream(mediaStream)
 				img, err := imaging.Decode(mediaStream)
 				if err != nil {
 					ctx.Log.Warn("Non-fatal error getting thumbnail dimensions: " + err.Error())

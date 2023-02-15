@@ -2,20 +2,21 @@ package ds_file
 
 import (
 	"errors"
-	"github.com/turt2live/matrix-media-repo/util/ids"
 	"io"
 	"io/ioutil"
 	"os"
 	"path"
 
+	"github.com/turt2live/matrix-media-repo/util/ids"
+	"github.com/turt2live/matrix-media-repo/util/stream_util"
+
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/cleanup"
 )
 
 func PersistFile(basePath string, file io.ReadCloser, ctx rcontext.RequestContext) (*types.ObjectInfo, error) {
-	defer cleanup.DumpAndCloseStream(file)
+	defer stream_util.DumpAndCloseStream(file)
 
 	exists := true
 	var primaryContainer string
@@ -70,13 +71,13 @@ func PersistFile(basePath string, file io.ReadCloser, ctx rcontext.RequestContex
 }
 
 func PersistFileAtLocation(targetFile string, file io.ReadCloser, ctx rcontext.RequestContext) (int64, string, error) {
-	defer cleanup.DumpAndCloseStream(file)
+	defer stream_util.DumpAndCloseStream(file)
 
 	f, err := os.OpenFile(targetFile, os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return 0, "", err
 	}
-	defer cleanup.DumpAndCloseStream(f)
+	defer stream_util.DumpAndCloseStream(f)
 
 	rfile, wfile := io.Pipe()
 	tr := io.TeeReader(file, wfile)
@@ -92,7 +93,7 @@ func PersistFileAtLocation(targetFile string, file io.ReadCloser, ctx rcontext.R
 	go func() {
 		defer wfile.Close()
 		ctx.Log.Info("Calculating hash of stream...")
-		hash, hashErr = util.GetSha256HashOfStream(ioutil.NopCloser(tr))
+		hash, hashErr = stream_util.GetSha256HashOfStream(ioutil.NopCloser(tr))
 		ctx.Log.Info("Hash of file is ", hash)
 		done <- true
 	}()

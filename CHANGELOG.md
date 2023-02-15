@@ -11,6 +11,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 * IPFS support has been removed due to maintenance burden.
 
+### Changed
+
+* Some admin endpoints for purging media, quarantining media, and background task information now require additional path components. See [docs/admin.md](./docs/admin.md) for more information. 
+
 ## [1.2.13] - February 12, 2023
 
 ### Deprecations

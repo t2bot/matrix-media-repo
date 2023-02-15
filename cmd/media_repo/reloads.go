@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/turt2live/matrix-media-repo/api/auth_cache"
-	"github.com/turt2live/matrix-media-repo/api/webserver"
+	"github.com/turt2live/matrix-media-repo/api"
+	"github.com/turt2live/matrix-media-repo/api/_auth_cache"
 	"github.com/turt2live/matrix-media-repo/common/globals"
 	"github.com/turt2live/matrix-media-repo/common/runtime"
 	"github.com/turt2live/matrix-media-repo/internal_cache"
@@ -41,7 +41,7 @@ func reloadWebOnChan(reloadChan chan bool) {
 		for {
 			shouldReload := <-reloadChan
 			if shouldReload {
-				webserver.Reload()
+				api.Reload()
 			} else {
 				return // received stop
 			}
@@ -114,7 +114,7 @@ func reloadAccessTokensOnChan(reloadChan chan bool) {
 		for {
 			shouldReload := <-reloadChan
 			if shouldReload {
-				auth_cache.FlushCache()
+				_auth_cache.FlushCache()
 			}
 		}
 	}()

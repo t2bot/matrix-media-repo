@@ -2,11 +2,13 @@ package r0
 
 import (
 	"github.com/getsentry/sentry-go"
+	"github.com/turt2live/matrix-media-repo/api/_apimeta"
+	"github.com/turt2live/matrix-media-repo/api/_responses"
+
 	"net/http"
 	"strconv"
 	"strings"
 
-	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/preview_controller"
@@ -26,9 +28,9 @@ type MatrixOpenGraph struct {
 	ImageHeight int    `json:"og:image:height,omitempty"`
 }
 
-func PreviewUrl(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
+func PreviewUrl(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
 	if !rctx.Config.UrlPreviews.Enabled {
-		return api.NotFoundError()
+		return _responses.NotFoundError()
 	}
 
 	params := r.URL.Query()
@@ -42,16 +44,16 @@ func PreviewUrl(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo
 		ts, err = strconv.ParseInt(tsStr, 10, 64)
 		if err != nil {
 			rctx.Log.Error("Error parsing ts: " + err.Error())
-			return api.BadRequest(err.Error())
+			return _responses.BadRequest(err.Error())
 		}
 	}
 
 	// Validate the URL
 	if urlStr == "" {
-		return api.BadRequest("No url provided")
+		return _responses.BadRequest("No url provided")
 	}
 	if strings.Index(urlStr, "http://") != 0 && strings.Index(urlStr, "https://") != 0 {
-		return api.BadRequest("Scheme not accepted")
+		return _responses.BadRequest("Scheme not accepted")
 	}
 
 	languageHeader := rctx.Config.UrlPreviews.DefaultLanguage
@@ -62,12 +64,12 @@ func PreviewUrl(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo
 	preview, err := preview_controller.GetPreview(urlStr, r.Host, user.UserId, ts, languageHeader, rctx)
 	if err != nil {
 		if err == common.ErrMediaNotFound || err == common.ErrHostNotFound {
-			return api.NotFoundError()
+			return _responses.NotFoundError()
 		} else if err == common.ErrInvalidHost || err == common.ErrHostBlacklisted {
-			return api.BadRequest(err.Error())
+			return _responses.BadRequest(err.Error())
 		} else {
 			sentry.CaptureException(err)
-			return api.InternalServerError("unexpected error during request")
+			return _responses.InternalServerError("unexpected error during request")
 		}
 	}
 

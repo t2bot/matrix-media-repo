@@ -3,31 +3,28 @@ package r0
 import (
 	"bytes"
 	"crypto/md5"
-	"github.com/getsentry/sentry-go"
 	"image/color"
 	"io"
 	"net/http"
 	"strconv"
 
+	"github.com/getsentry/sentry-go"
+	"github.com/turt2live/matrix-media-repo/api/_apimeta"
+	"github.com/turt2live/matrix-media-repo/api/_responses"
+	"github.com/turt2live/matrix-media-repo/api/_routers"
+
 	"github.com/cupcake/sigil/gen"
 	"github.com/disintegration/imaging"
-	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 )
 
-type IdenticonResponse struct {
-	Avatar io.Reader
-}
-
-func Identicon(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
+func Identicon(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
 	if !rctx.Config.Identicons.Enabled {
-		return api.NotFoundError()
+		return _responses.NotFoundError()
 	}
 
-	params := mux.Vars(r)
-	seed := params["seed"]
+	seed := _routers.GetParam("seed", r)
 
 	var err error
 	width := 96
@@ -38,14 +35,14 @@ func Identicon(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo)
 	if widthStr != "" {
 		width, err = strconv.Atoi(widthStr)
 		if err != nil {
-			return api.InternalServerError("Error parsing width: " + err.Error())
+			return _responses.InternalServerError("Error parsing width: " + err.Error())
 		}
 		height = width
 	}
 	if heightStr != "" {
 		height, err = strconv.Atoi(heightStr)
 		if err != nil {
-			return api.InternalServerError("Error parsing height: " + err.Error())
+			return _responses.InternalServerError("Error parsing height: " + err.Error())
 		}
 	}
 
@@ -86,10 +83,16 @@ func Identicon(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo)
 	if err != nil {
 		rctx.Log.Error("Error generating image:" + err.Error())
 		sentry.CaptureException(err)
-		return api.InternalServerError("error generating identicon")
+		return _responses.InternalServerError("error generating identicon")
 	}
 
-	return &IdenticonResponse{Avatar: imgData}
+	return &_responses.DownloadResponse{
+		ContentType:       "image/png",
+		Filename:          string(hashed) + ".png",
+		SizeBytes:         0,
+		Data:              io.NopCloser(imgData),
+		TargetDisposition: "inline",
+	}
 }
 
 func rgb(r, g, b uint8) color.NRGBA {

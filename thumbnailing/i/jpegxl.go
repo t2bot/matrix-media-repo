@@ -2,15 +2,16 @@ package i
 
 import (
 	"errors"
-	"github.com/turt2live/matrix-media-repo/util/ids"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
 
+	"github.com/turt2live/matrix-media-repo/util/ids"
+	"github.com/turt2live/matrix-media-repo/util/stream_util"
+
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/m"
-	"github.com/turt2live/matrix-media-repo/util/cleanup"
 )
 
 type jpegxlGenerator struct {
@@ -49,7 +50,7 @@ func (d jpegxlGenerator) GenerateThumbnail(b []byte, contentType string, width i
 		return nil, errors.New("jpegxl: error writing temp jpegxl file: " + err.Error())
 	}
 	_, _ = f.Write(b)
-	cleanup.DumpAndCloseStream(f)
+	stream_util.DumpAndCloseStream(f)
 
 	err = exec.Command("convert", tempFile1, tempFile2).Run()
 	if err != nil {

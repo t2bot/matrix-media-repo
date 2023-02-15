@@ -7,12 +7,12 @@ import (
 	"reflect"
 
 	"github.com/turt2live/matrix-media-repo/common"
+	"github.com/turt2live/matrix-media-repo/util/stream_util"
 
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/i"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/m"
 	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/cleanup"
 )
 
 var ErrUnsupported = errors.New("unsupported thumbnail type")
@@ -30,7 +30,7 @@ func GenerateThumbnail(imgStream io.ReadCloser, contentType string, width int, h
 		return nil, ErrUnsupported
 	}
 
-	defer cleanup.DumpAndCloseStream(imgStream)
+	defer stream_util.DumpAndCloseStream(imgStream)
 	b, err := ioutil.ReadAll(imgStream)
 	if err != nil {
 		return nil, err
@@ -57,7 +57,7 @@ func GenerateThumbnail(imgStream io.ReadCloser, contentType string, width int, h
 }
 
 func GetGenerator(imgStream io.ReadCloser, contentType string, animated bool) (i.Generator, error) {
-	defer cleanup.DumpAndCloseStream(imgStream)
+	defer stream_util.DumpAndCloseStream(imgStream)
 	b, err := ioutil.ReadAll(imgStream)
 	if err != nil {
 		return nil, err

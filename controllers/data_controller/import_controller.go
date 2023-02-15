@@ -8,11 +8,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"github.com/getsentry/sentry-go"
-	"github.com/turt2live/matrix-media-repo/util/ids"
 	"io"
 	"net/http"
 	"sync"
+
+	"github.com/getsentry/sentry-go"
+	"github.com/turt2live/matrix-media-repo/util/ids"
+	"github.com/turt2live/matrix-media-repo/util/stream_util"
 
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
@@ -336,7 +338,7 @@ func doImport(updateChannel chan *importUpdate, taskId int, importId string, ctx
 			buf, found := fileMap[record.ArchivedName]
 			if found {
 				ctx.Log.Info("Using file from memory")
-				closer := util.BufferToStream(buf)
+				closer := stream_util.BufferToStream(buf)
 				_, err := upload_controller.StoreDirect(nil, closer, record.SizeBytes, record.ContentType, record.FileName, userId, record.Origin, record.MediaId, kind, ctx, true)
 				if err != nil {
 					ctx.Log.Errorf("Error importing file: %s", err.Error())

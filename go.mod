@@ -27,7 +27,6 @@ require (
 	github.com/getsentry/sentry-go v0.13.0
 	github.com/go-redis/redis/v9 v9.0.0-beta.2
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
-	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-hclog v1.2.2
 	github.com/hashicorp/go-plugin v1.4.4
 	github.com/k3a/html2text v1.0.8
@@ -49,6 +48,8 @@ require (
 	golang.org/x/image v0.0.0-20220722155232-062f8c9fd539
 	golang.org/x/net v0.0.0-20220812174116-3211cb980234
 )
+
+require github.com/julienschmidt/httprouter v1.3.0
 
 require (
 	github.com/Jeffail/gabs v1.4.0 // indirect

@@ -2,10 +2,11 @@ package util_exif
 
 import (
 	"fmt"
+	"io"
+
 	"github.com/dsoprea/go-exif/v3"
 	"github.com/pkg/errors"
-	"github.com/turt2live/matrix-media-repo/util/cleanup"
-	"io"
+	"github.com/turt2live/matrix-media-repo/util/stream_util"
 )
 
 type ExifOrientation struct {
@@ -15,7 +16,7 @@ type ExifOrientation struct {
 }
 
 func GetExifOrientation(img io.ReadCloser) (*ExifOrientation, error) {
-	defer cleanup.DumpAndCloseStream(img)
+	defer stream_util.DumpAndCloseStream(img)
 
 	rawExif, err := exif.SearchAndExtractExifWithReader(img)
 	if err != nil {

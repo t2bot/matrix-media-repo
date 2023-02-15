@@ -4,9 +4,9 @@ import (
 	"io"
 
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/stream_util"
 )
 
 func hashFile(ctx rcontext.RequestContext, r io.ReadCloser) (string, error) {
-	return util.GetSha256HashOfStream(r)
+	return stream_util.GetSha256HashOfStream(r)
 }

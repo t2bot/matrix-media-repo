@@ -3,12 +3,13 @@ package cluster
 import (
 	"errors"
 	"fmt"
-	"github.com/turt2live/matrix-media-repo/common/config"
-	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/cleanup"
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/stream_util"
 )
 
 func GetId() (string, error) {
@@ -26,7 +27,7 @@ func GetId() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer cleanup.DumpAndCloseStream(res.Body)
+	defer stream_util.DumpAndCloseStream(res.Body)
 
 	contents, err := ioutil.ReadAll(res.Body)
 	if err != nil {

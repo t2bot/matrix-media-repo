@@ -1,16 +1,6 @@
-package api
+package _responses
 
 import "github.com/turt2live/matrix-media-repo/common"
-
-type EmptyResponse struct{}
-
-type DoNotCacheResponse struct {
-	Payload interface{}
-}
-
-type HtmlResponse struct {
-	HTML string
-}
 
 type ErrorResponse struct {
 	Code         string `json:"errcode"`
@@ -19,6 +9,10 @@ type ErrorResponse struct {
 }
 
 func InternalServerError(message string) *ErrorResponse {
+	return &ErrorResponse{common.ErrCodeUnknown, message, common.ErrCodeUnknown}
+}
+
+func BadGatewayError(message string) *ErrorResponse {
 	return &ErrorResponse{common.ErrCodeUnknown, message, common.ErrCodeUnknown}
 }
 

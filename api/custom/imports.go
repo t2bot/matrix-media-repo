@@ -2,13 +2,15 @@ package custom
 
 import (
 	"github.com/getsentry/sentry-go"
+	"github.com/turt2live/matrix-media-repo/api/_apimeta"
+	"github.com/turt2live/matrix-media-repo/api/_responses"
+	"github.com/turt2live/matrix-media-repo/api/_routers"
+	"github.com/turt2live/matrix-media-repo/util/stream_util"
+
 	"net/http"
 
-	"github.com/gorilla/mux"
-	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/data_controller"
-	"github.com/turt2live/matrix-media-repo/util/cleanup"
 )
 
 type ImportStarted struct {
@@ -16,60 +18,64 @@ type ImportStarted struct {
 	TaskID   int    `json:"task_id"`
 }
 
-func StartImport(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
+func StartImport(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
 	if !rctx.Config.Archiving.Enabled {
-		return api.BadRequest("archiving is not enabled")
+		return _responses.BadRequest("archiving is not enabled")
 	}
 
-	defer cleanup.DumpAndCloseStream(r.Body)
+	defer stream_util.DumpAndCloseStream(r.Body)
 	task, importId, err := data_controller.StartImport(r.Body, rctx)
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return api.InternalServerError("fatal error starting import")
+		return _responses.InternalServerError("fatal error starting import")
 	}
 
-	return &api.DoNotCacheResponse{Payload: &ImportStarted{
+	return &_responses.DoNotCacheResponse{Payload: &ImportStarted{
 		TaskID:   task.ID,
 		ImportID: importId,
 	}}
 }
 
-func AppendToImport(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
+func AppendToImport(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
 	if !rctx.Config.Archiving.Enabled {
-		return api.BadRequest("archiving is not enabled")
+		return _responses.BadRequest("archiving is not enabled")
 	}
 
-	params := mux.Vars(r)
+	importId := _routers.GetParam("importId", r)
 
-	importId := params["importId"]
+	if !_routers.ServerNameRegex.MatchString(importId) {
+		return _responses.BadRequest("invalid import ID")
+	}
 
-	defer cleanup.DumpAndCloseStream(r.Body)
+	defer stream_util.DumpAndCloseStream(r.Body)
 	_, err := data_controller.AppendToImport(importId, r.Body, false)
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return api.InternalServerError("fatal error appending to import")
+		return _responses.InternalServerError("fatal error appending to import")
 	}
 
-	return &api.DoNotCacheResponse{Payload: &api.EmptyResponse{}}
+	return &_responses.DoNotCacheResponse{Payload: &_responses.EmptyResponse{}}
 }
 
-func StopImport(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
+func StopImport(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
 	if !rctx.Config.Archiving.Enabled {
-		return api.BadRequest("archiving is not enabled")
+		return _responses.BadRequest("archiving is not enabled")
 	}
 
-	params := mux.Vars(r)
+	importId := _routers.GetParam("importId", r)
 
-	importId := params["importId"]
+	if !_routers.ServerNameRegex.MatchString(importId) {
+		return _responses.BadRequest("invalid import ID")
+	}
 
 	err := data_controller.StopImport(importId)
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return api.InternalServerError("fatal error stopping import")
+		return _responses.InternalServerError("fatal error stopping import")
 	}
 
-	return &api.DoNotCacheResponse{Payload: &api.EmptyResponse{}}
+	return &_responses.DoNotCacheResponse{Payload: &_responses.EmptyResponse{}}
 }
