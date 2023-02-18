@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
-	"github.com/getsentry/sentry-go"
 	"io/ioutil"
 	"time"
+
+	"github.com/getsentry/sentry-go"
+	"github.com/turt2live/matrix-media-repo/util/stream_util"
 
 	"github.com/disintegration/imaging"
 	"github.com/patrickmn/go-cache"
@@ -58,7 +60,7 @@ func GetThumbnail(origin string, mediaId string, desiredWidth int, desiredHeight
 			data := &bytes.Buffer{}
 			_ = imaging.Encode(data, img, imaging.PNG)
 			return &types.StreamedThumbnail{
-				Stream: util.BufferToStream(data),
+				Stream: stream_util.BufferToStream(data),
 				Thumbnail: &types.Thumbnail{
 					// We lie about the details to ensure we keep our contract
 					Width:       img.Bounds().Max.X,
@@ -165,7 +167,7 @@ func GetThumbnail(origin string, mediaId string, desiredWidth int, desiredHeight
 
 		rv := v.(*types.StreamedThumbnail)
 		vals := make([]interface{}, 0)
-		streams := util.CloneReader(rv.Stream, count)
+		streams := stream_util.CloneReader(rv.Stream, count)
 
 		for i := 0; i < count; i++ {
 			internal_cache.Get().MarkDownload(rv.Thumbnail.Sha256Hash)

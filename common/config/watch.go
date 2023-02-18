@@ -1,8 +1,9 @@
 package config
 
 import (
-	"github.com/getsentry/sentry-go"
 	"time"
+
+	"github.com/getsentry/sentry-go"
 
 	"github.com/bep/debounce"
 	"github.com/fsnotify/fsnotify"
@@ -92,13 +93,6 @@ func onFileChanged() {
 		logrus.Warn("Log configuration changed - restart the media repo to apply changes")
 	}
 
-	ipfsDaemonChange := configNew.Features.IPFS.Daemon.Enabled != configNow.Features.IPFS.Daemon.Enabled
-	ipfsDaemonPathChange := configNew.Features.IPFS.Daemon.RepoPath != configNow.Features.IPFS.Daemon.RepoPath
-	if ipfsDaemonChange || ipfsDaemonPathChange {
-		logrus.Warn("IPFS Daemon options changed - reloading")
-		globals.IPFSReloadChan <- true
-	}
-
 	redisEnabledChange := configNew.Features.Redis.Enabled != configNow.Features.Redis.Enabled
 	redisShardsChange := hasRedisShardConfigChanged(configNew, configNow)
 	if redisEnabledChange || redisShardsChange {
@@ -123,9 +117,6 @@ func onFileChanged() {
 
 func hasWebFeatureChanged(configNew *MainRepoConfig, configNow *MainRepoConfig) bool {
 	if configNew.Features.MSC2448Blurhash.Enabled != configNow.Features.MSC2448Blurhash.Enabled {
-		return true
-	}
-	if configNew.Features.IPFS.Enabled != configNow.Features.IPFS.Enabled {
 		return true
 	}
 

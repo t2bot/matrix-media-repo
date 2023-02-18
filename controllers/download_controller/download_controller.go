@@ -5,10 +5,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/getsentry/sentry-go"
 	"io"
 	"io/ioutil"
 	"time"
+
+	"github.com/getsentry/sentry-go"
+	"github.com/turt2live/matrix-media-repo/util/stream_util"
 
 	"github.com/disintegration/imaging"
 	"github.com/patrickmn/go-cache"
@@ -21,7 +23,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/cleanup"
 )
 
 var localCache = cache.New(30*time.Second, 60*time.Second)
@@ -70,7 +71,7 @@ func GetMedia(origin string, mediaId string, downloadRemote bool, blockForMedia 
 		if media != nil {
 			if media.Quarantined {
 				ctx.Log.Warn("Quarantined media accessed")
-				defer cleanup.DumpAndCloseStream(minMedia.Stream)
+				defer stream_util.DumpAndCloseStream(minMedia.Stream)
 
 				if ctx.Config.Quarantine.ReplaceDownloads {
 					ctx.Log.Info("Replacing thumbnail with a quarantined one")
@@ -84,7 +85,7 @@ func GetMedia(origin string, mediaId string, downloadRemote bool, blockForMedia 
 					imaging.Encode(data, img, imaging.PNG)
 					return &types.MinimalMedia{
 						// Lie about all the details
-						Stream:      util.BufferToStream(data),
+						Stream:      stream_util.BufferToStream(data),
 						ContentType: "image/png",
 						UploadName:  "quarantine.png",
 						SizeBytes:   int64(data.Len()),
@@ -131,7 +132,7 @@ func GetMedia(origin string, mediaId string, downloadRemote bool, blockForMedia 
 
 		rv := v.(*types.MinimalMedia)
 		vals := make([]interface{}, 0)
-		streams := util.CloneReader(rv.Stream, count)
+		streams := stream_util.CloneReader(rv.Stream, count)
 
 		for i := 0; i < count; i++ {
 			if rv.KnownMedia != nil {

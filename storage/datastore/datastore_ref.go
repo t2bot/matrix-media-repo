@@ -10,7 +10,6 @@ import (
 	config2 "github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/storage/datastore/ds_file"
-	"github.com/turt2live/matrix-media-repo/storage/datastore/ds_ipfs"
 	"github.com/turt2live/matrix-media-repo/storage/datastore/ds_s3"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
@@ -47,8 +46,6 @@ func (d *DatastoreRef) UploadFile(file io.ReadCloser, expectedLength int64, ctx 
 			return nil, err
 		}
 		return s3.UploadFile(file, expectedLength, ctx)
-	} else if d.Type == "ipfs" {
-		return ds_ipfs.UploadFile(file, ctx)
 	} else {
 		return nil, errors.New("unknown datastore type")
 	}
@@ -63,10 +60,6 @@ func (d *DatastoreRef) DeleteObject(location string) error {
 			return err
 		}
 		return s3.DeleteObject(location)
-	} else if d.Type == "ipfs" {
-		// TODO: Support deleting from IPFS - will need a "delete reason" to avoid deleting duplicates
-		logrus.Warn("Unsupported operation: deleting from IPFS datastore")
-		return nil
 	} else {
 		return errors.New("unknown datastore type")
 	}
@@ -81,8 +74,6 @@ func (d *DatastoreRef) DownloadFile(location string) (io.ReadCloser, error) {
 			return nil, err
 		}
 		return s3.DownloadObject(location)
-	} else if d.Type == "ipfs" {
-		return ds_ipfs.DownloadFile(location)
 	} else {
 		return nil, errors.New("unknown datastore type")
 	}
@@ -101,10 +92,6 @@ func (d *DatastoreRef) ObjectExists(location string) bool {
 			return false
 		}
 		return s3.ObjectExists(location)
-	} else if d.Type == "ipfs" {
-		// TODO: Support checking file existence in IPFS
-		logrus.Warn("Unsupported operation: existence in IPFS datastore")
-		return false
 	} else {
 		panic("unknown datastore type")
 	}
@@ -120,10 +107,6 @@ func (d *DatastoreRef) OverwriteObject(location string, stream io.ReadCloser, ct
 			return err
 		}
 		return s3.OverwriteObject(location, stream)
-	} else if d.Type == "ipfs" {
-		// TODO: Support overwriting in IPFS
-		logrus.Warn("Unsupported operation: overwriting file in IPFS datastore")
-		return errors.New("unsupported operation")
 	} else {
 		return errors.New("unknown datastore type")
 	}

@@ -9,7 +9,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/preview_types"
 	"github.com/turt2live/matrix-media-repo/metrics"
-	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/stream_util"
 )
 
 func GenerateCalculatedPreview(urlPayload *preview_types.UrlPayload, languageHeader string, ctx rcontext.RequestContext) (preview_types.PreviewResult, error) {
@@ -26,7 +26,7 @@ func GenerateCalculatedPreview(urlPayload *preview_types.UrlPayload, languageHea
 		return preview_types.PreviewResult{}, common.ErrMediaNotFound
 	}
 
-	stream := util.BufferToStream(bytes2.NewBuffer(bytes))
+	stream := stream_util.BufferToStream(bytes2.NewBuffer(bytes))
 	img := &preview_types.PreviewImage{
 		Data:                stream,
 		ContentType:         contentType,

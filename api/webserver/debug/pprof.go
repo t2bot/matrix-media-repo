@@ -4,36 +4,50 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/pprof"
+
+	"github.com/julienschmidt/httprouter"
 )
 
-func BindPprofEndpoints(httpMux *http.ServeMux, secret string) {
-	httpMux.HandleFunc("/_matrix/media/unstable/io.t2bot/debug/pprof/", pprofServe(pprof.Index, secret))
-	httpMux.HandleFunc("/_matrix/media/unstable/io.t2bot/debug/pprof/allocs", pprofServe(pprof.Index, secret))
-	httpMux.HandleFunc("/_matrix/media/unstable/io.t2bot/debug/pprof/block", pprofServe(pprof.Index, secret))
-	httpMux.HandleFunc("/_matrix/media/unstable/io.t2bot/debug/pprof/cmdline", pprofServe(pprof.Index, secret))
-	httpMux.HandleFunc("/_matrix/media/unstable/io.t2bot/debug/pprof/goroutine", pprofServe(pprof.Index, secret))
-	httpMux.HandleFunc("/_matrix/media/unstable/io.t2bot/debug/pprof/heap", pprofServe(pprof.Index, secret))
-	httpMux.HandleFunc("/_matrix/media/unstable/io.t2bot/debug/pprof/mutex", pprofServe(pprof.Index, secret))
-	httpMux.HandleFunc("/_matrix/media/unstable/io.t2bot/debug/pprof/profile", pprofServe(pprof.Index, secret))
-	httpMux.HandleFunc("/_matrix/media/unstable/io.t2bot/debug/pprof/threadcreate", pprofServe(pprof.Index, secret))
-	httpMux.HandleFunc("/_matrix/media/unstable/io.t2bot/debug/pprof/trace", pprofServe(pprof.Index, secret))
+func BindPprofEndpoints(httpMux *httprouter.Router, secret string) {
+	httpMux.Handler("GET", "/_matrix/media/unstable/io.t2bot/debug/pprof/", pprofServe(pprof.Index, secret))
+	httpMux.Handler("GET", "/_matrix/media/unstable/io.t2bot/debug/pprof/allocs", pprofServe(pprof.Index, secret))
+	httpMux.Handler("GET", "/_matrix/media/unstable/io.t2bot/debug/pprof/block", pprofServe(pprof.Index, secret))
+	httpMux.Handler("GET", "/_matrix/media/unstable/io.t2bot/debug/pprof/cmdline", pprofServe(pprof.Index, secret))
+	httpMux.Handler("GET", "/_matrix/media/unstable/io.t2bot/debug/pprof/goroutine", pprofServe(pprof.Index, secret))
+	httpMux.Handler("GET", "/_matrix/media/unstable/io.t2bot/debug/pprof/heap", pprofServe(pprof.Index, secret))
+	httpMux.Handler("GET", "/_matrix/media/unstable/io.t2bot/debug/pprof/mutex", pprofServe(pprof.Index, secret))
+	httpMux.Handler("GET", "/_matrix/media/unstable/io.t2bot/debug/pprof/profile", pprofServe(pprof.Index, secret))
+	httpMux.Handler("GET", "/_matrix/media/unstable/io.t2bot/debug/pprof/threadcreate", pprofServe(pprof.Index, secret))
+	httpMux.Handler("GET", "/_matrix/media/unstable/io.t2bot/debug/pprof/trace", pprofServe(pprof.Index, secret))
 }
 
-func pprofServe(fn func(http.ResponseWriter, *http.Request), secret string) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		auth := r.Header.Get("Authorization")
-		if auth != ("Bearer " + secret) {
-			// Order is important: Set headers before sending responses
-			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-			w.WriteHeader(http.StatusUnauthorized)
+type generatorFn = func(w http.ResponseWriter, r *http.Request)
 
-			encoder := json.NewEncoder(w)
-			encoder.Encode(&map[string]bool{"success": false})
-			return
-		}
+type requestContainer struct {
+	secret string
+	fn     generatorFn
+}
 
-		// otherwise authed fine
-		r.URL.Path = r.URL.Path[len("/_matrix/media/unstable/io.t2bot"):]
-		fn(w, r)
+func pprofServe(fn generatorFn, secret string) http.Handler {
+	return &requestContainer{
+		secret: secret,
+		fn:     fn,
 	}
+}
+
+func (c *requestContainer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	auth := r.Header.Get("Authorization")
+	if auth != ("Bearer " + c.secret) {
+		// Order is important: Set headers before sending responses
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusUnauthorized)
+
+		encoder := json.NewEncoder(w)
+		_ = encoder.Encode(&map[string]bool{"success": false})
+		return
+	}
+
+	// otherwise authed fine
+	r.URL.Path = r.URL.Path[len("/_matrix/media/unstable/io.t2bot"):]
+	c.fn(w, r)
 }

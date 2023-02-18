@@ -15,6 +15,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/templating"
 	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/stream_util"
 )
 
 type V2ArchiveWriter interface {
@@ -49,7 +50,7 @@ func NewV2Export(exportId string, entity string, partSize int64, writer V2Archiv
 		entity:   entity,
 		writer:   writer,
 		partSize: partSize,
-		ctx: ctx,
+		ctx:      ctx,
 		indexModel: &templating.ExportIndexModel{
 			Entity:   entity,
 			ExportID: exportId,
@@ -91,7 +92,7 @@ func (e *V2ArchiveExport) persistTar() error {
 		archiver.Name = "export-manifest.tar"
 	}
 
-	if _, err := io.Copy(archiver, util.ClonedBufReader(*e.currentTarBytes)); err != nil {
+	if _, err := io.Copy(archiver, stream_util.ClonedBufReader(*e.currentTarBytes)); err != nil {
 		return err
 	}
 	_ = archiver.Close()

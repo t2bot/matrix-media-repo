@@ -8,11 +8,11 @@ import (
 
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/types"
-	"github.com/turt2live/matrix-media-repo/util/cleanup"
+	"github.com/turt2live/matrix-media-repo/util/stream_util"
 )
 
 func UploadMedia(ctx rcontext.RequestContext, origin string, mediaId string, r io.ReadCloser, contentType string, fileName string, userId string) (*types.Media, error) {
-	defer cleanup.DumpAndCloseStream(r)
+	defer stream_util.DumpAndCloseStream(r)
 
 	// Step 1: Limit the stream's length
 	r = limitStreamLength(ctx, r)

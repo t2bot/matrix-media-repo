@@ -19,6 +19,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/synapse"
 	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/stream_util"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -126,7 +127,7 @@ func main() {
 		_ = f.Close()
 
 		temp := bytes.NewBuffer(d.Bytes())
-		sha256, err := util.GetSha256HashOfStream(ioutil.NopCloser(temp))
+		sha256, err := stream_util.GetSha256HashOfStream(ioutil.NopCloser(temp))
 		if err != nil {
 			logrus.Fatal(err)
 		}

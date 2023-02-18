@@ -2,12 +2,14 @@ package custom
 
 import (
 	"github.com/getsentry/sentry-go"
+	"github.com/turt2live/matrix-media-repo/api/_apimeta"
+	"github.com/turt2live/matrix-media-repo/api/_responses"
+	"github.com/turt2live/matrix-media-repo/api/_routers"
+
 	"net/http"
 	"strconv"
 
-	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/storage"
 )
@@ -21,14 +23,12 @@ type TaskStatus struct {
 	IsFinished bool                   `json:"is_finished"`
 }
 
-func GetTask(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
-	params := mux.Vars(r)
-
-	taskIdStr := params["taskId"]
+func GetTask(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+	taskIdStr := _routers.GetParam("taskId", r)
 	taskId, err := strconv.Atoi(taskIdStr)
 	if err != nil {
 		rctx.Log.Error(err)
-		return api.BadRequest("invalid task ID")
+		return _responses.BadRequest("invalid task ID")
 	}
 
 	rctx = rctx.LogWithFields(logrus.Fields{
@@ -41,10 +41,10 @@ func GetTask(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) i
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return api.InternalServerError("failed to get task information")
+		return _responses.InternalServerError("failed to get task information")
 	}
 
-	return &api.DoNotCacheResponse{Payload: &TaskStatus{
+	return &_responses.DoNotCacheResponse{Payload: &TaskStatus{
 		TaskID:     task.ID,
 		Name:       task.Name,
 		Params:     task.Params,
@@ -54,14 +54,14 @@ func GetTask(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) i
 	}}
 }
 
-func ListAllTasks(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
+func ListAllTasks(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
 	db := storage.GetDatabase().GetMetadataStore(rctx)
 
 	tasks, err := db.GetAllBackgroundTasks()
 	if err != nil {
 		logrus.Error(err)
 		sentry.CaptureException(err)
-		return api.InternalServerError("Failed to get background tasks")
+		return _responses.InternalServerError("Failed to get background tasks")
 	}
 
 	statusObjs := make([]*TaskStatus, 0)
@@ -76,17 +76,17 @@ func ListAllTasks(r *http.Request, rctx rcontext.RequestContext, user api.UserIn
 		})
 	}
 
-	return &api.DoNotCacheResponse{Payload: statusObjs}
+	return &_responses.DoNotCacheResponse{Payload: statusObjs}
 }
 
-func ListUnfinishedTasks(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
+func ListUnfinishedTasks(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
 	db := storage.GetDatabase().GetMetadataStore(rctx)
 
 	tasks, err := db.GetAllBackgroundTasks()
 	if err != nil {
 		logrus.Error(err)
 		sentry.CaptureException(err)
-		return api.InternalServerError("Failed to get background tasks")
+		return _responses.InternalServerError("Failed to get background tasks")
 	}
 
 	statusObjs := make([]*TaskStatus, 0)
@@ -104,5 +104,5 @@ func ListUnfinishedTasks(r *http.Request, rctx rcontext.RequestContext, user api
 		})
 	}
 
-	return &api.DoNotCacheResponse{Payload: statusObjs}
+	return &_responses.DoNotCacheResponse{Payload: statusObjs}
 }

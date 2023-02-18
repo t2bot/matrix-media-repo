@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/util/cleanup"
+	"github.com/turt2live/matrix-media-repo/util/stream_util"
 )
 
 // Based in part on https://github.com/matrix-org/gomatrix/blob/072b39f7fa6b40257b4eead8c958d71985c28bdd/client.go#L180-L243
@@ -48,7 +48,7 @@ func doRequest(ctx rcontext.RequestContext, method string, urlStr string, body i
 	if err != nil {
 		return err
 	}
-	defer cleanup.DumpAndCloseStream(res.Body)
+	defer stream_util.DumpAndCloseStream(res.Body)
 
 	contents, err := ioutil.ReadAll(res.Body)
 	if err != nil {

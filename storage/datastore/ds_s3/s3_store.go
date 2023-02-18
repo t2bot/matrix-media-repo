@@ -8,6 +8,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/turt2live/matrix-media-repo/util/ids"
+	"github.com/turt2live/matrix-media-repo/util/stream_util"
+
 	"github.com/minio/minio-go/v6"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -16,8 +19,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/types"
-	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/cleanup"
 )
 
 var stores = make(map[string]*s3Datastore)
@@ -130,9 +131,9 @@ func (s *s3Datastore) EnsureTempPathExists() error {
 }
 
 func (s *s3Datastore) UploadFile(file io.ReadCloser, expectedLength int64, ctx rcontext.RequestContext) (*types.ObjectInfo, error) {
-	defer cleanup.DumpAndCloseStream(file)
+	defer stream_util.DumpAndCloseStream(file)
 
-	objectName, err := util.GenerateRandomString(512)
+	objectName, err := ids.NewUniqueId()
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +154,7 @@ func (s *s3Datastore) UploadFile(file io.ReadCloser, expectedLength int64, ctx r
 	go func() {
 		defer ws3.Close()
 		ctx.Log.Info("Calculating hash of stream...")
-		hash, hashErr = util.GetSha256HashOfStream(ioutil.NopCloser(tr))
+		hash, hashErr = stream_util.GetSha256HashOfStream(ioutil.NopCloser(tr))
 		ctx.Log.Info("Hash of file is ", hash)
 		done <- true
 	}()
@@ -171,14 +172,14 @@ func (s *s3Datastore) UploadFile(file io.ReadCloser, expectedLength int64, ctx r
 				}
 				defer os.Remove(f.Name())
 				expectedLength, uploadErr = io.Copy(f, rs3)
-				cleanup.DumpAndCloseStream(f)
+				stream_util.DumpAndCloseStream(f)
 				f, uploadErr = os.Open(f.Name())
 				if uploadErr != nil {
 					done <- true
 					return
 				}
 				rs3 = f
-				defer cleanup.DumpAndCloseStream(f)
+				defer stream_util.DumpAndCloseStream(f)
 			} else {
 				ctx.Log.Warn("Uploading content of unknown length to s3 - this could result in high memory usage")
 				expectedLength = -1
@@ -235,7 +236,7 @@ func (s *s3Datastore) ObjectExists(location string) bool {
 }
 
 func (s *s3Datastore) OverwriteObject(location string, stream io.ReadCloser) error {
-	defer cleanup.DumpAndCloseStream(stream)
+	defer stream_util.DumpAndCloseStream(stream)
 	metrics.S3Operations.With(prometheus.Labels{"operation": "PutObject"}).Inc()
 	_, err := s.client.PutObject(s.bucket, location, stream, -1, minio.PutObjectOptions{StorageClass: s.storageClass})
 	return err
