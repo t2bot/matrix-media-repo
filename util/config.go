@@ -1,6 +1,8 @@
 package util
 
 import (
+	"strings"
+
 	"github.com/turt2live/matrix-media-repo/common/config"
 )
 
@@ -16,5 +18,15 @@ func IsGlobalAdmin(userId string) bool {
 		}
 	}
 
+	return false
+}
+
+func IsHostIgnored(serverName string) bool {
+	serverName = strings.ToLower(serverName)
+	for _, host := range config.Get().Federation.IgnoredHosts {
+		if strings.ToLower(host) == serverName {
+			return true
+		}
+	}
 	return false
 }

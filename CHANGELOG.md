@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Added
+
+* Added a `federation.ignoredHosts` config option to block media from individual homeservers.
+
 ### Removed
 
 * IPFS support has been removed due to maintenance burden.

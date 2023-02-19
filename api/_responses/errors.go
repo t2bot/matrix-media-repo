@@ -40,6 +40,10 @@ func AuthFailed() *ErrorResponse {
 	return &ErrorResponse{common.ErrCodeUnknownToken, "Authentication Failed", common.ErrCodeUnknownToken}
 }
 
+func MediaBlocked() *ErrorResponse {
+	return &ErrorResponse{common.ErrCodeNotFound, "Media blocked or not found", common.ErrCodeForbidden}
+}
+
 func GuestAuthFailed() *ErrorResponse {
 	return &ErrorResponse{common.ErrCodeNoGuests, "Guests cannot use this endpoint", common.ErrCodeNoGuests}
 }

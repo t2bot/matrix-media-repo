@@ -64,7 +64,8 @@ type SharedSecretConfig struct {
 }
 
 type FederationConfig struct {
-	BackoffAt int `yaml:"backoffAt"`
+	BackoffAt    int      `yaml:"backoffAt"`
+	IgnoredHosts []string `yaml:"ignoredHosts,flow"`
 }
 
 type PluginConfig struct {

@@ -41,6 +41,18 @@ federation:
   # the remote server do not count towards this.
   backoffAt: 20
 
+  # The domains the media repo should never serve media for. Existing media already stored from
+  # these domains will remain, however will not be downloadable without a data export. Media
+  # repo administrators will bypass this check. Admin APIs will still work for media on these
+  # domains.
+  #
+  # This will not prevent the listed domains from accessing media on this media repo - it only
+  # stops users on *this* media repo from accessing media originally uploaded to the listed domains.
+  #
+  # Note: Adding domains controlled by the media repo itself to this list is not advisable.
+  ignoredHosts:
+    - example.org
+
 # The database configuration for the media repository
 # Do NOT put your homeserver's existing database credentials here. Create a new database and
 # user instead. Using the same server is fine, just not the same username and database.

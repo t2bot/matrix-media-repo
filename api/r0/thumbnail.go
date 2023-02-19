@@ -5,6 +5,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/api/_apimeta"
 	"github.com/turt2live/matrix-media-repo/api/_responses"
 	"github.com/turt2live/matrix-media-repo/api/_routers"
+	"github.com/turt2live/matrix-media-repo/util"
 
 	"net/http"
 	"strconv"
@@ -38,6 +39,11 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 		"server":      server,
 		"allowRemote": downloadRemote,
 	})
+
+	if !util.IsGlobalAdmin(user.UserId) && util.IsHostIgnored(server) {
+		rctx.Log.Warn("Request blocked due to domain being ignored.")
+		return _responses.MediaBlocked()
+	}
 
 	widthStr := r.URL.Query().Get("width")
 	heightStr := r.URL.Query().Get("height")

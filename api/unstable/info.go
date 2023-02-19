@@ -12,6 +12,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/api/_apimeta"
 	"github.com/turt2live/matrix-media-repo/api/_responses"
 	"github.com/turt2live/matrix-media-repo/api/_routers"
+	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/stream_util"
 
 	"github.com/disintegration/imaging"
@@ -72,6 +73,11 @@ func MediaInfo(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 		"server":      server,
 		"allowRemote": downloadRemote,
 	})
+
+	if !util.IsGlobalAdmin(user.UserId) && util.IsHostIgnored(server) {
+		rctx.Log.Warn("Request blocked due to domain being ignored.")
+		return _responses.MediaBlocked()
+	}
 
 	streamedMedia, err := download_controller.GetMedia(server, mediaId, downloadRemote, true, rctx)
 	if err != nil {
