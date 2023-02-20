@@ -33,6 +33,15 @@ type AlreadyUploadedFile struct {
 	ObjectInfo *types.ObjectInfo
 }
 
+func GetUploadMaxBytesForUser(ctx rcontext.RequestContext, userId string) (int64) {
+	for _, q := range ctx.Config.Uploads.MaxBytesPerUser.UserMaxBytes {
+		if glob.Glob(q.Glob, userId) {
+			return q.MaxBytes
+		}
+	}
+	return ctx.Config.Uploads.MaxSizeBytes
+}
+
 func IsRequestTooLargeForUser(contentLength int64, contentLengthHeader string, ctx rcontext.RequestContext, userId string) bool {
 	if !ctx.Config.Uploads.MaxBytesPerUser.Enabled {
 		return false // per user max not enabled
