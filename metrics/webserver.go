@@ -2,11 +2,12 @@ package metrics
 
 import (
 	"context"
-	"github.com/getsentry/sentry-go"
 	"net"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/getsentry/sentry-go"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
@@ -16,10 +17,6 @@ import (
 var srv *http.Server
 
 func internalHandler(res http.ResponseWriter, req *http.Request) {
-	logrus.Info("Updating live metrics for cache")
-	for _, fn := range beforeMetricsCalledFns {
-		fn()
-	}
 	promhttp.Handler().ServeHTTP(res, req)
 }
 

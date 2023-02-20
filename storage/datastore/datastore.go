@@ -2,9 +2,10 @@ package datastore
 
 import (
 	"fmt"
+	"io"
+
 	"github.com/getsentry/sentry-go"
 	"github.com/turt2live/matrix-media-repo/common"
-	"io"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -87,8 +88,6 @@ func GetUriForDatastore(dsConf config.DatastoreConfig) string {
 		} else {
 			return fmt.Sprintf("s3://%s/%s", endpoint, bucket)
 		}
-	} else if dsConf.Type == "ipfs" {
-		return "ipfs://localhost"
 	} else {
 		sentry.CaptureException(errors.New("unknown datastore type: " + dsConf.Type))
 		logrus.Fatal("Unknown datastore type: ", dsConf.Type)

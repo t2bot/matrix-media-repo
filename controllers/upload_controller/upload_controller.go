@@ -1,12 +1,14 @@
 package upload_controller
 
 import (
-	"fmt"
-	"github.com/getsentry/sentry-go"
 	"io"
 	"io/ioutil"
 	"strconv"
 	"time"
+
+	"github.com/getsentry/sentry-go"
+	"github.com/turt2live/matrix-media-repo/util/ids"
+	"github.com/turt2live/matrix-media-repo/util/stream_util"
 
 	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
@@ -20,7 +22,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/cleanup"
 	"github.com/turt2live/matrix-media-repo/util/util_byte_seeker"
 )
 
@@ -120,7 +121,7 @@ func EstimateContentLength(contentLength int64, contentLengthHeader string) int6
 }
 
 func UploadMedia(contents io.ReadCloser, contentLength int64, contentType string, filename string, userId string, origin string, ctx rcontext.RequestContext) (*types.Media, error) {
-	defer cleanup.DumpAndCloseStream(contents)
+	defer stream_util.DumpAndCloseStream(contents)
 
 	var data io.ReadCloser
 	if ctx.Config.Uploads.MaxSizeBytes > 0 {
@@ -145,11 +146,7 @@ func UploadMedia(contents io.ReadCloser, contentLength int64, contentType string
 			return nil, errors.New("failed to generate a media ID after 10 rounds")
 		}
 
-		mediaId, err = util.GenerateRandomString(64)
-		if err != nil {
-			return nil, err
-		}
-		mediaId, err = util.GetSha1OfString(mediaId + strconv.FormatInt(util.NowMillis(), 10))
+		mediaId, err = ids.NewUniqueId()
 		if err != nil {
 			return nil, err
 		}
@@ -169,25 +166,7 @@ func UploadMedia(contents io.ReadCloser, contentLength int64, contentType string
 
 	_ = recentMediaIds.Add(mediaId, true, cache.DefaultExpiration)
 
-	var existingFile *AlreadyUploadedFile = nil
-	ds, err := datastore.PickDatastore(common.KindLocalMedia, ctx)
-	if err != nil {
-		return nil, err
-	}
-	if ds.Type == "ipfs" {
-		// Do the upload now so we can pick the media ID to point to IPFS
-		info, err := ds.UploadFile(util_byte_seeker.NewByteSeeker(dataBytes), contentLength, ctx)
-		if err != nil {
-			return nil, err
-		}
-		existingFile = &AlreadyUploadedFile{
-			DS:         ds,
-			ObjectInfo: info,
-		}
-		mediaId = fmt.Sprintf("ipfs:%s", info.Location[len("ipfs/"):])
-	}
-
-	m, err := StoreDirect(existingFile, util_byte_seeker.NewByteSeeker(dataBytes), contentLength, contentType, filename, userId, origin, mediaId, common.KindLocalMedia, ctx, true)
+	m, err := StoreDirect(nil, util_byte_seeker.NewByteSeeker(dataBytes), contentLength, contentType, filename, userId, origin, mediaId, common.KindLocalMedia, ctx, true)
 	if err != nil {
 		return m, err
 	}
@@ -237,7 +216,7 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 			return nil, err
 		}
 
-		fInfo, err := ds.UploadFile(util.BytesToStream(contentBytes), expectedSize, ctx)
+		fInfo, err := ds.UploadFile(stream_util.BytesToStream(contentBytes), expectedSize, ctx)
 		if err != nil {
 			return nil, err
 		}

@@ -2,29 +2,34 @@ package r0
 
 import (
 	"github.com/getsentry/sentry-go"
+	"github.com/turt2live/matrix-media-repo/api/_apimeta"
+	"github.com/turt2live/matrix-media-repo/api/_responses"
+	"github.com/turt2live/matrix-media-repo/api/_routers"
+	"github.com/turt2live/matrix-media-repo/util"
+
 	"net/http"
 	"strconv"
 
-	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/thumbnail_controller"
 )
 
-func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user api.UserInfo) interface{} {
-	params := mux.Vars(r)
-
-	server := params["server"]
-	mediaId := params["mediaId"]
+func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+	server := _routers.GetParam("server", r)
+	mediaId := _routers.GetParam("mediaId", r)
 	allowRemote := r.URL.Query().Get("allow_remote")
+
+	if !_routers.ServerNameRegex.MatchString(server) {
+		return _responses.BadRequest("invalid server ID")
+	}
 
 	downloadRemote := true
 	if allowRemote != "" {
 		parsedFlag, err := strconv.ParseBool(allowRemote)
 		if err != nil {
-			return api.BadRequest("allow_remote flag does not appear to be a boolean")
+			return _responses.BadRequest("allow_remote flag does not appear to be a boolean")
 		}
 		downloadRemote = parsedFlag
 	}
@@ -35,6 +40,11 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user api.User
 		"allowRemote": downloadRemote,
 	})
 
+	if !util.IsGlobalAdmin(user.UserId) && util.IsHostIgnored(server) {
+		rctx.Log.Warn("Request blocked due to domain being ignored.")
+		return _responses.MediaBlocked()
+	}
+
 	widthStr := r.URL.Query().Get("width")
 	heightStr := r.URL.Query().Get("height")
 	method := r.URL.Query().Get("method")
@@ -44,7 +54,7 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user api.User
 	}
 
 	if widthStr == "" || heightStr == "" {
-		return api.BadRequest("Width and height are required")
+		return _responses.BadRequest("Width and height are required")
 	}
 
 	width := 0
@@ -54,21 +64,21 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user api.User
 	if widthStr != "" {
 		parsedWidth, err := strconv.Atoi(widthStr)
 		if err != nil {
-			return api.BadRequest("Width does not appear to be an integer")
+			return _responses.BadRequest("Width does not appear to be an integer")
 		}
 		width = parsedWidth
 	}
 	if heightStr != "" {
 		parsedHeight, err := strconv.Atoi(heightStr)
 		if err != nil {
-			return api.BadRequest("Height does not appear to be an integer")
+			return _responses.BadRequest("Height does not appear to be an integer")
 		}
 		height = parsedHeight
 	}
 	if animatedStr != "" {
 		parsedFlag, err := strconv.ParseBool(animatedStr)
 		if err != nil {
-			return api.BadRequest("Animated flag does not appear to be a boolean")
+			return _responses.BadRequest("Animated flag does not appear to be a boolean")
 		}
 		animated = parsedFlag
 	}
@@ -84,19 +94,19 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user api.User
 	})
 
 	if width <= 0 || height <= 0 {
-		return api.BadRequest("Width and height must be greater than zero")
+		return _responses.BadRequest("Width and height must be greater than zero")
 	}
 
 	streamedThumbnail, err := thumbnail_controller.GetThumbnail(server, mediaId, width, height, animated, method, downloadRemote, rctx)
 	if err != nil {
 		if err == common.ErrMediaNotFound {
-			return api.NotFoundError()
+			return _responses.NotFoundError()
 		} else if err == common.ErrMediaTooLarge {
-			return api.RequestTooLarge()
+			return _responses.RequestTooLarge()
 		}
 		rctx.Log.Error("Unexpected error locating media: " + err.Error())
 		sentry.CaptureException(err)
-		return api.InternalServerError("Unexpected Error")
+		return _responses.InternalServerError("Unexpected Error")
 	}
 
 	return &DownloadMediaResponse{

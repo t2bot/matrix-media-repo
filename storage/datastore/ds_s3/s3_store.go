@@ -8,14 +8,17 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/turt2live/matrix-media-repo/util/ids"
+	"github.com/turt2live/matrix-media-repo/util/stream_util"
+
 	"github.com/minio/minio-go/v6"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
+	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/types"
-	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/cleanup"
 )
 
 var stores = make(map[string]*s3Datastore)
@@ -128,9 +131,9 @@ func (s *s3Datastore) EnsureTempPathExists() error {
 }
 
 func (s *s3Datastore) UploadFile(file io.ReadCloser, expectedLength int64, ctx rcontext.RequestContext) (*types.ObjectInfo, error) {
-	defer cleanup.DumpAndCloseStream(file)
+	defer stream_util.DumpAndCloseStream(file)
 
-	objectName, err := util.GenerateRandomString(512)
+	objectName, err := ids.NewUniqueId()
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +154,7 @@ func (s *s3Datastore) UploadFile(file io.ReadCloser, expectedLength int64, ctx r
 	go func() {
 		defer ws3.Close()
 		ctx.Log.Info("Calculating hash of stream...")
-		hash, hashErr = util.GetSha256HashOfStream(ioutil.NopCloser(tr))
+		hash, hashErr = stream_util.GetSha256HashOfStream(ioutil.NopCloser(tr))
 		ctx.Log.Info("Hash of file is ", hash)
 		done <- true
 	}()
@@ -169,20 +172,21 @@ func (s *s3Datastore) UploadFile(file io.ReadCloser, expectedLength int64, ctx r
 				}
 				defer os.Remove(f.Name())
 				expectedLength, uploadErr = io.Copy(f, rs3)
-				cleanup.DumpAndCloseStream(f)
+				stream_util.DumpAndCloseStream(f)
 				f, uploadErr = os.Open(f.Name())
 				if uploadErr != nil {
 					done <- true
 					return
 				}
 				rs3 = f
-				defer cleanup.DumpAndCloseStream(f)
+				defer stream_util.DumpAndCloseStream(f)
 			} else {
 				ctx.Log.Warn("Uploading content of unknown length to s3 - this could result in high memory usage")
 				expectedLength = -1
 			}
 		}
 		ctx.Log.Info("Uploading file...")
+		metrics.S3Operations.With(prometheus.Labels{"operation": "PutObject"}).Inc()
 		sizeBytes, uploadErr = s.client.PutObjectWithContext(ctx, s.bucket, objectName, rs3, expectedLength, minio.PutObjectOptions{StorageClass: s.storageClass})
 		ctx.Log.Info("Uploaded ", sizeBytes, " bytes to s3")
 		done <- true
@@ -212,15 +216,18 @@ func (s *s3Datastore) UploadFile(file io.ReadCloser, expectedLength int64, ctx r
 
 func (s *s3Datastore) DeleteObject(location string) error {
 	logrus.Info("Deleting object from bucket ", s.bucket, ": ", location)
+	metrics.S3Operations.With(prometheus.Labels{"operation": "RemoveObject"}).Inc()
 	return s.client.RemoveObject(s.bucket, location)
 }
 
 func (s *s3Datastore) DownloadObject(location string) (io.ReadCloser, error) {
 	logrus.Info("Downloading object from bucket ", s.bucket, ": ", location)
+	metrics.S3Operations.With(prometheus.Labels{"operation": "GetObject"}).Inc()
 	return s.client.GetObject(s.bucket, location, minio.GetObjectOptions{})
 }
 
 func (s *s3Datastore) ObjectExists(location string) bool {
+	metrics.S3Operations.With(prometheus.Labels{"operation": "StatObject"}).Inc()
 	stat, err := s.client.StatObject(s.bucket, location, minio.StatObjectOptions{})
 	if err != nil {
 		return false
@@ -229,7 +236,8 @@ func (s *s3Datastore) ObjectExists(location string) bool {
 }
 
 func (s *s3Datastore) OverwriteObject(location string, stream io.ReadCloser) error {
-	defer cleanup.DumpAndCloseStream(stream)
+	defer stream_util.DumpAndCloseStream(stream)
+	metrics.S3Operations.With(prometheus.Labels{"operation": "PutObject"}).Inc()
 	_, err := s.client.PutObject(s.bucket, location, stream, -1, minio.PutObjectOptions{StorageClass: s.storageClass})
 	return err
 }
@@ -238,6 +246,7 @@ func (s *s3Datastore) ListObjects() ([]string, error) {
 	doneCh := make(chan struct{})
 	defer close(doneCh)
 	list := make([]string, 0)
+	metrics.S3Operations.With(prometheus.Labels{"operation": "ListObjectsV2"}).Inc()
 	for message := range s.client.ListObjectsV2(s.bucket, "", true, doneCh) {
 		list = append(list, message.Key)
 	}

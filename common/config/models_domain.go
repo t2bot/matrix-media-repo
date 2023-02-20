@@ -99,7 +99,6 @@ type TimeoutsConfig struct {
 
 type FeatureConfig struct {
 	MSC2448Blurhash MSC2448Config `yaml:"MSC2448"`
-	IPFS            IPFSConfig    `yaml:"IPFS"`
 	Redis           RedisConfig   `yaml:"redis"`
 }
 
@@ -112,16 +111,6 @@ type MSC2448Config struct {
 	XComponents     int  `yaml:"xComponents"`
 	YComponents     int  `yaml:"yComponents"`
 	Punch           int  `yaml:"punch"`
-}
-
-type IPFSConfig struct {
-	Enabled bool             `yaml:"enabled"`
-	Daemon  IPFSDaemonConfig `yaml:"builtInDaemon"`
-}
-
-type IPFSDaemonConfig struct {
-	Enabled  bool   `yaml:"enabled"`
-	RepoPath string `yaml:"repoPath"`
 }
 
 type AccessTokenConfig struct {

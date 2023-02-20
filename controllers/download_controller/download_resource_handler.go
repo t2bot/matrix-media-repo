@@ -2,14 +2,16 @@ package download_controller
 
 import (
 	"errors"
-	"github.com/getsentry/sentry-go"
-	"github.com/turt2live/matrix-media-repo/util"
 	"io"
 	"io/ioutil"
 	"mime"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/getsentry/sentry-go"
+	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/stream_util"
 
 	"github.com/djherbis/stream"
 	"github.com/patrickmn/go-cache"
@@ -22,7 +24,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/matrix"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/types"
-	"github.com/turt2live/matrix-media-repo/util/cleanup"
 	"github.com/turt2live/matrix-media-repo/util/resource_handler"
 )
 
@@ -153,7 +154,7 @@ func downloadResourceWorkFn(request *resource_handler.WorkRequest) (resp *worker
 	}
 
 	persistFile := func(fileStream io.ReadCloser, r *workerDownloadResponse) *workerDownloadResponse {
-		defer cleanup.DumpAndCloseStream(fileStream)
+		defer stream_util.DumpAndCloseStream(fileStream)
 		userId := upload_controller.NoApplicableUploadUser
 
 		ms := stream.NewMemStream()

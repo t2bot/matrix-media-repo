@@ -4,7 +4,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/turt2live/matrix-media-repo/util/cleanup"
+	"github.com/turt2live/matrix-media-repo/util/stream_util"
 )
 
 func FileExists(path string) (bool, error) {
@@ -33,7 +33,7 @@ func GetFileHash(filePath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer cleanup.DumpAndCloseStream(f)
+	defer stream_util.DumpAndCloseStream(f)
 
-	return GetSha256HashOfStream(f)
+	return stream_util.GetSha256HashOfStream(f)
 }

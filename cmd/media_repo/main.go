@@ -3,9 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
+	"os/signal"
+	"time"
+
 	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/api/webserver"
+	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/common/assets"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/logging"
@@ -14,9 +18,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/internal_cache"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/tasks"
-	"os"
-	"os/signal"
-	"time"
 )
 
 func main() {
@@ -90,7 +91,7 @@ func main() {
 
 	logrus.Info("Starting media repository...")
 	metrics.Init()
-	web := webserver.Init()
+	web := api.Init()
 
 	// Set up a function to stop everything
 	stopAllButWeb := func() {
@@ -117,7 +118,7 @@ func main() {
 		stopAllButWeb()
 
 		logrus.Info("Stopping web server...")
-		webserver.Stop()
+		api.Stop()
 	}()
 
 	// Wait for the web server to exit nicely

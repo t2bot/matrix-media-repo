@@ -1,12 +1,11 @@
 package main
 
 import (
-	"github.com/turt2live/matrix-media-repo/api/auth_cache"
-	"github.com/turt2live/matrix-media-repo/api/webserver"
+	"github.com/turt2live/matrix-media-repo/api"
+	"github.com/turt2live/matrix-media-repo/api/_auth_cache"
 	"github.com/turt2live/matrix-media-repo/common/globals"
 	"github.com/turt2live/matrix-media-repo/common/runtime"
 	"github.com/turt2live/matrix-media-repo/internal_cache"
-	"github.com/turt2live/matrix-media-repo/ipfs_proxy"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/plugins"
 	"github.com/turt2live/matrix-media-repo/storage"
@@ -19,7 +18,6 @@ func setupReloads() {
 	reloadDatabaseOnChan(globals.DatabaseReloadChan)
 	reloadDatastoresOnChan(globals.DatastoresReloadChan)
 	reloadRecurringTasksOnChan(globals.RecurringTasksReloadChan)
-	reloadIpfsOnChan(globals.IPFSReloadChan)
 	reloadAccessTokensOnChan(globals.AccessTokenReloadChan)
 	reloadCacheOnChan(globals.CacheReplaceChan)
 	reloadPluginsOnChan(globals.PluginReloadChan)
@@ -33,7 +31,6 @@ func stopReloads() {
 	globals.DatastoresReloadChan <- false
 	globals.AccessTokenReloadChan <- false
 	globals.RecurringTasksReloadChan <- false
-	globals.IPFSReloadChan <- false
 	globals.CacheReplaceChan <- false
 	globals.PluginReloadChan <- false
 }
@@ -44,7 +41,7 @@ func reloadWebOnChan(reloadChan chan bool) {
 		for {
 			shouldReload := <-reloadChan
 			if shouldReload {
-				webserver.Reload()
+				api.Reload()
 			} else {
 				return // received stop
 			}
@@ -111,27 +108,13 @@ func reloadRecurringTasksOnChan(reloadChan chan bool) {
 	}()
 }
 
-func reloadIpfsOnChan(reloadChan chan bool) {
-	go func() {
-		defer close(reloadChan)
-		for {
-			shouldReload := <-reloadChan
-			if shouldReload {
-				ipfs_proxy.Reload()
-			} else {
-				ipfs_proxy.Stop()
-			}
-		}
-	}()
-}
-
 func reloadAccessTokensOnChan(reloadChan chan bool) {
 	go func() {
 		defer close(reloadChan)
 		for {
 			shouldReload := <-reloadChan
 			if shouldReload {
-				auth_cache.FlushCache()
+				_auth_cache.FlushCache()
 			}
 		}
 	}()

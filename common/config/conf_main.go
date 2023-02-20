@@ -16,6 +16,7 @@ type MainRepoConfig struct {
 	Plugins           []PluginConfig        `yaml:"plugins,flow"`
 	Sentry            SentryConfig          `yaml:"sentry"`
 	Redis             RedisConfig           `yaml:"redis"`
+	Cluster           ClusterConfig         `yaml:"cluster"`
 }
 
 func NewDefaultMainConfig() MainRepoConfig {
@@ -133,6 +134,12 @@ func NewDefaultMainConfig() MainRepoConfig {
 		Redis: RedisConfig{
 			Enabled: false,
 			Shards:  []RedisShardConfig{},
+		},
+		Cluster: ClusterConfig{
+			IDGenerator: IDGeneratorConfig{
+				Location: "",
+				Secret:   "",
+			},
 		},
 	}
 }

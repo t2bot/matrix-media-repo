@@ -7,9 +7,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/getsentry/sentry-go"
 	"io"
 	"time"
+
+	"github.com/getsentry/sentry-go"
+	"github.com/turt2live/matrix-media-repo/util/ids"
+	"github.com/turt2live/matrix-media-repo/util/stream_util"
 
 	"github.com/dustin/go-humanize"
 	"github.com/turt2live/matrix-media-repo/common"
@@ -20,7 +23,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/templating"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/cleanup"
 )
 
 type ManifestRecord struct {
@@ -47,7 +49,7 @@ type Manifest struct {
 }
 
 func StartServerExport(serverName string, s3urls bool, includeData bool, ctx rcontext.RequestContext) (*types.BackgroundTask, string, error) {
-	exportId, err := util.GenerateRandomString(128)
+	exportId, err := ids.NewUniqueId()
 	if err != nil {
 		return nil, "", err
 	}
@@ -100,7 +102,7 @@ func StartServerExport(serverName string, s3urls bool, includeData bool, ctx rco
 }
 
 func StartUserExport(userId string, s3urls bool, includeData bool, ctx rcontext.RequestContext) (*types.BackgroundTask, string, error) {
-	exportId, err := util.GenerateRandomString(128)
+	exportId, err := ids.NewUniqueId()
 	if err != nil {
 		return nil, "", err
 	}
@@ -122,7 +124,7 @@ func StartUserExport(userId string, s3urls bool, includeData bool, ctx rcontext.
 		ctx.Context = context.Background()
 		db := storage.GetDatabase().GetMetadataStore(ctx)
 
-		ds, err := datastore.PickDatastore(common.KindArchives, ctx, )
+		ds, err := datastore.PickDatastore(common.KindArchives, ctx)
 		if err != nil {
 			ctx.Log.Error(err)
 			sentry.CaptureException(err)
@@ -175,7 +177,7 @@ func compileArchive(exportId string, entityId string, archiveDs *datastore.Datas
 		gzipBytes := bytes.Buffer{}
 		archiver := gzip.NewWriter(&gzipBytes)
 		archiver.Name = fmt.Sprintf("export-part-%d.tar", part)
-		_, err := io.Copy(archiver, util.BufferToStream(bytes.NewBuffer(currentTarBytes.Bytes())))
+		_, err := io.Copy(archiver, stream_util.BufferToStream(bytes.NewBuffer(currentTarBytes.Bytes())))
 		if err != nil {
 			return err
 		}
@@ -184,7 +186,7 @@ func compileArchive(exportId string, entityId string, archiveDs *datastore.Datas
 		ctx.Log.Info("Uploading compressed tar file")
 		buf := bytes.NewBuffer(gzipBytes.Bytes())
 		size := int64(buf.Len())
-		obj, err := archiveDs.UploadFile(util.BufferToStream(buf), size, ctx)
+		obj, err := archiveDs.UploadFile(stream_util.BufferToStream(buf), size, ctx)
 		if err != nil {
 			return err
 		}
@@ -312,7 +314,7 @@ func compileArchive(exportId string, entityId string, archiveDs *datastore.Datas
 	}
 
 	ctx.Log.Info("Writing manifest")
-	err = putFile("manifest.json", int64(len(b)), time.Now(), util.BufferToStream(bytes.NewBuffer(b)))
+	err = putFile("manifest.json", int64(len(b)), time.Now(), stream_util.BufferToStream(bytes.NewBuffer(b)))
 	if err != nil {
 		ctx.Log.Error(err)
 		sentry.CaptureException(err)
@@ -334,7 +336,7 @@ func compileArchive(exportId string, entityId string, archiveDs *datastore.Datas
 			sentry.CaptureException(err)
 			return
 		}
-		err = putFile("index.html", int64(html.Len()), time.Now(), util.BufferToStream(bytes.NewBuffer(html.Bytes())))
+		err = putFile("index.html", int64(html.Len()), time.Now(), stream_util.BufferToStream(bytes.NewBuffer(html.Bytes())))
 		if err != nil {
 			ctx.Log.Error(err)
 			sentry.CaptureException(err)
@@ -356,12 +358,12 @@ func compileArchive(exportId string, entityId string, archiveDs *datastore.Datas
 			_, err = io.Copy(&b, s)
 			if err != nil {
 				ctx.Log.Error(err)
-				cleanup.DumpAndCloseStream(s)
+				stream_util.DumpAndCloseStream(s)
 				sentry.CaptureException(err)
 				continue
 			}
-			cleanup.DumpAndCloseStream(s)
-			s = util.BufferToStream(bytes.NewBuffer(b.Bytes()))
+			stream_util.DumpAndCloseStream(s)
+			s = stream_util.BufferToStream(bytes.NewBuffer(b.Bytes()))
 
 			ctx.Log.Info("Archiving ", m.MxcUri())
 			err = putFile(archivedName(m), m.SizeBytes, time.Unix(0, m.CreationTs*int64(time.Millisecond)), s)

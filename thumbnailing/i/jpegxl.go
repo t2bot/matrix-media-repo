@@ -7,10 +7,11 @@ import (
 	"os/exec"
 	"path"
 
+	"github.com/turt2live/matrix-media-repo/util/ids"
+	"github.com/turt2live/matrix-media-repo/util/stream_util"
+
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/m"
-	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/cleanup"
 )
 
 type jpegxlGenerator struct {
@@ -33,7 +34,7 @@ func (d jpegxlGenerator) GetOriginDimensions(b []byte, contentType string, ctx r
 }
 
 func (d jpegxlGenerator) GenerateThumbnail(b []byte, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
-	key, err := util.GenerateRandomString(16)
+	key, err := ids.NewUniqueId()
 	if err != nil {
 		return nil, errors.New("jpegxl: error generating temp key: " + err.Error())
 	}
@@ -49,7 +50,7 @@ func (d jpegxlGenerator) GenerateThumbnail(b []byte, contentType string, width i
 		return nil, errors.New("jpegxl: error writing temp jpegxl file: " + err.Error())
 	}
 	_, _ = f.Write(b)
-	cleanup.DumpAndCloseStream(f)
+	stream_util.DumpAndCloseStream(f)
 
 	err = exec.Command("convert", tempFile1, tempFile2).Run()
 	if err != nil {

@@ -2,13 +2,13 @@ package runtime
 
 import (
 	"fmt"
+
 	"github.com/getsentry/sentry-go"
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/common/version"
-	"github.com/turt2live/matrix-media-repo/ipfs_proxy"
 	"github.com/turt2live/matrix-media-repo/plugins"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
@@ -22,9 +22,6 @@ func RunStartupSequence() {
 	LoadDatabase()
 	LoadDatastores()
 	plugins.ReloadPlugins()
-
-	logrus.Info("Starting IPFS (if enabled)...")
-	ipfs_proxy.Reload()
 }
 
 func LoadDatabase() {

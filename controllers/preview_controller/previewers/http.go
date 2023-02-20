@@ -18,7 +18,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/acl"
 	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/preview_types"
 	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/cleanup"
+	"github.com/turt2live/matrix-media-repo/util/stream_util"
 )
 
 func doHttpGet(urlPayload *preview_types.UrlPayload, languageHeader string, ctx rcontext.RequestContext) (*http.Response, error) {
@@ -149,7 +149,7 @@ func downloadRawContent(urlPayload *preview_types.UrlPayload, supportedTypes []s
 		return nil, "", "", "", err
 	}
 
-	defer cleanup.DumpAndCloseStream(resp.Body)
+	defer stream_util.DumpAndCloseStream(resp.Body)
 
 	contentType := resp.Header.Get("Content-Type")
 	for _, supportedType := range supportedTypes {

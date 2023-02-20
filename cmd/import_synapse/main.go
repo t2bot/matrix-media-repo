@@ -22,7 +22,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/controllers/upload_controller"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/synapse"
-	"github.com/turt2live/matrix-media-repo/util/cleanup"
+	"github.com/turt2live/matrix-media-repo/util/stream_util"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -159,7 +159,7 @@ func fetchMedia(req interface{}) interface{} {
 		logrus.Error(err.Error())
 		return nil
 	}
-	defer cleanup.DumpAndCloseStream(body)
+	defer stream_util.DumpAndCloseStream(body)
 
 	_, err = upload_controller.StoreDirect(nil, body, -1, record.ContentType, record.UploadName, record.UserId, payload.serverName, record.MediaId, common.KindLocalMedia, ctx, false)
 	if err != nil {
