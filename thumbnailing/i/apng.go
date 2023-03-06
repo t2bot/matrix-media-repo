@@ -5,7 +5,7 @@ import (
 	"errors"
 	"image"
 	"image/draw"
-	"io/ioutil"
+	"io"
 
 	"github.com/kettek/apng"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
@@ -99,7 +99,7 @@ func (d apngGenerator) GenerateThumbnail(b []byte, contentType string, width int
 	return &m.Thumbnail{
 		ContentType: "image/png",
 		Animated:    true,
-		Reader:      ioutil.NopCloser(buf),
+		Reader:      io.NopCloser(buf),
 	}, nil
 }
 

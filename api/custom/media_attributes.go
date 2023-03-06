@@ -3,7 +3,7 @@ package custom
 import (
 	"database/sql"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/getsentry/sentry-go"
@@ -98,7 +98,7 @@ func SetAttributes(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 	}
 
 	defer stream_util.DumpAndCloseStream(r.Body)
-	b, err := ioutil.ReadAll(r.Body)
+	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"os"
@@ -104,7 +104,7 @@ func GetServerApiUrl(hostname string) (string, string, error) {
 	r, err := http.Get(fmt.Sprintf("https://%s/.well-known/matrix/server", h))
 	if err == nil && r.StatusCode == http.StatusOK {
 		// Try parsing .well-known
-		c, err2 := ioutil.ReadAll(r.Body)
+		c, err2 := io.ReadAll(r.Body)
 		if err2 == nil {
 			wk := &wellknownServerResponse{}
 			err3 := json.Unmarshal(c, wk)

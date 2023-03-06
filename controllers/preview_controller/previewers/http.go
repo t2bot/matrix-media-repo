@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"io"
-	"io/ioutil"
 	"mime"
 	"net"
 	"net/http"
@@ -144,7 +143,7 @@ func downloadRawContent(urlPayload *preview_types.UrlPayload, supportedTypes []s
 		reader = io.LimitReader(resp.Body, ctx.Config.UrlPreviews.MaxPageSizeBytes)
 	}
 
-	bytes, err := ioutil.ReadAll(reader)
+	bytes, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, "", "", "", err
 	}

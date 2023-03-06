@@ -3,7 +3,7 @@ package matrix
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -50,7 +50,7 @@ func doRequest(ctx rcontext.RequestContext, method string, urlStr string, body i
 	}
 	defer stream_util.DumpAndCloseStream(res.Body)
 
-	contents, err := ioutil.ReadAll(res.Body)
+	contents, err := io.ReadAll(res.Body)
 	if err != nil {
 		return err
 	}

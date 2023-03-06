@@ -6,7 +6,7 @@ import (
 	"image"
 	"image/draw"
 	"image/gif"
-	"io/ioutil"
+	"io"
 	"math"
 
 	"github.com/disintegration/imaging"
@@ -83,9 +83,9 @@ func (d gifGenerator) GenerateThumbnail(b []byte, contentType string, width int,
 				return nil, errors.New("gif: error encoding still frame thumbnail: " + err.Error())
 			}
 			return &m.Thumbnail{
-				Animated: false,
+				Animated:    false,
 				ContentType: "image/png",
-				Reader: ioutil.NopCloser(buf),
+				Reader:      io.NopCloser(buf),
 			}, nil
 		}
 
@@ -116,7 +116,7 @@ func (d gifGenerator) GenerateThumbnail(b []byte, contentType string, width int,
 	return &m.Thumbnail{
 		ContentType: "image/gif",
 		Animated:    true,
-		Reader:      ioutil.NopCloser(buf),
+		Reader:      io.NopCloser(buf),
 	}, nil
 }
 

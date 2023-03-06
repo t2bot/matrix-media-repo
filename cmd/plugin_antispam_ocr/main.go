@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"image"
-	"io/ioutil"
 	"math"
 	"net/http"
 	"os"
@@ -103,7 +102,7 @@ func (a *AntispamOCR) CheckForSpam(b64 string, filename string, contentType stri
 	// 4. Adjust contrast to make text more obvious on the background.
 	// 5. Convert to grayscale, thus avoiding any colour issues with the OCR.
 	img = imaging.Fit(img, 512, 512, imaging.Lanczos)
-	img = imaging.Fill(img, img.Bounds().Max.X * 2, img.Bounds().Max.Y * 2, imaging.Top, imaging.Lanczos)
+	img = imaging.Fill(img, img.Bounds().Max.X*2, img.Bounds().Max.Y*2, imaging.Top, imaging.Lanczos)
 	img = imaging.Sharpen(img, 50)
 	img = imaging.AdjustContrast(img, 2)
 	img = imaging.Grayscale(img)
@@ -137,7 +136,7 @@ func (a *AntispamOCR) CheckForSpam(b64 string, filename string, contentType stri
 		a.logger.Error("non-fatal error checking spam: ", err)
 		return false, nil
 	}
-	contents, err := ioutil.ReadAll(res.Body)
+	contents, err := io.ReadAll(res.Body)
 	if err != nil {
 		return false, err
 	}

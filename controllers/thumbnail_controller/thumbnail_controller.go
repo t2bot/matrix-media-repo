@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"time"
 
 	"github.com/getsentry/sentry-go"
@@ -148,7 +148,7 @@ func GetThumbnail(origin string, mediaId string, desiredWidth int, desiredHeight
 		if cached != nil && cached.Contents != nil {
 			return &types.StreamedThumbnail{
 				Thumbnail: thumbnail,
-				Stream:    ioutil.NopCloser(cached.Contents),
+				Stream:    io.NopCloser(cached.Contents),
 			}, nil
 		}
 

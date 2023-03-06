@@ -3,7 +3,6 @@ package ds_file
 import (
 	"errors"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 
@@ -93,7 +92,7 @@ func PersistFileAtLocation(targetFile string, file io.ReadCloser, ctx rcontext.R
 	go func() {
 		defer wfile.Close()
 		ctx.Log.Info("Calculating hash of stream...")
-		hash, hashErr = stream_util.GetSha256HashOfStream(ioutil.NopCloser(tr))
+		hash, hashErr = stream_util.GetSha256HashOfStream(io.NopCloser(tr))
 		ctx.Log.Info("Hash of file is ", hash)
 		done <- true
 	}()

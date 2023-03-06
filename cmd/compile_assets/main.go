@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path"
 
 	"github.com/turt2live/matrix-media-repo/common/config"
@@ -44,7 +44,7 @@ func main() {
 		str += fmt.Sprintf("\t\"%s\": \"%s\",\n", f, b64)
 	}
 	str += "}\n"
-	err := ioutil.WriteFile(*outputFile, []byte(str), 0644)
+	err := os.WriteFile(*outputFile, []byte(str), 0644)
 	if err != nil {
 		panic(err)
 	}
@@ -54,15 +54,18 @@ func main() {
 
 func readDir(dir string, pathName string) map[string][]byte {
 	fileMap := make(map[string][]byte)
-	files, err := ioutil.ReadDir(dir)
+	files, err := os.ReadDir(dir)
 	if err != nil {
 		panic(err)
 	}
 	for _, f := range files {
+		if f.IsDir() {
+			continue
+		}
 		fname := path.Join(dir, f.Name())
 		fmt.Println("Reading ", fname)
 
-		b, err := ioutil.ReadFile(fname)
+		b, err := os.ReadFile(fname)
 		if err != nil {
 			panic(err)
 		}

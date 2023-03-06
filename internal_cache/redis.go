@@ -2,11 +2,10 @@ package internal_cache
 
 import (
 	"bytes"
-	"github.com/turt2live/matrix-media-repo/common/config"
 	"io"
-	"io/ioutil"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/redis_cache"
@@ -46,7 +45,7 @@ func (c *RedisCache) updateItemInCache(sha256hash string, fetchFn FetchFunction,
 			return nil, err
 		}
 		defer s.Close()
-		fb, err := ioutil.ReadAll(s)
+		fb, err := io.ReadAll(s)
 		if err != nil {
 			return nil, err
 		}

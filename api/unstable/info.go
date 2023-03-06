@@ -3,7 +3,7 @@ package unstable
 import (
 	"bytes"
 	"database/sql"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -94,7 +94,7 @@ func MediaInfo(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 	}
 	defer stream_util.DumpAndCloseStream(streamedMedia.Stream)
 
-	b, err := ioutil.ReadAll(streamedMedia.Stream)
+	b, err := io.ReadAll(streamedMedia.Stream)
 	if err != nil {
 		rctx.Log.Error("Unexpected error processing media: " + err.Error())
 		sentry.CaptureException(err)

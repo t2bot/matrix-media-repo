@@ -6,8 +6,9 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
-	"io/ioutil"
+	"io"
 	"math"
+	"os"
 	"path"
 
 	"github.com/dhowden/tag"
@@ -116,7 +117,7 @@ func (d mp3Generator) GenerateFromStream(audio beep.StreamSeekCloser, format bee
 	r := image.Rect(dx, dy, ddx, ddy)
 
 	if artworkImg == nil {
-		i, _ := ioutil.ReadFile(path.Join(config.Runtime.AssetsPath, "default-artwork.png"))
+		i, _ := os.ReadFile(path.Join(config.Runtime.AssetsPath, "default-artwork.png"))
 		if i != nil {
 			tmp, _, _ := image.Decode(bytes.NewBuffer(i))
 			if tmp != nil {
@@ -196,7 +197,7 @@ func (d mp3Generator) GenerateFromStream(audio beep.StreamSeekCloser, format bee
 	return &m.Thumbnail{
 		Animated:    false,
 		ContentType: "image/png",
-		Reader:      ioutil.NopCloser(imgData),
+		Reader:      io.NopCloser(imgData),
 	}, nil
 }
 

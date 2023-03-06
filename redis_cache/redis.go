@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"io"
-	"io/ioutil"
 	"time"
 
 	"github.com/go-redis/redis/v9"
@@ -51,7 +50,7 @@ func (c *RedisCache) Close() error {
 }
 
 func (c *RedisCache) SetStream(ctx rcontext.RequestContext, key string, s io.Reader) error {
-	b, err := ioutil.ReadAll(s)
+	b, err := io.ReadAll(s)
 	if err != nil {
 		return err
 	}

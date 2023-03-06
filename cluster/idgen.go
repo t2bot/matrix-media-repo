@@ -3,7 +3,7 @@ package cluster
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -29,7 +29,7 @@ func GetId() (string, error) {
 	}
 	defer stream_util.DumpAndCloseStream(res.Body)
 
-	contents, err := ioutil.ReadAll(res.Body)
+	contents, err := io.ReadAll(res.Body)
 	if err != nil {
 		return "", err
 	}

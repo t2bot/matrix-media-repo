@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"strconv"
@@ -127,7 +126,7 @@ func main() {
 		_ = f.Close()
 
 		temp := bytes.NewBuffer(d.Bytes())
-		sha256, err := stream_util.GetSha256HashOfStream(ioutil.NopCloser(temp))
+		sha256, err := stream_util.GetSha256HashOfStream(io.NopCloser(temp))
 		if err != nil {
 			logrus.Fatal(err)
 		}

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 	_ "image/jpeg"
-	"io/ioutil"
+	"io"
 
 	"github.com/disintegration/imaging"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
@@ -62,7 +62,7 @@ func (d jpgGenerator) GenerateThumbnail(b []byte, contentType string, width int,
 	return &m.Thumbnail{
 		Animated:    false,
 		ContentType: "image/jpeg",
-		Reader:      ioutil.NopCloser(imgData),
+		Reader:      io.NopCloser(imgData),
 	}, nil
 }
 

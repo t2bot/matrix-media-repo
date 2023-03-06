@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"io"
-	"io/ioutil"
 
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/types"
@@ -25,7 +24,7 @@ func UploadMedia(ctx rcontext.RequestContext, origin string, mediaId string, r i
 
 	// Create a utility function for getting at the buffer easily
 	stream := func() io.ReadCloser {
-		return ioutil.NopCloser(bytes.NewBuffer(b))
+		return io.NopCloser(bytes.NewBuffer(b))
 	}
 
 	// Step 3: Get a hash of the file

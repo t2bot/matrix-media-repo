@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"io/ioutil"
 	"os"
 	"path"
 	"time"
@@ -49,12 +48,15 @@ func main() {
 	runtime.RunStartupSequence()
 
 	logrus.Info("Discovering files...")
-	fileInfos, err := ioutil.ReadDir(*filesDir)
+	fileInfos, err := os.ReadDir(*filesDir)
 	if err != nil {
 		panic(err)
 	}
 	files := make([]string, 0)
 	for _, f := range fileInfos {
+		if f.IsDir() {
+			continue
+		}
 		files = append(files, path.Join(*filesDir, f.Name()))
 	}
 

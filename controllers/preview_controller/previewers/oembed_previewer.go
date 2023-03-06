@@ -2,10 +2,11 @@ package previewers
 
 import (
 	"bytes"
-	"github.com/getsentry/sentry-go"
-	"io/ioutil"
 	"net/url"
+	"os"
 	"path"
+
+	"github.com/getsentry/sentry-go"
 
 	"github.com/dyatlov/go-oembed/oembed"
 	"github.com/k3a/html2text"
@@ -26,7 +27,7 @@ func getOembed() *oembed.Oembed {
 
 	oembedInstance = oembed.NewOembed()
 
-	data, err := ioutil.ReadFile(path.Join(config.Runtime.AssetsPath, "providers.json"))
+	data, err := os.ReadFile(path.Join(config.Runtime.AssetsPath, "providers.json"))
 	if err != nil {
 		sentry.CaptureException(err)
 		logrus.Fatal(err)

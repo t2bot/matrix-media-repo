@@ -5,7 +5,7 @@ import (
 	"errors"
 	"image"
 	_ "image/png"
-	"io/ioutil"
+	"io"
 
 	"github.com/disintegration/imaging"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
@@ -59,7 +59,7 @@ func (d pngGenerator) GenerateThumbnailOf(src image.Image, width int, height int
 	return &m.Thumbnail{
 		Animated:    false,
 		ContentType: "image/png",
-		Reader:      ioutil.NopCloser(imgData),
+		Reader:      io.NopCloser(imgData),
 	}, nil
 }
 

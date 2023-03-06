@@ -2,7 +2,6 @@ package upload_controller
 
 import (
 	"io"
-	"io/ioutil"
 	"strconv"
 	"time"
 
@@ -98,12 +97,12 @@ func UploadMedia(contents io.ReadCloser, contentLength int64, contentType string
 
 	var data io.ReadCloser
 	if ctx.Config.Uploads.MaxSizeBytes > 0 {
-		data = ioutil.NopCloser(io.LimitReader(contents, ctx.Config.Uploads.MaxSizeBytes))
+		data = io.NopCloser(io.LimitReader(contents, ctx.Config.Uploads.MaxSizeBytes))
 	} else {
 		data = contents
 	}
 
-	dataBytes, err := ioutil.ReadAll(data)
+	dataBytes, err := io.ReadAll(data)
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +183,7 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 		}
 		ds = dsPicked
 
-		contentBytes, err = ioutil.ReadAll(contents)
+		contentBytes, err = io.ReadAll(contents)
 		if err != nil {
 			return nil, err
 		}
@@ -203,7 +202,7 @@ func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize in
 		if err != nil {
 			return nil, err
 		}
-		contentBytes, err = ioutil.ReadAll(contents)
+		contentBytes, err = io.ReadAll(contents)
 		if err != nil {
 			return nil, err
 		}

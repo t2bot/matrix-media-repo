@@ -7,7 +7,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/util/stream_util"
 
 	"io"
-	"io/ioutil"
 	"net/http"
 	"path/filepath"
 
@@ -38,24 +37,24 @@ func UploadMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.Us
 	}
 
 	if upload_controller.IsRequestTooLarge(r.ContentLength, r.Header.Get("Content-Length"), rctx) {
-		io.Copy(ioutil.Discard, r.Body) // Ditch the entire request
+		io.Copy(io.Discard, r.Body) // Ditch the entire request
 		return _responses.RequestTooLarge()
 	}
 
 	if upload_controller.IsRequestTooSmall(r.ContentLength, r.Header.Get("Content-Length"), rctx) {
-		io.Copy(ioutil.Discard, r.Body) // Ditch the entire request
+		io.Copy(io.Discard, r.Body) // Ditch the entire request
 		return _responses.RequestTooSmall()
 	}
 
 	inQuota, err := quota.IsUserWithinQuota(rctx, user.UserId)
 	if err != nil {
-		io.Copy(ioutil.Discard, r.Body) // Ditch the entire request
+		io.Copy(io.Discard, r.Body) // Ditch the entire request
 		rctx.Log.Error("Unexpected error checking quota: " + err.Error())
 		sentry.CaptureException(err)
 		return _responses.InternalServerError("Unexpected Error")
 	}
 	if !inQuota {
-		io.Copy(ioutil.Discard, r.Body) // Ditch the entire request
+		io.Copy(io.Discard, r.Body) // Ditch the entire request
 		return _responses.QuotaExceeded()
 	}
 
@@ -63,7 +62,7 @@ func UploadMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.Us
 
 	media, err := upload_controller.UploadMedia(r.Body, contentLength, contentType, filename, user.UserId, r.Host, rctx)
 	if err != nil {
-		io.Copy(ioutil.Discard, r.Body) // Ditch the entire request
+		io.Copy(io.Discard, r.Body) // Ditch the entire request
 
 		if err == common.ErrMediaQuarantined {
 			return _responses.BadRequest("This file is not permitted on this server")

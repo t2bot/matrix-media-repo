@@ -2,7 +2,6 @@ package i
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -57,7 +56,7 @@ func (d jpegxlGenerator) GenerateThumbnail(b []byte, contentType string, width i
 		return nil, errors.New("jpegxl: error converting jpegxl file: " + err.Error())
 	}
 
-	b, err = ioutil.ReadFile(tempFile2)
+	b, err = os.ReadFile(tempFile2)
 	if err != nil {
 		return nil, errors.New("jpegxl: error reading temp png file: " + err.Error())
 	}

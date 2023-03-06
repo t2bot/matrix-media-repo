@@ -3,10 +3,11 @@ package thumbnail_controller
 import (
 	"bytes"
 	"fmt"
-	"github.com/getsentry/sentry-go"
-	"io/ioutil"
+	"io"
 	"strconv"
 	"sync"
+
+	"github.com/getsentry/sentry-go"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
@@ -192,7 +193,7 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 	}
 
 	defer thumbImg.Reader.Close()
-	b, err := ioutil.ReadAll(thumbImg.Reader)
+	b, err := io.ReadAll(thumbImg.Reader)
 	if err != nil {
 		return nil, err
 	}
@@ -201,7 +202,7 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 	if err != nil {
 		return nil, err
 	}
-	info, err := ds.UploadFile(ioutil.NopCloser(bytes.NewBuffer(b)), int64(len(b)), ctx)
+	info, err := ds.UploadFile(io.NopCloser(bytes.NewBuffer(b)), int64(len(b)), ctx)
 	if err != nil {
 		ctx.Log.Error("Unexpected error saving thumbnail: " + err.Error())
 		return nil, err

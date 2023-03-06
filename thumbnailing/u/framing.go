@@ -3,11 +3,11 @@ package u
 import (
 	"bytes"
 	"errors"
-	"github.com/getsentry/sentry-go"
 	"image"
-	"io/ioutil"
+	"io"
 
 	"github.com/disintegration/imaging"
+	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/util/util_exif"
 )
@@ -25,7 +25,7 @@ func MakeThumbnail(src image.Image, method string, width int, height int) (image
 }
 
 func IdentifyAndApplyOrientation(origBytes []byte, src image.Image) (image.Image, error) {
-	orientation, err := util_exif.GetExifOrientation(ioutil.NopCloser(bytes.NewBuffer(origBytes)))
+	orientation, err := util_exif.GetExifOrientation(io.NopCloser(bytes.NewBuffer(origBytes)))
 	if err != nil {
 		// assume no orientation if there was an error reading the exif header
 		logrus.Warn("Non-fatal error reading exif headers:", err.Error())

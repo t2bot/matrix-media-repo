@@ -3,7 +3,6 @@ package ds_s3
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -154,7 +153,7 @@ func (s *s3Datastore) UploadFile(file io.ReadCloser, expectedLength int64, ctx r
 	go func() {
 		defer ws3.Close()
 		ctx.Log.Info("Calculating hash of stream...")
-		hash, hashErr = stream_util.GetSha256HashOfStream(ioutil.NopCloser(tr))
+		hash, hashErr = stream_util.GetSha256HashOfStream(io.NopCloser(tr))
 		ctx.Log.Info("Hash of file is ", hash)
 		done <- true
 	}()
@@ -164,9 +163,9 @@ func (s *s3Datastore) UploadFile(file io.ReadCloser, expectedLength int64, ctx r
 			if s.tempPath != "" {
 				ctx.Log.Info("Buffering file to temp path due to unknown file size")
 				var f *os.File
-				f, uploadErr = ioutil.TempFile(s.tempPath, "mr*")
+				f, uploadErr = os.CreateTemp(s.tempPath, "mr*")
 				if uploadErr != nil {
-					io.Copy(ioutil.Discard, rs3)
+					io.Copy(io.Discard, rs3)
 					done <- true
 					return
 				}

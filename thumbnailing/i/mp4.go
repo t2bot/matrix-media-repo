@@ -2,7 +2,6 @@ package i
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -58,7 +57,7 @@ func (d mp4Generator) GenerateThumbnail(b []byte, contentType string, width int,
 		return nil, errors.New("mp4: error converting video file: " + err.Error())
 	}
 
-	b, err = ioutil.ReadFile(tempFile2)
+	b, err = os.ReadFile(tempFile2)
 	if err != nil {
 		return nil, errors.New("mp4: error reading temp png file: " + err.Error())
 	}

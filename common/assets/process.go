@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/hex"
-	"io/ioutil"
+	"io"
 	"os"
 	"path"
 	"path/filepath"
@@ -21,7 +21,7 @@ func SetupMigrations(givenMigrationsPath string) {
 	_, err := os.Stat(givenMigrationsPath)
 	exists := err == nil || !os.IsNotExist(err)
 	if !exists {
-		tempMigrations, err = ioutil.TempDir(os.TempDir(), "media-repo-migrations")
+		tempMigrations, err = os.MkdirTemp(os.TempDir(), "media-repo-migrations")
 		if err != nil {
 			panic(err)
 		}
@@ -38,7 +38,7 @@ func SetupTemplates(givenTemplatesPath string) {
 		_, err := os.Stat(givenTemplatesPath)
 		exists := err == nil || !os.IsNotExist(err)
 		if !exists {
-			tempTemplates, err = ioutil.TempDir(os.TempDir(), "media-repo-templates")
+			tempTemplates, err = os.MkdirTemp(os.TempDir(), "media-repo-templates")
 			if err != nil {
 				panic(err)
 			}
@@ -55,7 +55,7 @@ func SetupAssets(givenAssetsPath string) {
 	_, err := os.Stat(givenAssetsPath)
 	exists := err == nil || !os.IsNotExist(err)
 	if !exists {
-		tempAssets, err := ioutil.TempDir(os.TempDir(), "media-repo-assets")
+		tempAssets, err := os.MkdirTemp(os.TempDir(), "media-repo-assets")
 		if err != nil {
 			panic(err)
 		}
@@ -97,14 +97,14 @@ func extractPrefixTo(pathName string, destination string) {
 		}
 		//noinspection GoDeferInLoop,GoUnhandledErrorResult
 		defer gr.Close()
-		uncompressedBytes, err := ioutil.ReadAll(gr)
+		uncompressedBytes, err := io.ReadAll(gr)
 		if err != nil {
 			panic(err)
 		}
 
 		dest := path.Join(destination, filepath.Base(f))
 		logrus.Infof("Writing %s to %s", f, dest)
-		err = ioutil.WriteFile(dest, uncompressedBytes, 0644)
+		err = os.WriteFile(dest, uncompressedBytes, 0644)
 		if err != nil {
 			panic(err)
 		}

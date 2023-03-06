@@ -2,7 +2,7 @@ package config
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path"
 	"sort"
@@ -69,12 +69,15 @@ func reloadConfig() (*MainRepoConfig, map[string]*DomainRepoConfig, error) {
 	if info.IsDir() {
 		logrus.Info("Config is a directory - loading all files over top of each other")
 
-		files, err := ioutil.ReadDir(Path)
+		files, err := os.ReadDir(Path)
 		if err != nil {
 			return nil, nil, err
 		}
 
 		for _, f := range files {
+			if f.IsDir() {
+				continue
+			}
 			pathsOrdered = append(pathsOrdered, path.Join(Path, f.Name()))
 		}
 
@@ -107,7 +110,7 @@ func reloadConfig() (*MainRepoConfig, map[string]*DomainRepoConfig, error) {
 		}
 		defer stream_util.DumpAndCloseStream(f)
 
-		buffer, err := ioutil.ReadAll(f)
+		buffer, err := io.ReadAll(f)
 		if err != nil {
 			return nil, nil, err
 		}

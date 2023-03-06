@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"time"
 
 	"github.com/getsentry/sentry-go"
@@ -234,7 +233,7 @@ func FindMinimalMediaRecord(origin string, mediaId string, downloadRemote bool, 
 		return nil, err
 	}
 	if cached != nil && cached.Contents != nil {
-		mediaStream = ioutil.NopCloser(cached.Contents)
+		mediaStream = io.NopCloser(cached.Contents)
 	} else {
 		mediaStream, err = datastore.DownloadStream(ctx, media.DatastoreId, media.Location)
 		if err != nil {

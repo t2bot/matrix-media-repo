@@ -3,7 +3,6 @@ package thumbnailing
 import (
 	"errors"
 	"io"
-	"io/ioutil"
 	"reflect"
 
 	"github.com/turt2live/matrix-media-repo/common"
@@ -31,7 +30,7 @@ func GenerateThumbnail(imgStream io.ReadCloser, contentType string, width int, h
 	}
 
 	defer stream_util.DumpAndCloseStream(imgStream)
-	b, err := ioutil.ReadAll(imgStream)
+	b, err := io.ReadAll(imgStream)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +57,7 @@ func GenerateThumbnail(imgStream io.ReadCloser, contentType string, width int, h
 
 func GetGenerator(imgStream io.ReadCloser, contentType string, animated bool) (i.Generator, error) {
 	defer stream_util.DumpAndCloseStream(imgStream)
-	b, err := ioutil.ReadAll(imgStream)
+	b, err := io.ReadAll(imgStream)
 	if err != nil {
 		return nil, err
 	}

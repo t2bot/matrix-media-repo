@@ -1,7 +1,7 @@
 package util
 
 import (
-	"io/ioutil"
+	"io"
 	"strings"
 	"unicode/utf8"
 
@@ -37,7 +37,7 @@ func ToUtf8(text string, possibleContentType string) string {
 		return text // best we can do
 	}
 
-	converted, err := ioutil.ReadAll(r)
+	converted, err := io.ReadAll(r)
 	if err != nil {
 		return text // best we can do
 	}

@@ -2,7 +2,6 @@ package i
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -57,7 +56,7 @@ func (d svgGenerator) GenerateThumbnail(b []byte, contentType string, width int,
 		return nil, errors.New("svg: error converting svg file: " + err.Error())
 	}
 
-	b, err = ioutil.ReadFile(tempFile2)
+	b, err = os.ReadFile(tempFile2)
 	if err != nil {
 		return nil, errors.New("svg: error reading temp png file: " + err.Error())
 	}

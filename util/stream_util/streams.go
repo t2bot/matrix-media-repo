@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math"
 
 	"github.com/turt2live/matrix-media-repo/util/util_byte_seeker"
@@ -15,11 +14,11 @@ import (
 
 func BufferToStream(buf *bytes.Buffer) io.ReadCloser {
 	newBuf := bytes.NewReader(buf.Bytes())
-	return ioutil.NopCloser(newBuf)
+	return io.NopCloser(newBuf)
 }
 
 func BytesToStream(b []byte) io.ReadCloser {
-	return ioutil.NopCloser(bytes.NewBuffer(b))
+	return io.NopCloser(bytes.NewBuffer(b))
 }
 
 func CloneReader(input io.ReadCloser, numReaders int) []io.ReadCloser {

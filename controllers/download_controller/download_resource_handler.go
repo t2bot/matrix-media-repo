@@ -3,7 +3,6 @@ package download_controller
 import (
 	"errors"
 	"io"
-	"io/ioutil"
 	"mime"
 	"strconv"
 	"sync"
@@ -194,7 +193,7 @@ func downloadResourceWorkFn(request *resource_handler.WorkRequest) (resp *worker
 	reader, writer := io.Pipe()
 	tr := io.TeeReader(downloaded.Contents, writer)
 
-	go persistFile(ioutil.NopCloser(tr), &workerDownloadResponse{})
+	go persistFile(io.NopCloser(tr), &workerDownloadResponse{})
 
 	ms := stream.NewMemStream()
 	defer ms.Close()
