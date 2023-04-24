@@ -167,7 +167,7 @@ func FindMinimalMediaRecord(origin string, mediaId string, downloadRemote bool, 
 	if found {
 		media = item.(*types.Media)
 	} else {
-		ctx.Log.Info("Getting media record from database")
+		ctx.Log.Debug("Getting minimal media record from database")
 		dbMedia, err := db.Get(origin, mediaId)
 		if err != nil {
 			if err == sql.ErrNoRows {
@@ -262,7 +262,7 @@ func FindMediaRecord(origin string, mediaId string, downloadRemote bool, ctx rco
 		if found {
 			media = item.(*types.Media)
 		} else {
-			ctx.Log.Info("Getting media record from database")
+			ctx.Log.Debug("Getting media record from database")
 			dbMedia, err := db.Get(origin, mediaId)
 			if err != nil {
 				if err == sql.ErrNoRows {

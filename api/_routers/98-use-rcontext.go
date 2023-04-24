@@ -63,7 +63,7 @@ func (c *RContextRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Check for HTML response and reply accordingly
 	if htmlRes, isHtml := res.(*_responses.HtmlResponse); isHtml {
-		log.Infof("Replying with result: %T <%d chars of html>", res, len(htmlRes.HTML))
+		log.Debugf("Replying with result: %T <%d chars of html>", res, len(htmlRes.HTML))
 
 		// Write out HTML here, now that we know it's happening
 		if shouldCache {
@@ -88,7 +88,7 @@ func (c *RContextRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	expectedBytes := int64(0)
 	var contentType string
 beforeParseDownload:
-	log.Infof("Replying with result: %T %+v", res, res)
+	log.Debugf("Replying with result: %T %+v", res, res)
 	if downloadRes, isDownload := res.(*_responses.DownloadResponse); isDownload {
 		doRange, rangeStart, rangeEnd, grabBytes, rangeErrMsg := parseRange(r, downloadRes)
 		if doRange && rangeErrMsg != "" {
