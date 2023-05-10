@@ -3,8 +3,9 @@ package maintenance_controller
 import (
 	"database/sql"
 	"fmt"
-	"github.com/getsentry/sentry-go"
 	"os"
+
+	"github.com/getsentry/sentry-go"
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
@@ -256,11 +257,26 @@ func PurgeQuarantined(ctx rcontext.RequestContext) ([]*types.Media, error) {
 		return nil, err
 	}
 
+	done := make([]string, 0)
+
 	for _, r := range records {
+		key := r.DatastoreId + ":" + r.Location
+		found := false
+		for _, d := range done {
+			if d == key {
+				found = true
+				break
+			}
+		}
+		if found {
+			ctx.Log.Infof("Skipping delete for %s (%s) because we already deleted it", r.DatastoreId, r.Location)
+			continue
+		}
 		err = doPurge(r, ctx)
 		if err != nil {
 			return nil, err
 		}
+		done = append(done, key)
 	}
 
 	return records, nil
