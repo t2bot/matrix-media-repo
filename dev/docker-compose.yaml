@@ -1,6 +1,6 @@
 version: '2.0'
 services:
-  media_conduit:
+  media_homeserver:
     container_name: "media_repo_synapse"
     image: "matrixdotorg/synapse:latest"
     restart: unless-stopped
