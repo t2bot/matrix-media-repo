@@ -1,20 +1,17 @@
 package ids
 
 import (
-	"github.com/turt2live/matrix-media-repo/cluster"
-	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/util"
-	"strconv"
 )
 
 func NewUniqueId() (string, error) {
-	if config.Get().Cluster.IDGenerator.Secret != "" {
-		return cluster.GetId()
-	}
-
-	b, err := util.GenerateRandomBytes(64)
+	r, err := util.GenerateRandomString(32) // pad out the snowflake
 	if err != nil {
 		return "", err
 	}
-	return util.GetSha1OfString(string(b) + strconv.FormatInt(util.NowMillis(), 10))
+	sf, err := makeSnowflake()
+	if err != nil {
+		return "", err
+	}
+	return r + sf.Generate().String(), nil
 }

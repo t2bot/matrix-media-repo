@@ -31,6 +31,7 @@ func main() {
 	}
 
 	config.Path = *configPath
+	runtime.CheckIdGenerator()
 	assets.SetupMigrations(*migrationsPath)
 
 	var err error

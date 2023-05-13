@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/getsentry/sentry-go"
+	"github.com/turt2live/matrix-media-repo/util/ids"
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"
@@ -17,6 +18,7 @@ import (
 
 func RunStartupSequence() {
 	version.Print(true)
+	CheckIdGenerator()
 	config.PrintDomainInfo()
 	config.CheckDeprecations()
 	LoadDatabase()
@@ -79,4 +81,15 @@ func LoadDatastores() {
 			}
 		}
 	}
+}
+
+func CheckIdGenerator() {
+	// Create a throwaway ID to ensure no errors
+	_, err := ids.NewUniqueId()
+	if err != nil {
+		panic(err)
+	}
+
+	id := ids.GetMachineId()
+	logrus.Infof("Running as machine %d for ID generation. This ID must be unique within your cluster.", id)
 }
