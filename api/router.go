@@ -10,6 +10,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api/_responses"
+	"github.com/turt2live/matrix-media-repo/api/_routers"
 )
 
 func buildPrimaryRouter() *httprouter.Router {
@@ -18,7 +19,8 @@ func buildPrimaryRouter() *httprouter.Router {
 	router.RedirectFixedPath = false     // don't fix case
 	router.MethodNotAllowed = http.HandlerFunc(methodNotAllowedFn)
 	router.NotFound = http.HandlerFunc(notFoundFn)
-	//router.GlobalOPTIONS = http.HandlerFunc(corsFn)
+	router.HandleOPTIONS = true
+	router.GlobalOPTIONS = _routers.NewInstallHeadersRouter(http.HandlerFunc(finishCorsFn))
 	router.PanicHandler = panicFn
 	return router
 }
@@ -47,15 +49,9 @@ func notFoundFn(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//func corsFn(w http.ResponseWriter, r *http.Request) {
-//	header := w.Header()
-//	if header.Get("Access-Control-Request-Method") != "" {
-//		header.Set("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization")
-//		header.Set("Access-Control-Allow-Origin", "Access-Control-Allow-Origin")
-//	}
-//
-//	w.WriteHeader(http.StatusNoContent)
-//}
+func finishCorsFn(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNoContent)
+}
 
 func panicFn(w http.ResponseWriter, r *http.Request, i interface{}) {
 	logrus.Errorf("Panic received on %s %s: %s", r.Method, r.URL.String(), i)

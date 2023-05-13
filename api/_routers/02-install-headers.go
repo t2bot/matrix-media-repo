@@ -14,6 +14,9 @@ func NewInstallHeadersRouter(next http.Handler) *InstallHeadersRouter {
 
 func (i *InstallHeadersRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	headers := w.Header()
+	if headers.Get("Allow") != "" {
+		headers.Set("Access-Control-Allow-Methods", headers.Get("Allow"))
+	}
 	headers.Set("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization")
 	headers.Set("Access-Control-Allow-Origin", "*")
 	headers.Set("Content-Security-Policy", "sandbox; default-src 'none'; script-src 'none'; plugin-types application/pdf; style-src 'unsafe-inline'; media-src 'self'; object-src 'self';")
