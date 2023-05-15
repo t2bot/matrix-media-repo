@@ -23,6 +23,10 @@ func NewDefaultMinimumRepoConfig() MinimumRepoConfig {
 			MaxSizeBytes:         104857600, // 100mb
 			MinSizeBytes:         100,
 			ReportedMaxSizeBytes: 0,
+			MaxBytesPerUser: MaxBytesPerUserConfig{
+				Enabled:      false,
+				UserMaxBytes: []MaxBytesUserConfig{},
+			},
 			Quota: QuotasConfig{
 				Enabled:    false,
 				UserQuotas: []QuotaUserConfig{},

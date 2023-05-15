@@ -105,6 +105,7 @@ caching that is now supported properly by this release, or disable caching if no
 ### Added
 
 * Added support for `HEAD` at the `/healthz` endpoint.
+* Added support for setting maximum individual upload size per user
 * Added `X-Content-Security-Policy: sandbox` in contexts where the normal CSP
   header would be served. This is a limited, pre-standard form of CSP supported
   by IE11, in order to have at least some mitigation of XSS attacks.

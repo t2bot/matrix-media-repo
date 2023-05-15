@@ -36,6 +36,11 @@ func UploadMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.Us
 		contentType = "application/octet-stream" // binary
 	}
 
+	if upload_controller.IsRequestTooLargeForUser(r.ContentLength, r.Header.Get("Content-Length"), rctx, user.UserId) {
+		io.Copy(ioutil.Discard, r.Body) // Ditch the entire request
+		return api.RequestTooLarge()
+	}
+
 	if upload_controller.IsRequestTooLarge(r.ContentLength, r.Header.Get("Content-Length"), rctx) {
 		io.Copy(io.Discard, r.Body) // Ditch the entire request
 		return _responses.RequestTooLarge()
