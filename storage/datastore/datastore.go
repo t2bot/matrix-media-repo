@@ -18,10 +18,6 @@ import (
 func GetAvailableDatastores(ctx rcontext.RequestContext) ([]*types.Datastore, error) {
 	datastores := make([]*types.Datastore, 0)
 	for _, ds := range ctx.Config.DataStores {
-		if !ds.Enabled {
-			continue
-		}
-
 		uri := GetUriForDatastore(ds)
 
 		dsInstance, err := storage.GetOrCreateDatastoreOfType(rcontext.Initial(), ds.Type, uri)
@@ -106,10 +102,6 @@ func PickDatastore(forKind string, ctx rcontext.RequestContext) (*DatastoreRef, 
 	// size of the datastore).
 	var possibleDatastores = make([]config.DatastoreConfig, 0)
 	for _, dsConf := range confDatastores {
-		if !dsConf.Enabled {
-			continue
-		}
-
 		allowed := common.HasKind(dsConf.MediaKinds, forKind)
 		if !allowed {
 			continue

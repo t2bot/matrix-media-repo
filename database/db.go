@@ -6,13 +6,16 @@ import (
 	"sync"
 
 	"github.com/DavidHuie/gomigrate"
+	"github.com/getsentry/sentry-go"
+	_ "github.com/lib/pq" // postgres driver
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/common/logging"
 )
 
 type Database struct {
-	conn       *sql.DB
-	Datastores *dsTableStatements
+	conn  *sql.DB
+	Media *mediaTableStatements
 }
 
 var instance *Database
@@ -33,6 +36,19 @@ func GetInstance() *Database {
 	return instance
 }
 
+func Reload() {
+	if instance != nil {
+		if err := instance.conn.Close(); err != nil {
+			logrus.Error(err)
+			sentry.CaptureException(err)
+		}
+	}
+
+	instance = nil
+	singleton = &sync.Once{}
+	GetInstance()
+}
+
 func openDatabase(connectionString string, maxConns int, maxIdleConns int) error {
 	d := &Database{}
 	var err error
@@ -45,7 +61,7 @@ func openDatabase(connectionString string, maxConns int, maxIdleConns int) error
 
 	// Run migrations
 	var migrator *gomigrate.Migrator
-	if migrator, err = gomigrate.NewMigratorWithLogger(d.conn, gomigrate.Postgres{}, config.Runtime.MigrationsPath, logrus.StandardLogger()); err != nil {
+	if migrator, err = gomigrate.NewMigratorWithLogger(d.conn, gomigrate.Postgres{}, config.Runtime.MigrationsPath, &logging.GoMigrateLogger{}); err != nil {
 		return errors.New("error setting up migrator: " + err.Error())
 	}
 	if err = migrator.Migrate(); err != nil {
@@ -53,9 +69,10 @@ func openDatabase(connectionString string, maxConns int, maxIdleConns int) error
 	}
 
 	// Prepare the table accessors
-	if d.Datastores, err = prepareDatastoreTables(d.conn); err != nil {
-		return errors.New("failed to create datastores table accessor")
+	if d.Media, err = prepareMediaTables(d.conn); err != nil {
+		return errors.New("failed to create media table accessor")
 	}
 
+	instance = d
 	return nil
 }

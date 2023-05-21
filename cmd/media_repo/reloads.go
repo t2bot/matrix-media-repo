@@ -5,10 +5,10 @@ import (
 	"github.com/turt2live/matrix-media-repo/api/_auth_cache"
 	"github.com/turt2live/matrix-media-repo/common/globals"
 	"github.com/turt2live/matrix-media-repo/common/runtime"
+	"github.com/turt2live/matrix-media-repo/database"
 	"github.com/turt2live/matrix-media-repo/internal_cache"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/plugins"
-	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/tasks"
 )
 
@@ -69,7 +69,7 @@ func reloadDatabaseOnChan(reloadChan chan bool) {
 		for {
 			shouldReload := <-reloadChan
 			if shouldReload {
-				storage.ReloadDatabase()
+				database.Reload()
 				runtime.LoadDatabase()
 				globals.DatastoresReloadChan <- true
 			} else {

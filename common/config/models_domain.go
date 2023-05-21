@@ -24,8 +24,8 @@ type UploadsConfig struct {
 }
 
 type DatastoreConfig struct {
+	Id         string            `yaml:"id"`
 	Type       string            `yaml:"type"`
-	Enabled    bool              `yaml:"enabled"`
 	MediaKinds []string          `yaml:"forKinds,flow"`
 	Options    map[string]string `yaml:"opts,flow"`
 }

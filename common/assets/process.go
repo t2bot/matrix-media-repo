@@ -69,7 +69,7 @@ func SetupAssets(givenAssetsPath string) {
 
 func Cleanup() {
 	if tempMigrations != "" {
-		logrus.Info("Cleaning up temporary assets directory: ", tempMigrations)
+		logrus.Info("Cleaning up temporary migrations directory: ", tempMigrations)
 		os.Remove(tempMigrations)
 	}
 	if tempTemplates != "" {

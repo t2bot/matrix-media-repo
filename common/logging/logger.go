@@ -5,6 +5,7 @@ import (
 	"path"
 	"time"
 
+	"github.com/DavidHuie/gomigrate"
 	"github.com/lestrrat/go-file-rotatelogs"
 	"github.com/rifflock/lfshook"
 	"github.com/sirupsen/logrus"
@@ -75,4 +76,24 @@ func Setup(dir string, colors bool, json bool, level string) error {
 	}, formatter))
 
 	return nil
+}
+
+type GoMigrateLogger struct {
+	gomigrate.Logger
+}
+
+func (*GoMigrateLogger) Print(v ...interface{}) {
+	logrus.Debug(v...)
+}
+
+func (*GoMigrateLogger) Printf(format string, v ...interface{}) {
+	logrus.Debugf(format, v...)
+}
+
+func (*GoMigrateLogger) Println(v ...interface{}) {
+	logrus.Debugln(v...)
+}
+
+func (*GoMigrateLogger) Fatalf(format string, v ...interface{}) {
+	logrus.Fatalf(format, v...)
 }

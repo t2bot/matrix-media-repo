@@ -154,11 +154,13 @@ sharedSecretAuth:
 # for a datastore to use, will always use the smallest datastore first.
 datastores:
   - type: file
-    enabled: false # Enable this to set up data storage.
+    id: "UNIQUE_ID_HERE" # ID for this datastore (cannot change). Alphanumeric recommended.
     # Datastores can be split into many areas when handling uploads. Media is still de-duplicated
     # across all datastores (local content which duplicates remote content will re-use the remote
     # content's location). This option is useful if your datastore is becoming very large, or if
     # you want faster storage for a particular kind of media.
+    #
+    # To disable this datastore, making it readonly, specify `forKinds: []`.
     #
     # The kinds available are:
     #   thumbnails    - Used to store thumbnails of media (local and remote).
@@ -170,7 +172,7 @@ datastores:
       path: /var/matrix/media
 
   - type: s3
-    enabled: false # Enable this to set up s3 uploads
+    id: "ANOTHER_UNIQUE_ID_HERE" # ID for this datastore (cannot change). Alphanumeric recommended.
     forKinds: ["thumbnails", "remote_media", "local_media", "archives"]
     opts:
       # The s3 uploader needs a temporary location to buffer files to reduce memory usage on

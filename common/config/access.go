@@ -248,15 +248,10 @@ func UniqueDatastores() []DatastoreConfig {
 	for _, d := range AllDomains() {
 		for _, dsc := range d.DataStores {
 			found := false
-			for _, edsc := range confs {
-				if edsc.Type == dsc.Type {
-					if dsc.Type == "file" && edsc.Options["path"] == dsc.Options["path"] {
-						found = true
-						break
-					} else if dsc.Type == "s3" && edsc.Options["endpoint"] == dsc.Options["endpoint"] && edsc.Options["bucketName"] == dsc.Options["bucketName"] {
-						found = true
-						break
-					}
+			for _, existingDsc := range confs {
+				if existingDsc.Id == dsc.Id {
+					found = true
+					break
 				}
 			}
 			if found {
