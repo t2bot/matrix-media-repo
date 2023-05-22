@@ -158,7 +158,7 @@ path/server, for example, then you can simply update the path in the config for 
 * Updated support for post-[MSC3069](https://github.com/matrix-org/matrix-doc/pull/3069) homeservers.
 * Updated the built-in oEmbed `providers.json`
 
-# [1.2.10] - December 23rd, 2021
+## [1.2.10] - December 23rd, 2021
 
 ### Deprecation notices
 
