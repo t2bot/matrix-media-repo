@@ -227,24 +227,38 @@ uploads:
   # Set this to -1 to indicate that there is no limit. Zero will force the use of maxBytes.
   #reportedMaxBytes: 104857600
 
+  # The number of pending uploads a user is permitted to have at a given time. They must cancel,
+  # complete, or otherwise let pending requests expire before uploading any more media. Set to
+  # zero to disable.
+  maxPending: 5
+
+  # The duration the server will wait to receive media that was asynchronously uploaded before
+  # expiring it entirely. This should be set sufficiently high for a client on poor connectivity
+  # to upload something. The Matrix specification recommends 24 hours (86400 seconds), however
+  # this project recommends 30 minutes (1800 seconds).
+  maxAgeSeconds: 1800
+
   # Options for limiting how much content a user can upload. Quotas are applied to content
   # associated with a user regardless of de-duplication. Quotas which affect remote servers
   # or users will not take effect. When a user exceeds their quota they will be unable to
   # upload any more media.
   quotas:
-    # Whether or not quotas are enabled/enforced. Note that even when disabled the media repo
-    # will track how much media a user has uploaded. This is disabled by default.
+    # Whether quotas are enabled/enforced. Note that even when disabled the media repo will
+    # track how much media a user has uploaded. Quotas are disabled by default.
     enabled: false
 
-    # The quota rules that affect users. The first rule to match the uploader will take effect.
-    # An implied rule which matches all users and has no quota is always last in this list,
-    # meaning that if no rules are supplied then users will be able to upload anything. Similarly,
-    # if no rules match a user then the implied rule will match, allowing the user to have no
-    # quota. The quota will let the user upload to 1 media past their quota, meaning that from
-    # a statistics perspective the user might exceed their quota however only by a small amount.
+    # The upload quota rules which affect users. The first rule to match the user ID will take
+    # effect. If a user does not match a rule, the defaults implied by the above config will
+    # take effect instead. The user will not be permitted to upload anything above these quota
+    # values, but can match them exactly.
     users:
       - glob: "@*:*"  # Affect all users. Use asterisks (*) to match any character.
-        maxBytes: 53687063712 # 50GB default, 0 to disable
+        # The maximum number of TOTAL bytes a user can upload. Defaults to zero (no limit).
+        maxBytes: 53687063712 # 50gb
+        # The same as maxPending above - the number of uploads the user can have waiting to
+        # complete before starting another one. Defaults to maxPending above. Set to 0 to
+        # disable.
+        maxPending: 5
 
 # Settings related to downloading files from the media repository
 downloads:

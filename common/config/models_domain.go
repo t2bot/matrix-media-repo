@@ -7,8 +7,9 @@ type ArchivingConfig struct {
 }
 
 type QuotaUserConfig struct {
-	Glob     string `yaml:"glob"`
-	MaxBytes int64  `yaml:"maxBytes"`
+	Glob       string `yaml:"glob"`
+	MaxBytes   int64  `yaml:"maxBytes"`
+	MaxPending int64  `yaml:"maxPending"`
 }
 
 type QuotasConfig struct {
@@ -20,6 +21,8 @@ type UploadsConfig struct {
 	MaxSizeBytes         int64        `yaml:"maxBytes"`
 	MinSizeBytes         int64        `yaml:"minBytes"`
 	ReportedMaxSizeBytes int64        `yaml:"reportedMaxBytes"`
+	MaxPending           int64        `yaml:"maxPending"`
+	MaxAgeSeconds        int64        `yaml:"maxAgeSeconds"`
 	Quota                QuotasConfig `yaml:"quotas"`
 }
 

@@ -13,6 +13,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/api/custom"
 	"github.com/turt2live/matrix-media-repo/api/r0"
 	"github.com/turt2live/matrix-media-repo/api/unstable"
+	v1 "github.com/turt2live/matrix-media-repo/api/v1"
 )
 
 const PrefixMedia = "/_matrix/media"
@@ -39,6 +40,7 @@ func buildRoutes() http.Handler {
 	register([]string{"GET"}, PrefixMedia, "config", false, router, makeRoute(_routers.RequireAccessToken(r0.PublicConfig), "config", false, counter))
 	register([]string{"POST"}, PrefixClient, "logout", false, router, makeRoute(_routers.RequireAccessToken(r0.Logout), "logout", false, counter))
 	register([]string{"POST"}, PrefixClient, "logout/all", false, router, makeRoute(_routers.RequireAccessToken(r0.LogoutAll), "logout_all", false, counter))
+	register([]string{"POST"}, PrefixMedia, "create", false, router, makeRoute(_routers.RequireAccessToken(v1.CreateMedia), "create", false, counter))
 
 	// Custom features
 	register([]string{"GET"}, PrefixMedia, "local_copy/:server/:mediaId", true, router, makeRoute(_routers.RequireAccessToken(unstable.LocalCopy), "local_copy", false, counter))

@@ -83,6 +83,7 @@ path/server, for example, then you can simply update the path in the config for 
 ### Added
 
 * Added a `federation.ignoredHosts` config option to block media from individual homeservers.
+* Support for MSC2246 (async uploads) is added, with per-user quota limiting options.
 
 ### Removed
 
@@ -93,6 +94,8 @@ path/server, for example, then you can simply update the path in the config for 
 * **Mandatory configuration change**: You must add datastore IDs to your datastore configuration, as matrix-media-repo will no longer manage datastores for you.
 * Datastores no longer use the `enabled` flag set on them. Use `forKinds: []` instead.
 * Some admin endpoints for purging media, quarantining media, and background task information now require additional path components. See [docs/admin.md](./docs/admin.md) for more information.
+* Per-user upload quotas now do not allow users to exceed the maximum values, even by 1 byte. Previously, users could exceed the limits by a little bit.
+* All uploads are now async (using MSC2246) internally. This should not have user-facing impact.
 * Updated to Go 1.19
 
 ## [1.2.13] - February 12, 2023

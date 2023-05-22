@@ -14,8 +14,11 @@ import (
 )
 
 type Database struct {
-	conn  *sql.DB
-	Media *mediaTableStatements
+	conn          *sql.DB
+	Media         *mediaTableStatements
+	ExpiringMedia *expiringMediaTableStatements
+	UserStats     *userStatsTableStatements
+	ReservedMedia *reservedMediaTableStatements
 }
 
 var instance *Database
@@ -70,7 +73,16 @@ func openDatabase(connectionString string, maxConns int, maxIdleConns int) error
 
 	// Prepare the table accessors
 	if d.Media, err = prepareMediaTables(d.conn); err != nil {
-		return errors.New("failed to create media table accessor")
+		return errors.New("failed to create media table accessor: " + err.Error())
+	}
+	if d.ExpiringMedia, err = prepareExpiringMediaTables(d.conn); err != nil {
+		return errors.New("failed to create expiring media table accessor: " + err.Error())
+	}
+	if d.UserStats, err = prepareUserStatsTables(d.conn); err != nil {
+		return errors.New("failed to create user stats table accessor: " + err.Error())
+	}
+	if d.ReservedMedia, err = prepareReservedMediaTables(d.conn); err != nil {
+		return errors.New("failed to create reserved media table accessor: " + err.Error())
 	}
 
 	instance = d
