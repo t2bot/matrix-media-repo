@@ -13,12 +13,9 @@ var pluginTypes = map[string]plugin.Plugin{
 	"antispam": &plugin_interfaces.AntispamPlugin{},
 }
 
-
 var existingPlugins = make([]*mmrPlugin, 0)
 
 func ReloadPlugins() {
-	logrus.Info("Reloading plugins...")
-
 	for _, pl := range config.Get().Plugins {
 		logrus.Info("Loading plugin: ", pl.Executable)
 		mmr, err := newPlugin(pl.Executable, pl.Config)
