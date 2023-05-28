@@ -19,6 +19,7 @@ type Database struct {
 	ExpiringMedia *expiringMediaTableStatements
 	UserStats     *userStatsTableStatements
 	ReservedMedia *reservedMediaTableStatements
+	MetadataView  *metadataVirtualTableStatements
 }
 
 var instance *Database
@@ -64,7 +65,7 @@ func openDatabase(connectionString string, maxConns int, maxIdleConns int) error
 
 	// Run migrations
 	var migrator *gomigrate.Migrator
-	if migrator, err = gomigrate.NewMigratorWithLogger(d.conn, gomigrate.Postgres{}, config.Runtime.MigrationsPath, &logging.GoMigrateLogger{}); err != nil {
+	if migrator, err = gomigrate.NewMigratorWithLogger(d.conn, gomigrate.Postgres{}, config.Runtime.MigrationsPath, &logging.SendToDebugLogger{}); err != nil {
 		return errors.New("error setting up migrator: " + err.Error())
 	}
 	if err = migrator.Migrate(); err != nil {
@@ -83,6 +84,9 @@ func openDatabase(connectionString string, maxConns int, maxIdleConns int) error
 	}
 	if d.ReservedMedia, err = prepareReservedMediaTables(d.conn); err != nil {
 		return errors.New("failed to create reserved media table accessor: " + err.Error())
+	}
+	if d.MetadataView, err = prepareMetadataVirtualTables(d.conn); err != nil {
+		return errors.New("failed to create metadata virtual table accessor: " + err.Error())
 	}
 
 	instance = d

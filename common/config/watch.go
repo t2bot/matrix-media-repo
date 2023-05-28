@@ -3,10 +3,9 @@ package config
 import (
 	"time"
 
-	"github.com/getsentry/sentry-go"
-
 	"github.com/bep/debounce"
 	"github.com/fsnotify/fsnotify"
+	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/globals"
 )
@@ -61,6 +60,9 @@ func onFileChanged() {
 	domains = domainsNew
 	PrintDomainInfo()
 	CheckDeprecations()
+
+	logrus.Info("Reloading pool configuration")
+	globals.PoolReloadChan <- true
 
 	bindAddressChange := configNew.General.BindAddress != configNow.General.BindAddress
 	bindPortChange := configNew.General.Port != configNow.General.Port

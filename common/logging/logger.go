@@ -78,22 +78,23 @@ func Setup(dir string, colors bool, json bool, level string) error {
 	return nil
 }
 
-type GoMigrateLogger struct {
+type SendToDebugLogger struct {
 	gomigrate.Logger
+	//ants.Logger
 }
 
-func (*GoMigrateLogger) Print(v ...interface{}) {
+func (*SendToDebugLogger) Print(v ...interface{}) {
 	logrus.Debug(v...)
 }
 
-func (*GoMigrateLogger) Printf(format string, v ...interface{}) {
+func (*SendToDebugLogger) Printf(format string, v ...interface{}) {
 	logrus.Debugf(format, v...)
 }
 
-func (*GoMigrateLogger) Println(v ...interface{}) {
+func (*SendToDebugLogger) Println(v ...interface{}) {
 	logrus.Debugln(v...)
 }
 
-func (*GoMigrateLogger) Fatalf(format string, v ...interface{}) {
+func (*SendToDebugLogger) Fatalf(format string, v ...interface{}) {
 	logrus.Fatalf(format, v...)
 }

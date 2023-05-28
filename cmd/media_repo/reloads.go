@@ -9,6 +9,8 @@ import (
 	"github.com/turt2live/matrix-media-repo/internal_cache"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/plugins"
+	"github.com/turt2live/matrix-media-repo/pool"
+	"github.com/turt2live/matrix-media-repo/redislib"
 	"github.com/turt2live/matrix-media-repo/tasks"
 )
 
@@ -21,6 +23,7 @@ func setupReloads() {
 	reloadAccessTokensOnChan(globals.AccessTokenReloadChan)
 	reloadCacheOnChan(globals.CacheReplaceChan)
 	reloadPluginsOnChan(globals.PluginReloadChan)
+	reloadPoolOnChan(globals.PoolReloadChan)
 }
 
 func stopReloads() {
@@ -33,6 +36,7 @@ func stopReloads() {
 	globals.RecurringTasksReloadChan <- false
 	globals.CacheReplaceChan <- false
 	globals.PluginReloadChan <- false
+	globals.PoolReloadChan <- false
 }
 
 func reloadWebOnChan(reloadChan chan bool) {
@@ -126,8 +130,10 @@ func reloadCacheOnChan(reloadChan chan bool) {
 		for {
 			shouldReload := <-reloadChan
 			if shouldReload {
+				redislib.Reconnect()
 				internal_cache.ReplaceInstance()
 			} else {
+				redislib.Stop()
 				internal_cache.Get().Stop()
 			}
 		}
@@ -143,6 +149,20 @@ func reloadPluginsOnChan(reloadChan chan bool) {
 				plugins.ReloadPlugins()
 			} else {
 				plugins.StopPlugins()
+			}
+		}
+	}()
+}
+
+func reloadPoolOnChan(reloadChan chan bool) {
+	go func() {
+		defer close(reloadChan)
+		for {
+			shouldReload := <-reloadChan
+			if shouldReload {
+				pool.AdjustSize()
+			} else {
+				pool.Drain()
 			}
 		}
 	}()

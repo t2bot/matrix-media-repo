@@ -71,7 +71,7 @@ func StartServerExport(serverName string, s3urls bool, includeData bool, ctx rco
 		ctx.Context = context.Background()
 		db := storage.GetDatabase().GetMetadataStore(ctx)
 
-		ds, err := datastore.PickDatastore(common.KindArchives, ctx)
+		ds, err := datastore.PickDatastore(string(common.KindArchives), ctx)
 		if err != nil {
 			ctx.Log.Error(err)
 			sentry.CaptureException(err)
@@ -124,7 +124,7 @@ func StartUserExport(userId string, s3urls bool, includeData bool, ctx rcontext.
 		ctx.Context = context.Background()
 		db := storage.GetDatabase().GetMetadataStore(ctx)
 
-		ds, err := datastore.PickDatastore(common.KindArchives, ctx)
+		ds, err := datastore.PickDatastore(string(common.KindArchives), ctx)
 		if err != nil {
 			ctx.Log.Error(err)
 			sentry.CaptureException(err)

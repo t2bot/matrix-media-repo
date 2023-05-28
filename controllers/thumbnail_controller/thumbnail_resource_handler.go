@@ -198,7 +198,7 @@ func GenerateThumbnail(media *types.Media, width int, height int, method string,
 		return nil, err
 	}
 
-	ds, err := datastore.PickDatastore(common.KindThumbnails, ctx)
+	ds, err := datastore.PickDatastore(string(common.KindThumbnails), ctx)
 	if err != nil {
 		return nil, err
 	}

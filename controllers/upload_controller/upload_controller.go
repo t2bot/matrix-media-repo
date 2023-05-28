@@ -171,13 +171,13 @@ func checkSpam(contents []byte, filename string, contentType string, userId stri
 	return nil
 }
 
-func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize int64, contentType string, filename string, userId string, origin string, mediaId string, kind string, ctx rcontext.RequestContext, filterUserDuplicates bool) (*types.Media, error) {
+func StoreDirect(f *AlreadyUploadedFile, contents io.ReadCloser, expectedSize int64, contentType string, filename string, userId string, origin string, mediaId string, kind common.Kind, ctx rcontext.RequestContext, filterUserDuplicates bool) (*types.Media, error) {
 	var err error
 	var ds *datastore.DatastoreRef
 	var info *types.ObjectInfo
 	var contentBytes []byte
 	if f == nil {
-		dsPicked, err := datastore.PickDatastore(kind, ctx)
+		dsPicked, err := datastore.PickDatastore(string(kind), ctx)
 		if err != nil {
 			return nil, err
 		}

@@ -102,7 +102,7 @@ func PickDatastore(forKind string, ctx rcontext.RequestContext) (*DatastoreRef, 
 	// size of the datastore).
 	var possibleDatastores = make([]config.DatastoreConfig, 0)
 	for _, dsConf := range confDatastores {
-		allowed := common.HasKind(dsConf.MediaKinds, forKind)
+		allowed := common.HasKind(dsConf.MediaKinds, common.Kind(forKind))
 		if !allowed {
 			continue
 		}

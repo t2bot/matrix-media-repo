@@ -1,20 +1,20 @@
 package common
 
-const KindLocalMedia = "local_media"
-const KindRemoteMedia = "remote_media"
-const KindThumbnails = "thumbnails"
-const KindArchives = "archives"
-const KindAll = "all"
+type Kind string
 
-var AllKinds = []string{KindLocalMedia, KindRemoteMedia, KindThumbnails}
+const KindLocalMedia Kind = "local_media"
+const KindRemoteMedia Kind = "remote_media"
+const KindThumbnails Kind = "thumbnails"
+const KindArchives Kind = "archives"
+const KindAll Kind = "all"
 
-func IsKind(have string, want string) bool {
+func IsKind(have Kind, want Kind) bool {
 	return have == want || have == KindAll
 }
 
-func HasKind(have []string, want string) bool {
+func HasKind(have []string, want Kind) bool {
 	for _, k := range have {
-		if IsKind(k, want) {
+		if IsKind(Kind(k), want) {
 			return true
 		}
 	}

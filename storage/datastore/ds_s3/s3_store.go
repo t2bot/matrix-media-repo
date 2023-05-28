@@ -7,10 +7,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/minio/minio-go/v6"
 	"github.com/turt2live/matrix-media-repo/util/ids"
 	"github.com/turt2live/matrix-media-repo/util/stream_util"
 
-	"github.com/minio/minio-go/v6"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"

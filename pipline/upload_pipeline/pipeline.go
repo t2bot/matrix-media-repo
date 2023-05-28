@@ -1,65 +1,110 @@
 package upload_pipeline
 
 import (
-	"bytes"
-	"errors"
 	"io"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/types"
-	"github.com/turt2live/matrix-media-repo/util/stream_util"
+	"github.com/turt2live/matrix-media-repo/database"
+	"github.com/turt2live/matrix-media-repo/datastores"
+	"github.com/turt2live/matrix-media-repo/pipline/_steps/quota"
+	"github.com/turt2live/matrix-media-repo/pipline/_steps/upload"
+	"github.com/turt2live/matrix-media-repo/util"
 )
 
-func UploadMedia(ctx rcontext.RequestContext, origin string, mediaId string, r io.ReadCloser, contentType string, fileName string, userId string) (*types.Media, error) {
-	defer stream_util.DumpAndCloseStream(r)
-
+// UploadMedia Media upload. If mediaId is an empty string, one will be generated.
+func UploadMedia(ctx rcontext.RequestContext, origin string, mediaId string, r io.ReadCloser, contentType string, fileName string, userId string, kind datastores.Kind) (*database.DbMedia, error) {
 	// Step 1: Limit the stream's length
-	r = limitStreamLength(ctx, r)
+	r = upload.LimitStream(ctx, r)
 
-	// Step 2: Buffer the stream
-	b, err := bufferStream(ctx, r)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create a utility function for getting at the buffer easily
-	stream := func() io.ReadCloser {
-		return io.NopCloser(bytes.NewBuffer(b))
-	}
-
-	// Step 3: Get a hash of the file
-	hash, err := hashFile(ctx, stream())
-	if err != nil {
-		return nil, err
-	}
-
-	// Step 4: Check if the media is quarantined
-	err = checkQuarantineStatus(ctx, hash)
-	if err != nil {
-		return nil, err
-	}
-
-	// Step 5: Generate a media ID if we need to
+	// Step 2: Create a media ID (if needed)
 	if mediaId == "" {
-		mediaId, err = generateMediaID(ctx, origin)
+		var err error
+		mediaId, err = upload.GenerateMediaId(ctx, origin)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	// Step 6: De-duplicate the media
-	// TODO: Implementation. Check to see if uploading is required, also if the user has already uploaded a copy.
+	// Step 3: Pick a datastore
+	dsConf, err := datastores.Pick(ctx, kind)
+	if err != nil {
+		return nil, err
+	}
 
-	// Step 7: Cache the file before uploading
-	// TODO
+	// Step 4: Buffer to the datastore's temporary path
+	sha256hash, sizeBytes, reader, err := datastores.BufferTemp(dsConf, r)
+	if err != nil {
+		return nil, err
+	}
+	defer reader.Close()
 
-	// Step 8: Prepare an async job to persist the media
-	// TODO: Implementation. Limit the number of concurrent jobs on this to avoid queue flooding.
-	// TODO: Should this be configurable?
-	// TODO: Handle partial uploads/incomplete uploads.
+	// Step 5: Check quarantine
+	if err = upload.CheckQuarantineStatus(ctx, sha256hash); err != nil {
+		return nil, err
+	}
 
-	// Step 9: Return the media while it gets persisted
-	// TODO
+	// Step 6: Ensure user can upload within quota
+	err = quota.CanUpload(ctx, userId, sizeBytes)
+	if err != nil {
+		return nil, err
+	}
 
-	return nil, errors.New("not yet implemented")
+	// Step 7: Acquire a lock on the media hash for uploading
+	unlockFn, err := upload.LockForUpload(ctx, sha256hash)
+	//goland:noinspection GoUnhandledErrorResult
+	defer unlockFn()
+	if err != nil {
+		return nil, err
+	}
+
+	// Step 8: Pull all upload records (to check if an upload has already happened)
+	newRecord := &database.DbMedia{
+		Origin:      origin,
+		MediaId:     mediaId,
+		UploadName:  fileName,
+		ContentType: contentType,
+		UserId:      userId,
+		Sha256Hash:  sha256hash,
+		SizeBytes:   sizeBytes,
+		CreationTs:  util.NowMillis(),
+		Quarantined: false,
+		DatastoreId: "", // Populated later
+		Location:    "", // Populated later
+	}
+	record, perfect, err := upload.FindRecord(ctx, sha256hash, userId, contentType, fileName)
+	if record != nil {
+		// We already had this record in some capacity
+		if perfect {
+			// Exact match - deduplicate, skip upload to datastore
+			return record, nil
+		} else {
+			// We already uploaded it somewhere else - use the datastore ID and location
+			newRecord.Quarantined = record.Quarantined // just in case (shouldn't be a different value by here)
+			newRecord.DatastoreId = record.DatastoreId
+			newRecord.Location = record.Location
+			if err = database.GetInstance().Media.Prepare(ctx).Insert(newRecord); err != nil {
+				return nil, err
+			}
+			return newRecord, nil
+		}
+	}
+
+	// Step 9: Since we didn't find a duplicate, upload it to the datastore
+	dsLocation, err := datastores.Upload(ctx, dsConf, reader, sizeBytes, contentType, sha256hash)
+	if err != nil {
+		return nil, err
+	}
+
+	// Step 10: Everything finally looks good - return some stuff
+	newRecord.DatastoreId = dsConf.Id
+	newRecord.Location = dsLocation
+	if err = database.GetInstance().Media.Prepare(ctx).Insert(newRecord); err != nil {
+		if err2 := datastores.Remove(ctx, dsConf, dsLocation); err2 != nil {
+			sentry.CaptureException(err2)
+			ctx.Log.Warn("Error deleting upload (delete attempted due to persistence error): ", err2)
+		}
+		return nil, err
+	}
+	return newRecord, nil
 }

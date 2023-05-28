@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/ryanuber/go-glob"
+	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/database"
 )
@@ -15,58 +16,80 @@ const (
 	MaxPending Type = 1
 )
 
-var ErrQuotaExceeded = errors.New("quota exceeded")
-
 func Check(ctx rcontext.RequestContext, userId string, quotaType Type) error {
+	limit, err := Limit(ctx, userId, quotaType)
+	if err != nil {
+		return err
+	}
+
+	var count int64
+	if quotaType == MaxBytes {
+		if limit < 0 {
+			return nil
+		}
+		count, err = database.GetInstance().UserStats.Prepare(ctx).UserUploadedBytes(userId)
+	} else if quotaType == MaxPending {
+		count, err = database.GetInstance().ExpiringMedia.Prepare(ctx).ByUserCount(userId)
+	} else {
+		return errors.New("missing check for quota type - contact developer")
+	}
+
+	if err != nil {
+		return err
+	}
+	if count < limit {
+		return nil
+	} else {
+		return common.ErrQuotaExceeded
+	}
+}
+
+func CanUpload(ctx rcontext.RequestContext, userId string, bytes int64) error {
+	limit, err := Limit(ctx, userId, MaxBytes)
+	if err != nil {
+		return err
+	}
+	if limit < 0 {
+		return nil
+	}
+
+	count, err := database.GetInstance().UserStats.Prepare(ctx).UserUploadedBytes(userId)
+	if err != nil {
+		return err
+	}
+
+	if (count + bytes) > limit {
+		return common.ErrQuotaExceeded
+	}
+
+	return nil
+}
+
+func Limit(ctx rcontext.RequestContext, userId string, quotaType Type) (int64, error) {
 	if !ctx.Config.Uploads.Quota.Enabled {
-		return checkDefault(ctx, userId, quotaType)
+		return defaultLimit(ctx, quotaType)
 	}
 
 	for _, q := range ctx.Config.Uploads.Quota.UserQuotas {
 		if glob.Glob(q.Glob, userId) {
 			if quotaType == MaxBytes {
-				if q.MaxBytes == 0 {
-					return nil
-				}
-				total, err := database.GetInstance().UserStats.Prepare(ctx).UserUploadedBytes(userId)
-				if err != nil {
-					return err
-				}
-				if total >= q.MaxBytes {
-					return ErrQuotaExceeded
-				}
-				return nil
+				return q.MaxBytes, nil
 			} else if quotaType == MaxPending {
-				count, err := database.GetInstance().ExpiringMedia.Prepare(ctx).ByUserCount(userId)
-				if err != nil {
-					return err
-				}
-				if count < ctx.Config.Uploads.MaxPending {
-					return nil
-				}
-				return ErrQuotaExceeded
+				return q.MaxPending, nil
 			} else {
-				return errors.New("no default for quota type - contact developer")
+				return 0, errors.New("missing glob switch for quota type - contact developer")
 			}
 		}
 	}
 
-	return checkDefault(ctx, userId, quotaType)
+	return defaultLimit(ctx, quotaType)
 }
 
-func checkDefault(ctx rcontext.RequestContext, userId string, quotaType Type) error {
+func defaultLimit(ctx rcontext.RequestContext, quotaType Type) (int64, error) {
 	if quotaType == MaxBytes {
-		return nil
+		return -1, nil
 	} else if quotaType == MaxPending {
-		count, err := database.GetInstance().ExpiringMedia.Prepare(ctx).ByUserCount(userId)
-		if err != nil {
-			return err
-		}
-		if count < ctx.Config.Uploads.MaxPending {
-			return nil
-		}
-		return ErrQuotaExceeded
+		return ctx.Config.Uploads.MaxPending, nil
 	}
-
-	return errors.New("no default for quota type - contact developer")
+	return 0, errors.New("no default for quota type - contact developer")
 }
