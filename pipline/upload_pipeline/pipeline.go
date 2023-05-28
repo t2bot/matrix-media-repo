@@ -39,18 +39,22 @@ func UploadMedia(ctx rcontext.RequestContext, origin string, mediaId string, r i
 	}
 	defer reader.Close()
 
-	// Step 5: Check quarantine
+	// Step 5: Split the buffer to calculate a blurhash later
+	bhR, bhW := io.Pipe()
+	tee := io.TeeReader(reader, bhW)
+
+	// Step 6: Check quarantine
 	if err = upload.CheckQuarantineStatus(ctx, sha256hash); err != nil {
 		return nil, err
 	}
 
-	// Step 6: Ensure user can upload within quota
+	// Step 7: Ensure user can upload within quota
 	err = quota.CanUpload(ctx, userId, sizeBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	// Step 7: Acquire a lock on the media hash for uploading
+	// Step 8: Acquire a lock on the media hash for uploading
 	unlockFn, err := upload.LockForUpload(ctx, sha256hash)
 	//goland:noinspection GoUnhandledErrorResult
 	defer unlockFn()
@@ -58,7 +62,7 @@ func UploadMedia(ctx rcontext.RequestContext, origin string, mediaId string, r i
 		return nil, err
 	}
 
-	// Step 8: Pull all upload records (to check if an upload has already happened)
+	// Step 9: Pull all upload records (to check if an upload has already happened)
 	newRecord := &database.DbMedia{
 		Origin:      origin,
 		MediaId:     mediaId,
@@ -90,13 +94,19 @@ func UploadMedia(ctx rcontext.RequestContext, origin string, mediaId string, r i
 		}
 	}
 
-	// Step 9: Since we didn't find a duplicate, upload it to the datastore
-	dsLocation, err := datastores.Upload(ctx, dsConf, reader, sizeBytes, contentType, sha256hash)
+	// Step 10: Asynchronously calculate blurhash
+	bhChan := upload.CalculateBlurhashAsync(ctx, bhR, sha256hash)
+
+	// Step 11: Since we didn't find a duplicate, upload it to the datastore
+	dsLocation, err := datastores.Upload(ctx, dsConf, io.NopCloser(tee), sizeBytes, contentType, sha256hash)
 	if err != nil {
 		return nil, err
 	}
 
-	// Step 10: Everything finally looks good - return some stuff
+	// Step 12: Wait for blurhash
+	<-bhChan
+
+	// Step 13: Everything finally looks good - return some stuff
 	newRecord.DatastoreId = dsConf.Id
 	newRecord.Location = dsLocation
 	if err = database.GetInstance().Media.Prepare(ctx).Insert(newRecord); err != nil {
