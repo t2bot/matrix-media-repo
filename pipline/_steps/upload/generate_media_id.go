@@ -9,9 +9,11 @@ import (
 )
 
 func GenerateMediaId(ctx rcontext.RequestContext, origin string) (string, error) {
-	db := database.GetInstance().ReservedMedia.Prepare(ctx)
+	heldDb := database.GetInstance().HeldMedia.Prepare(ctx)
+	mediaDb := database.GetInstance().Media.Prepare(ctx)
 	var mediaId string
 	var err error
+	var exists bool
 	attempts := 0
 	for true {
 		attempts += 1
@@ -21,13 +23,21 @@ func GenerateMediaId(ctx rcontext.RequestContext, origin string) (string, error)
 
 		mediaId, err = ids.NewUniqueId()
 
-		err = db.TryInsert(origin, mediaId, database.ForCreateReserveReason)
+		err = heldDb.TryInsert(origin, mediaId, database.ForCreateHeldReason)
 		if err != nil {
 			return "", err
 		}
 
 		// Check if there's a media table record for this media as well (there shouldn't be)
-		return mediaId, nil // TODO: @@TR - This
+		exists, err = mediaDb.IdExists(origin, mediaId)
+		if err != nil {
+			return "", err
+		}
+		if exists {
+			continue
+		}
+
+		return mediaId, nil
 	}
 	return "", errors.New("internal limit reached: fell out of media ID generation loop")
 }

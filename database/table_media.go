@@ -25,12 +25,14 @@ const selectDistinctMediaDatastoreIds = "SELECT DISTINCT datastore_id FROM media
 const selectMediaIsQuarantinedByHash = "SELECT quarantined FROM media WHERE quarantined = TRUE AND sha256_hash = $1;"
 const selectMediaByHash = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, creation_ts, quarantined, datastore_id, location FROM media WHERE sha256_hash = $1;"
 const insertMedia = "INSERT INTO media (origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, creation_ts, quarantined, datastore_id, location) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);"
+const selectMediaExists = "SELECT TRUE FROM media WHERE origin = $1 AND media_id = $2 LIMIT 1;"
 
 type mediaTableStatements struct {
 	selectDistinctMediaDatastoreIds *sql.Stmt
 	selectMediaIsQuarantinedByHash  *sql.Stmt
 	selectMediaByHash               *sql.Stmt
 	insertMedia                     *sql.Stmt
+	selectMediaExists               *sql.Stmt
 }
 
 type mediaTableWithContext struct {
@@ -53,6 +55,9 @@ func prepareMediaTables(db *sql.DB) (*mediaTableStatements, error) {
 	}
 	if stmts.insertMedia, err = db.Prepare(insertMedia); err != nil {
 		return nil, errors.New("error preparing insertMedia: " + err.Error())
+	}
+	if stmts.selectMediaExists, err = db.Prepare(selectMediaExists); err != nil {
+		return nil, errors.New("error preparing selectMediaExists: " + err.Error())
 	}
 
 	return stmts, nil
@@ -116,6 +121,17 @@ func (s *mediaTableWithContext) GetByHash(sha256hash string) ([]*DbMedia, error)
 	}
 
 	return results, nil
+}
+
+func (s *mediaTableWithContext) IdExists(origin string, mediaId string) (bool, error) {
+	row := s.statements.selectMediaExists.QueryRowContext(s.ctx, origin, mediaId)
+	val := false
+	err := row.Scan(&val)
+	if err == sql.ErrNoRows {
+		err = nil
+		val = false
+	}
+	return val, err
 }
 
 func (s *mediaTableWithContext) Insert(record *DbMedia) error {

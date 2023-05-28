@@ -13,12 +13,6 @@ type DbReservedMedia struct {
 	Reason  string
 }
 
-type ReserveReason string
-
-const (
-	ForCreateReserveReason ReserveReason = "media_create"
-)
-
 const insertReservedMedia = "INSERT INTO reserved_media (origin, media_id, reason) VALUES ($1, $2, $3);"
 
 type reservedMediaTableStatements struct {
@@ -48,7 +42,7 @@ func (s *reservedMediaTableStatements) Prepare(ctx rcontext.RequestContext) *res
 	}
 }
 
-func (s *reservedMediaTableWithContext) TryInsert(origin string, mediaId string, reason ReserveReason) error {
+func (s *reservedMediaTableWithContext) TryInsert(origin string, mediaId string, reason string) error {
 	_, err := s.statements.insertReservedMedia.ExecContext(s.ctx, origin, mediaId, reason)
 	return err
 }

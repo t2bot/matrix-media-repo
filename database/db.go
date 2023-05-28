@@ -21,6 +21,7 @@ type Database struct {
 	ReservedMedia *reservedMediaTableStatements
 	MetadataView  *metadataVirtualTableStatements
 	Blurhashes    *blurhashesTableStatements
+	HeldMedia     *heldMediaTableStatements
 }
 
 var instance *Database
@@ -91,6 +92,9 @@ func openDatabase(connectionString string, maxConns int, maxIdleConns int) error
 	}
 	if d.Blurhashes, err = prepareBlurhashesTables(d.conn); err != nil {
 		return errors.New("failed to create blurhashes table accessor: " + err.Error())
+	}
+	if d.HeldMedia, err = prepareHeldMediaTables(d.conn); err != nil {
+		return errors.New("failed to create held media table accessor: " + err.Error())
 	}
 
 	instance = d
