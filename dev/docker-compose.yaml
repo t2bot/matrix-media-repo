@@ -1,5 +1,38 @@
 version: '2.0'
 services:
+  media_redis01:
+    container_name: "media_repo_redis01"
+    image: "redis:latest"
+    restart: unless-stopped
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: "redis-server /usr/local/etc/redis/redis.conf"
+    ports:
+      - "7001:6379"
+    networks:
+      - media_proxy
+  media_redis02:
+    container_name: "media_repo_redis02"
+    image: "redis:latest"
+    restart: unless-stopped
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: "redis-server /usr/local/etc/redis/redis.conf"
+    ports:
+      - "7002:6379"
+    networks:
+      - media_proxy
+  media_redis03:
+    container_name: "media_repo_redis03"
+    image: "redis:latest"
+    restart: unless-stopped
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: "redis-server /usr/local/etc/redis/redis.conf"
+    ports:
+      - "7003:6379"
+    networks:
+      - media_proxy
   media_homeserver:
     container_name: "media_repo_synapse"
     image: "matrixdotorg/synapse:latest"
