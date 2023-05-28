@@ -95,7 +95,7 @@ func onFileChanged() {
 		logrus.Warn("Log configuration changed - restart the media repo to apply changes")
 	}
 
-	redisEnabledChange := configNew.Features.Redis.Enabled != configNow.Features.Redis.Enabled
+	redisEnabledChange := configNew.Redis.Enabled != configNow.Redis.Enabled
 	redisShardsChange := hasRedisShardConfigChanged(configNew, configNow)
 	if redisEnabledChange || redisShardsChange {
 		logrus.Warn("Cache configuration changed - reloading")
@@ -126,8 +126,8 @@ func hasWebFeatureChanged(configNew *MainRepoConfig, configNow *MainRepoConfig) 
 }
 
 func hasRedisShardConfigChanged(configNew *MainRepoConfig, configNow *MainRepoConfig) bool {
-	oldShards := configNow.Features.Redis.Shards
-	newShards := configNew.Features.Redis.Shards
+	oldShards := configNow.Redis.Shards
+	newShards := configNew.Redis.Shards
 	if len(oldShards) != len(newShards) {
 		return true
 	}

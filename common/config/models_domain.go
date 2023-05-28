@@ -91,7 +91,6 @@ type TimeoutsConfig struct {
 
 type FeatureConfig struct {
 	MSC2448Blurhash MSC2448Config `yaml:"MSC2448"`
-	Redis           RedisConfig   `yaml:"redis"`
 }
 
 type MSC2448Config struct {
