@@ -12,11 +12,15 @@ import (
 
 func CalculateBlurhashAsync(ctx rcontext.RequestContext, reader io.Reader, sha256hash string) chan struct{} {
 	var err error
-	bhChan := make(chan struct{})
+	opChan := make(chan struct{})
 	go func() {
 		//goland:noinspection GoUnhandledErrorResult
 		defer io.Copy(io.Discard, reader) // we need to flush the reader as we might end up blocking the upload
-		defer close(bhChan)
+		defer close(opChan)
+
+		if !ctx.Config.Features.MSC2448Blurhash.Enabled {
+			return
+		}
 
 		var img image.Image
 		img, err = imaging.Decode(reader)
@@ -43,5 +47,5 @@ func CalculateBlurhashAsync(ctx rcontext.RequestContext, reader io.Reader, sha25
 			return
 		}
 	}()
-	return bhChan
+	return opChan
 }
