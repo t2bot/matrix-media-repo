@@ -1,6 +1,10 @@
 package r0
 
 import (
+	"net/http"
+	"path/filepath"
+	"strconv"
+
 	"github.com/getsentry/sentry-go"
 	"github.com/turt2live/matrix-media-repo/api/_apimeta"
 	"github.com/turt2live/matrix-media-repo/api/_responses"
@@ -9,14 +13,9 @@ import (
 	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/stream_util"
 
-	"io"
-	"net/http"
-	"path/filepath"
-
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/controllers/upload_controller"
 )
 
 type MediaUploadedResponse struct {
@@ -37,18 +36,32 @@ func UploadMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.Us
 		contentType = "application/octet-stream" // binary
 	}
 
-	// TODO: Move to new function - https://github.com/turt2live/matrix-media-repo/issues/411
-	if upload_controller.IsRequestTooLarge(r.ContentLength, r.Header.Get("Content-Length"), rctx) {
-		io.Copy(io.Discard, r.Body) // Ditch the entire request
-		return _responses.RequestTooLarge()
+	// Early sizing constraints (reject requests which claim to be too large/small)
+	maxSize := rctx.Config.Uploads.MaxSizeBytes
+	minSize := rctx.Config.Uploads.MinSizeBytes
+	if maxSize > 0 || minSize > 0 {
+		if r.ContentLength > 0 {
+			if maxSize > 0 && maxSize < r.ContentLength {
+				return _responses.RequestTooLarge()
+			}
+			if minSize > 0 && minSize < r.ContentLength {
+				return _responses.RequestTooSmall()
+			}
+		} else {
+			header := r.Header.Get("Content-Length")
+			if header != "" {
+				parsed, _ := strconv.ParseInt(header, 10, 64)
+				if maxSize > 0 && maxSize < parsed {
+					return _responses.RequestTooLarge()
+				}
+				if minSize > 0 && minSize < parsed {
+					return _responses.RequestTooSmall()
+				}
+			}
+		}
 	}
 
-	// TODO: Move to new function - https://github.com/turt2live/matrix-media-repo/issues/411
-	if upload_controller.IsRequestTooSmall(r.ContentLength, r.Header.Get("Content-Length"), rctx) {
-		io.Copy(io.Discard, r.Body) // Ditch the entire request
-		return _responses.RequestTooSmall()
-	}
-
+	// Actually upload
 	media, err := upload_pipeline.UploadMedia(rctx, r.Host, "", r.Body, contentType, filename, user.UserId, datastores.LocalMediaKind)
 	if err != nil {
 		if err == common.ErrQuotaExceeded {
