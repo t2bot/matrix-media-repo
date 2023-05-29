@@ -1,6 +1,7 @@
 package upload_pipeline
 
 import (
+	"errors"
 	"io"
 
 	"github.com/getsentry/sentry-go"
@@ -18,12 +19,14 @@ func UploadMedia(ctx rcontext.RequestContext, origin string, mediaId string, r i
 	r = upload.LimitStream(ctx, r)
 
 	// Step 2: Create a media ID (if needed)
+	mustUseMediaId := true
 	if mediaId == "" {
 		var err error
 		mediaId, err = upload.GenerateMediaId(ctx, origin)
 		if err != nil {
 			return nil, err
 		}
+		mustUseMediaId = false
 	}
 
 	// Step 3: Pick a datastore
@@ -39,9 +42,14 @@ func UploadMedia(ctx rcontext.RequestContext, origin string, mediaId string, r i
 	}
 	defer reader.Close()
 
-	// Step 5: Split the buffer to calculate a blurhash later
+	// Step 5: Split the buffer to calculate a blurhash & populate cache later
 	bhR, bhW := io.Pipe()
-	tee := io.TeeReader(reader, bhW)
+	cacheR, cacheW := io.Pipe()
+	allWriters := io.MultiWriter(cacheW, bhW)
+	tee := io.TeeReader(reader, allWriters)
+
+	defer bhW.CloseWithError(errors.New("failed to finish write"))
+	defer cacheW.CloseWithError(errors.New("failed to finish write"))
 
 	// Step 6: Check quarantine
 	if err = upload.CheckQuarantineStatus(ctx, sha256hash); err != nil {
@@ -56,11 +64,11 @@ func UploadMedia(ctx rcontext.RequestContext, origin string, mediaId string, r i
 
 	// Step 8: Acquire a lock on the media hash for uploading
 	unlockFn, err := upload.LockForUpload(ctx, sha256hash)
-	//goland:noinspection GoUnhandledErrorResult
-	defer unlockFn()
 	if err != nil {
 		return nil, err
 	}
+	//goland:noinspection GoUnhandledErrorResult
+	defer unlockFn()
 
 	// Step 9: Pull all upload records (to check if an upload has already happened)
 	newRecord := &database.DbMedia{
@@ -79,7 +87,7 @@ func UploadMedia(ctx rcontext.RequestContext, origin string, mediaId string, r i
 	record, perfect, err := upload.FindRecord(ctx, sha256hash, userId, contentType, fileName)
 	if record != nil {
 		// We already had this record in some capacity
-		if perfect {
+		if perfect && !mustUseMediaId {
 			// Exact match - deduplicate, skip upload to datastore
 			return record, nil
 		} else {
@@ -97,16 +105,28 @@ func UploadMedia(ctx rcontext.RequestContext, origin string, mediaId string, r i
 	// Step 10: Asynchronously calculate blurhash
 	bhChan := upload.CalculateBlurhashAsync(ctx, bhR, sha256hash)
 
-	// Step 11: Since we didn't find a duplicate, upload it to the datastore
+	// Step 11: Asynchronously upload to cache
+	cacheChan := upload.PopulateCacheAsync(ctx, cacheR, sizeBytes, sha256hash)
+
+	// Step 12: Since we didn't find a duplicate, upload it to the datastore
 	dsLocation, err := datastores.Upload(ctx, dsConf, io.NopCloser(tee), sizeBytes, contentType, sha256hash)
 	if err != nil {
 		return nil, err
 	}
+	if err = bhW.Close(); err != nil {
+		ctx.Log.Warn("Failed to close writer for blurhash: ", err)
+		close(bhChan)
+	}
+	if err = cacheW.Close(); err != nil {
+		ctx.Log.Warn("Failed to close writer for cache layer: ", err)
+		close(cacheChan)
+	}
 
-	// Step 12: Wait for blurhash
+	// Step 13: Wait for channels
 	<-bhChan
+	<-cacheChan
 
-	// Step 13: Everything finally looks good - return some stuff
+	// Step 14: Everything finally looks good - return some stuff
 	newRecord.DatastoreId = dsConf.Id
 	newRecord.Location = dsLocation
 	if err = database.GetInstance().Media.Prepare(ctx).Insert(newRecord); err != nil {
