@@ -24,6 +24,7 @@ func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 	mediaId := _routers.GetParam("mediaId", r)
 	filename := _routers.GetParam("filename", r)
 	allowRemote := r.URL.Query().Get("allow_remote")
+	timeoutMs := r.URL.Query().Get("timeout_ms")
 
 	if !_routers.ServerNameRegex.MatchString(server) {
 		return _responses.BadRequest("invalid server ID")
@@ -42,9 +43,24 @@ func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 	if allowRemote != "" {
 		parsedFlag, err := strconv.ParseBool(allowRemote)
 		if err != nil {
-			return _responses.InternalServerError("allow_remote flag does not appear to be a boolean")
+			return _responses.BadRequest("allow_remote flag does not appear to be a boolean")
 		}
 		downloadRemote = parsedFlag
+	}
+
+	blockFor := 20 * time.Second
+	if timeoutMs != "" {
+		parsed, err := strconv.Atoi(timeoutMs)
+		if err != nil {
+			return _responses.BadRequest("timeout_ms does not appear to be an integer")
+		}
+		if parsed > 0 {
+			// Limit to 60 seconds
+			if parsed > 60000 {
+				parsed = 60000
+			}
+			blockFor = time.Duration(parsed) * time.Millisecond
+		}
 	}
 
 	rctx = rctx.LogWithFields(logrus.Fields{
@@ -63,7 +79,7 @@ func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 		FetchRemoteIfNeeded: downloadRemote,
 		StartByte:           -1,
 		EndByte:             -1,
-		BlockForReadUntil:   20 * time.Second,
+		BlockForReadUntil:   blockFor,
 	})
 	if err != nil {
 		if err == common.ErrMediaNotFound {
