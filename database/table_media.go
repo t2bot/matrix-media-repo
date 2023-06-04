@@ -26,6 +26,7 @@ const selectMediaIsQuarantinedByHash = "SELECT quarantined FROM media WHERE quar
 const selectMediaByHash = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, creation_ts, quarantined, datastore_id, location FROM media WHERE sha256_hash = $1;"
 const insertMedia = "INSERT INTO media (origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, creation_ts, quarantined, datastore_id, location) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);"
 const selectMediaExists = "SELECT TRUE FROM media WHERE origin = $1 AND media_id = $2 LIMIT 1;"
+const selectMediaById = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, creation_ts, quarantined, datastore_id, location FROM media WHERE origin = $1 AND media_id = $2;"
 
 type mediaTableStatements struct {
 	selectDistinctMediaDatastoreIds *sql.Stmt
@@ -33,6 +34,7 @@ type mediaTableStatements struct {
 	selectMediaByHash               *sql.Stmt
 	insertMedia                     *sql.Stmt
 	selectMediaExists               *sql.Stmt
+	selectMediaById                 *sql.Stmt
 }
 
 type mediaTableWithContext struct {
@@ -58,6 +60,9 @@ func prepareMediaTables(db *sql.DB) (*mediaTableStatements, error) {
 	}
 	if stmts.selectMediaExists, err = db.Prepare(selectMediaExists); err != nil {
 		return nil, errors.New("error preparing selectMediaExists: " + err.Error())
+	}
+	if stmts.selectMediaById, err = db.Prepare(selectMediaById); err != nil {
+		return nil, errors.New("error preparing selectMediaById: " + err.Error())
 	}
 
 	return stmts, nil
@@ -121,6 +126,17 @@ func (s *mediaTableWithContext) GetByHash(sha256hash string) ([]*DbMedia, error)
 	}
 
 	return results, nil
+}
+
+func (s *mediaTableWithContext) GetById(origin string, mediaId string) (*DbMedia, error) {
+	row := s.statements.selectMediaById.QueryRowContext(s.ctx, origin, mediaId)
+	val := &DbMedia{}
+	err := row.Scan(&val.Origin, &val.MediaId, &val.UploadName, &val.ContentType, &val.UserId, &val.Sha256Hash, &val.SizeBytes, &val.CreationTs, &val.Quarantined, &val.DatastoreId, &val.Location)
+	if err == sql.ErrNoRows {
+		err = nil
+		val = nil
+	}
+	return val, err
 }
 
 func (s *mediaTableWithContext) IdExists(origin string, mediaId string) (bool, error) {

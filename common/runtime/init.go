@@ -3,6 +3,7 @@ package runtime
 import (
 	"github.com/getsentry/sentry-go"
 	"github.com/turt2live/matrix-media-repo/database"
+	"github.com/turt2live/matrix-media-repo/errcache"
 	"github.com/turt2live/matrix-media-repo/pool"
 	"github.com/turt2live/matrix-media-repo/redislib"
 	"github.com/turt2live/matrix-media-repo/util/ids"
@@ -23,6 +24,7 @@ func RunStartupSequence() {
 	LoadDatastores()
 	plugins.ReloadPlugins()
 	pool.Init()
+	errcache.Init()
 	redislib.Reconnect()
 }
 

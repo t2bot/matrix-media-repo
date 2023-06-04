@@ -57,9 +57,11 @@ func UploadMedia(ctx rcontext.RequestContext, origin string, mediaId string, r i
 	}
 
 	// Step 7: Ensure user can upload within quota
-	err = quota.CanUpload(ctx, userId, sizeBytes)
-	if err != nil {
-		return nil, err
+	if userId != "" {
+		err = quota.CanUpload(ctx, userId, sizeBytes)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Step 8: Acquire a lock on the media hash for uploading

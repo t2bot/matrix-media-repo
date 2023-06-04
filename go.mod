@@ -54,6 +54,7 @@ require (
 	github.com/minio/minio-go/v7 v7.0.55
 	github.com/panjf2000/ants/v2 v2.7.4
 	github.com/redis/go-redis/v9 v9.0.4
+	github.com/t2bot/go-singleflight-streams v0.0.1
 )
 
 require (
@@ -94,6 +95,7 @@ require (
 	github.com/rs/xid v1.5.0 // indirect
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd // indirect
 	github.com/smartystreets/assertions v1.0.0 // indirect
+	golang.org/x/sync v0.2.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect
 	golang.org/x/term v0.8.0 // indirect
 	golang.org/x/text v0.9.0 // indirect

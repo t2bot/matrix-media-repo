@@ -61,8 +61,9 @@ func onFileChanged() {
 	PrintDomainInfo()
 	CheckDeprecations()
 
-	logrus.Info("Reloading pool configuration")
+	logrus.Info("Reloading pool & cache configuration")
 	globals.PoolReloadChan <- true
+	globals.ErrorCacheReloadChan <- true
 
 	bindAddressChange := configNew.General.BindAddress != configNow.General.BindAddress
 	bindPortChange := configNew.General.Port != configNow.General.Port

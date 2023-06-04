@@ -6,6 +6,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/globals"
 	"github.com/turt2live/matrix-media-repo/common/runtime"
 	"github.com/turt2live/matrix-media-repo/database"
+	"github.com/turt2live/matrix-media-repo/errcache"
 	"github.com/turt2live/matrix-media-repo/internal_cache"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/plugins"
@@ -24,6 +25,7 @@ func setupReloads() {
 	reloadCacheOnChan(globals.CacheReplaceChan)
 	reloadPluginsOnChan(globals.PluginReloadChan)
 	reloadPoolOnChan(globals.PoolReloadChan)
+	reloadErrorCachesOnChan(globals.ErrorCacheReloadChan)
 }
 
 func stopReloads() {
@@ -37,6 +39,7 @@ func stopReloads() {
 	globals.CacheReplaceChan <- false
 	globals.PluginReloadChan <- false
 	globals.PoolReloadChan <- false
+	globals.ErrorCacheReloadChan <- false
 }
 
 func reloadWebOnChan(reloadChan chan bool) {
@@ -163,6 +166,18 @@ func reloadPoolOnChan(reloadChan chan bool) {
 				pool.AdjustSize()
 			} else {
 				pool.Drain()
+			}
+		}
+	}()
+}
+
+func reloadErrorCachesOnChan(reloadChan chan bool) {
+	go func() {
+		defer close(reloadChan)
+		for {
+			shouldReload := <-reloadChan
+			if shouldReload {
+				errcache.AdjustSize()
 			}
 		}
 	}()

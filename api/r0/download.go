@@ -3,17 +3,18 @@ package r0
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/turt2live/matrix-media-repo/api/_apimeta"
 	"github.com/turt2live/matrix-media-repo/api/_responses"
 	"github.com/turt2live/matrix-media-repo/api/_routers"
+	"github.com/turt2live/matrix-media-repo/pipline/download_pipeline"
 	"github.com/turt2live/matrix-media-repo/util"
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/controllers/download_controller"
 )
 
 type DownloadMediaResponse = _responses.DownloadResponse
@@ -58,7 +59,12 @@ func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 		return _responses.MediaBlocked()
 	}
 
-	streamedMedia, err := download_controller.GetMedia(server, mediaId, downloadRemote, false, rctx)
+	media, stream, err := download_pipeline.DownloadMedia(rctx, server, mediaId, download_pipeline.DownloadOpts{
+		FetchRemoteIfNeeded: downloadRemote,
+		StartByte:           -1,
+		EndByte:             -1,
+		BlockForReadUntil:   20 * time.Second,
+	})
 	if err != nil {
 		if err == common.ErrMediaNotFound {
 			return _responses.NotFoundError()
@@ -73,14 +79,14 @@ func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 	}
 
 	if filename == "" {
-		filename = streamedMedia.UploadName
+		filename = media.UploadName
 	}
 
 	return &DownloadMediaResponse{
-		ContentType:       streamedMedia.ContentType,
+		ContentType:       media.ContentType,
 		Filename:          filename,
-		SizeBytes:         streamedMedia.SizeBytes,
-		Data:              streamedMedia.Stream,
+		SizeBytes:         media.SizeBytes,
+		Data:              stream,
 		TargetDisposition: targetDisposition,
 	}
 }

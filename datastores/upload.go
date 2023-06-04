@@ -70,6 +70,7 @@ func Upload(ctx rcontext.RequestContext, ds config.DatastoreConfig, data io.Read
 		var secondContainer string
 		var fileName string
 		var targetDir string
+		var targetFile string
 
 		// Ensure unique ID
 		exists := true
@@ -88,10 +89,11 @@ func Upload(ctx rcontext.RequestContext, ds config.DatastoreConfig, data io.Read
 			firstContainer = objectName[0:2]
 			secondContainer = objectName[2:4]
 			fileName = objectName[4:]
+			objectName = path.Join(firstContainer, secondContainer, fileName)
 			targetDir = path.Join(basePath, firstContainer, secondContainer)
-			objectName = path.Join(targetDir, fileName)
+			targetFile = path.Join(targetDir, fileName)
 
-			_, err = os.Stat(objectName)
+			_, err = os.Stat(targetFile)
 			if err != nil && !os.IsNotExist(err) {
 				return "", err
 			} else if err != nil && os.IsNotExist(err) {
@@ -104,7 +106,7 @@ func Upload(ctx rcontext.RequestContext, ds config.DatastoreConfig, data io.Read
 		if err = os.MkdirAll(targetDir, 0755); err != nil {
 			return "", err
 		}
-		file, err = os.OpenFile(objectName, os.O_WRONLY|os.O_CREATE, 0644)
+		file, err = os.OpenFile(targetFile, os.O_WRONLY|os.O_CREATE, 0644)
 		if err != nil {
 			return "", err
 		}

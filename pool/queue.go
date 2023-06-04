@@ -34,3 +34,7 @@ func NewQueue(workers int, name string) (*Queue, error) {
 	}
 	return &Queue{pool: p}, nil
 }
+
+func (p *Queue) Schedule(task func()) error {
+	return p.pool.Submit(task)
+}
