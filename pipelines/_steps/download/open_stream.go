@@ -41,25 +41,7 @@ func OpenStream(ctx rcontext.RequestContext, media *database.DbMedia, startByte 
 		return nil, err
 	}
 
-	if startByte >= 0 {
-		if _, err = rsc.Seek(startByte, io.SeekStart); err != nil {
-			err2 := rsc.Close()
-			if err2 != nil {
-				ctx.Log.Errorf("Error while closing datastore stream due to other error: %s", err2)
-				sentry.CaptureException(err2)
-			}
-			return nil, err
-		}
-	}
-
-	var lm io.Reader = rsc
-	if endByte >= 1 {
-		if startByte < 0 {
-			startByte = 0
-		}
-		lm = io.LimitReader(rsc, endByte-startByte)
-	}
-	return &limitedCloser{lm: lm, rs: rsc}, nil
+	return CreateLimitedStream(ctx, rsc, startByte, endByte)
 }
 
 func CreateLimitedStream(ctx rcontext.RequestContext, r io.ReadCloser, startByte int64, endByte int64) (io.ReadCloser, error) {
