@@ -7,7 +7,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/api/_apimeta"
 	"github.com/turt2live/matrix-media-repo/api/_responses"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/pipline/create_pipeline"
+	"github.com/turt2live/matrix-media-repo/pipelines/pipeline_create"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
@@ -17,7 +17,7 @@ type MediaCreatedResponse struct {
 }
 
 func CreateMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
-	id, err := create_pipeline.Execute(rctx, r.Host, user.UserId, create_pipeline.DefaultExpirationTime)
+	id, err := pipeline_create.Execute(rctx, r.Host, user.UserId, pipeline_create.DefaultExpirationTime)
 	if err != nil {
 		rctx.Log.Error("Unexpected error creating media ID:", err)
 		sentry.CaptureException(err)

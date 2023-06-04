@@ -1,4 +1,4 @@
-package download_pipeline
+package pipeline_download
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/database"
-	"github.com/turt2live/matrix-media-repo/pipline/_steps/download"
+	"github.com/turt2live/matrix-media-repo/pipelines/_steps/download"
 )
 
 var sf = new(sfstreams.Group)
@@ -41,7 +41,7 @@ func (c *cancelCloser) Close() error {
 	return c.r.Close()
 }
 
-func DownloadMedia(ctx rcontext.RequestContext, origin string, mediaId string, opts DownloadOpts) (*database.DbMedia, io.ReadCloser, error) {
+func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts DownloadOpts) (*database.DbMedia, io.ReadCloser, error) {
 	// Step 1: Make our context a timeout context
 	var cancel context.CancelFunc
 	//goland:noinspection GoVetLostCancel - we handle the function in our custom cancelCloser struct

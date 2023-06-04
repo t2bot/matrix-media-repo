@@ -13,7 +13,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/database"
 	"github.com/turt2live/matrix-media-repo/datastores"
-	"github.com/turt2live/matrix-media-repo/pipline/upload_pipeline"
+	"github.com/turt2live/matrix-media-repo/pipelines/pipeline_upload"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
@@ -60,7 +60,7 @@ func UploadMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.Us
 	}
 
 	// Actually upload
-	media, err := upload_pipeline.UploadMedia(rctx, r.Host, "", r.Body, contentType, filename, user.UserId, datastores.LocalMediaKind)
+	media, err := pipeline_upload.Execute(rctx, r.Host, "", r.Body, contentType, filename, user.UserId, datastores.LocalMediaKind)
 	if err != nil {
 		if err == common.ErrQuotaExceeded {
 			return _responses.QuotaExceeded()

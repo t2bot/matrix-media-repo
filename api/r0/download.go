@@ -9,7 +9,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/api/_apimeta"
 	"github.com/turt2live/matrix-media-repo/api/_responses"
 	"github.com/turt2live/matrix-media-repo/api/_routers"
-	"github.com/turt2live/matrix-media-repo/pipline/download_pipeline"
+	"github.com/turt2live/matrix-media-repo/pipelines/pipeline_download"
 	"github.com/turt2live/matrix-media-repo/util"
 
 	"github.com/sirupsen/logrus"
@@ -75,7 +75,7 @@ func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 		return _responses.MediaBlocked()
 	}
 
-	media, stream, err := download_pipeline.DownloadMedia(rctx, server, mediaId, download_pipeline.DownloadOpts{
+	media, stream, err := pipeline_download.Execute(rctx, server, mediaId, pipeline_download.DownloadOpts{
 		FetchRemoteIfNeeded: downloadRemote,
 		StartByte:           -1,
 		EndByte:             -1,

@@ -19,7 +19,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/errcache"
 	"github.com/turt2live/matrix-media-repo/matrix"
 	"github.com/turt2live/matrix-media-repo/metrics"
-	"github.com/turt2live/matrix-media-repo/pipline/upload_pipeline"
+	"github.com/turt2live/matrix-media-repo/pipelines/pipeline_upload"
 	"github.com/turt2live/matrix-media-repo/pool"
 	"github.com/turt2live/matrix-media-repo/util"
 )
@@ -147,7 +147,7 @@ func TryDownload(ctx rcontext.RequestContext, origin string, mediaId string) (*d
 	}(dsConf, pr, bufferCh)
 
 	go func(ctx rcontext.RequestContext, origin string, mediaId string, r io.ReadCloser, upstreamClose func() error, contentType string, fileName string, uploadCh chan uploadResult) {
-		m, err2 := upload_pipeline.UploadMedia(ctx, origin, mediaId, r, contentType, fileName, "", datastores.RemoteMediaKind)
+		m, err2 := pipeline_upload.Execute(ctx, origin, mediaId, r, contentType, fileName, "", datastores.RemoteMediaKind)
 		// async the channel update to avoid deadlocks
 		go func(uploadCh chan uploadResult, err2 error, m *database.DbMedia) {
 			uploadCh <- uploadResult{err: err2, m: m}

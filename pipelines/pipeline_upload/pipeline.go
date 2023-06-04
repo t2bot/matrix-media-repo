@@ -1,4 +1,4 @@
-package upload_pipeline
+package pipeline_upload
 
 import (
 	"errors"
@@ -8,13 +8,13 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/database"
 	"github.com/turt2live/matrix-media-repo/datastores"
-	"github.com/turt2live/matrix-media-repo/pipline/_steps/quota"
-	"github.com/turt2live/matrix-media-repo/pipline/_steps/upload"
+	"github.com/turt2live/matrix-media-repo/pipelines/_steps/quota"
+	"github.com/turt2live/matrix-media-repo/pipelines/_steps/upload"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
-// UploadMedia Media upload. If mediaId is an empty string, one will be generated.
-func UploadMedia(ctx rcontext.RequestContext, origin string, mediaId string, r io.ReadCloser, contentType string, fileName string, userId string, kind datastores.Kind) (*database.DbMedia, error) {
+// Execute Media upload. If mediaId is an empty string, one will be generated.
+func Execute(ctx rcontext.RequestContext, origin string, mediaId string, r io.ReadCloser, contentType string, fileName string, userId string, kind datastores.Kind) (*database.DbMedia, error) {
 	// Step 1: Limit the stream's length
 	r = upload.LimitStream(ctx, r)
 

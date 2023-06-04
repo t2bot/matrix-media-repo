@@ -1,10 +1,10 @@
-package create_pipeline
+package pipeline_create
 
 import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/database"
-	"github.com/turt2live/matrix-media-repo/pipline/_steps/quota"
-	"github.com/turt2live/matrix-media-repo/pipline/_steps/upload"
+	"github.com/turt2live/matrix-media-repo/pipelines/_steps/quota"
+	"github.com/turt2live/matrix-media-repo/pipelines/_steps/upload"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
