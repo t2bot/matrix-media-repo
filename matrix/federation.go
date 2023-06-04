@@ -57,14 +57,14 @@ func getFederationBreaker(hostname string) *circuit.Breaker {
 
 // Note: URL lookups are not covered by the breaker because otherwise it might never close.
 func GetServerApiUrl(hostname string) (string, string, error) {
-	logrus.Info("Getting server API URL for " + hostname)
+	logrus.Debug("Getting server API URL for " + hostname)
 
 	// Check to see if we've cached this hostname at all
 	setupCache()
 	record, found := apiUrlCacheInstance.Get(hostname)
 	if found {
 		server := record.(cachedServer)
-		logrus.Info("Server API URL for " + hostname + " is " + server.url + " (cache)")
+		logrus.Debug("Server API URL for " + hostname + " is " + server.url + " (cache)")
 		return server.url, server.hostname, nil
 	}
 
@@ -84,7 +84,7 @@ func GetServerApiUrl(hostname string) (string, string, error) {
 		url := fmt.Sprintf("https://%s", net.JoinHostPort(h, p))
 		server := cachedServer{url, hostname}
 		apiUrlCacheInstance.Set(hostname, server, cache.DefaultExpiration)
-		logrus.Info("Server API URL for " + hostname + " is " + url + " (IP address)")
+		logrus.Debug("Server API URL for " + hostname + " is " + url + " (IP address)")
 		return url, hostname, nil
 	}
 
@@ -94,7 +94,7 @@ func GetServerApiUrl(hostname string) (string, string, error) {
 		url := fmt.Sprintf("https://%s", net.JoinHostPort(h, p))
 		server := cachedServer{url, h}
 		apiUrlCacheInstance.Set(hostname, server, cache.DefaultExpiration)
-		logrus.Info("Server API URL for " + hostname + " is " + url + " (explicit port)")
+		logrus.Debug("Server API URL for " + hostname + " is " + url + " (explicit port)")
 		return url, h, nil
 	}
 
@@ -122,7 +122,7 @@ func GetServerApiUrl(hostname string) (string, string, error) {
 						url := fmt.Sprintf("https://%s", net.JoinHostPort(wkHost, wkPort))
 						server := cachedServer{url, wk.ServerAddr}
 						apiUrlCacheInstance.Set(hostname, server, cache.DefaultExpiration)
-						logrus.Info("Server API URL for " + hostname + " is " + url + " (WK; IP address)")
+						logrus.Debug("Server API URL for " + hostname + " is " + url + " (WK; IP address)")
 						return url, wk.ServerAddr, nil
 					}
 
@@ -133,7 +133,7 @@ func GetServerApiUrl(hostname string) (string, string, error) {
 						url := fmt.Sprintf("https://%s", wkHost)
 						server := cachedServer{url, wkHost}
 						apiUrlCacheInstance.Set(hostname, server, cache.DefaultExpiration)
-						logrus.Info("Server API URL for " + hostname + " is " + url + " (WK; explicit port)")
+						logrus.Debug("Server API URL for " + hostname + " is " + url + " (WK; explicit port)")
 						return url, wkHost, nil
 					}
 
@@ -150,7 +150,7 @@ func GetServerApiUrl(hostname string) (string, string, error) {
 						url := fmt.Sprintf("https://%s", net.JoinHostPort(realAddr, strconv.Itoa(int(addrs[0].Port))))
 						server := cachedServer{url, wkHost}
 						apiUrlCacheInstance.Set(hostname, server, cache.DefaultExpiration)
-						logrus.Info("Server API URL for " + hostname + " is " + url + " (WK; SRV)")
+						logrus.Debug("Server API URL for " + hostname + " is " + url + " (WK; SRV)")
 						return url, wkHost, nil
 					}
 
@@ -159,7 +159,7 @@ func GetServerApiUrl(hostname string) (string, string, error) {
 					url := fmt.Sprintf("https://%s", net.JoinHostPort(wkHost, wkPort))
 					server := cachedServer{url, wkHost}
 					apiUrlCacheInstance.Set(hostname, server, cache.DefaultExpiration)
-					logrus.Info("Server API URL for " + hostname + " is " + url + " (WK; fallback)")
+					logrus.Debug("Server API URL for " + hostname + " is " + url + " (WK; fallback)")
 					return url, wkHost, nil
 				}
 			}
@@ -183,7 +183,7 @@ func GetServerApiUrl(hostname string) (string, string, error) {
 		url := fmt.Sprintf("https://%s", net.JoinHostPort(realAddr, strconv.Itoa(int(addrs[0].Port))))
 		server := cachedServer{url, h}
 		apiUrlCacheInstance.Set(hostname, server, cache.DefaultExpiration)
-		logrus.Info("Server API URL for " + hostname + " is " + url + " (SRV)")
+		logrus.Debug("Server API URL for " + hostname + " is " + url + " (SRV)")
 		return url, h, nil
 	}
 
@@ -192,12 +192,12 @@ func GetServerApiUrl(hostname string) (string, string, error) {
 	url := fmt.Sprintf("https://%s", net.JoinHostPort(h, p))
 	server := cachedServer{url, h}
 	apiUrlCacheInstance.Set(hostname, server, cache.DefaultExpiration)
-	logrus.Info("Server API URL for " + hostname + " is " + url + " (fallback)")
+	logrus.Debug("Server API URL for " + hostname + " is " + url + " (fallback)")
 	return url, h, nil
 }
 
 func FederatedGet(url string, realHost string, ctx rcontext.RequestContext) (*http.Response, error) {
-	logrus.Info("Doing federated GET to " + url + " with host " + realHost)
+	logrus.Debug("Doing federated GET to " + url + " with host " + realHost)
 
 	cb := getFederationBreaker(realHost)
 
