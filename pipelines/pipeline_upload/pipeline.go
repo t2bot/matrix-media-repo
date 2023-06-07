@@ -79,12 +79,14 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, r io.Re
 		UploadName:  fileName,
 		ContentType: contentType,
 		UserId:      userId,
-		Sha256Hash:  sha256hash,
 		SizeBytes:   sizeBytes,
 		CreationTs:  util.NowMillis(),
 		Quarantined: false,
-		DatastoreId: "", // Populated later
-		Location:    "", // Populated later
+		Locatable: &database.Locatable{
+			Sha256Hash:  sha256hash,
+			DatastoreId: "", // Populated later
+			Location:    "", // Populated later
+		},
 	}
 	record, perfect, err := upload.FindRecord(ctx, sha256hash, userId, contentType, fileName)
 	if record != nil {

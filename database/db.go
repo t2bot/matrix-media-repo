@@ -22,6 +22,7 @@ type Database struct {
 	MetadataView  *metadataVirtualTableStatements
 	Blurhashes    *blurhashesTableStatements
 	HeldMedia     *heldMediaTableStatements
+	Thumbnails    *thumbnailsTableStatements
 }
 
 var instance *Database
@@ -95,6 +96,9 @@ func openDatabase(connectionString string, maxConns int, maxIdleConns int) error
 	}
 	if d.HeldMedia, err = prepareHeldMediaTables(d.conn); err != nil {
 		return errors.New("failed to create held media table accessor: " + err.Error())
+	}
+	if d.Thumbnails, err = prepareThumbnailsTables(d.conn); err != nil {
+		return errors.New("failed to create thumbnails table accessor: " + err.Error())
 	}
 
 	instance = d

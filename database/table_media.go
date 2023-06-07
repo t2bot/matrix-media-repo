@@ -7,18 +7,25 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 )
 
+type Locatable struct {
+	Sha256Hash  string
+	DatastoreId string
+	Location    string
+}
+
 type DbMedia struct {
+	*Locatable
 	Origin      string
 	MediaId     string
 	UploadName  string
 	ContentType string
 	UserId      string
-	Sha256Hash  string
+	//Sha256Hash  string
 	SizeBytes   int64
 	CreationTs  int64
 	Quarantined bool
-	DatastoreId string
-	Location    string
+	//DatastoreId string
+	//Location    string
 }
 
 const selectDistinctMediaDatastoreIds = "SELECT DISTINCT datastore_id FROM media;"
@@ -118,7 +125,7 @@ func (s *mediaTableWithContext) GetByHash(sha256hash string) ([]*DbMedia, error)
 		return nil, err
 	}
 	for rows.Next() {
-		val := &DbMedia{}
+		val := &DbMedia{Locatable: &Locatable{}}
 		if err = rows.Scan(&val.Origin, &val.MediaId, &val.UploadName, &val.ContentType, &val.UserId, &val.Sha256Hash, &val.SizeBytes, &val.CreationTs, &val.Quarantined, &val.DatastoreId, &val.Location); err != nil {
 			return nil, err
 		}
@@ -130,7 +137,7 @@ func (s *mediaTableWithContext) GetByHash(sha256hash string) ([]*DbMedia, error)
 
 func (s *mediaTableWithContext) GetById(origin string, mediaId string) (*DbMedia, error) {
 	row := s.statements.selectMediaById.QueryRowContext(s.ctx, origin, mediaId)
-	val := &DbMedia{}
+	val := &DbMedia{Locatable: &Locatable{}}
 	err := row.Scan(&val.Origin, &val.MediaId, &val.UploadName, &val.ContentType, &val.UserId, &val.Sha256Hash, &val.SizeBytes, &val.CreationTs, &val.Quarantined, &val.DatastoreId, &val.Location)
 	if err == sql.ErrNoRows {
 		err = nil

@@ -54,7 +54,7 @@ require (
 	github.com/minio/minio-go/v7 v7.0.55
 	github.com/panjf2000/ants/v2 v2.7.4
 	github.com/redis/go-redis/v9 v9.0.4
-	github.com/t2bot/go-singleflight-streams v0.0.1
+	github.com/t2bot/go-singleflight-streams v0.0.2
 )
 
 require (

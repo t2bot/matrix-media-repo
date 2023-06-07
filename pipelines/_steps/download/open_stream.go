@@ -25,7 +25,7 @@ func (r limitedCloser) Close() error {
 	return r.rs.Close()
 }
 
-func OpenStream(ctx rcontext.RequestContext, media *database.DbMedia, startByte int64, endByte int64) (io.ReadCloser, error) {
+func OpenStream(ctx rcontext.RequestContext, media *database.Locatable, startByte int64, endByte int64) (io.ReadCloser, error) {
 	reader, err := redislib.TryGetMedia(ctx, media.Sha256Hash, startByte, endByte)
 	if err != nil || reader != nil {
 		return io.NopCloser(reader), err

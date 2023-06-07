@@ -3,7 +3,6 @@ package r0
 import (
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/turt2live/matrix-media-repo/api/_apimeta"
@@ -48,19 +47,9 @@ func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 		downloadRemote = parsedFlag
 	}
 
-	blockFor := 20 * time.Second
-	if timeoutMs != "" {
-		parsed, err := strconv.Atoi(timeoutMs)
-		if err != nil {
-			return _responses.BadRequest("timeout_ms does not appear to be an integer")
-		}
-		if parsed > 0 {
-			// Limit to 60 seconds
-			if parsed > 60000 {
-				parsed = 60000
-			}
-			blockFor = time.Duration(parsed) * time.Millisecond
-		}
+	blockFor, err := util.CalcBlockForDuration(timeoutMs)
+	if err != nil {
+		return _responses.BadRequest("timeout_ms does not appear to be an integer")
 	}
 
 	rctx = rctx.LogWithFields(logrus.Fields{

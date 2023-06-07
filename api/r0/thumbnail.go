@@ -1,25 +1,27 @@
 package r0
 
 import (
+	"net/http"
+	"strconv"
+
 	"github.com/getsentry/sentry-go"
 	"github.com/turt2live/matrix-media-repo/api/_apimeta"
 	"github.com/turt2live/matrix-media-repo/api/_responses"
 	"github.com/turt2live/matrix-media-repo/api/_routers"
+	"github.com/turt2live/matrix-media-repo/pipelines/pipeline_download"
+	"github.com/turt2live/matrix-media-repo/pipelines/pipeline_thumbnail"
 	"github.com/turt2live/matrix-media-repo/util"
-
-	"net/http"
-	"strconv"
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/controllers/thumbnail_controller"
 )
 
 func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
 	server := _routers.GetParam("server", r)
 	mediaId := _routers.GetParam("mediaId", r)
 	allowRemote := r.URL.Query().Get("allow_remote")
+	timeoutMs := r.URL.Query().Get("timeout_ms")
 
 	if !_routers.ServerNameRegex.MatchString(server) {
 		return _responses.BadRequest("invalid server ID")
@@ -32,6 +34,11 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 			return _responses.BadRequest("allow_remote flag does not appear to be a boolean")
 		}
 		downloadRemote = parsedFlag
+	}
+
+	blockFor, err := util.CalcBlockForDuration(timeoutMs)
+	if err != nil {
+		return _responses.BadRequest("timeout_ms does not appear to be an integer")
 	}
 
 	rctx = rctx.LogWithFields(logrus.Fields{
@@ -97,12 +104,26 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 		return _responses.BadRequest("Width and height must be greater than zero")
 	}
 
-	streamedThumbnail, err := thumbnail_controller.GetThumbnail(server, mediaId, width, height, animated, method, downloadRemote, rctx)
+	thumbnail, stream, err := pipeline_thumbnail.Execute(rctx, server, mediaId, pipeline_thumbnail.ThumbnailOpts{
+		DownloadOpts: pipeline_download.DownloadOpts{
+			FetchRemoteIfNeeded: downloadRemote,
+			StartByte:           -1,
+			EndByte:             -1,
+			BlockForReadUntil:   blockFor,
+			RecordOnly:          false, // overridden
+		},
+		Width:    width,
+		Height:   height,
+		Method:   method,
+		Animated: animated,
+	})
 	if err != nil {
 		if err == common.ErrMediaNotFound {
 			return _responses.NotFoundError()
 		} else if err == common.ErrMediaTooLarge {
 			return _responses.RequestTooLarge()
+		} else if err == common.ErrMediaQuarantined {
+			return _responses.NotFoundError() // We lie for security
 		}
 		rctx.Log.Error("Unexpected error locating media: " + err.Error())
 		sentry.CaptureException(err)
@@ -110,9 +131,10 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 	}
 
 	return &DownloadMediaResponse{
-		ContentType: streamedThumbnail.Thumbnail.ContentType,
-		SizeBytes:   streamedThumbnail.Thumbnail.SizeBytes,
-		Data:        streamedThumbnail.Stream,
-		Filename:    "thumbnail.png",
+		ContentType:       thumbnail.ContentType,
+		Filename:          "thumbnail" + util.ExtensionForContentType(thumbnail.ContentType),
+		SizeBytes:         thumbnail.SizeBytes,
+		Data:              stream,
+		TargetDisposition: "infer",
 	}
 }
