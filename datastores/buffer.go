@@ -7,11 +7,9 @@ import (
 	"errors"
 	"io"
 	"os"
-	"path"
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"
-	"github.com/turt2live/matrix-media-repo/util/ids"
 )
 
 func BufferTemp(datastore config.DatastoreConfig, contents io.ReadCloser) (string, int64, io.ReadCloser, error) {
@@ -20,13 +18,7 @@ func BufferTemp(datastore config.DatastoreConfig, contents io.ReadCloser) (strin
 	if datastore.Type == "s3" {
 		fpath = datastore.Options["tempPath"]
 	} else if datastore.Type == "file" {
-		var id string
-		id, err = ids.NewUniqueId()
-		if err != nil {
-			return "", 0, nil, errors.New("error generating temporary file ID: " + err.Error())
-		}
-		fpath = path.Join(os.TempDir(), id)
-		fpath, err = os.MkdirTemp(fpath, "mmr")
+		fpath, err = os.MkdirTemp(os.TempDir(), "mmr")
 		if err != nil {
 			return "", 0, nil, errors.New("error generating temporary directory: " + err.Error())
 		}
@@ -98,6 +90,10 @@ func (c *tempFileCloser) Close() error {
 	if c.closed {
 		return nil
 	}
+	var upstreamErr error
+	if upstreamErr = c.upstream.Close(); upstreamErr != nil {
+		// don't return the error yet because we want to try to delete the temp file
+	}
 	var err error
 	if err = os.Remove(c.fname); err != nil {
 		return err
@@ -106,7 +102,7 @@ func (c *tempFileCloser) Close() error {
 		return err
 	}
 	c.closed = true
-	return c.upstream.Close()
+	return upstreamErr
 }
 
 func (c *tempFileCloser) Read(p []byte) (n int, err error) {
