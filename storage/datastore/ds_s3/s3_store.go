@@ -186,7 +186,7 @@ func (s *s3Datastore) UploadFile(file io.ReadCloser, expectedLength int64, ctx r
 		}
 		ctx.Log.Info("Uploading file...")
 		metrics.S3Operations.With(prometheus.Labels{"operation": "PutObject"}).Inc()
-		sizeBytes, uploadErr = s.client.PutObjectWithContext(ctx, s.bucket, objectName, rs3, expectedLength, minio.PutObjectOptions{StorageClass: s.storageClass})
+		sizeBytes, uploadErr = s.client.PutObjectWithContext(ctx, s.bucket, objectName, rs3, expectedLength, minio.PutObjectOptions{StorageClass: s.storageClass, SendContentMd5: true})
 		ctx.Log.Info("Uploaded ", sizeBytes, " bytes to s3")
 		done <- true
 	}()
@@ -237,7 +237,7 @@ func (s *s3Datastore) ObjectExists(location string) bool {
 func (s *s3Datastore) OverwriteObject(location string, stream io.ReadCloser) error {
 	defer stream_util.DumpAndCloseStream(stream)
 	metrics.S3Operations.With(prometheus.Labels{"operation": "PutObject"}).Inc()
-	_, err := s.client.PutObject(s.bucket, location, stream, -1, minio.PutObjectOptions{StorageClass: s.storageClass})
+	_, err := s.client.PutObject(s.bucket, location, stream, -1, minio.PutObjectOptions{StorageClass: s.storageClass, SendContentMd5: true})
 	return err
 }
 
