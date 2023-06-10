@@ -15,6 +15,7 @@ type s3 struct {
 	client       *minio.Client
 	storageClass string
 	bucket       string
+	putWithMd5   bool
 }
 
 func getS3(ds config.DatastoreConfig) (*s3, error) {
@@ -29,6 +30,7 @@ func getS3(ds config.DatastoreConfig) (*s3, error) {
 	region := ds.Options["region"]
 	storageClass, hasStorageClass := ds.Options["storageClass"]
 	useSslStr, hasSsl := ds.Options["ssl"]
+	useMd5Str, hasMd5 := ds.Options["useMD5"]
 
 	if !hasStorageClass {
 		storageClass = "STANDARD"
@@ -37,6 +39,11 @@ func getS3(ds config.DatastoreConfig) (*s3, error) {
 	useSsl := true
 	if hasSsl && useSslStr != "" {
 		useSsl, _ = strconv.ParseBool(useSslStr)
+	}
+
+	useMd5 := false
+	if hasMd5 && useMd5Str != "" {
+		useMd5, _ = strconv.ParseBool(useMd5Str)
 	}
 
 	var err error
@@ -54,6 +61,7 @@ func getS3(ds config.DatastoreConfig) (*s3, error) {
 		client:       client,
 		storageClass: storageClass,
 		bucket:       bucket,
+		putWithMd5:   useMd5,
 	}
 	s3clients.Store(ds.Id, s3c)
 	return s3c, nil

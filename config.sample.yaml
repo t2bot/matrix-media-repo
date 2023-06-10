@@ -191,6 +191,10 @@ datastores:
       # An optional storage class for tuning how the media is stored at s3.
       # See https://aws.amazon.com/s3/storage-classes/ for details; uncomment to use.
       #storageClass: STANDARD
+      # If you're seeing errors relating to 'z-amz-checksum-algorithm CRC32C not implemented',
+      # set this to `true`. This will reduce performance, but will allow uploads to be possible.
+      # It is common that you need to enable this with Backblaze B2 and CloudFlare R2.
+      useMD5: false
 
 # Options for controlling archives. Archives are exports of a particular user's content for
 # the purpose of GDPR or moving media to a different server.

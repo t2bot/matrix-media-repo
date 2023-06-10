@@ -61,7 +61,11 @@ func Upload(ctx rcontext.RequestContext, ds config.DatastoreConfig, data io.Read
 
 		metrics.S3Operations.With(prometheus.Labels{"operation": "PutObject"}).Inc()
 		var info minio.UploadInfo
-		info, err = s3c.client.PutObject(ctx.Context, s3c.bucket, objectName, tee, size, minio.PutObjectOptions{StorageClass: s3c.storageClass, ContentType: contentType})
+		info, err = s3c.client.PutObject(ctx.Context, s3c.bucket, objectName, tee, size, minio.PutObjectOptions{
+			StorageClass:   s3c.storageClass,
+			ContentType:    contentType,
+			SendContentMd5: s3c.putWithMd5,
+		})
 		uploadedBytes = info.Size
 	} else if ds.Type == "file" {
 		basePath := ds.Options["path"]
