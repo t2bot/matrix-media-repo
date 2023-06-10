@@ -12,7 +12,6 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/api/r0"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/data_controller"
 	"github.com/turt2live/matrix-media-repo/matrix"
@@ -274,7 +273,7 @@ func DownloadExportPart(r *http.Request, rctx rcontext.RequestContext, user _api
 		return _responses.InternalServerError("failed to start download")
 	}
 
-	return &r0.DownloadMediaResponse{
+	return &_responses.DownloadResponse{
 		ContentType:       "application/gzip",
 		SizeBytes:         part.SizeBytes,
 		Data:              s,
