@@ -18,10 +18,8 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/turt2live/matrix-media-repo/api/_responses"
 	"github.com/turt2live/matrix-media-repo/common"
-	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/stream_util"
 )
 
 const statusCodeCtxKey = "mmr.status_code"
@@ -90,7 +88,7 @@ func (c *RContextRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 beforeParseDownload:
 	log.Infof("Replying with result: %T %+v", res, res)
 	if downloadRes, isDownload := res.(*_responses.DownloadResponse); isDownload {
-		doRange, rangeStart, rangeEnd, grabBytes, rangeErrMsg := parseRange(r, downloadRes)
+		doRange, rangeStart, rangeEnd, rangeErrMsg := parseRange(r, downloadRes)
 		if doRange && rangeErrMsg != "" {
 			proposedStatusCode = http.StatusRequestedRangeNotSatisfiable
 			res = _responses.BadRequest(rangeErrMsg)
@@ -106,9 +104,7 @@ beforeParseDownload:
 		}
 
 		if downloadRes.SizeBytes > 0 {
-			if config.Get().Redis.Enabled {
-				headers.Set("Accept-Ranges", "bytes")
-			}
+			headers.Set("Accept-Ranges", "bytes")
 		}
 
 		disposition := downloadRes.TargetDisposition
@@ -145,19 +141,11 @@ beforeParseDownload:
 			headers.Set("Content-Disposition", disposition+"; filename*=utf-8''"+url.QueryEscape(fname))
 		}
 
-		if doRange {
-			defer stream_util.DumpAndCloseStream(downloadRes.Data)
-			seekStream, err := stream_util.ManualSeekStream(downloadRes.Data, rangeStart, grabBytes)
-			if err != nil {
-				panic(err) // blow up the request
-			}
-			stream = io.NopCloser(seekStream)
-			expectedBytes = grabBytes
+		if _, ok := stream.(io.ReadSeekCloser); ok && doRange {
 			headers.Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", rangeStart, rangeEnd, downloadRes.SizeBytes))
 			proposedStatusCode = http.StatusPartialContent
-		} else {
-			stream = downloadRes.Data
 		}
+		stream = downloadRes.Data
 	}
 
 	// Try to find a suitable error code, if one is needed
@@ -217,7 +205,7 @@ beforeParseDownload:
 
 	r = writeStatusCode(w, r, proposedStatusCode)
 
-	defer stream_util.DumpAndCloseStream(stream)
+	defer stream.Close()
 	written, err := io.Copy(w, stream)
 	if err != nil {
 		panic(err) // blow up this request
@@ -244,47 +232,44 @@ func writeStatusCode(w http.ResponseWriter, r *http.Request, statusCode int) *ht
 	return r.WithContext(context.WithValue(r.Context(), statusCodeCtxKey, statusCode))
 }
 
-func parseRange(r *http.Request, res *_responses.DownloadResponse) (bool, int64, int64, int64, string) {
+func parseRange(r *http.Request, res *_responses.DownloadResponse) (bool, int64, int64, string) {
 	rangeHeader := r.Header.Get("Range")
-	if rangeHeader == "" || res.SizeBytes <= 0 || !config.Get().Redis.Enabled {
-		return false, 0, 0, 0, ""
+	if rangeHeader == "" || res.SizeBytes <= 0 {
+		return false, 0, 0, ""
 	}
 
 	if !strings.HasPrefix(rangeHeader, "bytes=") {
-		return true, 0, 0, 0, "Improper range units"
+		return true, 0, 0, "Improper range units"
 	}
 	if !strings.Contains(rangeHeader, ",") && !strings.HasPrefix(rangeHeader, "bytes=-") {
 		parts := strings.Split(rangeHeader[len("bytes="):], "-")
 		if len(parts) <= 2 {
-			grabBytes := int64(0)
 			rstart, err := strconv.ParseInt(parts[0], 10, 64)
 			if err != nil {
-				return true, 0, 0, 0, "Improper start of range"
+				return true, 0, 0, "Improper start of range"
 			}
 			if rstart < 0 {
-				return true, 0, 0, 0, "Improper start of range: negative"
+				return true, 0, 0, "Improper start of range: negative"
 			}
 
 			rend := int64(-1)
 			if len(parts) > 1 && parts[1] != "" {
 				rend, err = strconv.ParseInt(parts[1], 10, 64)
 				if err != nil {
-					return true, 0, 0, 0, "Improper end of range"
+					return true, 0, 0, "Improper end of range"
 				}
 				if rend < 1 {
-					return true, 0, 0, 0, "Improper end of range: negative"
+					return true, 0, 0, "Improper end of range: negative"
 				}
 				if rend >= res.SizeBytes {
-					return true, 0, 0, 0, "Improper end of range: out of bounds"
+					return true, 0, 0, "Improper end of range: out of bounds"
 				}
 				if rend <= rstart {
-					return true, 0, 0, 0, "Start must be before end"
+					return true, 0, 0, "Start must be before end"
 				}
 				if (rstart + rend) >= res.SizeBytes {
-					return true, 0, 0, 0, "Range too large"
+					return true, 0, 0, "Range too large"
 				}
-
-				grabBytes = rend - rstart
 			} else {
 				add := int64(10485760) // 10mb default
 				conf := GetDomainConfig(r)
@@ -292,14 +277,13 @@ func parseRange(r *http.Request, res *_responses.DownloadResponse) (bool, int64,
 					add = conf.Downloads.DefaultRangeChunkSizeBytes
 				}
 				rend = int64(math.Min(float64(rstart+add), float64(res.SizeBytes-1)))
-				grabBytes = (rend - rstart) + 1
 			}
 
-			if (rend-rstart) <= 0 || grabBytes <= 0 {
-				return true, 0, 0, 0, "Range invalid at last pass"
+			if (rend - rstart) <= 0 {
+				return true, 0, 0, "Range invalid at last pass"
 			}
-			return true, rstart, rend, grabBytes, ""
+			return true, rstart, rend, ""
 		}
 	}
-	return false, 0, 0, 0, ""
+	return false, 0, 0, ""
 }
