@@ -13,6 +13,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/database"
 	"github.com/turt2live/matrix-media-repo/pipelines/_steps/download"
+	"github.com/turt2live/matrix-media-repo/pipelines/_steps/meta"
 	"github.com/turt2live/matrix-media-repo/pipelines/_steps/quarantine"
 	"github.com/turt2live/matrix-media-repo/util"
 )
@@ -60,6 +61,7 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 			if record.Quarantined {
 				return quarantine.ReturnAppropriateThing(ctx, true, opts.RecordOnly, 512, 512, opts.StartByte, opts.EndByte)
 			}
+			meta.FlagAccess(ctx, record.Sha256Hash)
 			if opts.RecordOnly {
 				return nil, nil
 			}
@@ -78,6 +80,7 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 		if record.Quarantined {
 			return quarantine.ReturnAppropriateThing(ctx, true, opts.RecordOnly, 512, 512, opts.StartByte, opts.EndByte)
 		}
+		meta.FlagAccess(ctx, record.Sha256Hash)
 		if opts.RecordOnly {
 			r.Close()
 			return nil, nil

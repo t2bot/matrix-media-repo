@@ -23,6 +23,7 @@ type Database struct {
 	Blurhashes    *blurhashesTableStatements
 	HeldMedia     *heldMediaTableStatements
 	Thumbnails    *thumbnailsTableStatements
+	LastAccess    *lastAccessTableStatements
 }
 
 var instance *Database
@@ -99,6 +100,9 @@ func openDatabase(connectionString string, maxConns int, maxIdleConns int) error
 	}
 	if d.Thumbnails, err = prepareThumbnailsTables(d.conn); err != nil {
 		return errors.New("failed to create thumbnails table accessor: " + err.Error())
+	}
+	if d.LastAccess, err = prepareLastAccessTables(d.conn); err != nil {
+		return errors.New("failed to create last access table accessor: " + err.Error())
 	}
 
 	instance = d

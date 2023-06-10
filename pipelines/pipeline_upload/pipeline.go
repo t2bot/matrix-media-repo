@@ -8,6 +8,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/database"
 	"github.com/turt2live/matrix-media-repo/datastores"
+	"github.com/turt2live/matrix-media-repo/pipelines/_steps/meta"
 	"github.com/turt2live/matrix-media-repo/pipelines/_steps/quota"
 	"github.com/turt2live/matrix-media-repo/pipelines/_steps/upload"
 	"github.com/turt2live/matrix-media-repo/util"
@@ -140,5 +141,6 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, r io.Re
 		}
 		return nil, err
 	}
+	meta.FlagAccess(ctx, newRecord.Sha256Hash)
 	return newRecord, nil
 }
