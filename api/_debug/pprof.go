@@ -37,6 +37,9 @@ func pprofServe(fn generatorFn, secret string) http.Handler {
 
 func (c *requestContainer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	auth := r.Header.Get("Authorization")
+	if auth == "" {
+		auth = r.URL.Query().Get("access_token")
+	}
 	if auth != ("Bearer " + c.secret) {
 		// Order is important: Set headers before sending responses
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
