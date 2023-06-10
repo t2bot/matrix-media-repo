@@ -17,6 +17,10 @@ type s3 struct {
 	bucket       string
 }
 
+func ResetS3Clients() {
+	s3clients = &sync.Map{}
+}
+
 func getS3(ds config.DatastoreConfig) (*s3, error) {
 	if val, ok := s3clients.Load(ds.Id); ok {
 		return val.(*s3), nil

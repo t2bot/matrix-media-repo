@@ -3,6 +3,7 @@ package runtime
 import (
 	"github.com/getsentry/sentry-go"
 	"github.com/turt2live/matrix-media-repo/database"
+	"github.com/turt2live/matrix-media-repo/datastores"
 	"github.com/turt2live/matrix-media-repo/errcache"
 	"github.com/turt2live/matrix-media-repo/pool"
 	"github.com/turt2live/matrix-media-repo/redislib"
@@ -60,6 +61,8 @@ func LoadDatastores() {
 	if fatal {
 		logrus.Fatal("One or more datastores are not configured")
 	}
+
+	datastores.ResetS3Clients()
 }
 
 func CheckIdGenerator() {
