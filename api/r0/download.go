@@ -16,8 +16,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 )
 
-type DownloadMediaResponse = _responses.DownloadResponse
-
 func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
 	server := _routers.GetParam("server", r)
 	mediaId := _routers.GetParam("mediaId", r)
@@ -76,7 +74,12 @@ func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 		} else if err == common.ErrMediaTooLarge {
 			return _responses.RequestTooLarge()
 		} else if err == common.ErrMediaQuarantined {
-			return _responses.NotFoundError() // We lie for security
+			rctx.Log.Debug("Quarantined media accessed. Has stream? ", stream != nil)
+			if stream != nil {
+				return _responses.MakeQuarantinedImageResponse(stream)
+			} else {
+				return _responses.NotFoundError() // We lie for security
+			}
 		}
 		rctx.Log.Error("Unexpected error locating media: " + err.Error())
 		sentry.CaptureException(err)
@@ -87,7 +90,7 @@ func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 		filename = media.UploadName
 	}
 
-	return &DownloadMediaResponse{
+	return &_responses.DownloadResponse{
 		ContentType:       media.ContentType,
 		Filename:          filename,
 		SizeBytes:         media.SizeBytes,

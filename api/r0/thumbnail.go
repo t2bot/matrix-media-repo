@@ -123,14 +123,19 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 		} else if err == common.ErrMediaTooLarge {
 			return _responses.RequestTooLarge()
 		} else if err == common.ErrMediaQuarantined {
-			return _responses.NotFoundError() // We lie for security
+			rctx.Log.Debug("Quarantined media accessed. Has stream? ", stream != nil)
+			if stream != nil {
+				return _responses.MakeQuarantinedImageResponse(stream)
+			} else {
+				return _responses.NotFoundError() // We lie for security
+			}
 		}
 		rctx.Log.Error("Unexpected error locating media: " + err.Error())
 		sentry.CaptureException(err)
 		return _responses.InternalServerError("Unexpected Error")
 	}
 
-	return &DownloadMediaResponse{
+	return &_responses.DownloadResponse{
 		ContentType:       thumbnail.ContentType,
 		Filename:          "thumbnail" + util.ExtensionForContentType(thumbnail.ContentType),
 		SizeBytes:         thumbnail.SizeBytes,

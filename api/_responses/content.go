@@ -19,3 +19,13 @@ type DownloadResponse struct {
 type StreamDataResponse struct {
 	Stream io.Reader
 }
+
+func MakeQuarantinedImageResponse(stream io.ReadCloser) *DownloadResponse {
+	return &DownloadResponse{
+		ContentType:       "image/png",
+		Filename:          "not_allowed.png",
+		SizeBytes:         -1,
+		Data:              stream,
+		TargetDisposition: "inline",
+	}
+}

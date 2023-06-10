@@ -13,6 +13,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/database"
 	"github.com/turt2live/matrix-media-repo/pipelines/_steps/download"
+	"github.com/turt2live/matrix-media-repo/pipelines/_steps/quarantine"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
@@ -41,6 +42,10 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 	defer close(recordCh)
 	r, err, _ := sf.Do(fmt.Sprintf("%s/%s?%s", origin, mediaId, opts.String()), func() (io.ReadCloser, error) {
 		serveRecord := func(recordCh chan *database.DbMedia, record *database.DbMedia) {
+			defer func() {
+				// Don't crash when we send to a closed channel
+				recover()
+			}()
 			recordCh <- record
 		}
 
@@ -52,6 +57,9 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 		}
 		if record != nil {
 			go serveRecord(recordCh, record) // async function to prevent deadlock
+			if record.Quarantined {
+				return quarantine.ReturnAppropriateThing(ctx, true, opts.RecordOnly, 512, 512, opts.StartByte, opts.EndByte)
+			}
 			if opts.RecordOnly {
 				return nil, nil
 			}
@@ -67,6 +75,9 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 			return nil, err
 		}
 		go serveRecord(recordCh, record) // async function to prevent deadlock
+		if record.Quarantined {
+			return quarantine.ReturnAppropriateThing(ctx, true, opts.RecordOnly, 512, 512, opts.StartByte, opts.EndByte)
+		}
 		if opts.RecordOnly {
 			r.Close()
 			return nil, nil
@@ -80,6 +91,10 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 
 		return r, nil
 	})
+	if err == common.ErrMediaQuarantined {
+		cancel()
+		return nil, r, err
+	}
 	if err != nil {
 		cancel()
 		return nil, nil, err

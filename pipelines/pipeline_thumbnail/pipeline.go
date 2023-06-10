@@ -12,6 +12,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/database"
 	"github.com/turt2live/matrix-media-repo/pipelines/_steps/download"
+	"github.com/turt2live/matrix-media-repo/pipelines/_steps/quarantine"
 	"github.com/turt2live/matrix-media-repo/pipelines/_steps/thumbnails"
 	"github.com/turt2live/matrix-media-repo/pipelines/pipeline_download"
 	"github.com/turt2live/matrix-media-repo/util"
@@ -64,22 +65,30 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Th
 	defer close(recordCh)
 	r, err, _ := sf.Do(fmt.Sprintf("%s/%s?%s", origin, mediaId, opts.String()), func() (io.ReadCloser, error) {
 		serveRecord := func(recordCh chan *database.DbThumbnail, record *database.DbThumbnail) {
+			defer func() {
+				// Don't crash when we send to a closed channel
+				recover()
+			}()
 			recordCh <- record
 		}
 
 		// Step 4: Get the associated media record (without stream)
-		mediaRecord, _, err := pipeline_download.Execute(ctx, origin, mediaId, opts.ImpliedDownloadOpts())
+		mediaRecord, dr, err := pipeline_download.Execute(ctx, origin, mediaId, opts.ImpliedDownloadOpts())
 		if err != nil {
+			if err == common.ErrMediaQuarantined {
+				go serveRecord(recordCh, nil) // async function to prevent deadlock
+				if dr != nil {
+					dr.Close()
+				}
+				return quarantine.ReturnAppropriateThing(ctx, false, opts.RecordOnly, opts.Width, opts.Height, opts.StartByte, opts.EndByte)
+			}
 			return nil, err
 		}
 		if mediaRecord == nil {
 			return nil, common.ErrMediaNotFound
 		}
 
-		// Step 5: Check for quarantine
-		// TODO: Quarantine
-
-		// Step 6: See if we're lucky enough to already have this thumbnail
+		// Step 5: See if we're lucky enough to already have this thumbnail
 		thumbDb := database.GetInstance().Thumbnails.Prepare(ctx)
 		record, err := thumbDb.GetByParams(origin, mediaId, opts.Width, opts.Height, opts.Method, opts.Animated)
 		if err != nil {
@@ -93,7 +102,7 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Th
 			return download.OpenStream(ctx, record.Locatable, opts.StartByte, opts.EndByte)
 		}
 
-		// Step 7: Generate the thumbnail and return that
+		// Step 6: Generate the thumbnail and return that
 		record, r, err := thumbnails.Generate(ctx, mediaRecord, opts.Width, opts.Height, opts.Method, opts.Animated)
 		if err != nil {
 			return nil, err
@@ -104,9 +113,13 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Th
 			return nil, nil
 		}
 
-		// Step 8: Create a limited stream
+		// Step 7: Create a limited stream
 		return download.CreateLimitedStream(ctx, r, opts.StartByte, opts.EndByte)
 	})
+	if err == common.ErrMediaQuarantined {
+		cancel()
+		return nil, r, err
+	}
 	if err != nil {
 		cancel()
 		return nil, nil, err

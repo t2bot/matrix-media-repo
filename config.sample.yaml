@@ -464,6 +464,7 @@ quarantine:
   replaceDownloads: false
 
   # If provided, the given image will be returned as a thumbnail for media that is quarantined.
+  # The recommended size is at least 512x512.
   #thumbnailPath: "/path/to/thumbnail.png"
 
   # If true, administrators of the configured homeservers may quarantine media for their server

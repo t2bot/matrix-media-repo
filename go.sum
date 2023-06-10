@@ -335,8 +335,8 @@ github.com/stretchr/testify v1.8.1 h1:w7B6lhMri9wdJUVmEZPGGhZzrYTPvgJArz7wNPgYKs
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
 github.com/stvp/tempredis v0.0.0-20181119212430-b82af8480203 h1:QVqDTf3h2WHt08YuiTGPZLls0Wq99X9bWd0Q5ZSBesM=
 github.com/stvp/tempredis v0.0.0-20181119212430-b82af8480203/go.mod h1:oqN97ltKNihBbwlX8dLpwxCl3+HnXKV/R0e+sRLd9C8=
-github.com/t2bot/go-singleflight-streams v0.0.2 h1:N60e6rZvuf5CybfuGREgMDxKbFtvHqr3FzawuPLaGOI=
-github.com/t2bot/go-singleflight-streams v0.0.2/go.mod h1:oiZ5Zj2o6p3SuMWTPXAmye7Ou86WCrQ2oGcr32bEEq8=
+github.com/t2bot/go-singleflight-streams v0.0.3 h1:vedZM34NuCMx7YJkPek2b73zjzV8Qt8v+hR2u7RCbbk=
+github.com/t2bot/go-singleflight-streams v0.0.3/go.mod h1:oiZ5Zj2o6p3SuMWTPXAmye7Ou86WCrQ2oGcr32bEEq8=
 github.com/tebeka/strftime v0.1.3 h1:5HQXOqWKYRFfNyBMNVc9z5+QzuBtIXy03psIhtdJYto=
 github.com/tebeka/strftime v0.1.3/go.mod h1:7wJm3dZlpr4l/oVK0t1HYIc4rMzQ2XJlOMIUJUJH6XQ=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
