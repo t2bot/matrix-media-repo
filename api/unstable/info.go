@@ -137,10 +137,10 @@ func MediaInfo(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 	}
 
 	if strings.HasPrefix(response.ContentType, "audio/") {
-		generator, err := thumbnailing.GetGenerator(util_byte_seeker.NewByteSeeker(b), response.ContentType, false)
+		generator, reconstructed, err := thumbnailing.GetGenerator(util_byte_seeker.NewByteSeeker(b), response.ContentType, false)
 		if err == nil {
 			if audiogenerator, ok := generator.(i.AudioGenerator); ok {
-				audioInfo, err := audiogenerator.GetAudioData(b, 768, rctx)
+				audioInfo, err := audiogenerator.GetAudioData(reconstructed, 768, rctx)
 				if err == nil {
 					response.KeySamples = audioInfo.KeySamples
 					response.NumChannels = audioInfo.Channels

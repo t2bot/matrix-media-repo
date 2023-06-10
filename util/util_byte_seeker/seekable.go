@@ -2,9 +2,11 @@ package util_byte_seeker
 
 import (
 	"bytes"
+	"io"
 )
 
 type ByteSeeker struct {
+	io.ReadSeekCloser
 	s *bytes.Reader
 }
 

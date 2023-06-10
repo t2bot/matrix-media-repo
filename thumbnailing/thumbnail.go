@@ -6,12 +6,11 @@ import (
 	"reflect"
 
 	"github.com/turt2live/matrix-media-repo/common"
-	"github.com/turt2live/matrix-media-repo/util/stream_util"
-
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/i"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/m"
 	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/readers"
 )
 
 var ErrUnsupported = errors.New("unsupported thumbnail type")
@@ -25,17 +24,12 @@ func IsAnimationSupported(contentType string) bool {
 }
 
 func GenerateThumbnail(imgStream io.ReadCloser, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
+	defer imgStream.Close()
 	if !IsSupported(contentType) {
 		return nil, ErrUnsupported
 	}
 
-	defer stream_util.DumpAndCloseStream(imgStream)
-	b, err := io.ReadAll(imgStream)
-	if err != nil {
-		return nil, err
-	}
-
-	generator := i.GetGenerator(b, contentType, animated)
+	generator, reconstructed := i.GetGenerator(imgStream, contentType, animated)
 	if generator == nil {
 		return nil, ErrUnsupported
 	}
@@ -43,29 +37,24 @@ func GenerateThumbnail(imgStream io.ReadCloser, contentType string, width int, h
 
 	// Validate maximum megapixel values to avoid memory issues
 	// https://github.com/turt2live/matrix-media-repo/security/advisories/GHSA-j889-h476-hh9h
-	dimensional, w, h, err := generator.GetOriginDimensions(b, contentType, ctx)
+	buffered := readers.NewBufferReadsReader(reconstructed)
+	dimensional, w, h, err := generator.GetOriginDimensions(buffered, contentType, ctx)
 	if err != nil {
 		return nil, errors.New("error getting dimensions: " + err.Error())
 	}
 	if dimensional && (w*h) >= ctx.Config.Thumbnails.MaxPixels {
-		ctx.Log.Warn("Image too large: too many pixels")
+		ctx.Log.Debug("Image too large: too many pixels")
 		return nil, common.ErrMediaTooLarge
 	}
 
-	return generator.GenerateThumbnail(b, contentType, width, height, method, animated, ctx)
+	return generator.GenerateThumbnail(buffered.GetRewoundReader(), contentType, width, height, method, animated, ctx)
 }
 
-func GetGenerator(imgStream io.ReadCloser, contentType string, animated bool) (i.Generator, error) {
-	defer stream_util.DumpAndCloseStream(imgStream)
-	b, err := io.ReadAll(imgStream)
-	if err != nil {
-		return nil, err
-	}
-
-	generator := i.GetGenerator(b, contentType, animated)
+func GetGenerator(imgStream io.Reader, contentType string, animated bool) (i.Generator, *readers.PrefixedReader, error) {
+	generator, reconstructed := i.GetGenerator(imgStream, contentType, animated)
 	if generator == nil {
-		return nil, ErrUnsupported
+		return nil, reconstructed, ErrUnsupported
 	}
 
-	return generator, nil
+	return generator, reconstructed, nil
 }

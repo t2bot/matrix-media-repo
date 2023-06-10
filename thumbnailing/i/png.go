@@ -1,7 +1,6 @@
 package i
 
 import (
-	"bytes"
 	"errors"
 	"image"
 	_ "image/png"
@@ -24,20 +23,20 @@ func (d pngGenerator) supportsAnimation() bool {
 	return false
 }
 
-func (d pngGenerator) matches(img []byte, contentType string) bool {
+func (d pngGenerator) matches(img io.Reader, contentType string) bool {
 	return contentType == "image/png"
 }
 
-func (d pngGenerator) GetOriginDimensions(b []byte, contentType string, ctx rcontext.RequestContext) (bool, int, int, error) {
-	i, _, err := image.DecodeConfig(bytes.NewBuffer(b))
+func (d pngGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx rcontext.RequestContext) (bool, int, int, error) {
+	i, _, err := image.DecodeConfig(b)
 	if err != nil {
 		return false, 0, 0, err
 	}
 	return true, i.Width, i.Height, nil
 }
 
-func (d pngGenerator) GenerateThumbnail(b []byte, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
-	src, err := imaging.Decode(bytes.NewBuffer(b))
+func (d pngGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
+	src, err := imaging.Decode(b)
 	if err != nil {
 		return nil, errors.New("png: error decoding thumbnail: " + err.Error())
 	}
@@ -51,15 +50,20 @@ func (d pngGenerator) GenerateThumbnailOf(src image.Image, width int, height int
 		return nil, err
 	}
 
-	imgData := &bytes.Buffer{}
-	err = imaging.Encode(imgData, thumb, imaging.PNG)
-	if err != nil {
-		return nil, errors.New("png: error encoding thumbnail: " + err.Error())
-	}
+	pr, pw := io.Pipe()
+	go func(pw *io.PipeWriter, p image.Image) {
+		err = imaging.Encode(pw, p, imaging.PNG)
+		if err != nil {
+			_ = pw.CloseWithError(errors.New("png: error encoding thumbnail: " + err.Error()))
+		} else {
+			_ = pw.Close()
+		}
+	}(pw, thumb)
+
 	return &m.Thumbnail{
 		Animated:    false,
 		ContentType: "image/png",
-		Reader:      io.NopCloser(imgData),
+		Reader:      pr,
 	}, nil
 }
 

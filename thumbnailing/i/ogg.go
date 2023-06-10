@@ -2,13 +2,14 @@ package i
 
 import (
 	"errors"
+	"io"
 
 	"github.com/faiface/beep"
 	"github.com/faiface/beep/vorbis"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/m"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/u"
-	"github.com/turt2live/matrix-media-repo/util/util_byte_seeker"
+	"github.com/turt2live/matrix-media-repo/util/readers"
 )
 
 type oggGenerator struct {
@@ -22,38 +23,47 @@ func (d oggGenerator) supportsAnimation() bool {
 	return false
 }
 
-func (d oggGenerator) matches(img []byte, contentType string) bool {
+func (d oggGenerator) matches(img io.Reader, contentType string) bool {
 	return contentType == "audio/ogg"
 }
 
-func (d oggGenerator) decode(b []byte) (beep.StreamSeekCloser, beep.Format, error) {
-	audio, format, err := vorbis.Decode(util_byte_seeker.NewByteSeeker(b))
+func (d oggGenerator) decode(b io.Reader) (beep.StreamSeekCloser, beep.Format, error) {
+	audio, format, err := vorbis.Decode(readers.MakeCloser(b))
 	if err != nil {
 		return audio, format, errors.New("ogg: error decoding audio: " + err.Error())
 	}
 	return audio, format, nil
 }
 
-func (d oggGenerator) GetOriginDimensions(b []byte, contentType string, ctx rcontext.RequestContext) (bool, int, int, error) {
+func (d oggGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx rcontext.RequestContext) (bool, int, int, error) {
 	return false, 0, 0, nil
 }
 
-func (d oggGenerator) GenerateThumbnail(b []byte, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
-	audio, format, err := d.decode(b)
+func (d oggGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
+	tags, rc, err := u.GetID3Tags(b)
+	if err != nil {
+		return nil, errors.New("ogg: error getting tags: " + err.Error())
+	}
+	//goland:noinspection GoUnhandledErrorResult
+	defer rc.Close()
+
+	audio, format, err := d.decode(rc)
 	if err != nil {
 		return nil, err
 	}
 
+	//goland:noinspection GoUnhandledErrorResult
 	defer audio.Close()
-	return mp3Generator{}.GenerateFromStream(audio, format, u.GetID3Tags(b), width, height)
+	return mp3Generator{}.GenerateFromStream(audio, format, tags, width, height)
 }
 
-func (d oggGenerator) GetAudioData(b []byte, nKeys int, ctx rcontext.RequestContext) (*m.AudioInfo, error) {
+func (d oggGenerator) GetAudioData(b io.Reader, nKeys int, ctx rcontext.RequestContext) (*m.AudioInfo, error) {
 	audio, format, err := d.decode(b)
 	if err != nil {
 		return nil, err
 	}
 
+	//goland:noinspection GoUnhandledErrorResult
 	defer audio.Close()
 	return mp3Generator{}.GetDataFromStream(audio, format, nKeys)
 }

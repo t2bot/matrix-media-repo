@@ -10,6 +10,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/util/readers"
 )
 
 func BufferTemp(datastore config.DatastoreConfig, contents io.ReadCloser) (string, int64, io.ReadCloser, error) {
@@ -65,46 +66,10 @@ func BufferTemp(datastore config.DatastoreConfig, contents io.ReadCloser) (strin
 		if err != nil {
 			return "", 0, nil, err
 		}
-		return hash(), sizeBytes, &tempFileCloser{
-			fname:    f.Name(),
-			fpath:    fpath,
-			upstream: f,
-			closed:   false,
-		}, nil
+		return hash(), sizeBytes, readers.NewTempFileCloser(fpath, f.Name(), f), nil
 	} else if b, ok := target.(*bytes.Buffer); ok {
 		return hash(), sizeBytes, io.NopCloser(b), nil
 	} else {
 		return "", 0, nil, errors.New("developer error - did not account for possible stream writer type")
 	}
-}
-
-type tempFileCloser struct {
-	io.ReadCloser
-	fname    string
-	fpath    string
-	upstream io.ReadCloser
-	closed   bool
-}
-
-func (c *tempFileCloser) Close() error {
-	if c.closed {
-		return nil
-	}
-	var upstreamErr error
-	if upstreamErr = c.upstream.Close(); upstreamErr != nil {
-		// don't return the error yet because we want to try to delete the temp file
-	}
-	var err error
-	if err = os.Remove(c.fname); err != nil {
-		return err
-	}
-	if err = os.Remove(c.fpath); err != nil {
-		return err
-	}
-	c.closed = true
-	return upstreamErr
-}
-
-func (c *tempFileCloser) Read(p []byte) (n int, err error) {
-	return c.upstream.Read(p)
 }

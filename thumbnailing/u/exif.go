@@ -1,12 +1,11 @@
-package util_exif
+package u
 
 import (
+	"errors"
 	"fmt"
 	"io"
 
 	"github.com/dsoprea/go-exif/v3"
-	"github.com/pkg/errors"
-	"github.com/turt2live/matrix-media-repo/util/stream_util"
 )
 
 type ExifOrientation struct {
@@ -15,9 +14,7 @@ type ExifOrientation struct {
 	FlipHorizontal bool
 }
 
-func GetExifOrientation(img io.ReadCloser) (*ExifOrientation, error) {
-	defer stream_util.DumpAndCloseStream(img)
-
+func GetExifOrientation(img io.Reader) (*ExifOrientation, error) {
 	rawExif, err := exif.SearchAndExtractExifWithReader(img)
 	if err != nil {
 		return nil, errors.New("exif: error reading possible exif data: " + err.Error())

@@ -1,4 +1,4 @@
-package util_audio
+package u
 
 import (
 	"errors"

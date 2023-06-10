@@ -1,8 +1,9 @@
 package i
 
 import (
-	"bytes"
 	"errors"
+	"io"
+
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/m"
 	"golang.org/x/image/webp"
@@ -19,20 +20,20 @@ func (d webpGenerator) supportsAnimation() bool {
 	return true
 }
 
-func (d webpGenerator) matches(img []byte, contentType string) bool {
+func (d webpGenerator) matches(img io.Reader, contentType string) bool {
 	return contentType == "image/webp"
 }
 
-func (d webpGenerator) GetOriginDimensions(b []byte, contentType string, ctx rcontext.RequestContext) (bool, int, int, error) {
-	i, err := webp.DecodeConfig(bytes.NewBuffer(b))
+func (d webpGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx rcontext.RequestContext) (bool, int, int, error) {
+	i, err := webp.DecodeConfig(b)
 	if err != nil {
 		return false, 0, 0, err
 	}
 	return true, i.Width, i.Height, nil
 }
 
-func (d webpGenerator) GenerateThumbnail(b []byte, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
-	src, err := webp.Decode(bytes.NewBuffer(b))
+func (d webpGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
+	src, err := webp.Decode(b)
 	if err != nil {
 		return nil, errors.New("webp: error decoding thumbnail: " + err.Error())
 	}

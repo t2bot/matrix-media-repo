@@ -1,16 +1,15 @@
 package i
 
 import (
-	"bytes"
 	"errors"
 	"image"
 	"image/draw"
 	"io"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/kettek/apng"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/m"
-	"github.com/turt2live/matrix-media-repo/util"
 )
 
 type apngGenerator struct {
@@ -24,24 +23,24 @@ func (d apngGenerator) supportsAnimation() bool {
 	return true
 }
 
-func (d apngGenerator) matches(img []byte, contentType string) bool {
-	return (contentType == "image/png" && util.IsAnimatedPNG(img)) || contentType == "image/apng"
+func (d apngGenerator) matches(img io.Reader, contentType string) bool {
+	return (contentType == "image/png" && isAnimatedPNG(img)) || contentType == "image/apng"
 }
 
-func (d apngGenerator) GetOriginDimensions(b []byte, contentType string, ctx rcontext.RequestContext) (bool, int, int, error) {
-	i, err := apng.DecodeConfig(bytes.NewBuffer(b))
+func (d apngGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx rcontext.RequestContext) (bool, int, int, error) {
+	i, err := apng.DecodeConfig(b)
 	if err != nil {
 		return false, 0, 0, err
 	}
 	return true, i.Width, i.Height, nil
 }
 
-func (d apngGenerator) GenerateThumbnail(b []byte, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
+func (d apngGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
 	if !animated {
 		return pngGenerator{}.GenerateThumbnail(b, "image/png", width, height, method, false, ctx)
 	}
 
-	p, err := apng.DecodeAll(bytes.NewBuffer(b))
+	p, err := apng.DecodeAll(b)
 	if err != nil {
 		return nil, errors.New("apng: error decoding image: " + err.Error())
 	}
@@ -90,19 +89,64 @@ func (d apngGenerator) GenerateThumbnail(b []byte, contentType string, width int
 		}
 	}
 
-	buf := &bytes.Buffer{}
-	err = apng.Encode(buf, p)
-	if err != nil {
-		return nil, errors.New("apng: error encoding final thumbnail: " + err.Error())
-	}
+	pr, pw := io.Pipe()
+	go func(pw *io.PipeWriter, p apng.APNG) {
+		err = apng.Encode(pw, p)
+		if err != nil {
+			_ = pw.CloseWithError(errors.New("apng: error encoding final thumbnail: " + err.Error()))
+		} else {
+			_ = pw.Close()
+		}
+	}(pw, p)
 
 	return &m.Thumbnail{
 		ContentType: "image/png",
 		Animated:    true,
-		Reader:      io.NopCloser(buf),
+		Reader:      pr,
 	}, nil
 }
 
 func init() {
 	generators = append(generators, apngGenerator{})
+}
+
+func isAnimatedPNG(r io.Reader) bool {
+	maxBytes := 4096 // if we don't have an acTL chunk after 4kb, give up
+	IDAT := []byte{0x49, 0x44, 0x41, 0x54}
+	acTL := []byte{0x61, 0x63, 0x54, 0x4C}
+
+	b := make([]byte, maxBytes)
+	c, err := r.Read(b)
+	if err != nil {
+		// we don't log the error, but we do want to report it if sentry is hooked up
+		sentry.CaptureException(err)
+		return false // assume read errors are a problem
+	}
+
+	idatIdx := 0
+	actlIdx := 0
+	for i, bt := range b {
+		if i > c {
+			break
+		}
+		if bt == IDAT[idatIdx] {
+			idatIdx++
+			actlIdx = 0
+		} else if bt == acTL[actlIdx] {
+			actlIdx++
+			idatIdx = 0
+		} else {
+			idatIdx = 0
+			actlIdx = 0
+		}
+
+		if idatIdx == len(IDAT) {
+			return false
+		}
+		if actlIdx == len(acTL) {
+			return true
+		}
+	}
+
+	return false
 }

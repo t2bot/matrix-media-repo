@@ -1,38 +1,43 @@
 package i
 
 import (
+	"io"
+
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/m"
+	"github.com/turt2live/matrix-media-repo/util/readers"
 )
 
 type Generator interface {
 	supportedContentTypes() []string
 	supportsAnimation() bool
-	matches(img []byte, contentType string) bool
-	GenerateThumbnail(b []byte, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error)
-	GetOriginDimensions(b []byte, contentType string, ctx rcontext.RequestContext) (bool, int, int, error)
+	matches(img io.Reader, contentType string) bool
+	GenerateThumbnail(img io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error)
+	GetOriginDimensions(b io.Reader, contentType string, ctx rcontext.RequestContext) (bool, int, int, error)
 }
 
 type AudioGenerator interface {
-	GetAudioData(b []byte, nKeys int, ctx rcontext.RequestContext) (*m.AudioInfo, error)
+	Generator
+	GetAudioData(b io.Reader, nKeys int, ctx rcontext.RequestContext) (*m.AudioInfo, error)
 }
 
 var generators = make([]Generator, 0)
 
-func GetGenerator(img []byte, contentType string, needsAnimation bool) Generator {
+func GetGenerator(img io.Reader, contentType string, needsAnimation bool) (Generator, *readers.PrefixedReader) {
+	br := readers.NewBufferReadsReader(img)
 	for _, g := range generators {
 		if needsAnimation && !g.supportsAnimation() {
 			continue
 		}
-		if g.matches(img, contentType) {
-			return g
+		if g.matches(br, contentType) {
+			return g, br.GetRewoundReader()
 		}
 	}
 	if needsAnimation {
 		// try again, this time without animation
-		return GetGenerator(img, contentType, false)
+		return GetGenerator(br.GetRewoundReader(), contentType, false)
 	}
-	return nil
+	return nil, br.GetRewoundReader()
 }
 
 func GetSupportedContentTypes() []string {
