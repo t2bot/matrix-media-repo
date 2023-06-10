@@ -42,7 +42,7 @@ require (
 	github.com/ryanuber/go-glob v1.0.0
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d
 	github.com/sebest/xff v0.0.0-20210106013422-671bd2870b3a
-	github.com/sirupsen/logrus v1.9.2
+	github.com/sirupsen/logrus v1.9.3
 	golang.org/x/crypto v0.9.0
 	golang.org/x/image v0.5.0
 	golang.org/x/net v0.10.0
@@ -51,7 +51,7 @@ require (
 require (
 	github.com/go-redsync/redsync/v4 v4.8.1
 	github.com/julienschmidt/httprouter v1.3.0
-	github.com/minio/minio-go/v7 v7.0.55
+	github.com/minio/minio-go/v7 v7.0.56
 	github.com/panjf2000/ants/v2 v2.7.4
 	github.com/redis/go-redis/v9 v9.0.4
 	github.com/t2bot/go-singleflight-streams v0.0.3
@@ -79,7 +79,7 @@ require (
 	github.com/jonboulle/clockwork v0.1.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.16.5 // indirect
-	github.com/klauspost/cpuid/v2 v2.2.4 // indirect
+	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.17 // indirect
