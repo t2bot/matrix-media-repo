@@ -25,9 +25,3 @@ func GenerateRandomString(nBytes int) (string, error) {
 	hasher.Write(b)
 	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
-
-func GetSha1OfString(str string) (string, error) {
-	hasher := sha1.New()
-	hasher.Write([]byte(str))
-	return hex.EncodeToString(hasher.Sum(nil)), nil
-}

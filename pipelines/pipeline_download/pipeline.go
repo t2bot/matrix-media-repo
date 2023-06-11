@@ -15,7 +15,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/pipelines/_steps/download"
 	"github.com/turt2live/matrix-media-repo/pipelines/_steps/meta"
 	"github.com/turt2live/matrix-media-repo/pipelines/_steps/quarantine"
-	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/readers"
 )
 
 var sf = new(sfstreams.Group)
@@ -113,5 +113,5 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 		cancel()
 		return record, nil, nil
 	}
-	return record, util.NewCancelCloser(r, cancel), nil
+	return record, readers.NewCancelCloser(r, cancel), nil
 }
