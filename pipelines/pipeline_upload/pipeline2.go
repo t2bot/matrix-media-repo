@@ -8,7 +8,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/database"
 	"github.com/turt2live/matrix-media-repo/datastores"
-	"github.com/turt2live/matrix-media-repo/util"
 )
 
 func ExecutePut(ctx rcontext.RequestContext, origin string, mediaId string, r io.ReadCloser, contentType string, fileName string, userId string) (*database.DbMedia, error) {
@@ -30,7 +29,7 @@ func ExecutePut(ctx rcontext.RequestContext, origin string, mediaId string, r io
 	}
 
 	// Step 3: Is the record expired?
-	if record == nil || record.ExpiresTs < util.NowMillis() {
+	if record == nil || record.IsExpired() {
 		return nil, common.ErrExpired
 	}
 

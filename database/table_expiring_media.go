@@ -15,6 +15,10 @@ type DbExpiringMedia struct {
 	ExpiresTs int64
 }
 
+func (r *DbExpiringMedia) IsExpired() bool {
+	return r.ExpiresTs < util.NowMillis()
+}
+
 const insertExpiringMedia = "INSERT INTO expiring_media (origin, media_id, user_id, expires_ts) VALUES ($1, $2, $3, $4);"
 const selectExpiringMediaByUserCount = "SELECT COUNT(*) FROM expiring_media WHERE user_id = $1 AND expires_ts >= $2;"
 const selectExpiringMediaById = "SELECT origin, media_id, user_id, expires_ts FROM expiring_media WHERE origin = $1 AND media_id = $2;"

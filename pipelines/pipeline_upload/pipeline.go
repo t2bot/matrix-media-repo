@@ -8,6 +8,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/database"
 	"github.com/turt2live/matrix-media-repo/datastores"
+	"github.com/turt2live/matrix-media-repo/notifier"
 	"github.com/turt2live/matrix-media-repo/pipelines/_steps/meta"
 	"github.com/turt2live/matrix-media-repo/pipelines/_steps/quota"
 	"github.com/turt2live/matrix-media-repo/pipelines/_steps/upload"
@@ -16,6 +17,14 @@ import (
 
 // Execute Media upload. If mediaId is an empty string, one will be generated.
 func Execute(ctx rcontext.RequestContext, origin string, mediaId string, r io.ReadCloser, contentType string, fileName string, userId string, kind datastores.Kind) (*database.DbMedia, error) {
+	uploadDone := func(record *database.DbMedia) {
+		meta.FlagAccess(ctx, record.Sha256Hash)
+		if err := notifier.UploadDone(ctx, record); err != nil {
+			ctx.Log.Warn("Non-fatal error notifying about completed upload: ", err)
+			sentry.CaptureException(err)
+		}
+	}
+
 	// Step 1: Limit the stream's length
 	r = upload.LimitStream(ctx, r)
 
@@ -103,6 +112,7 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, r io.Re
 			if err = database.GetInstance().Media.Prepare(ctx).Insert(newRecord); err != nil {
 				return nil, err
 			}
+			uploadDone(newRecord)
 			return newRecord, nil
 		}
 	}
@@ -141,6 +151,6 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, r io.Re
 		}
 		return nil, err
 	}
-	meta.FlagAccess(ctx, newRecord.Sha256Hash)
+	uploadDone(newRecord)
 	return newRecord, nil
 }

@@ -172,6 +172,9 @@ beforeParseDownload:
 		case common.ErrCodeCannotOverwrite:
 			proposedStatusCode = http.StatusConflict
 			break
+		case common.ErrCodeNotYetUploaded:
+			proposedStatusCode = http.StatusGatewayTimeout
+			break
 		default: // Treat as unknown (a generic server error)
 			proposedStatusCode = http.StatusInternalServerError
 			break

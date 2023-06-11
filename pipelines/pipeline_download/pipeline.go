@@ -53,6 +53,8 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 		// Step 3: Do we already have the media? Serve it if yes.
 		mediaDb := database.GetInstance().Media.Prepare(ctx)
 		record, err := mediaDb.GetById(origin, mediaId)
+		didAsyncWait := false
+	handlePossibleRecord:
 		if err != nil {
 			return nil, err
 		}
@@ -68,7 +70,14 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 			return download.OpenStream(ctx, record.Locatable, opts.StartByte, opts.EndByte)
 		}
 
-		// Step 4: Media record unknown - download it (if possible)
+		// Step 4: Wait for the media, if we can
+		if !didAsyncWait {
+			record, err = download.WaitForAsyncMedia(ctx, origin, mediaId)
+			didAsyncWait = true
+			goto handlePossibleRecord
+		}
+
+		// Step 5: Media record unknown - download it (if possible)
 		if !opts.FetchRemoteIfNeeded {
 			return nil, common.ErrMediaNotFound
 		}
@@ -86,7 +95,7 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 			return nil, nil
 		}
 
-		// Step 5: Limit the stream if needed
+		// Step 6: Limit the stream if needed
 		r, err = download.CreateLimitedStream(ctx, r, opts.StartByte, opts.EndByte)
 		if err != nil {
 			return nil, err

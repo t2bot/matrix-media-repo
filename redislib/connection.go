@@ -49,11 +49,17 @@ func makeConnection() {
 }
 
 func Reconnect() {
-	Stop()
+	softStop()
 	makeConnection()
+	resubscribeAll()
 }
 
 func Stop() {
+	softStop()
+	resubscribeAll() // since we don't have a `ring`, it'll close everything
+}
+
+func softStop() {
 	if ring != nil {
 		_ = ring.Close()
 	}

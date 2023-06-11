@@ -129,6 +129,8 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 			} else {
 				return _responses.NotFoundError() // We lie for security
 			}
+		} else if err == common.ErrMediaNotYetUploaded {
+			return _responses.NotYetUploaded()
 		}
 		rctx.Log.Error("Unexpected error locating media: " + err.Error())
 		sentry.CaptureException(err)
