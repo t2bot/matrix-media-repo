@@ -31,6 +31,7 @@ func buildRoutes() http.Handler {
 
 	// Standard (spec) features
 	register([]string{"POST"}, PrefixMedia, "upload", false, router, makeRoute(_routers.RequireAccessToken(r0.UploadMedia), "upload", false, counter))
+	register([]string{"PUT"}, PrefixMedia, "upload/:server/:mediaId", false, router, makeRoute(_routers.RequireAccessToken(r0.UploadMediaAsync), "upload_async", false, counter))
 	downloadRoute := makeRoute(_routers.OptionalAccessToken(r0.DownloadMedia), "download", false, counter)
 	register([]string{"GET"}, PrefixMedia, "download/:server/:mediaId/:filename", false, router, downloadRoute)
 	register([]string{"GET"}, PrefixMedia, "download/:server/:mediaId", false, router, downloadRoute)
