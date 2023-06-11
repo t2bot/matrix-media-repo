@@ -22,7 +22,7 @@ type MediaUploadedResponse struct {
 	Blurhash   string `json:"xyz.amorgan.blurhash,omitempty"`
 }
 
-func UploadMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func UploadMediaSync(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
 	filename := filepath.Base(r.URL.Query().Get("filename"))
 
 	rctx = rctx.LogWithFields(logrus.Fields{
