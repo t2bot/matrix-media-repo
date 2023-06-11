@@ -94,7 +94,7 @@ func GetUserId(ctx rcontext.RequestContext, accessToken string, appserviceUserId
 		if token.err != nil {
 			return "", token.err
 		}
-		ctx.Log.Infof("Access token belongs to %s", token.userId)
+		ctx.Log.Debugf("Access token belongs to %s", token.userId)
 		return token.userId, nil
 	}
 
@@ -109,7 +109,7 @@ func GetUserId(ctx rcontext.RequestContext, accessToken string, appserviceUserId
 		}
 
 		if r.SenderUserId != "" && (r.SenderUserId == appserviceUserId || appserviceUserId == "") {
-			ctx.Log.Infof("Access token belongs to appservice (sender user ID): %s", r.Id)
+			ctx.Log.Debugf("Access token belongs to appservice (sender user ID): %s", r.Id)
 			cacheToken(ctx, accessToken, appserviceUserId, r.SenderUserId, nil)
 			return r.SenderUserId, nil
 		}
@@ -121,7 +121,7 @@ func GetUserId(ctx rcontext.RequestContext, accessToken string, appserviceUserId
 				regexCache[n.Regex] = regex
 			}
 			if regex.MatchString(appserviceUserId) {
-				ctx.Log.Infof("Access token belongs to appservice: %s", r.Id)
+				ctx.Log.Debugf("Access token belongs to appservice: %s", r.Id)
 				cacheToken(ctx, accessToken, appserviceUserId, appserviceUserId, nil)
 				return appserviceUserId, nil
 			}
@@ -144,10 +144,10 @@ func cacheToken(ctx rcontext.RequestContext, accessToken string, appserviceUserI
 }
 
 func checkTokenWithHomeserver(ctx rcontext.RequestContext, accessToken string, appserviceUserId string, withCache bool) (string, error) {
-	ctx.Log.Info("Checking access token with homeserver")
+	ctx.Log.Debug("Checking access token with homeserver")
 	hsUserId, err := matrix.GetUserIdFromToken(ctx, ctx.Request.Host, accessToken, appserviceUserId, ctx.Request.RemoteAddr)
 	if withCache {
-		ctx.Log.Info("Caching access token response from homeserver")
+		ctx.Log.Debug("Caching access token response from homeserver")
 		cacheToken(ctx, accessToken, appserviceUserId, hsUserId, err)
 	}
 	return hsUserId, err
