@@ -33,7 +33,7 @@ func GenerateThumbnail(imgStream io.ReadCloser, contentType string, width int, h
 	if generator == nil {
 		return nil, ErrUnsupported
 	}
-	ctx.Log.Info("Using generator: ", reflect.TypeOf(generator).Name())
+	ctx.Log.Debug("Using generator: ", reflect.TypeOf(generator).Name())
 
 	// Validate maximum megapixel values to avoid memory issues
 	// https://github.com/turt2live/matrix-media-repo/security/advisories/GHSA-j889-h476-hh9h
