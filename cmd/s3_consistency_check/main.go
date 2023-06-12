@@ -30,7 +30,6 @@ func main() {
 	}
 
 	config.Path = *configPath
-	runtime.CheckIdGenerator()
 	assets.SetupMigrations(*migrationsPath)
 	assets.SetupTemplates(*templatesPath)
 

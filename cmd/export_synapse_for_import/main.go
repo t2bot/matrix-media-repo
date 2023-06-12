@@ -17,7 +17,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/logging"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/common/runtime"
-	"github.com/turt2live/matrix-media-repo/synapse"
+	"github.com/turt2live/matrix-media-repo/homeserver_interop/synapse"
 	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/stream_util"
 	"golang.org/x/crypto/ssh/terminal"

@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"github.com/getsentry/sentry-go"
+	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/database"
 	"github.com/turt2live/matrix-media-repo/datastores"
@@ -67,7 +68,7 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, r io.Re
 	}
 
 	// Step 7: Ensure user can upload within quota
-	if userId != "" {
+	if userId != "" && !config.Runtime.IsImportProcess {
 		err = quota.CanUpload(ctx, userId, sizeBytes)
 		if err != nil {
 			return nil, err

@@ -14,9 +14,10 @@ import (
 )
 
 type runtimeConfig struct {
-	MigrationsPath string
-	TemplatesPath  string
-	AssetsPath     string
+	MigrationsPath  string
+	TemplatesPath   string
+	AssetsPath      string
+	IsImportProcess bool
 }
 
 const DefaultMigrationsPath = "./migrations"
