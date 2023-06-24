@@ -61,8 +61,8 @@ func Generate(ctx rcontext.RequestContext, mediaRecord *database.DbMedia, width 
 
 	// Create a DbThumbnail
 	newRecord := &database.DbThumbnail{
-		Origin:      thumbMediaRecord.Origin,
-		MediaId:     thumbMediaRecord.MediaId,
+		Origin:      mediaRecord.Origin,
+		MediaId:     mediaRecord.MediaId,
 		ContentType: thumbMediaRecord.ContentType,
 		Width:       width,
 		Height:      height,
