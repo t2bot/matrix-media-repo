@@ -1,14 +1,12 @@
 package r0
 
 import (
-	"bytes"
 	"crypto/md5"
 	"image/color"
 	"io"
 	"net/http"
 	"strconv"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/turt2live/matrix-media-repo/api/_apimeta"
 	"github.com/turt2live/matrix-media-repo/api/_responses"
 	"github.com/turt2live/matrix-media-repo/api/_routers"
@@ -46,6 +44,18 @@ func Identicon(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 		}
 	}
 
+	clamp := func(v int) int {
+		if v > 512 {
+			return 512
+		}
+		if v < 96 {
+			return 96
+		}
+		return v
+	}
+	width = clamp(width)
+	height = clamp(height)
+
 	rctx = rctx.LogWithFields(logrus.Fields{
 		"identiconWidth":  width,
 		"identiconHeight": height,
@@ -78,19 +88,21 @@ func Identicon(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 		img = imaging.Resize(img, width, height, imaging.Lanczos)
 	}
 
-	imgData := &bytes.Buffer{}
-	err = imaging.Encode(imgData, img, imaging.PNG)
-	if err != nil {
-		rctx.Log.Error("Error generating image:" + err.Error())
-		sentry.CaptureException(err)
-		return _responses.InternalServerError("error generating identicon")
-	}
+	pr, pw := io.Pipe()
+	go func() {
+		err = imaging.Encode(pw, img, imaging.PNG)
+		if err != nil {
+			_ = pw.CloseWithError(err)
+		} else {
+			_ = pw.Close()
+		}
+	}()
 
 	return &_responses.DownloadResponse{
 		ContentType:       "image/png",
 		Filename:          string(hashed) + ".png",
 		SizeBytes:         0,
-		Data:              io.NopCloser(imgData),
+		Data:              pr,
 		TargetDisposition: "inline",
 	}
 }
