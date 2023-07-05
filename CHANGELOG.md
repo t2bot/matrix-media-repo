@@ -98,6 +98,10 @@ path/server, for example, then you can simply update the path in the config for 
 * Updated to Go 1.19
 * Logs are now less noisy by default.
 
+### Fixed
+
+* URL previews now follow redirects properly.
+
 ## [1.2.13] - February 12, 2023
 
 ### Deprecations
