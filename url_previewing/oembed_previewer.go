@@ -1,4 +1,4 @@
-package url_previewers
+package url_previewing
 
 import (
 	"bytes"
@@ -41,10 +41,10 @@ func getOembed() *oembed.Oembed {
 	return oembedInstance
 }
 
-func GenerateOEmbedPreview(urlPayload *UrlPayload, languageHeader string, ctx rcontext.RequestContext) (PreviewResult, error) {
+func GenerateOEmbedPreview(urlPayload *UrlPayload, languageHeader string, ctx rcontext.RequestContext) (Result, error) {
 	item := getOembed().FindItem(urlPayload.ParsedUrl.String())
 	if item == nil {
-		return PreviewResult{}, ErrPreviewUnsupported
+		return Result{}, ErrPreviewUnsupported
 	}
 
 	info, err := item.FetchOembed(oembed.Options{
@@ -53,7 +53,7 @@ func GenerateOEmbedPreview(urlPayload *UrlPayload, languageHeader string, ctx rc
 	})
 	if err != nil {
 		ctx.Log.Error("Error getting oEmbed: ", err)
-		return PreviewResult{}, err
+		return Result{}, err
 	}
 
 	if info.Type == "rich" {
@@ -62,7 +62,7 @@ func GenerateOEmbedPreview(urlPayload *UrlPayload, languageHeader string, ctx rc
 		info.ThumbnailURL = info.URL
 	}
 
-	graph := &PreviewResult{
+	graph := &Result{
 		Type:        info.Type,
 		Url:         info.URL,
 		Title:       info.Title,

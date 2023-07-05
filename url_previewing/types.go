@@ -1,4 +1,4 @@
-package url_previewers
+package url_previewing
 
 import (
 	"errors"
@@ -6,21 +6,19 @@ import (
 	"net/url"
 )
 
-type PreviewResult struct {
+type Result struct {
 	Url         string
 	SiteName    string
 	Type        string
 	Description string
 	Title       string
-	Image       *PreviewImage
+	Image       *Image
 }
 
-type PreviewImage struct {
-	ContentType         string
-	Data                io.ReadCloser
-	Filename            string
-	ContentLength       int64
-	ContentLengthHeader string
+type Image struct {
+	ContentType string
+	Data        io.ReadCloser
+	Filename    string
 }
 
 type UrlPayload struct {

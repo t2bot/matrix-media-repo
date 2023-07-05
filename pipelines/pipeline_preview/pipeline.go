@@ -10,7 +10,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/database"
 	"github.com/turt2live/matrix-media-repo/pipelines/_steps/url_preview"
-	url_previewers2 "github.com/turt2live/matrix-media-repo/url_previewers"
+	url_previewers2 "github.com/turt2live/matrix-media-repo/url_previewing"
 	"github.com/turt2live/matrix-media-repo/util"
 	"golang.org/x/sync/singleflight"
 )
@@ -56,7 +56,7 @@ func Execute(ctx rcontext.RequestContext, onHost string, previewUrl string, user
 			UrlString: previewUrl,
 			ParsedUrl: parsedUrl,
 		}
-		var preview url_previewers2.PreviewResult
+		var preview url_previewers2.Result
 		err = url_previewers2.ErrPreviewUnsupported
 
 		// Step 5: Try oEmbed

@@ -1,4 +1,4 @@
-package url_previewers
+package url_previewing
 
 import (
 	"net/url"
@@ -18,25 +18,25 @@ import (
 
 var ogSupportedTypes = []string{"text/*"}
 
-func GenerateOpenGraphPreview(urlPayload *UrlPayload, languageHeader string, ctx rcontext.RequestContext) (PreviewResult, error) {
+func GenerateOpenGraphPreview(urlPayload *UrlPayload, languageHeader string, ctx rcontext.RequestContext) (Result, error) {
 	html, err := downloadHtmlContent(urlPayload, ogSupportedTypes, languageHeader, ctx)
 	if err != nil {
 		ctx.Log.Error("Error downloading content: ", err)
 
 		// Make sure the unsupported error gets passed through
 		if err == ErrPreviewUnsupported {
-			return PreviewResult{}, ErrPreviewUnsupported
+			return Result{}, ErrPreviewUnsupported
 		}
 
 		// We'll consider it not found for the sake of processing
-		return PreviewResult{}, common.ErrMediaNotFound
+		return Result{}, common.ErrMediaNotFound
 	}
 
 	og := opengraph.NewOpenGraph()
 	err = og.ProcessHTML(strings.NewReader(html))
 	if err != nil {
 		ctx.Log.Error("Error getting OpenGraph: ", err)
-		return PreviewResult{}, err
+		return Result{}, err
 	}
 
 	if og.Title == "" {
@@ -53,7 +53,7 @@ func GenerateOpenGraphPreview(urlPayload *UrlPayload, languageHeader string, ctx
 	og.Title = summarize(og.Title, ctx.Config.UrlPreviews.NumTitleWords, ctx.Config.UrlPreviews.MaxTitleLength)
 	og.Description = summarize(og.Description, ctx.Config.UrlPreviews.NumWords, ctx.Config.UrlPreviews.MaxLength)
 
-	graph := &PreviewResult{
+	graph := &Result{
 		Type:        og.Type,
 		Url:         og.URL,
 		Title:       og.Title,

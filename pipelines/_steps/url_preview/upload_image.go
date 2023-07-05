@@ -9,15 +9,16 @@ import (
 	"github.com/turt2live/matrix-media-repo/datastores"
 	"github.com/turt2live/matrix-media-repo/pipelines/pipeline_upload"
 	"github.com/turt2live/matrix-media-repo/thumbnailing"
-	"github.com/turt2live/matrix-media-repo/url_previewers"
+	"github.com/turt2live/matrix-media-repo/url_previewing"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
-func UploadImage(ctx rcontext.RequestContext, image *url_previewers.PreviewImage, onHost string, userId string, forRecord *database.DbUrlPreview) {
-	if image == nil {
+func UploadImage(ctx rcontext.RequestContext, image *url_previewing.Image, onHost string, userId string, forRecord *database.DbUrlPreview) {
+	if image == nil || image.Data == nil {
 		return
 	}
 
+	defer image.Data.Close()
 	pr, pw := io.Pipe()
 	tee := io.TeeReader(image.Data, pw)
 	mediaChan := make(chan *database.DbMedia)

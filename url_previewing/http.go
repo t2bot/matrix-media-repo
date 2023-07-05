@@ -1,4 +1,4 @@
-package url_previewers
+package url_previewing
 
 import (
 	"context"
@@ -15,7 +15,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/stream_util"
+	"github.com/turt2live/matrix-media-repo/util/readers"
 )
 
 func doHttpGet(urlPayload *UrlPayload, languageHeader string, ctx rcontext.RequestContext) (*http.Response, error) {
@@ -120,38 +120,33 @@ func doHttpGet(urlPayload *UrlPayload, languageHeader string, ctx rcontext.Reque
 	return client.Do(req)
 }
 
-func downloadRawContent(urlPayload *UrlPayload, supportedTypes []string, languageHeader string, ctx rcontext.RequestContext) ([]byte, string, string, string, error) {
+func downloadRawContent(urlPayload *UrlPayload, supportedTypes []string, languageHeader string, ctx rcontext.RequestContext) (io.ReadCloser, string, string, error) {
 	ctx.Log.Info("Fetching remote content...")
 	resp, err := doHttpGet(urlPayload, languageHeader, ctx)
 	if err != nil {
-		return nil, "", "", "", err
+		return nil, "", "", err
 	}
 	if resp.StatusCode != http.StatusOK {
 		ctx.Log.Warn("Received status code " + strconv.Itoa(resp.StatusCode))
-		return nil, "", "", "", errors.New("error during transfer")
+		return nil, "", "", errors.New("error during transfer")
 	}
 
 	if ctx.Config.UrlPreviews.MaxPageSizeBytes > 0 && resp.ContentLength >= 0 && resp.ContentLength > ctx.Config.UrlPreviews.MaxPageSizeBytes {
-		return nil, "", "", "", common.ErrMediaTooLarge
+		return nil, "", "", common.ErrMediaTooLarge
 	}
 
-	var reader io.Reader
-	reader = resp.Body
+	var reader io.ReadCloser
 	if ctx.Config.UrlPreviews.MaxPageSizeBytes > 0 {
-		reader = io.LimitReader(resp.Body, ctx.Config.UrlPreviews.MaxPageSizeBytes)
+		lr := io.LimitReader(resp.Body, ctx.Config.UrlPreviews.MaxPageSizeBytes)
+		reader = readers.NewCancelCloser(io.NopCloser(lr), func() {
+			resp.Body.Close()
+		})
 	}
-
-	bytes, err := io.ReadAll(reader)
-	if err != nil {
-		return nil, "", "", "", err
-	}
-
-	defer stream_util.DumpAndCloseStream(resp.Body)
 
 	contentType := resp.Header.Get("Content-Type")
 	for _, supportedType := range supportedTypes {
 		if !glob.Glob(supportedType, contentType) {
-			return nil, "", "", "", ErrPreviewUnsupported
+			return nil, "", "", ErrPreviewUnsupported
 		}
 	}
 
@@ -162,19 +157,24 @@ func downloadRawContent(urlPayload *UrlPayload, supportedTypes []string, languag
 		filename = params["filename"]
 	}
 
-	return bytes, filename, contentType, resp.Header.Get("Content-Length"), nil
+	return reader, filename, contentType, nil
 }
 
 func downloadHtmlContent(urlPayload *UrlPayload, supportedTypes []string, languageHeader string, ctx rcontext.RequestContext) (string, error) {
-	raw, _, contentType, _, err := downloadRawContent(urlPayload, supportedTypes, languageHeader, ctx)
+	r, _, contentType, err := downloadRawContent(urlPayload, supportedTypes, languageHeader, ctx)
+	if err != nil {
+		return "", err
+	}
 	html := ""
+	defer r.Close()
+	raw, _ := io.ReadAll(r)
 	if raw != nil {
 		html = util.ToUtf8(string(raw), contentType)
 	}
-	return html, err
+	return html, nil
 }
 
-func downloadImage(urlPayload *UrlPayload, languageHeader string, ctx rcontext.RequestContext) (*PreviewImage, error) {
+func downloadImage(urlPayload *UrlPayload, languageHeader string, ctx rcontext.RequestContext) (*Image, error) {
 	ctx.Log.Info("Getting image from " + urlPayload.ParsedUrl.String())
 	resp, err := doHttpGet(urlPayload, languageHeader, ctx)
 	if err != nil {
@@ -185,11 +185,10 @@ func downloadImage(urlPayload *UrlPayload, languageHeader string, ctx rcontext.R
 		return nil, errors.New("error during transfer")
 	}
 
-	image := &PreviewImage{
-		ContentType:         resp.Header.Get("Content-Type"),
-		Data:                resp.Body,
-		ContentLength:       resp.ContentLength,
-		ContentLengthHeader: resp.Header.Get("Content-Length"),
+	image := &Image{
+		ContentType:   resp.Header.Get("Content-Type"),
+		Data:          resp.Body,
+		ContentLength: resp.ContentLength,
 	}
 
 	_, params, err := mime.ParseMediaType(resp.Header.Get("Content-Disposition"))

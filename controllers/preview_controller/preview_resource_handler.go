@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/getsentry/sentry-go"
-	url_previewers2 "github.com/turt2live/matrix-media-repo/url_previewers"
+	url_previewers2 "github.com/turt2live/matrix-media-repo/url_previewing"
 	"github.com/turt2live/matrix-media-repo/util/stream_util"
 
 	"github.com/disintegration/imaging"
@@ -80,7 +80,7 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) (resp *urlPreviewRe
 
 	db := storage.GetDatabase().GetUrlStore(ctx)
 
-	var preview url_previewers2.PreviewResult
+	var preview url_previewers2.Result
 	err := url_previewers2.ErrPreviewUnsupported
 
 	// Try oEmbed first
