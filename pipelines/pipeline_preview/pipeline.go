@@ -32,7 +32,7 @@ func Execute(ctx rcontext.RequestContext, onHost string, previewUrl string, user
 	// Step 2: Fix timestamp bucket. If we're within 60 seconds of a bucket, just assume we're okay, so we don't
 	// infinitely recurse into ourselves.
 	now := util.NowMillis()
-	atBucket := util.GetHourBucket(opts.Timestamp)
+	atBucket := util.GetHourBucket(opts.Timestamp) // we should only be using this for the remainder of the function
 	nowBucket := util.GetHourBucket(now)
 	if (now-opts.Timestamp) > 60000 && atBucket != nowBucket {
 		return Execute(ctx, onHost, previewUrl, userId, PreviewOpts{
