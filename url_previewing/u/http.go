@@ -38,41 +38,7 @@ func doHttpGet(urlPayload *m.UrlPayload, languageHeader string, ctx rcontext.Req
 			return nil, err
 		}
 
-		// Try and determine which port we're expecting a request to come in on. Because the
-		// http library follows redirects, we should also keep track of the alternate port
-		// so that redirects don't fail previews. We only support the alternate port if the
-		// default port for the scheme is used, however.
-
-		altPort := ""
-		if safePort == "" {
-			if urlPayload.ParsedUrl.Scheme == "http" {
-				safePort = "80"
-				altPort = "443"
-			} else if urlPayload.ParsedUrl.Scheme == "https" {
-				safePort = "443"
-				altPort = "80"
-			} else {
-				return nil, errors.New("unexpected scheme: cannot determine port")
-			}
-		}
-
-		safeIpStr := safeIp.String()
-
-		expectedAddr := net.JoinHostPort(urlPayload.ParsedUrl.Host, safePort)
-		altAddr := net.JoinHostPort(urlPayload.ParsedUrl.Host, altPort)
-
-		returnAddr := ""
-		if addr == expectedAddr {
-			returnAddr = net.JoinHostPort(safeIpStr, safePort)
-		} else if addr == altAddr && altPort != "" {
-			returnAddr = net.JoinHostPort(safeIpStr, altPort)
-		}
-
-		if returnAddr != "" {
-			return dialer.DialContext(ctx, network, returnAddr)
-		}
-
-		return nil, errors.New("unexpected host: not safe to complete request")
+		return dialer.DialContext(ctx2, network, net.JoinHostPort(safeIp.String(), safePort))
 	}
 
 	if ctx.Config.UrlPreviews.UnsafeCertificates {
