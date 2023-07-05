@@ -1,4 +1,4 @@
-package previewers
+package url_previewers
 
 import (
 	"bytes"
@@ -14,7 +14,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/preview_types"
 	"github.com/turt2live/matrix-media-repo/metrics"
 )
 
@@ -42,10 +41,10 @@ func getOembed() *oembed.Oembed {
 	return oembedInstance
 }
 
-func GenerateOEmbedPreview(urlPayload *preview_types.UrlPayload, languageHeader string, ctx rcontext.RequestContext) (preview_types.PreviewResult, error) {
+func GenerateOEmbedPreview(urlPayload *UrlPayload, languageHeader string, ctx rcontext.RequestContext) (PreviewResult, error) {
 	item := getOembed().FindItem(urlPayload.ParsedUrl.String())
 	if item == nil {
-		return preview_types.PreviewResult{}, preview_types.ErrPreviewUnsupported
+		return PreviewResult{}, ErrPreviewUnsupported
 	}
 
 	info, err := item.FetchOembed(oembed.Options{
@@ -54,7 +53,7 @@ func GenerateOEmbedPreview(urlPayload *preview_types.UrlPayload, languageHeader 
 	})
 	if err != nil {
 		ctx.Log.Error("Error getting oEmbed: " + err.Error())
-		return preview_types.PreviewResult{}, err
+		return PreviewResult{}, err
 	}
 
 	if info.Type == "rich" {
@@ -63,7 +62,7 @@ func GenerateOEmbedPreview(urlPayload *preview_types.UrlPayload, languageHeader 
 		info.ThumbnailURL = info.URL
 	}
 
-	graph := &preview_types.PreviewResult{
+	graph := &PreviewResult{
 		Type:        info.Type,
 		Url:         info.URL,
 		Title:       info.Title,
@@ -80,7 +79,7 @@ func GenerateOEmbedPreview(urlPayload *preview_types.UrlPayload, languageHeader 
 		}
 
 		imgAbsUrl := urlPayload.ParsedUrl.ResolveReference(imgUrl)
-		imgUrlPayload := &preview_types.UrlPayload{
+		imgUrlPayload := &UrlPayload{
 			UrlString: imgAbsUrl.String(),
 			ParsedUrl: imgAbsUrl,
 		}

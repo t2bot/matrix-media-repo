@@ -8,10 +8,9 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/preview_types"
-	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/previewers"
 	"github.com/turt2live/matrix-media-repo/database"
 	"github.com/turt2live/matrix-media-repo/pipelines/_steps/url_preview"
+	url_previewers2 "github.com/turt2live/matrix-media-repo/url_previewers"
 	"github.com/turt2live/matrix-media-repo/util"
 	"golang.org/x/sync/singleflight"
 )
@@ -53,34 +52,34 @@ func Execute(ctx rcontext.RequestContext, onHost string, previewUrl string, user
 
 	// Step 4: Join the singleflight queue
 	r, err, _ := sf.Do(fmt.Sprintf("%s:%s_%d/%s", onHost, previewUrl, opts.Timestamp, opts.LanguageHeader), func() (interface{}, error) {
-		payload := &preview_types.UrlPayload{
+		payload := &url_previewers2.UrlPayload{
 			UrlString: previewUrl,
 			ParsedUrl: parsedUrl,
 		}
-		var preview preview_types.PreviewResult
-		err = preview_types.ErrPreviewUnsupported
+		var preview url_previewers2.PreviewResult
+		err = url_previewers2.ErrPreviewUnsupported
 
 		// Step 5: Try oEmbed
 		if ctx.Config.UrlPreviews.OEmbed {
 			ctx.Log.Debug("Trying oEmbed previewer")
-			preview, err = previewers.GenerateOEmbedPreview(payload, opts.LanguageHeader, ctx)
+			preview, err = url_previewers2.GenerateOEmbedPreview(payload, opts.LanguageHeader, ctx)
 		}
 
 		// Step 6: Try OpenGraph
-		if err == preview_types.ErrPreviewUnsupported {
+		if err == url_previewers2.ErrPreviewUnsupported {
 			ctx.Log.Debug("Trying OpenGraph previewer")
-			preview, err = previewers.GenerateOpenGraphPreview(payload, opts.LanguageHeader, ctx)
+			preview, err = url_previewers2.GenerateOpenGraphPreview(payload, opts.LanguageHeader, ctx)
 		}
 
 		// Step 7: Try scraping
-		if err == preview_types.ErrPreviewUnsupported {
+		if err == url_previewers2.ErrPreviewUnsupported {
 			ctx.Log.Debug("Trying built-in previewer")
-			preview, err = previewers.GenerateCalculatedPreview(payload, opts.LanguageHeader, ctx)
+			preview, err = url_previewers2.GenerateCalculatedPreview(payload, opts.LanguageHeader, ctx)
 		}
 
 		// Step 8: Finish processing
 		if err != nil {
-			if err == preview_types.ErrPreviewUnsupported {
+			if err == url_previewers2.ErrPreviewUnsupported {
 				err = common.ErrMediaNotFound
 			}
 

@@ -5,15 +5,15 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/preview_types"
 	"github.com/turt2live/matrix-media-repo/database"
 	"github.com/turt2live/matrix-media-repo/datastores"
 	"github.com/turt2live/matrix-media-repo/pipelines/pipeline_upload"
 	"github.com/turt2live/matrix-media-repo/thumbnailing"
+	"github.com/turt2live/matrix-media-repo/url_previewers"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
-func UploadImage(ctx rcontext.RequestContext, image *preview_types.PreviewImage, onHost string, userId string, forRecord *database.DbUrlPreview) {
+func UploadImage(ctx rcontext.RequestContext, image *url_previewers.PreviewImage, onHost string, userId string, forRecord *database.DbUrlPreview) {
 	if image == nil {
 		return
 	}

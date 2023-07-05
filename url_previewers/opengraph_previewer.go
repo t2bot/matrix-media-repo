@@ -1,4 +1,4 @@
-package previewers
+package url_previewers
 
 import (
 	"net/url"
@@ -13,31 +13,30 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/preview_types"
 	"github.com/turt2live/matrix-media-repo/metrics"
 )
 
 var ogSupportedTypes = []string{"text/*"}
 
-func GenerateOpenGraphPreview(urlPayload *preview_types.UrlPayload, languageHeader string, ctx rcontext.RequestContext) (preview_types.PreviewResult, error) {
+func GenerateOpenGraphPreview(urlPayload *UrlPayload, languageHeader string, ctx rcontext.RequestContext) (PreviewResult, error) {
 	html, err := downloadHtmlContent(urlPayload, ogSupportedTypes, languageHeader, ctx)
 	if err != nil {
 		ctx.Log.Error("Error downloading content: " + err.Error())
 
 		// Make sure the unsupported error gets passed through
-		if err == preview_types.ErrPreviewUnsupported {
-			return preview_types.PreviewResult{}, preview_types.ErrPreviewUnsupported
+		if err == ErrPreviewUnsupported {
+			return PreviewResult{}, ErrPreviewUnsupported
 		}
 
 		// We'll consider it not found for the sake of processing
-		return preview_types.PreviewResult{}, common.ErrMediaNotFound
+		return PreviewResult{}, common.ErrMediaNotFound
 	}
 
 	og := opengraph.NewOpenGraph()
 	err = og.ProcessHTML(strings.NewReader(html))
 	if err != nil {
 		ctx.Log.Error("Error getting OpenGraph: " + err.Error())
-		return preview_types.PreviewResult{}, err
+		return PreviewResult{}, err
 	}
 
 	if og.Title == "" {
@@ -54,7 +53,7 @@ func GenerateOpenGraphPreview(urlPayload *preview_types.UrlPayload, languageHead
 	og.Title = summarize(og.Title, ctx.Config.UrlPreviews.NumTitleWords, ctx.Config.UrlPreviews.MaxTitleLength)
 	og.Description = summarize(og.Description, ctx.Config.UrlPreviews.NumWords, ctx.Config.UrlPreviews.MaxLength)
 
-	graph := &preview_types.PreviewResult{
+	graph := &PreviewResult{
 		Type:        og.Type,
 		Url:         og.URL,
 		Title:       og.Title,
@@ -71,7 +70,7 @@ func GenerateOpenGraphPreview(urlPayload *preview_types.UrlPayload, languageHead
 		}
 
 		imgAbsUrl := urlPayload.ParsedUrl.ResolveReference(imgUrl)
-		imgUrlPayload := &preview_types.UrlPayload{
+		imgUrlPayload := &UrlPayload{
 			UrlString: imgAbsUrl.String(),
 			ParsedUrl: imgAbsUrl,
 		}

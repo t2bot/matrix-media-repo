@@ -10,10 +10,10 @@ import (
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/globals"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/preview_types"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/stores"
 	"github.com/turt2live/matrix-media-repo/types"
+	"github.com/turt2live/matrix-media-repo/url_previewers"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
@@ -55,7 +55,7 @@ func GetPreview(urlStr string, onHost string, forUserId string, atTs int64, lang
 			return nil, common.ErrInvalidHost
 		}
 		parsedUrl.Fragment = "" // Remove fragment because it's not important for servers
-		urlToPreview := &preview_types.UrlPayload{
+		urlToPreview := &url_previewers.UrlPayload{
 			UrlString: urlStr,
 			ParsedUrl: parsedUrl,
 		}

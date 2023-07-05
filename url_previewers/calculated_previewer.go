@@ -1,4 +1,4 @@
-package previewers
+package url_previewers
 
 import (
 	bytes2 "bytes"
@@ -7,27 +7,26 @@ import (
 	"github.com/ryanuber/go-glob"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/preview_types"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/util/stream_util"
 )
 
-func GenerateCalculatedPreview(urlPayload *preview_types.UrlPayload, languageHeader string, ctx rcontext.RequestContext) (preview_types.PreviewResult, error) {
+func GenerateCalculatedPreview(urlPayload *UrlPayload, languageHeader string, ctx rcontext.RequestContext) (PreviewResult, error) {
 	bytes, filename, contentType, contentLength, err := downloadRawContent(urlPayload, ctx.Config.UrlPreviews.FilePreviewTypes, languageHeader, ctx)
 	if err != nil {
 		ctx.Log.Error("Error downloading content: " + err.Error())
 
 		// Make sure the unsupported error gets passed through
-		if err == preview_types.ErrPreviewUnsupported {
-			return preview_types.PreviewResult{}, preview_types.ErrPreviewUnsupported
+		if err == ErrPreviewUnsupported {
+			return PreviewResult{}, ErrPreviewUnsupported
 		}
 
 		// We'll consider it not found for the sake of processing
-		return preview_types.PreviewResult{}, common.ErrMediaNotFound
+		return PreviewResult{}, common.ErrMediaNotFound
 	}
 
 	stream := stream_util.BufferToStream(bytes2.NewBuffer(bytes))
-	img := &preview_types.PreviewImage{
+	img := &PreviewImage{
 		Data:                stream,
 		ContentType:         contentType,
 		Filename:            filename,
@@ -48,7 +47,7 @@ func GenerateCalculatedPreview(urlPayload *preview_types.UrlPayload, languageHea
 		description = ""
 	}
 
-	result := &preview_types.PreviewResult{
+	result := &PreviewResult{
 		Type:        "", // intentionally empty
 		Url:         urlPayload.ParsedUrl.String(),
 		Title:       summarize(filename, ctx.Config.UrlPreviews.NumTitleWords, ctx.Config.UrlPreviews.MaxTitleLength),

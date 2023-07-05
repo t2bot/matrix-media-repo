@@ -1,4 +1,4 @@
-package previewers
+package url_previewers
 
 import (
 	"regexp"

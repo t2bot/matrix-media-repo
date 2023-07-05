@@ -1,4 +1,4 @@
-package previewers
+package url_previewers
 
 import (
 	"context"
@@ -14,13 +14,11 @@ import (
 	"github.com/ryanuber/go-glob"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/acl"
-	"github.com/turt2live/matrix-media-repo/controllers/preview_controller/preview_types"
 	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/stream_util"
 )
 
-func doHttpGet(urlPayload *preview_types.UrlPayload, languageHeader string, ctx rcontext.RequestContext) (*http.Response, error) {
+func doHttpGet(urlPayload *UrlPayload, languageHeader string, ctx rcontext.RequestContext) (*http.Response, error) {
 	var client *http.Client
 
 	dialer := &net.Dialer{
@@ -34,7 +32,7 @@ func doHttpGet(urlPayload *preview_types.UrlPayload, languageHeader string, ctx 
 			return nil, errors.New("invalid network: expected tcp")
 		}
 
-		safeIp, safePort, err := acl.GetSafeAddress(addr, ctx)
+		safeIp, safePort, err := getSafeAddress(addr, ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -122,7 +120,7 @@ func doHttpGet(urlPayload *preview_types.UrlPayload, languageHeader string, ctx 
 	return client.Do(req)
 }
 
-func downloadRawContent(urlPayload *preview_types.UrlPayload, supportedTypes []string, languageHeader string, ctx rcontext.RequestContext) ([]byte, string, string, string, error) {
+func downloadRawContent(urlPayload *UrlPayload, supportedTypes []string, languageHeader string, ctx rcontext.RequestContext) ([]byte, string, string, string, error) {
 	ctx.Log.Info("Fetching remote content...")
 	resp, err := doHttpGet(urlPayload, languageHeader, ctx)
 	if err != nil {
@@ -153,7 +151,7 @@ func downloadRawContent(urlPayload *preview_types.UrlPayload, supportedTypes []s
 	contentType := resp.Header.Get("Content-Type")
 	for _, supportedType := range supportedTypes {
 		if !glob.Glob(supportedType, contentType) {
-			return nil, "", "", "", preview_types.ErrPreviewUnsupported
+			return nil, "", "", "", ErrPreviewUnsupported
 		}
 	}
 
@@ -167,7 +165,7 @@ func downloadRawContent(urlPayload *preview_types.UrlPayload, supportedTypes []s
 	return bytes, filename, contentType, resp.Header.Get("Content-Length"), nil
 }
 
-func downloadHtmlContent(urlPayload *preview_types.UrlPayload, supportedTypes []string, languageHeader string, ctx rcontext.RequestContext) (string, error) {
+func downloadHtmlContent(urlPayload *UrlPayload, supportedTypes []string, languageHeader string, ctx rcontext.RequestContext) (string, error) {
 	raw, _, contentType, _, err := downloadRawContent(urlPayload, supportedTypes, languageHeader, ctx)
 	html := ""
 	if raw != nil {
@@ -176,7 +174,7 @@ func downloadHtmlContent(urlPayload *preview_types.UrlPayload, supportedTypes []
 	return html, err
 }
 
-func downloadImage(urlPayload *preview_types.UrlPayload, languageHeader string, ctx rcontext.RequestContext) (*preview_types.PreviewImage, error) {
+func downloadImage(urlPayload *UrlPayload, languageHeader string, ctx rcontext.RequestContext) (*PreviewImage, error) {
 	ctx.Log.Info("Getting image from " + urlPayload.ParsedUrl.String())
 	resp, err := doHttpGet(urlPayload, languageHeader, ctx)
 	if err != nil {
@@ -187,7 +185,7 @@ func downloadImage(urlPayload *preview_types.UrlPayload, languageHeader string, 
 		return nil, errors.New("error during transfer")
 	}
 
-	image := &preview_types.PreviewImage{
+	image := &PreviewImage{
 		ContentType:         resp.Header.Get("Content-Type"),
 		Data:                resp.Body,
 		ContentLength:       resp.ContentLength,

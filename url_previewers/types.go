@@ -1,4 +1,4 @@
-package preview_types
+package url_previewers
 
 import (
 	"errors"

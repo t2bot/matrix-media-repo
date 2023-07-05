@@ -1,20 +1,19 @@
-package acl
+package url_previewers
 
 import (
-	"fmt"
-	"github.com/getsentry/sentry-go"
 	"net"
 
-	"github.com/sirupsen/logrus"
+	"github.com/getsentry/sentry-go"
+
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 )
 
-func GetSafeAddress(addr string, ctx rcontext.RequestContext) (net.IP, string, error) {
-	ctx.Log.Info("Checking address: " + addr)
+func getSafeAddress(addr string, ctx rcontext.RequestContext) (net.IP, string, error) {
+	ctx.Log.Debug("Checking address: " + addr)
 	realHost, p, err := net.SplitHostPort(addr)
 	if err != nil {
-		ctx.Log.Warn("Error parsing host and port: ", err.Error())
+		ctx.Log.Debug("Error parsing host and port: ", err)
 		sentry.CaptureException(err)
 		realHost = addr
 	}
@@ -23,7 +22,7 @@ func GetSafeAddress(addr string, ctx rcontext.RequestContext) (net.IP, string, e
 	if realHost != "localhost" {
 		addrs, err := net.LookupIP(realHost)
 		if err != nil {
-			ctx.Log.Warn("Error looking up DNS record for preview - assuming invalid host:", err)
+			ctx.Log.Debug("Error looking up DNS record for preview - assuming invalid host:", err)
 			return nil, "", common.ErrInvalidHost
 		}
 		if len(addrs) == 0 {
@@ -52,28 +51,23 @@ func GetSafeAddress(addr string, ctx rcontext.RequestContext) (net.IP, string, e
 }
 
 func isAllowed(ip net.IP, allowed []string, disallowed []string, ctx rcontext.RequestContext) bool {
-	ctx = ctx.LogWithFields(logrus.Fields{
-		"checkHost":       ip,
-		"allowedHosts":    fmt.Sprintf("%v", allowed),
-		"disallowedHosts": fmt.Sprintf("%v", allowed),
-	})
-	ctx.Log.Info("Validating host")
+	ctx.Log.Debug("Validating host")
 
 	// First check if the IP fits the blacklist. This should be a much shorter list, and therefore
 	// much faster to check.
-	ctx.Log.Info("Checking blacklist for host...")
+	ctx.Log.Debug("Checking blacklist for host...")
 	if inRange(ip, disallowed, ctx) {
-		ctx.Log.Warn("Host found on blacklist - rejecting")
+		ctx.Log.Debug("Host found on blacklist - rejecting")
 		return false
 	}
 
 	// Now check the allowed list just to make sure the IP is actually allowed
 	if inRange(ip, allowed, ctx) {
-		ctx.Log.Info("Host allowed due to whitelist")
+		ctx.Log.Debug("Host allowed due to whitelist")
 		return true
 	}
 
-	ctx.Log.Warn("Host is not on either whitelist or blacklist, considering blacklisted")
+	ctx.Log.Debug("Host is not on either whitelist or blacklist, considering blacklisted")
 	return false
 }
 
@@ -82,7 +76,7 @@ func inRange(ip net.IP, cidrs []string, ctx rcontext.RequestContext) bool {
 		cidr := cidrs[i]
 		_, network, err := net.ParseCIDR(cidr)
 		if err != nil {
-			ctx.Log.Error("Error checking host: " + err.Error())
+			ctx.Log.Debug("Error checking host: ", err)
 			sentry.CaptureException(err)
 			return false
 		}
