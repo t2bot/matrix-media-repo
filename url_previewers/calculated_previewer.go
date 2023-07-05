@@ -14,7 +14,7 @@ import (
 func GenerateCalculatedPreview(urlPayload *UrlPayload, languageHeader string, ctx rcontext.RequestContext) (PreviewResult, error) {
 	bytes, filename, contentType, contentLength, err := downloadRawContent(urlPayload, ctx.Config.UrlPreviews.FilePreviewTypes, languageHeader, ctx)
 	if err != nil {
-		ctx.Log.Error("Error downloading content: " + err.Error())
+		ctx.Log.Error("Error downloading content: ", err)
 
 		// Make sure the unsupported error gets passed through
 		if err == ErrPreviewUnsupported {

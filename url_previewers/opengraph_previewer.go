@@ -21,7 +21,7 @@ var ogSupportedTypes = []string{"text/*"}
 func GenerateOpenGraphPreview(urlPayload *UrlPayload, languageHeader string, ctx rcontext.RequestContext) (PreviewResult, error) {
 	html, err := downloadHtmlContent(urlPayload, ogSupportedTypes, languageHeader, ctx)
 	if err != nil {
-		ctx.Log.Error("Error downloading content: " + err.Error())
+		ctx.Log.Error("Error downloading content: ", err)
 
 		// Make sure the unsupported error gets passed through
 		if err == ErrPreviewUnsupported {
@@ -35,7 +35,7 @@ func GenerateOpenGraphPreview(urlPayload *UrlPayload, languageHeader string, ctx
 	og := opengraph.NewOpenGraph()
 	err = og.ProcessHTML(strings.NewReader(html))
 	if err != nil {
-		ctx.Log.Error("Error getting OpenGraph: " + err.Error())
+		ctx.Log.Error("Error getting OpenGraph: ", err)
 		return PreviewResult{}, err
 	}
 
@@ -64,7 +64,7 @@ func GenerateOpenGraphPreview(urlPayload *UrlPayload, languageHeader string, ctx
 	if og.Images != nil && len(og.Images) > 0 {
 		imgUrl, err := url.Parse(og.Images[0].URL)
 		if err != nil {
-			ctx.Log.Error("Non-fatal error getting thumbnail (parsing image url): " + err.Error())
+			ctx.Log.Error("Non-fatal error getting thumbnail (parsing image url): ", err)
 			sentry.CaptureException(err)
 			return *graph, nil
 		}
@@ -77,7 +77,7 @@ func GenerateOpenGraphPreview(urlPayload *UrlPayload, languageHeader string, ctx
 
 		img, err := downloadImage(imgUrlPayload, languageHeader, ctx)
 		if err != nil {
-			ctx.Log.Error("Non-fatal error getting thumbnail (downloading image): " + err.Error())
+			ctx.Log.Error("Non-fatal error getting thumbnail (downloading image): ", err)
 			sentry.CaptureException(err)
 			return *graph, nil
 		}

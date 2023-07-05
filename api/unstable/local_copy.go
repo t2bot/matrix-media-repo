@@ -59,7 +59,7 @@ func LocalCopy(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 		} else if err == common.ErrMediaQuarantined {
 			return _responses.NotFoundError() // We lie for security
 		}
-		rctx.Log.Error("Unexpected error locating media: " + err.Error())
+		rctx.Log.Error("Unexpected error locating media: ", err)
 		sentry.CaptureException(err)
 		return _responses.InternalServerError("Unexpected Error")
 	}
@@ -72,7 +72,7 @@ func LocalCopy(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 
 	newMedia, err := upload_controller.UploadMedia(streamedMedia.Stream, streamedMedia.KnownMedia.SizeBytes, streamedMedia.KnownMedia.ContentType, streamedMedia.KnownMedia.UploadName, user.UserId, r.Host, rctx)
 	if err != nil {
-		rctx.Log.Error("Unexpected error storing media: " + err.Error())
+		rctx.Log.Error("Unexpected error storing media: ", err)
 		sentry.CaptureException(err)
 		return _responses.InternalServerError("Unexpected Error")
 	}

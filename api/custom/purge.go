@@ -41,7 +41,7 @@ func PurgeRemoteMedia(r *http.Request, rctx rcontext.RequestContext, user _apime
 	// We don't bother clearing the cache because it's still probably useful there
 	removed, err := maintenance_controller.PurgeRemoteMediaBefore(beforeTs, rctx)
 	if err != nil {
-		rctx.Log.Error("Error purging remote media: " + err.Error())
+		rctx.Log.Error("Error purging remote media: ", err)
 		sentry.CaptureException(err)
 		return _responses.InternalServerError("Error purging remote media")
 	}
@@ -78,7 +78,7 @@ func PurgeIndividualRecord(r *http.Request, rctx rcontext.RequestContext, user _
 				return _responses.NotFoundError()
 			}
 			if err != nil {
-				rctx.Log.Error("Error checking ownership of media: " + err.Error())
+				rctx.Log.Error("Error checking ownership of media: ", err)
 				sentry.CaptureException(err)
 				return _responses.InternalServerError("error checking media ownership")
 			}
@@ -93,7 +93,7 @@ func PurgeIndividualRecord(r *http.Request, rctx rcontext.RequestContext, user _
 		return _responses.NotFoundError()
 	}
 	if err != nil {
-		rctx.Log.Error("Error purging media: " + err.Error())
+		rctx.Log.Error("Error purging media: ", err)
 		sentry.CaptureException(err)
 		return _responses.InternalServerError("error purging media")
 	}
@@ -117,7 +117,7 @@ func PurgeQuarantined(r *http.Request, rctx rcontext.RequestContext, user _apime
 	}
 
 	if err != nil {
-		rctx.Log.Error("Error purging media: " + err.Error())
+		rctx.Log.Error("Error purging media: ", err)
 		sentry.CaptureException(err)
 		return _responses.InternalServerError("error purging media")
 	}
@@ -158,7 +158,7 @@ func PurgeOldMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 	affected, err := maintenance_controller.PurgeOldMedia(beforeTs, includeLocal, rctx)
 
 	if err != nil {
-		rctx.Log.Error("Error purging media: " + err.Error())
+		rctx.Log.Error("Error purging media: ", err)
 		sentry.CaptureException(err)
 		return _responses.InternalServerError("error purging media")
 	}
@@ -196,7 +196,7 @@ func PurgeUserMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 
 	_, userDomain, err := util.SplitUserId(userId)
 	if err != nil {
-		rctx.Log.Error("Error parsing user ID (" + userId + "): " + err.Error())
+		rctx.Log.Error("Error parsing user ID ("+userId+"): ", err)
 		sentry.CaptureException(err)
 		return _responses.InternalServerError("error parsing user ID")
 	}
@@ -208,7 +208,7 @@ func PurgeUserMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 	affected, err := maintenance_controller.PurgeUserMedia(userId, beforeTs, rctx)
 
 	if err != nil {
-		rctx.Log.Error("Error purging media: " + err.Error())
+		rctx.Log.Error("Error purging media: ", err)
 		sentry.CaptureException(err)
 		return _responses.InternalServerError("error purging media")
 	}
@@ -246,7 +246,7 @@ func PurgeRoomMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 
 	allMedia, err := matrix.ListMedia(rctx, r.Host, user.AccessToken, roomId, r.RemoteAddr)
 	if err != nil {
-		rctx.Log.Error("Error while listing media in the room: " + err.Error())
+		rctx.Log.Error("Error while listing media in the room: ", err)
 		sentry.CaptureException(err)
 		return _responses.InternalServerError("error retrieving media in room")
 	}
@@ -286,7 +286,7 @@ func PurgeRoomMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 	affected, err := maintenance_controller.PurgeRoomMedia(mxcs, beforeTs, rctx)
 
 	if err != nil {
-		rctx.Log.Error("Error purging media: " + err.Error())
+		rctx.Log.Error("Error purging media: ", err)
 		sentry.CaptureException(err)
 		return _responses.InternalServerError("error purging media")
 	}
@@ -333,7 +333,7 @@ func PurgeDomainMedia(r *http.Request, rctx rcontext.RequestContext, user _apime
 	affected, err := maintenance_controller.PurgeDomainMedia(serverName, beforeTs, rctx)
 
 	if err != nil {
-		rctx.Log.Error("Error purging media: " + err.Error())
+		rctx.Log.Error("Error purging media: ", err)
 		sentry.CaptureException(err)
 		return _responses.InternalServerError("error purging media")
 	}

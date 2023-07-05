@@ -52,7 +52,7 @@ func GenerateOEmbedPreview(urlPayload *UrlPayload, languageHeader string, ctx rc
 		AcceptLanguage: languageHeader,
 	})
 	if err != nil {
-		ctx.Log.Error("Error getting oEmbed: " + err.Error())
+		ctx.Log.Error("Error getting oEmbed: ", err)
 		return PreviewResult{}, err
 	}
 
@@ -73,7 +73,7 @@ func GenerateOEmbedPreview(urlPayload *UrlPayload, languageHeader string, ctx rc
 	if info.ThumbnailURL != "" {
 		imgUrl, err := url.Parse(info.ThumbnailURL)
 		if err != nil {
-			ctx.Log.Error("Non-fatal error getting thumbnail (parsing image url): " + err.Error())
+			ctx.Log.Error("Non-fatal error getting thumbnail (parsing image url): ", err)
 			sentry.CaptureException(err)
 			return *graph, nil
 		}
@@ -86,7 +86,7 @@ func GenerateOEmbedPreview(urlPayload *UrlPayload, languageHeader string, ctx rc
 
 		img, err := downloadImage(imgUrlPayload, languageHeader, ctx)
 		if err != nil {
-			ctx.Log.Error("Non-fatal error getting thumbnail (downloading image): " + err.Error())
+			ctx.Log.Error("Non-fatal error getting thumbnail (downloading image): ", err)
 			sentry.CaptureException(err)
 			return *graph, nil
 		}

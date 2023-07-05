@@ -42,7 +42,7 @@ func PersistFile(basePath string, file io.ReadCloser, ctx rcontext.RequestContex
 		attempts++
 
 		if err != nil {
-			ctx.Log.Error("Error checking if the file exists: " + err.Error())
+			ctx.Log.Error("Error checking if the file exists: ", err)
 		}
 
 		// Infinite loop protection

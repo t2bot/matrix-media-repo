@@ -44,7 +44,7 @@ func PreviewUrl(r *http.Request, rctx rcontext.RequestContext, user _apimeta.Use
 	if tsStr != "" {
 		ts, err = strconv.ParseInt(tsStr, 10, 64)
 		if err != nil {
-			rctx.Log.Error("Error parsing ts: " + err.Error())
+			rctx.Log.Error("Error parsing ts: ", err)
 			return _responses.BadRequest(err.Error())
 		}
 	}

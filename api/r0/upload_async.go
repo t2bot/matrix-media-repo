@@ -68,14 +68,14 @@ func UploadMediaAsync(r *http.Request, rctx rcontext.RequestContext, user _apime
 				InternalCode: common.ErrCodeNotFound,
 			}
 		}
-		rctx.Log.Error("Unexpected error uploading media: " + err.Error())
+		rctx.Log.Error("Unexpected error uploading media: ", err)
 		sentry.CaptureException(err)
 		return _responses.InternalServerError("Unexpected Error")
 	}
 
 	blurhash, err := database.GetInstance().Blurhashes.Prepare(rctx).Get(media.Sha256Hash)
 	if err != nil {
-		rctx.Log.Warn("Unexpected error getting media's blurhash from DB: " + err.Error())
+		rctx.Log.Warn("Unexpected error getting media's blurhash from DB: ", err)
 		sentry.CaptureException(err)
 	}
 

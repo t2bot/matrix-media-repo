@@ -145,7 +145,7 @@ func UploadMedia(contents io.ReadCloser, contentLength int64, contentType string
 	if m != nil {
 		err = internal_cache.Get().UploadMedia(m.Sha256Hash, util_byte_seeker.NewByteSeeker(dataBytes), ctx)
 		if err != nil {
-			ctx.Log.Warn("Unexpected error trying to cache media: " + err.Error())
+			ctx.Log.Warn("Unexpected error trying to cache media: ", err)
 		}
 	}
 	return m, err

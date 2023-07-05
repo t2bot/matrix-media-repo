@@ -88,7 +88,7 @@ func MediaInfo(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 		} else if err == common.ErrMediaQuarantined {
 			return _responses.NotFoundError() // We lie for security
 		}
-		rctx.Log.Error("Unexpected error locating media: " + err.Error())
+		rctx.Log.Error("Unexpected error locating media: ", err)
 		sentry.CaptureException(err)
 		return _responses.InternalServerError("Unexpected Error")
 	}
@@ -96,7 +96,7 @@ func MediaInfo(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 
 	b, err := io.ReadAll(streamedMedia.Stream)
 	if err != nil {
-		rctx.Log.Error("Unexpected error processing media: " + err.Error())
+		rctx.Log.Error("Unexpected error processing media: ", err)
 		sentry.CaptureException(err)
 		return _responses.InternalServerError("Unexpected Error")
 	}
@@ -119,7 +119,7 @@ func MediaInfo(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 	thumbsDb := storage.GetDatabase().GetThumbnailStore(rctx)
 	thumbs, err := thumbsDb.GetAllForMedia(streamedMedia.KnownMedia.Origin, streamedMedia.KnownMedia.MediaId)
 	if err != nil && err != sql.ErrNoRows {
-		rctx.Log.Error("Unexpected error locating media: " + err.Error())
+		rctx.Log.Error("Unexpected error locating media: ", err)
 		sentry.CaptureException(err)
 		return _responses.InternalServerError("Unexpected Error")
 	}

@@ -24,7 +24,7 @@ func LockForUpload(ctx rcontext.RequestContext, hash string) (func() error, erro
 				if time.Now().After(attemptDoneAt) {
 					return nil, errors.New("failed to acquire upload lock: " + err.Error())
 				} else {
-					ctx.Log.Warn("failed to acquire upload lock: " + err.Error())
+					ctx.Log.Warn("failed to acquire upload lock: ", err)
 				}
 			} else {
 				acquired = true

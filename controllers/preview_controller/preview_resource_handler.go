@@ -135,18 +135,18 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) (resp *urlPreviewRe
 		// UploadMedia will close the read stream for the thumbnail and dedupe the image
 		media, err := upload_controller.UploadMedia(preview.Image.Data, contentLength, preview.Image.ContentType, preview.Image.Filename, info.forUserId, info.onHost, ctx)
 		if err != nil {
-			ctx.Log.Warn("Non-fatal error storing preview thumbnail: " + err.Error())
+			ctx.Log.Warn("Non-fatal error storing preview thumbnail: ", err)
 			sentry.CaptureException(err)
 		} else {
 			mediaStream, err := datastore.DownloadStream(ctx, media.DatastoreId, media.Location)
 			if err != nil {
-				ctx.Log.Warn("Non-fatal error streaming datastore file: " + err.Error())
+				ctx.Log.Warn("Non-fatal error streaming datastore file: ", err)
 				sentry.CaptureException(err)
 			} else {
 				defer stream_util.DumpAndCloseStream(mediaStream)
 				img, err := imaging.Decode(mediaStream)
 				if err != nil {
-					ctx.Log.Warn("Non-fatal error getting thumbnail dimensions: " + err.Error())
+					ctx.Log.Warn("Non-fatal error getting thumbnail dimensions: ", err)
 					sentry.CaptureException(err)
 				} else {
 					result.ImageMxc = media.MxcUri()
@@ -167,7 +167,7 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) (resp *urlPreviewRe
 	}
 	err = db.InsertPreview(dbRecord)
 	if err != nil {
-		ctx.Log.Warn("Error caching URL preview: " + err.Error())
+		ctx.Log.Warn("Error caching URL preview: ", err)
 		sentry.CaptureException(err)
 		// Non-fatal: Just report it and move on. The worst that happens is we re-cache it.
 	}
