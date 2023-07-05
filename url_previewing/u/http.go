@@ -25,7 +25,6 @@ func doHttpGet(urlPayload *m.UrlPayload, languageHeader string, ctx rcontext.Req
 	dialer := &net.Dialer{
 		Timeout:   time.Duration(ctx.Config.TimeoutSeconds.UrlPreviews) * time.Second,
 		KeepAlive: time.Duration(ctx.Config.TimeoutSeconds.UrlPreviews) * time.Second,
-		DualStack: true,
 	}
 
 	dialContext := func(ctx2 context.Context, network, addr string) (conn net.Conn, e error) {
@@ -48,7 +47,7 @@ func doHttpGet(urlPayload *m.UrlPayload, languageHeader string, ctx rcontext.Req
 			DialContext:       dialContext,
 			TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
 			// Based on https://github.com/matrix-org/gomatrixserverlib/blob/51152a681e69a832efcd934b60080b92bc98b286/client.go#L74-L90
-			DialTLS: func(network, addr string) (net.Conn, error) {
+			DialTLSContext: func(ctx2 context.Context, network, addr string) (net.Conn, error) {
 				rawconn, err := net.Dial(network, addr)
 				if err != nil {
 					return nil, err
@@ -65,8 +64,8 @@ func doHttpGet(urlPayload *m.UrlPayload, languageHeader string, ctx rcontext.Req
 			},
 		}
 		client = &http.Client{
-			Transport: tr,
 			Timeout:   time.Duration(ctx.Config.TimeoutSeconds.UrlPreviews) * time.Second,
+			Transport: tr,
 		}
 	} else {
 		client = &http.Client{
