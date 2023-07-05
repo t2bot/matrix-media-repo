@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"sync"
 
 	"github.com/getsentry/sentry-go"
 
@@ -18,25 +19,28 @@ import (
 )
 
 var oembedInstance *oembed.Oembed
+var oembedLock = new(sync.Once)
 
 func getOembed() *oembed.Oembed {
 	if oembedInstance != nil {
 		return oembedInstance
 	}
 
-	oembedInstance = oembed.NewOembed()
+	oembedLock.Do(func() {
+		oembedInstance = oembed.NewOembed()
 
-	data, err := os.ReadFile(path.Join(config.Runtime.AssetsPath, "providers.json"))
-	if err != nil {
-		sentry.CaptureException(err)
-		logrus.Fatal(err)
-	}
+		data, err := os.ReadFile(path.Join(config.Runtime.AssetsPath, "providers.json"))
+		if err != nil {
+			sentry.CaptureException(err)
+			logrus.Fatal(err)
+		}
 
-	err = oembedInstance.ParseProviders(bytes.NewReader(data))
-	if err != nil {
-		sentry.CaptureException(err)
-		logrus.Fatal(err)
-	}
+		err = oembedInstance.ParseProviders(bytes.NewReader(data))
+		if err != nil {
+			sentry.CaptureException(err)
+			logrus.Fatal(err)
+		}
+	})
 
 	return oembedInstance
 }

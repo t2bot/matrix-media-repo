@@ -2,16 +2,16 @@ package url_previewing
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/ryanuber/go-glob"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/metrics"
+	"github.com/turt2live/matrix-media-repo/thumbnailing"
 )
 
 func GenerateCalculatedPreview(urlPayload *UrlPayload, languageHeader string, ctx rcontext.RequestContext) (Result, error) {
 	r, filename, contentType, err := downloadRawContent(urlPayload, ctx.Config.UrlPreviews.FilePreviewTypes, languageHeader, ctx)
 	if err != nil {
-		ctx.Log.Error("Error downloading content: ", err)
+		ctx.Log.Warn("Error downloading content: ", err)
 
 		// Make sure the unsupported error gets passed through
 		if err == ErrPreviewUnsupported {
@@ -49,8 +49,10 @@ func GenerateCalculatedPreview(urlPayload *UrlPayload, languageHeader string, ct
 		SiteName:    "", // intentionally empty
 	}
 
-	if glob.Glob("image/*", img.ContentType) {
+	if thumbnailing.IsSupported(img.ContentType) {
 		result.Image = img
+	} else {
+		defer img.Data.Close()
 	}
 
 	metrics.UrlPreviewsGenerated.With(prometheus.Labels{"type": "calculated"}).Inc()

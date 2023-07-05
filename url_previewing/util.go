@@ -5,11 +5,12 @@ import (
 	"strings"
 )
 
+var surroundingWhitespace = regexp.MustCompile(`^[\s\p{Zs}]+|[\s\p{Zs}]+$`)
+var interiorWhitespace = regexp.MustCompile(`[\s\p{Zs}]{2,}`)
+var newlines = regexp.MustCompile(`[\r\n]`)
+
 func summarize(text string, maxWords int, maxLength int) string {
 	// Normalize the whitespace to be something useful (crush it to one giant line)
-	surroundingWhitespace := regexp.MustCompile(`^[\s\p{Zs}]+|[\s\p{Zs}]+$`)
-	interiorWhitespace := regexp.MustCompile(`[\s\p{Zs}]{2,}`)
-	newlines := regexp.MustCompile(`[\r\n]`)
 	text = surroundingWhitespace.ReplaceAllString(text, "")
 	text = interiorWhitespace.ReplaceAllString(text, " ")
 	text = newlines.ReplaceAllString(text, " ")

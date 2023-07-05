@@ -186,9 +186,8 @@ func downloadImage(urlPayload *UrlPayload, languageHeader string, ctx rcontext.R
 	}
 
 	image := &Image{
-		ContentType:   resp.Header.Get("Content-Type"),
-		Data:          resp.Body,
-		ContentLength: resp.ContentLength,
+		ContentType: resp.Header.Get("Content-Type"),
+		Data:        resp.Body,
 	}
 
 	_, params, err := mime.ParseMediaType(resp.Header.Get("Content-Disposition"))
