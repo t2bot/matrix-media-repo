@@ -5,13 +5,11 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/database"
 	"github.com/turt2live/matrix-media-repo/pipelines/_steps/url_preview"
 	"github.com/turt2live/matrix-media-repo/url_previewing/m"
-	"github.com/turt2live/matrix-media-repo/url_previewing/p"
 	"github.com/turt2live/matrix-media-repo/util"
 	"golang.org/x/sync/singleflight"
 )
@@ -53,68 +51,15 @@ func Execute(ctx rcontext.RequestContext, onHost string, previewUrl string, user
 
 	// Step 4: Join the singleflight queue
 	r, err, _ := sf.Do(fmt.Sprintf("%s:%s_%d/%s", onHost, previewUrl, opts.Timestamp, opts.LanguageHeader), func() (interface{}, error) {
-		payload := &m.UrlPayload{
+		// Step 5: Generate preview
+		var preview m.PreviewResult
+		preview, err = url_preview.Preview(ctx, &m.UrlPayload{
 			UrlString: previewUrl,
 			ParsedUrl: parsedUrl,
-		}
-		var preview m.PreviewResult
-		err = m.ErrPreviewUnsupported
+		}, opts.LanguageHeader)
 
-		// Step 5: Try oEmbed
-		if ctx.Config.UrlPreviews.OEmbed {
-			ctx.Log.Debug("Trying oEmbed previewer")
-			preview, err = p.GenerateOEmbedPreview(payload, opts.LanguageHeader, ctx)
-		}
-
-		// Step 6: Try OpenGraph
-		if err == m.ErrPreviewUnsupported {
-			ctx.Log.Debug("Trying OpenGraph previewer")
-			preview, err = p.GenerateOpenGraphPreview(payload, opts.LanguageHeader, ctx)
-		}
-
-		// Step 7: Try scraping
-		if err == m.ErrPreviewUnsupported {
-			ctx.Log.Debug("Trying built-in previewer")
-			preview, err = p.GenerateCalculatedPreview(payload, opts.LanguageHeader, ctx)
-		}
-
-		// Step 8: Finish processing
-		if err != nil {
-			if err == m.ErrPreviewUnsupported {
-				err = common.ErrMediaNotFound
-			}
-
-			if err == common.ErrMediaNotFound {
-				previewDb.InsertError(previewUrl, common.ErrCodeNotFound)
-			} else {
-				previewDb.InsertError(previewUrl, common.ErrCodeUnknown)
-			}
-			return nil, err
-		} else {
-			result := &database.DbUrlPreview{
-				Url:            previewUrl,
-				ErrorCode:      "",
-				BucketTs:       util.GetHourBucket(opts.Timestamp),
-				SiteUrl:        preview.Url,
-				SiteName:       preview.SiteName,
-				ResourceType:   preview.Type,
-				Description:    preview.Description,
-				Title:          preview.Title,
-				LanguageHeader: opts.LanguageHeader,
-			}
-
-			// Step 9: Store the thumbnail, if needed
-			url_preview.UploadImage(ctx, preview.Image, onHost, userId, result)
-
-			// Step 10: Insert the record
-			err = previewDb.Insert(result)
-			if err != nil {
-				ctx.Log.Warn("Non-fatal error caching URL preview: ", err)
-				sentry.CaptureException(err)
-			}
-
-			return result, nil
-		}
+		// Step 6: Finish processing
+		return url_preview.Process(ctx, previewUrl, preview, err, onHost, userId, opts.LanguageHeader, opts.Timestamp)
 	})
 	if err != nil {
 		return nil, err
