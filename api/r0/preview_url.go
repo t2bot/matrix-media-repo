@@ -1,17 +1,18 @@
 package r0
 
 import (
-	"github.com/getsentry/sentry-go"
-	"github.com/turt2live/matrix-media-repo/api/_apimeta"
-	"github.com/turt2live/matrix-media-repo/api/_responses"
-
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
 
+	"github.com/getsentry/sentry-go"
+	"github.com/turt2live/matrix-media-repo/api/_apimeta"
+	"github.com/turt2live/matrix-media-repo/api/_responses"
+	"github.com/turt2live/matrix-media-repo/pipelines/pipeline_preview"
+
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/controllers/preview_controller"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
@@ -61,7 +62,19 @@ func PreviewUrl(r *http.Request, rctx rcontext.RequestContext, user _apimeta.Use
 		languageHeader = r.Header.Get("Accept-Language")
 	}
 
-	preview, err := preview_controller.GetPreview(urlStr, r.Host, user.UserId, ts, languageHeader, rctx)
+	preview, err := pipeline_preview.Execute(rctx, r.Host, urlStr, user.UserId, pipeline_preview.PreviewOpts{
+		Timestamp:      ts,
+		LanguageHeader: languageHeader,
+	})
+	if err == nil && preview != nil && preview.ErrorCode != "" {
+		if preview.ErrorCode == common.ErrCodeInvalidHost {
+			err = common.ErrInvalidHost
+		} else if preview.ErrorCode == common.ErrCodeNotFound {
+			err = common.ErrMediaNotFound
+		} else {
+			err = errors.New("url previews: unknown error code: " + preview.ErrorCode)
+		}
+	}
 	if err != nil {
 		if err == common.ErrMediaNotFound || err == common.ErrHostNotFound {
 			return _responses.NotFoundError()
@@ -69,14 +82,14 @@ func PreviewUrl(r *http.Request, rctx rcontext.RequestContext, user _apimeta.Use
 			return _responses.BadRequest(err.Error())
 		} else {
 			sentry.CaptureException(err)
-			return _responses.InternalServerError("unexpected error during request")
+			return _responses.InternalServerError("Unexpected Error")
 		}
 	}
 
 	return &MatrixOpenGraph{
-		Url:         preview.Url,
+		Url:         preview.SiteUrl,
 		SiteName:    preview.SiteName,
-		Type:        preview.Type,
+		Type:        preview.ResourceType,
 		Description: preview.Description,
 		Title:       preview.Title,
 		ImageMxc:    preview.ImageMxc,

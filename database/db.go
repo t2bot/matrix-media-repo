@@ -24,6 +24,7 @@ type Database struct {
 	HeldMedia     *heldMediaTableStatements
 	Thumbnails    *thumbnailsTableStatements
 	LastAccess    *lastAccessTableStatements
+	UrlPreviews   *urlPreviewsTableStatements
 }
 
 var instance *Database
@@ -103,6 +104,9 @@ func openDatabase(connectionString string, maxConns int, maxIdleConns int) error
 	}
 	if d.LastAccess, err = prepareLastAccessTables(d.conn); err != nil {
 		return errors.New("failed to create last access table accessor: " + err.Error())
+	}
+	if d.UrlPreviews, err = prepareUrlPreviewsTables(d.conn); err != nil {
+		return errors.New("failed to create url previews table accessor: " + err.Error())
 	}
 
 	instance = d

@@ -30,3 +30,7 @@ func CalcBlockForDuration(timeoutMs string) (time.Duration, error) {
 	}
 	return blockFor, nil
 }
+
+func GetHourBucket(ts int64) int64 {
+	return (ts / 3600000) * 3600000
+}
