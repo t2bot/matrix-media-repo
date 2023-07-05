@@ -6,7 +6,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/database"
 	"github.com/turt2live/matrix-media-repo/url_previewing/m"
-	"github.com/turt2live/matrix-media-repo/util"
 )
 
 func Process(ctx rcontext.RequestContext, previewUrl string, preview m.PreviewResult, err error, onHost string, userId string, languageHeader string, ts int64) (*database.DbUrlPreview, error) {
@@ -27,7 +26,7 @@ func Process(ctx rcontext.RequestContext, previewUrl string, preview m.PreviewRe
 		result := &database.DbUrlPreview{
 			Url:            previewUrl,
 			ErrorCode:      "",
-			BucketTs:       util.GetHourBucket(ts),
+			BucketTs:       ts, // already bucketed
 			SiteUrl:        preview.Url,
 			SiteName:       preview.SiteName,
 			ResourceType:   preview.Type,

@@ -50,7 +50,7 @@ func Execute(ctx rcontext.RequestContext, onHost string, previewUrl string, user
 	parsedUrl.Fragment = "" // remove fragments because they're not useful to servers
 
 	// Step 4: Join the singleflight queue
-	r, err, _ := sf.Do(fmt.Sprintf("%s:%s_%d/%s", onHost, previewUrl, opts.Timestamp, opts.LanguageHeader), func() (interface{}, error) {
+	r, err, _ := sf.Do(fmt.Sprintf("%s:%s_%d/%s", onHost, previewUrl, atBucket, opts.LanguageHeader), func() (interface{}, error) {
 		// Step 5: Generate preview
 		var preview m.PreviewResult
 		preview, err = url_preview.Preview(ctx, &m.UrlPayload{
@@ -59,7 +59,7 @@ func Execute(ctx rcontext.RequestContext, onHost string, previewUrl string, user
 		}, opts.LanguageHeader)
 
 		// Step 6: Finish processing
-		return url_preview.Process(ctx, previewUrl, preview, err, onHost, userId, opts.LanguageHeader, opts.Timestamp)
+		return url_preview.Process(ctx, previewUrl, preview, err, onHost, userId, opts.LanguageHeader, atBucket)
 	})
 	if err != nil {
 		return nil, err
