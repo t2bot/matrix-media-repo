@@ -1,6 +1,7 @@
 package ds_s3
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -11,7 +12,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/util/ids"
 	"github.com/turt2live/matrix-media-repo/util/stream_util"
 
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"

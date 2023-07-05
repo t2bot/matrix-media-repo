@@ -35,7 +35,7 @@ require (
 	github.com/minio/minio-go/v6 v6.0.57
 	github.com/olebedev/emitter v0.0.0-20230411050614-349169dec2ba
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/pkg/errors v0.9.1
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.16.0
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/rubyist/circuitbreaker v2.2.1+incompatible

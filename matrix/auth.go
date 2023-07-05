@@ -1,10 +1,10 @@
 package matrix
 
 import (
+	"errors"
 	"net/url"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/util"
 )

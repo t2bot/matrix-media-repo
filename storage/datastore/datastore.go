@@ -1,13 +1,13 @@
 package datastore
 
 import (
+	"errors"
 	"fmt"
 	"io"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/turt2live/matrix-media-repo/common"
 
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"

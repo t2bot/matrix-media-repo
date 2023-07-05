@@ -1,9 +1,8 @@
 package util
 
 import (
+	"errors"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 func SplitMxc(mxc string) (string, string, error) {
