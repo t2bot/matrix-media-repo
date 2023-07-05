@@ -1,4 +1,4 @@
-package url_previewing
+package u
 
 import (
 	"context"
@@ -14,11 +14,12 @@ import (
 	"github.com/ryanuber/go-glob"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
+	"github.com/turt2live/matrix-media-repo/url_previewing/m"
 	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/readers"
 )
 
-func doHttpGet(urlPayload *UrlPayload, languageHeader string, ctx rcontext.RequestContext) (*http.Response, error) {
+func doHttpGet(urlPayload *m.UrlPayload, languageHeader string, ctx rcontext.RequestContext) (*http.Response, error) {
 	var client *http.Client
 
 	dialer := &net.Dialer{
@@ -120,7 +121,7 @@ func doHttpGet(urlPayload *UrlPayload, languageHeader string, ctx rcontext.Reque
 	return client.Do(req)
 }
 
-func downloadRawContent(urlPayload *UrlPayload, supportedTypes []string, languageHeader string, ctx rcontext.RequestContext) (io.ReadCloser, string, string, error) {
+func DownloadRawContent(urlPayload *m.UrlPayload, supportedTypes []string, languageHeader string, ctx rcontext.RequestContext) (io.ReadCloser, string, string, error) {
 	ctx.Log.Info("Fetching remote content...")
 	resp, err := doHttpGet(urlPayload, languageHeader, ctx)
 	if err != nil {
@@ -146,7 +147,7 @@ func downloadRawContent(urlPayload *UrlPayload, supportedTypes []string, languag
 	contentType := resp.Header.Get("Content-Type")
 	for _, supportedType := range supportedTypes {
 		if !glob.Glob(supportedType, contentType) {
-			return nil, "", "", ErrPreviewUnsupported
+			return nil, "", "", m.ErrPreviewUnsupported
 		}
 	}
 
@@ -160,8 +161,8 @@ func downloadRawContent(urlPayload *UrlPayload, supportedTypes []string, languag
 	return reader, filename, contentType, nil
 }
 
-func downloadHtmlContent(urlPayload *UrlPayload, supportedTypes []string, languageHeader string, ctx rcontext.RequestContext) (string, error) {
-	r, _, contentType, err := downloadRawContent(urlPayload, supportedTypes, languageHeader, ctx)
+func DownloadHtmlContent(urlPayload *m.UrlPayload, supportedTypes []string, languageHeader string, ctx rcontext.RequestContext) (string, error) {
+	r, _, contentType, err := DownloadRawContent(urlPayload, supportedTypes, languageHeader, ctx)
 	if err != nil {
 		return "", err
 	}
@@ -174,7 +175,7 @@ func downloadHtmlContent(urlPayload *UrlPayload, supportedTypes []string, langua
 	return html, nil
 }
 
-func downloadImage(urlPayload *UrlPayload, languageHeader string, ctx rcontext.RequestContext) (*Image, error) {
+func DownloadImage(urlPayload *m.UrlPayload, languageHeader string, ctx rcontext.RequestContext) (*m.PreviewImage, error) {
 	ctx.Log.Info("Getting image from " + urlPayload.ParsedUrl.String())
 	resp, err := doHttpGet(urlPayload, languageHeader, ctx)
 	if err != nil {
@@ -185,7 +186,7 @@ func downloadImage(urlPayload *UrlPayload, languageHeader string, ctx rcontext.R
 		return nil, errors.New("error during transfer")
 	}
 
-	image := &Image{
+	image := &m.PreviewImage{
 		ContentType: resp.Header.Get("Content-Type"),
 		Data:        resp.Body,
 	}

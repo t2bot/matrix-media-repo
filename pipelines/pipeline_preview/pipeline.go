@@ -10,7 +10,8 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/database"
 	"github.com/turt2live/matrix-media-repo/pipelines/_steps/url_preview"
-	url_previewers2 "github.com/turt2live/matrix-media-repo/url_previewing"
+	"github.com/turt2live/matrix-media-repo/url_previewing/m"
+	"github.com/turt2live/matrix-media-repo/url_previewing/p"
 	"github.com/turt2live/matrix-media-repo/util"
 	"golang.org/x/sync/singleflight"
 )
@@ -52,34 +53,34 @@ func Execute(ctx rcontext.RequestContext, onHost string, previewUrl string, user
 
 	// Step 4: Join the singleflight queue
 	r, err, _ := sf.Do(fmt.Sprintf("%s:%s_%d/%s", onHost, previewUrl, opts.Timestamp, opts.LanguageHeader), func() (interface{}, error) {
-		payload := &url_previewers2.UrlPayload{
+		payload := &m.UrlPayload{
 			UrlString: previewUrl,
 			ParsedUrl: parsedUrl,
 		}
-		var preview url_previewers2.Result
-		err = url_previewers2.ErrPreviewUnsupported
+		var preview m.PreviewResult
+		err = m.ErrPreviewUnsupported
 
 		// Step 5: Try oEmbed
 		if ctx.Config.UrlPreviews.OEmbed {
 			ctx.Log.Debug("Trying oEmbed previewer")
-			preview, err = url_previewers2.GenerateOEmbedPreview(payload, opts.LanguageHeader, ctx)
+			preview, err = p.GenerateOEmbedPreview(payload, opts.LanguageHeader, ctx)
 		}
 
 		// Step 6: Try OpenGraph
-		if err == url_previewers2.ErrPreviewUnsupported {
+		if err == m.ErrPreviewUnsupported {
 			ctx.Log.Debug("Trying OpenGraph previewer")
-			preview, err = url_previewers2.GenerateOpenGraphPreview(payload, opts.LanguageHeader, ctx)
+			preview, err = p.GenerateOpenGraphPreview(payload, opts.LanguageHeader, ctx)
 		}
 
 		// Step 7: Try scraping
-		if err == url_previewers2.ErrPreviewUnsupported {
+		if err == m.ErrPreviewUnsupported {
 			ctx.Log.Debug("Trying built-in previewer")
-			preview, err = url_previewers2.GenerateCalculatedPreview(payload, opts.LanguageHeader, ctx)
+			preview, err = p.GenerateCalculatedPreview(payload, opts.LanguageHeader, ctx)
 		}
 
 		// Step 8: Finish processing
 		if err != nil {
-			if err == url_previewers2.ErrPreviewUnsupported {
+			if err == m.ErrPreviewUnsupported {
 				err = common.ErrMediaNotFound
 			}
 

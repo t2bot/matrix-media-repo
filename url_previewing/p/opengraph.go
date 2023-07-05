@@ -1,4 +1,4 @@
-package url_previewing
+package p
 
 import (
 	"net/url"
@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/getsentry/sentry-go"
+	"github.com/turt2live/matrix-media-repo/url_previewing/m"
+	"github.com/turt2live/matrix-media-repo/url_previewing/u"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/dyatlov/go-opengraph/opengraph"
@@ -18,25 +20,25 @@ import (
 
 var ogSupportedTypes = []string{"text/*"}
 
-func GenerateOpenGraphPreview(urlPayload *UrlPayload, languageHeader string, ctx rcontext.RequestContext) (Result, error) {
-	html, err := downloadHtmlContent(urlPayload, ogSupportedTypes, languageHeader, ctx)
+func GenerateOpenGraphPreview(urlPayload *m.UrlPayload, languageHeader string, ctx rcontext.RequestContext) (m.PreviewResult, error) {
+	html, err := u.DownloadHtmlContent(urlPayload, ogSupportedTypes, languageHeader, ctx)
 	if err != nil {
 		ctx.Log.Error("Error downloading content: ", err)
 
 		// Make sure the unsupported error gets passed through
-		if err == ErrPreviewUnsupported {
-			return Result{}, ErrPreviewUnsupported
+		if err == m.ErrPreviewUnsupported {
+			return m.PreviewResult{}, m.ErrPreviewUnsupported
 		}
 
 		// We'll consider it not found for the sake of processing
-		return Result{}, common.ErrMediaNotFound
+		return m.PreviewResult{}, common.ErrMediaNotFound
 	}
 
 	og := opengraph.NewOpenGraph()
 	err = og.ProcessHTML(strings.NewReader(html))
 	if err != nil {
 		ctx.Log.Error("Error getting OpenGraph: ", err)
-		return Result{}, err
+		return m.PreviewResult{}, err
 	}
 
 	if og.Title == "" {
@@ -50,10 +52,10 @@ func GenerateOpenGraphPreview(urlPayload *UrlPayload, languageHeader string, ctx
 	}
 
 	// Be sure to trim the title and description
-	og.Title = summarize(og.Title, ctx.Config.UrlPreviews.NumTitleWords, ctx.Config.UrlPreviews.MaxTitleLength)
-	og.Description = summarize(og.Description, ctx.Config.UrlPreviews.NumWords, ctx.Config.UrlPreviews.MaxLength)
+	og.Title = u.Summarize(og.Title, ctx.Config.UrlPreviews.NumTitleWords, ctx.Config.UrlPreviews.MaxTitleLength)
+	og.Description = u.Summarize(og.Description, ctx.Config.UrlPreviews.NumWords, ctx.Config.UrlPreviews.MaxLength)
 
-	graph := &Result{
+	graph := &m.PreviewResult{
 		Type:        og.Type,
 		Url:         og.URL,
 		Title:       og.Title,
@@ -70,12 +72,12 @@ func GenerateOpenGraphPreview(urlPayload *UrlPayload, languageHeader string, ctx
 		}
 
 		imgAbsUrl := urlPayload.ParsedUrl.ResolveReference(imgUrl)
-		imgUrlPayload := &UrlPayload{
+		imgUrlPayload := &m.UrlPayload{
 			UrlString: imgAbsUrl.String(),
 			ParsedUrl: imgAbsUrl,
 		}
 
-		img, err := downloadImage(imgUrlPayload, languageHeader, ctx)
+		img, err := u.DownloadImage(imgUrlPayload, languageHeader, ctx)
 		if err != nil {
 			ctx.Log.Error("Non-fatal error getting thumbnail (downloading image): ", err)
 			sentry.CaptureException(err)

@@ -1,4 +1,4 @@
-package url_previewing
+package p
 
 import (
 	"bytes"
@@ -8,6 +8,8 @@ import (
 	"sync"
 
 	"github.com/getsentry/sentry-go"
+	"github.com/turt2live/matrix-media-repo/url_previewing/m"
+	"github.com/turt2live/matrix-media-repo/url_previewing/u"
 
 	"github.com/dyatlov/go-oembed/oembed"
 	"github.com/k3a/html2text"
@@ -45,10 +47,10 @@ func getOembed() *oembed.Oembed {
 	return oembedInstance
 }
 
-func GenerateOEmbedPreview(urlPayload *UrlPayload, languageHeader string, ctx rcontext.RequestContext) (Result, error) {
+func GenerateOEmbedPreview(urlPayload *m.UrlPayload, languageHeader string, ctx rcontext.RequestContext) (m.PreviewResult, error) {
 	item := getOembed().FindItem(urlPayload.ParsedUrl.String())
 	if item == nil {
-		return Result{}, ErrPreviewUnsupported
+		return m.PreviewResult{}, m.ErrPreviewUnsupported
 	}
 
 	info, err := item.FetchOembed(oembed.Options{
@@ -57,7 +59,7 @@ func GenerateOEmbedPreview(urlPayload *UrlPayload, languageHeader string, ctx rc
 	})
 	if err != nil {
 		ctx.Log.Error("Error getting oEmbed: ", err)
-		return Result{}, err
+		return m.PreviewResult{}, err
 	}
 
 	if info.Type == "rich" {
@@ -66,7 +68,7 @@ func GenerateOEmbedPreview(urlPayload *UrlPayload, languageHeader string, ctx rc
 		info.ThumbnailURL = info.URL
 	}
 
-	graph := &Result{
+	graph := &m.PreviewResult{
 		Type:        info.Type,
 		Url:         info.URL,
 		Title:       info.Title,
@@ -83,12 +85,12 @@ func GenerateOEmbedPreview(urlPayload *UrlPayload, languageHeader string, ctx rc
 		}
 
 		imgAbsUrl := urlPayload.ParsedUrl.ResolveReference(imgUrl)
-		imgUrlPayload := &UrlPayload{
+		imgUrlPayload := &m.UrlPayload{
 			UrlString: imgAbsUrl.String(),
 			ParsedUrl: imgAbsUrl,
 		}
 
-		img, err := downloadImage(imgUrlPayload, languageHeader, ctx)
+		img, err := u.DownloadImage(imgUrlPayload, languageHeader, ctx)
 		if err != nil {
 			ctx.Log.Error("Non-fatal error getting thumbnail (downloading image): ", err)
 			sentry.CaptureException(err)

@@ -1,4 +1,4 @@
-package url_previewing
+package p
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
@@ -6,23 +6,25 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/thumbnailing"
+	"github.com/turt2live/matrix-media-repo/url_previewing/m"
+	"github.com/turt2live/matrix-media-repo/url_previewing/u"
 )
 
-func GenerateCalculatedPreview(urlPayload *UrlPayload, languageHeader string, ctx rcontext.RequestContext) (Result, error) {
-	r, filename, contentType, err := downloadRawContent(urlPayload, ctx.Config.UrlPreviews.FilePreviewTypes, languageHeader, ctx)
+func GenerateCalculatedPreview(urlPayload *m.UrlPayload, languageHeader string, ctx rcontext.RequestContext) (m.PreviewResult, error) {
+	r, filename, contentType, err := u.DownloadRawContent(urlPayload, ctx.Config.UrlPreviews.FilePreviewTypes, languageHeader, ctx)
 	if err != nil {
 		ctx.Log.Warn("Error downloading content: ", err)
 
 		// Make sure the unsupported error gets passed through
-		if err == ErrPreviewUnsupported {
-			return Result{}, ErrPreviewUnsupported
+		if err == m.ErrPreviewUnsupported {
+			return m.PreviewResult{}, m.ErrPreviewUnsupported
 		}
 
 		// We'll consider it not found for the sake of processing
-		return Result{}, common.ErrMediaNotFound
+		return m.PreviewResult{}, common.ErrMediaNotFound
 	}
 
-	img := &Image{
+	img := &m.PreviewImage{
 		Data:        r,
 		ContentType: contentType,
 		Filename:    filename,
@@ -41,11 +43,11 @@ func GenerateCalculatedPreview(urlPayload *UrlPayload, languageHeader string, ct
 		description = ""
 	}
 
-	result := &Result{
+	result := &m.PreviewResult{
 		Type:        "", // intentionally empty
 		Url:         urlPayload.ParsedUrl.String(),
-		Title:       summarize(filename, ctx.Config.UrlPreviews.NumTitleWords, ctx.Config.UrlPreviews.MaxTitleLength),
-		Description: summarize(description, ctx.Config.UrlPreviews.NumWords, ctx.Config.UrlPreviews.MaxLength),
+		Title:       u.Summarize(filename, ctx.Config.UrlPreviews.NumTitleWords, ctx.Config.UrlPreviews.MaxTitleLength),
+		Description: u.Summarize(description, ctx.Config.UrlPreviews.NumWords, ctx.Config.UrlPreviews.MaxLength),
 		SiteName:    "", // intentionally empty
 	}
 

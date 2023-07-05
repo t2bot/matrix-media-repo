@@ -1,4 +1,4 @@
-package url_previewing
+package u
 
 import (
 	"regexp"
@@ -9,7 +9,7 @@ var surroundingWhitespace = regexp.MustCompile(`^[\s\p{Zs}]+|[\s\p{Zs}]+$`)
 var interiorWhitespace = regexp.MustCompile(`[\s\p{Zs}]{2,}`)
 var newlines = regexp.MustCompile(`[\r\n]`)
 
-func summarize(text string, maxWords int, maxLength int) string {
+func Summarize(text string, maxWords int, maxLength int) string {
 	// Normalize the whitespace to be something useful (crush it to one giant line)
 	text = surroundingWhitespace.ReplaceAllString(text, "")
 	text = interiorWhitespace.ReplaceAllString(text, " ")

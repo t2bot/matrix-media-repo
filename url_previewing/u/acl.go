@@ -1,4 +1,4 @@
-package url_previewing
+package u
 
 import (
 	"net"

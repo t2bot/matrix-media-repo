@@ -9,11 +9,11 @@ import (
 	"github.com/turt2live/matrix-media-repo/datastores"
 	"github.com/turt2live/matrix-media-repo/pipelines/pipeline_upload"
 	"github.com/turt2live/matrix-media-repo/thumbnailing"
-	"github.com/turt2live/matrix-media-repo/url_previewing"
+	"github.com/turt2live/matrix-media-repo/url_previewing/m"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
-func UploadImage(ctx rcontext.RequestContext, image *url_previewing.Image, onHost string, userId string, forRecord *database.DbUrlPreview) {
+func UploadImage(ctx rcontext.RequestContext, image *m.PreviewImage, onHost string, userId string, forRecord *database.DbUrlPreview) {
 	if image == nil || image.Data == nil {
 		return
 	}

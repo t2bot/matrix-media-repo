@@ -5,7 +5,8 @@ import (
 	"sync"
 
 	"github.com/getsentry/sentry-go"
-	url_previewers2 "github.com/turt2live/matrix-media-repo/url_previewing"
+	url_previewers2 "github.com/turt2live/matrix-media-repo/url_previewing/m"
+	"github.com/turt2live/matrix-media-repo/url_previewing/p"
 	"github.com/turt2live/matrix-media-repo/util/stream_util"
 
 	"github.com/disintegration/imaging"
@@ -80,28 +81,28 @@ func urlPreviewWorkFn(request *resource_handler.WorkRequest) (resp *urlPreviewRe
 
 	db := storage.GetDatabase().GetUrlStore(ctx)
 
-	var preview url_previewers2.Result
+	var preview url_previewers2.PreviewResult
 	err := url_previewers2.ErrPreviewUnsupported
 
 	// Try oEmbed first
 	if info.allowOEmbed {
 		ctx = ctx.LogWithFields(logrus.Fields{"worker_previewer": "oEmbed"})
 		ctx.Log.Info("Trying oEmbed previewer")
-		preview, err = url_previewers2.GenerateOEmbedPreview(info.urlPayload, info.languageHeader, ctx)
+		preview, err = p.GenerateOEmbedPreview(info.urlPayload, info.languageHeader, ctx)
 	}
 
 	// Then try OpenGraph
 	if err == url_previewers2.ErrPreviewUnsupported {
 		ctx = ctx.LogWithFields(logrus.Fields{"worker_previewer": "OpenGraph"})
 		ctx.Log.Info("oEmbed preview for this URL is unsupported or disabled - treating it as a OpenGraph")
-		preview, err = url_previewers2.GenerateOpenGraphPreview(info.urlPayload, info.languageHeader, ctx)
+		preview, err = p.GenerateOpenGraphPreview(info.urlPayload, info.languageHeader, ctx)
 	}
 
 	// Finally try scraping
 	if err == url_previewers2.ErrPreviewUnsupported {
 		ctx = ctx.LogWithFields(logrus.Fields{"worker_previewer": "File"})
 		ctx.Log.Info("OpenGraph preview for this URL is unsupported - treating it as a file")
-		preview, err = url_previewers2.GenerateCalculatedPreview(info.urlPayload, info.languageHeader, ctx)
+		preview, err = p.GenerateCalculatedPreview(info.urlPayload, info.languageHeader, ctx)
 	}
 
 	if err != nil {
