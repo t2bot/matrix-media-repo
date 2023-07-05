@@ -1,6 +1,7 @@
 package matrix
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
@@ -242,7 +243,7 @@ func FederatedGet(url string, realHost string, ctx rcontext.RequestContext) (*ht
 				DisableKeepAlives: true,
 				TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
 				// Based on https://github.com/matrix-org/gomatrixserverlib/blob/51152a681e69a832efcd934b60080b92bc98b286/client.go#L74-L90
-				DialTLS: func(network, addr string) (net.Conn, error) {
+				DialTLSContext: func(ctx2 context.Context, network, addr string) (net.Conn, error) {
 					rawconn, err := net.Dial(network, addr)
 					if err != nil {
 						return nil, err
