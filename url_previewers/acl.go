@@ -45,7 +45,7 @@ func getSafeAddress(addr string, ctx rcontext.RequestContext) (net.IP, string, e
 	deniedCidrs = append(deniedCidrs, "::/128")
 
 	if !isAllowed(ipAddr, allowedCidrs, deniedCidrs, ctx) {
-		return nil, "", common.ErrHostBlacklisted
+		return nil, "", common.ErrHostNotAllowed
 	}
 	return ipAddr, p, nil
 }
@@ -53,21 +53,21 @@ func getSafeAddress(addr string, ctx rcontext.RequestContext) (net.IP, string, e
 func isAllowed(ip net.IP, allowed []string, disallowed []string, ctx rcontext.RequestContext) bool {
 	ctx.Log.Debug("Validating host")
 
-	// First check if the IP fits the blacklist. This should be a much shorter list, and therefore
+	// First check if the IP fits the deny list. This should be a much shorter list, and therefore
 	// much faster to check.
-	ctx.Log.Debug("Checking blacklist for host...")
+	ctx.Log.Debug("Checking deny list for host...")
 	if inRange(ip, disallowed, ctx) {
-		ctx.Log.Debug("Host found on blacklist - rejecting")
+		ctx.Log.Debug("Host found on deny list - rejecting")
 		return false
 	}
 
 	// Now check the allowed list just to make sure the IP is actually allowed
 	if inRange(ip, allowed, ctx) {
-		ctx.Log.Debug("Host allowed due to whitelist")
+		ctx.Log.Debug("Host allowed due to allow list")
 		return true
 	}
 
-	ctx.Log.Debug("Host is not on either whitelist or blacklist, considering blacklisted")
+	ctx.Log.Debug("Host is not on either allow list or deny list, considering deny listed")
 	return false
 }
 

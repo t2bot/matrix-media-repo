@@ -78,7 +78,7 @@ func PreviewUrl(r *http.Request, rctx rcontext.RequestContext, user _apimeta.Use
 	if err != nil {
 		if err == common.ErrMediaNotFound || err == common.ErrHostNotFound {
 			return _responses.NotFoundError()
-		} else if err == common.ErrInvalidHost || err == common.ErrHostBlacklisted {
+		} else if err == common.ErrInvalidHost || err == common.ErrHostNotAllowed {
 			return _responses.BadRequest(err.Error())
 		} else {
 			sentry.CaptureException(err)

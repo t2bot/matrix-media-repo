@@ -332,7 +332,7 @@ urlPreviews:
     - 'fe80::/64'
     - 'fc00::/7'
   allowedNetworks:
-    - "0.0.0.0/0" # "Everything". The blacklist will help limit this.
+    - "0.0.0.0/0" # "Everything". The deny list will help limit this.
                   # This is the default value for this field.
 
   # How many days after a preview is generated before it expires and is deleted. The preview
@@ -348,7 +348,7 @@ urlPreviews:
   # Set the User-Agent header to supply when generating URL previews
   userAgent: "matrix-media-repo"
 
-  # When true, oEmbed previews will be enabled. Typically these kinds of previews are used for
+  # When true, oEmbed previews will be enabled. Typically, these kinds of previews are used for
   # sites that do not support OpenGraph or page scraping, such as Twitter. For information on
   # specifying providers for oEmbed, including your own, see the following documentation:
   # https://docs.t2bot.io/matrix-media-repo/url-previews/oembed.html

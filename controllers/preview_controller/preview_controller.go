@@ -82,8 +82,8 @@ func cachedPreviewToReal(cached *types.CachedUrlPreview) (*types.UrlPreview, err
 		return nil, common.ErrInvalidHost
 	} else if cached.ErrorCode == common.ErrCodeHostNotFound {
 		return nil, common.ErrHostNotFound
-	} else if cached.ErrorCode == common.ErrCodeHostBlacklisted {
-		return nil, common.ErrHostBlacklisted
+	} else if cached.ErrorCode == common.ErrCodeHostNotAllowed {
+		return nil, common.ErrHostNotAllowed
 	} else if cached.ErrorCode == common.ErrCodeNotFound {
 		return nil, common.ErrMediaNotFound
 	} else if cached.ErrorCode == common.ErrCodeUnknown {
