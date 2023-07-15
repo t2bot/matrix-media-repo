@@ -29,9 +29,9 @@ func GetInstance() *templates {
 
 func GetTemplate(name string) (*template.Template, error) {
 	i := GetInstance()
-	//if v, ok := i.cached[name]; ok {
-	//	return v, nil
-	//}
+	if v, ok := i.cached[name]; ok {
+		return v, nil
+	}
 
 	fname := fmt.Sprintf("%s.html", name)
 	tmplPath := path.Join(config.Runtime.TemplatesPath, fname)
