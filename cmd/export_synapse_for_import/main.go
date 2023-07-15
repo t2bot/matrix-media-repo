@@ -3,12 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io"
 	"os"
 	"path"
 	"strconv"
 	"strings"
 
+	"github.com/turt2live/matrix-media-repo/archival"
 	"github.com/turt2live/matrix-media-repo/archival/v2archive"
 	"github.com/turt2live/matrix-media-repo/common/assets"
 	"github.com/turt2live/matrix-media-repo/common/config"
@@ -36,11 +36,10 @@ func main() {
 	prettyLog := flag.Bool("prettyLog", false, "Enables pretty logging (colours).")
 	flag.Parse()
 
+	config.Runtime.IsImportProcess = true
 	version.SetDefaults()
 	version.Print(true)
 	assets.SetupTemplates(*templatesPath)
-
-	_ = os.MkdirAll(*exportPath, 0755)
 
 	var realPsqlPassword string
 	if *postgresPassword == "" {
@@ -91,18 +90,7 @@ func main() {
 
 	ctx.Log.Info(fmt.Sprintf("Exporting %d media records", len(records)))
 
-	archiver, err := v2archive.NewWriter(ctx, "OOB", *serverName, *partSizeBytes, func(part int, fileName string, data io.ReadCloser) error {
-		defer data.Close()
-		f, errf := os.Create(path.Join(*exportPath, fileName))
-		if errf != nil {
-			return errf
-		}
-		_, errf = io.Copy(f, data)
-		if errf != nil {
-			return errf
-		}
-		return nil
-	})
+	archiver, err := v2archive.NewWriter(ctx, "OOB", *serverName, *partSizeBytes, archival.PersistPartsToDirectory(*exportPath))
 	if err != nil {
 		ctx.Log.Fatal(err)
 	}

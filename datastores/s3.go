@@ -62,3 +62,16 @@ func getS3(ds config.DatastoreConfig) (*s3, error) {
 	s3clients.Store(ds.Id, s3c)
 	return s3c, nil
 }
+
+func GetS3Url(ds config.DatastoreConfig) (string, error) {
+	if ds.Type != "s3" {
+		return "", nil
+	}
+
+	s3c, err := getS3(ds)
+	if err != nil {
+		return "", err
+	}
+
+	return s3c.client.EndpointURL().String(), nil
+}

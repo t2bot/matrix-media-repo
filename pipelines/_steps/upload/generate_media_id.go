@@ -3,12 +3,16 @@ package upload
 import (
 	"errors"
 
+	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/database"
 	"github.com/turt2live/matrix-media-repo/util/ids"
 )
 
 func GenerateMediaId(ctx rcontext.RequestContext, origin string) (string, error) {
+	if config.Runtime.IsImportProcess {
+		return "", errors.New("media IDs should not be generated from import processes")
+	}
 	heldDb := database.GetInstance().HeldMedia.Prepare(ctx)
 	mediaDb := database.GetInstance().Media.Prepare(ctx)
 	var mediaId string

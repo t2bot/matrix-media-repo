@@ -34,6 +34,8 @@ const selectMediaByHash = "SELECT origin, media_id, upload_name, content_type, u
 const insertMedia = "INSERT INTO media (origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, creation_ts, quarantined, datastore_id, location) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);"
 const selectMediaExists = "SELECT TRUE FROM media WHERE origin = $1 AND media_id = $2 LIMIT 1;"
 const selectMediaById = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, creation_ts, quarantined, datastore_id, location FROM media WHERE origin = $1 AND media_id = $2;"
+const selectMediaByUserId = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, creation_ts, quarantined, datastore_id, location FROM media WHERE user_id = $1;"
+const selectMediaByOrigin = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, creation_ts, quarantined, datastore_id, location FROM media WHERE origin = $1;"
 
 type mediaTableStatements struct {
 	selectDistinctMediaDatastoreIds *sql.Stmt
@@ -42,6 +44,8 @@ type mediaTableStatements struct {
 	insertMedia                     *sql.Stmt
 	selectMediaExists               *sql.Stmt
 	selectMediaById                 *sql.Stmt
+	selectMediaByUserId             *sql.Stmt
+	selectMediaByOrigin             *sql.Stmt
 }
 
 type mediaTableWithContext struct {
@@ -70,6 +74,12 @@ func prepareMediaTables(db *sql.DB) (*mediaTableStatements, error) {
 	}
 	if stmts.selectMediaById, err = db.Prepare(selectMediaById); err != nil {
 		return nil, errors.New("error preparing selectMediaById: " + err.Error())
+	}
+	if stmts.selectMediaByUserId, err = db.Prepare(selectMediaByUserId); err != nil {
+		return nil, errors.New("error preparing selectMediaByUserId: " + err.Error())
+	}
+	if stmts.selectMediaByOrigin, err = db.Prepare(selectMediaByOrigin); err != nil {
+		return nil, errors.New("error preparing selectMediaByOrigin: " + err.Error())
 	}
 
 	return stmts, nil
@@ -115,9 +125,8 @@ func (s *mediaTableWithContext) IsHashQuarantined(sha256hash string) (bool, erro
 	return val, err
 }
 
-func (s *mediaTableWithContext) GetByHash(sha256hash string) ([]*DbMedia, error) {
+func (s *mediaTableWithContext) scanRows(rows *sql.Rows, err error) ([]*DbMedia, error) {
 	results := make([]*DbMedia, 0)
-	rows, err := s.statements.selectMediaByHash.QueryContext(s.ctx, sha256hash)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return results, nil
@@ -133,6 +142,18 @@ func (s *mediaTableWithContext) GetByHash(sha256hash string) ([]*DbMedia, error)
 	}
 
 	return results, nil
+}
+
+func (s *mediaTableWithContext) GetByHash(sha256hash string) ([]*DbMedia, error) {
+	return s.scanRows(s.statements.selectMediaByHash.QueryContext(s.ctx, sha256hash))
+}
+
+func (s *mediaTableWithContext) GetByUserId(userId string) ([]*DbMedia, error) {
+	return s.scanRows(s.statements.selectMediaByUserId.QueryContext(s.ctx, userId))
+}
+
+func (s *mediaTableWithContext) GetByOrigin(origin string) ([]*DbMedia, error) {
+	return s.scanRows(s.statements.selectMediaByOrigin.QueryContext(s.ctx, origin))
 }
 
 func (s *mediaTableWithContext) GetById(origin string, mediaId string) (*DbMedia, error) {

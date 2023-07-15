@@ -30,6 +30,7 @@ func main() {
 		configPath = &configEnv
 	}
 
+	config.Runtime.IsImportProcess = true
 	config.Path = *configPath
 	assets.SetupMigrations(*migrationsPath)
 

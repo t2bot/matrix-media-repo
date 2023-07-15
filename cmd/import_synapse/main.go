@@ -47,8 +47,9 @@ func main() {
 	}
 
 	version.SetDefaults()
-	config.Path = *configPath
+	version.Print(true)
 	config.Runtime.IsImportProcess = true
+	config.Path = *configPath
 
 	if ids.GetMachineId() == 0 {
 		_ = os.Setenv("MACHINE_ID", "1023")
