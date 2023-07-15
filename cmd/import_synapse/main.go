@@ -90,8 +90,6 @@ func main() {
 	logrus.Info("Starting up...")
 	runtime.RunStartupSequence()
 
-	logrus.Debug("Setting up for importing...")
-
 	connectionString := "postgres://" + *postgresUsername + ":" + realPsqlPassword + "@" + *postgresHost + ":" + strconv.Itoa(*postgresPort) + "/" + *postgresDatabase + "?sslmode=disable"
 	csApiUrl := *baseUrl
 	if csApiUrl[len(csApiUrl)-1:] == "/" {

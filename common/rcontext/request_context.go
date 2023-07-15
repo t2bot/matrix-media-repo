@@ -11,13 +11,22 @@ import (
 func Initial() RequestContext {
 	return RequestContext{
 		Context: context.Background(),
-		Log:     logrus.WithFields(logrus.Fields{"nocontext": true}),
+		Log:     logrus.WithFields(logrus.Fields{"internal_flag": 1}),
 		Config: config.DomainRepoConfig{
 			MinimumRepoConfig: config.Get().MinimumRepoConfig,
 			Downloads:         config.Get().Downloads.DownloadsConfig,
 			Thumbnails:        config.Get().Thumbnails.ThumbnailsConfig,
 			UrlPreviews:       config.Get().UrlPreviews.UrlPreviewsConfig,
 		},
+		Request: nil,
+	}.populate()
+}
+
+func InitialNoConfig() RequestContext {
+	return RequestContext{
+		Context: context.Background(),
+		Log:     logrus.WithFields(logrus.Fields{"internal_flag": 2}),
+		Config:  config.DomainRepoConfig{},
 		Request: nil,
 	}.populate()
 }

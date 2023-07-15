@@ -1,6 +1,13 @@
-package archival
+package v2archive
 
-type V2ManifestRecord struct {
+type Manifest struct {
+	Version   int                        `json:"version"`
+	EntityId  string                     `json:"entity_id"`
+	CreatedTs int64                      `json:"created_ts"`
+	Media     map[string]*ManifestRecord `json:"media"`
+}
+
+type ManifestRecord struct {
 	FileName     string `json:"name"`
 	ArchivedName string `json:"file_name"`
 	SizeBytes    int64  `json:"size_bytes"`
@@ -11,11 +18,4 @@ type V2ManifestRecord struct {
 	MediaId      string `json:"media_id"`
 	CreatedTs    int64  `json:"created_ts"`
 	Uploader     string `json:"uploader"`
-}
-
-type V2Manifest struct {
-	Version   int                          `json:"version"`
-	EntityId  string                       `json:"entity_id"`
-	CreatedTs int64                        `json:"created_ts"`
-	Media     map[string]*V2ManifestRecord `json:"media"`
 }

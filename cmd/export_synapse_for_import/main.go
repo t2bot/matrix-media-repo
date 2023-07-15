@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
 	"io"
@@ -10,16 +9,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/archival"
+	"github.com/turt2live/matrix-media-repo/archival/v2archive"
 	"github.com/turt2live/matrix-media-repo/common/assets"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/logging"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/common/runtime"
+	"github.com/turt2live/matrix-media-repo/common/version"
 	"github.com/turt2live/matrix-media-repo/homeserver_interop/synapse"
 	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/stream_util"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -35,8 +32,12 @@ func main() {
 	importPath := flag.String("mediaDirectory", "./media_store", "The media_store_path for Synapse")
 	partSizeBytes := flag.Int64("partSize", 104857600, "The number of bytes (roughly) to split the export files into.")
 	skipMissing := flag.Bool("skipMissing", false, "If a media file can't be found, skip it.")
+	debug := flag.Bool("debug", false, "Enables debug logging.")
+	prettyLog := flag.Bool("prettyLog", false, "Enables pretty logging (colours).")
 	flag.Parse()
 
+	version.SetDefaults()
+	version.Print(true)
 	assets.SetupTemplates(*templatesPath)
 
 	_ = os.MkdirAll(*exportPath, 0755)
@@ -59,39 +60,51 @@ func main() {
 		realPsqlPassword = *postgresPassword
 	}
 
-	err := logging.Setup(
-		config.Get().General.LogDirectory,
-		config.Get().General.LogColors,
-		config.Get().General.JsonLogs,
-		config.Get().General.LogLevel,
-	)
-	if err != nil {
+	level := "info"
+	if *debug {
+		level = "debug"
+	}
+	if err := logging.Setup(
+		"-",
+		*prettyLog,
+		false,
+		level,
+	); err != nil {
 		panic(err)
 	}
 
-	logrus.Info("Setting up for importing...")
-	runtime.CheckIdGenerator()
+	ctx := rcontext.InitialNoConfig()
 
 	connectionString := "postgres://" + *postgresUsername + ":" + realPsqlPassword + "@" + *postgresHost + ":" + strconv.Itoa(*postgresPort) + "/" + *postgresDatabase + "?sslmode=disable"
 
-	logrus.Info("Connecting to synapse database...")
+	ctx.Log.Debug("Connecting to synapse database...")
 	synDb, err := synapse.OpenDatabase(connectionString)
 	if err != nil {
 		panic(err)
 	}
 
-	logrus.Info("Fetching all local media records from synapse...")
+	ctx.Log.Info("Fetching all local media records from Synapse...")
 	records, err := synDb.GetAllMedia()
 	if err != nil {
 		panic(err)
 	}
 
-	logrus.Info(fmt.Sprintf("Exporting %d media records", len(records)))
+	ctx.Log.Info(fmt.Sprintf("Exporting %d media records", len(records)))
 
-	writer := archival.NewV2ArchiveDiskWriter(*exportPath)
-	exporter, err := archival.NewV2Export("OOB", *serverName, *partSizeBytes, writer, rcontext.Initial())
+	archiver, err := v2archive.NewWriter(ctx, "OOB", *serverName, *partSizeBytes, func(part int, fileName string, data io.ReadCloser) error {
+		defer data.Close()
+		f, errf := os.Create(path.Join(*exportPath, fileName))
+		if errf != nil {
+			return errf
+		}
+		_, errf = io.Copy(f, data)
+		if errf != nil {
+			return errf
+		}
+		return nil
+	})
 	if err != nil {
-		logrus.Fatal(err)
+		ctx.Log.Fatal(err)
 	}
 
 	missing := make([]string, 0)
@@ -103,9 +116,9 @@ func main() {
 		// For a URL MediaID 2020-08-17_AABBCCDD:
 		// $importPath/url_cache/2020-08-17/AABBCCDD
 
-		mxc := fmt.Sprintf("mxc://%s/%s", *serverName, r.MediaId)
+		mxc := util.MxcUri(*serverName, r.MediaId)
 
-		logrus.Info("Copying " + mxc)
+		ctx.Log.Info("Copying " + mxc)
 
 		filePath := path.Join(*importPath, "local_content", r.MediaId[0:2], r.MediaId[2:4], r.MediaId[4:])
 		if r.UrlCache != "" {
@@ -115,36 +128,34 @@ func main() {
 
 		f, err := os.Open(filePath)
 		if os.IsNotExist(err) && *skipMissing {
-			logrus.Warn("File does not appear to exist, skipping: " + filePath)
+			ctx.Log.Warn("File does not appear to exist, skipping: " + filePath)
 			missing = append(missing, filePath)
 			continue
 		}
 		if err != nil {
-			logrus.Fatal(err)
+			ctx.Log.Fatal(err)
 		}
 
-		d := &bytes.Buffer{}
-		_, _ = io.Copy(d, f)
-		_ = f.Close()
-
-		temp := bytes.NewBuffer(d.Bytes())
-		sha256, err := stream_util.GetSha256HashOfStream(io.NopCloser(temp))
+		_, err = archiver.AppendMedia(f, v2archive.MediaInfo{
+			Origin:      *serverName,
+			MediaId:     r.MediaId,
+			FileName:    r.UploadName,
+			ContentType: r.ContentType,
+			CreationTs:  r.CreatedTs,
+			S3Url:       "",
+			UserId:      r.UserId,
+		})
 		if err != nil {
-			logrus.Fatal(err)
-		}
-
-		err = exporter.AppendMedia(*serverName, r.MediaId, r.UploadName, r.ContentType, util.FromMillis(r.CreatedTs), d, sha256, "", r.UserId)
-		if err != nil {
-			logrus.Fatal(err)
+			ctx.Log.Fatal(err)
 		}
 	}
 
-	err = exporter.Finish()
+	err = archiver.Finish()
 	if err != nil {
-		logrus.Fatal(err)
+		ctx.Log.Fatal(err)
 	}
 
-	logrus.Info("Done export - cleaning up...")
+	ctx.Log.Info("Done export - cleaning up...")
 
 	// Clean up
 	assets.Cleanup()
@@ -152,9 +163,9 @@ func main() {
 	// Report missing files
 	if len(missing) > 0 {
 		for _, m := range missing {
-			logrus.Warn("Was not able to find " + m)
+			ctx.Log.Warn("Was not able to find " + m)
 		}
 	}
 
-	logrus.Info("Export completed")
+	ctx.Log.Info("Export completed")
 }
