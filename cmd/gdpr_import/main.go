@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"os"
 	"path"
@@ -12,6 +13,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/logging"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/common/runtime"
+	"github.com/turt2live/matrix-media-repo/util/ids"
 )
 
 func main() {
@@ -28,9 +30,13 @@ func main() {
 		configPath = &configEnv
 	}
 
-	config.Runtime.IsImportProcess = true
+	config.Runtime.IsImportProcess = true // prevents us from creating media by accident
 	config.Path = *configPath
 	assets.SetupMigrations(*migrationsPath)
+
+	if ids.GetMachineId() == 0 {
+		panic(errors.New("expected custom machine ID for import process (unsafe to import as Machine 0)"))
+	}
 
 	var err error
 	err = logging.Setup(

@@ -18,7 +18,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/logging"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/common/runtime"
-	"github.com/turt2live/matrix-media-repo/common/version"
 	"github.com/turt2live/matrix-media-repo/database"
 	"github.com/turt2live/matrix-media-repo/datastores"
 	"github.com/turt2live/matrix-media-repo/homeserver_interop/synapse"
@@ -46,19 +45,13 @@ func main() {
 		configPath = &configEnv
 	}
 
-	version.SetDefaults()
-	version.Print(true)
-	config.Runtime.IsImportProcess = true
+	config.Runtime.IsImportProcess = true // prevents us from creating media by accident
 	config.Path = *configPath
+	assets.SetupMigrations(*migrationsPath)
 
 	if ids.GetMachineId() == 0 {
-		_ = os.Setenv("MACHINE_ID", "1023")
-		if ids.GetMachineId() != 1023 {
-			panic(errors.New("expected machine ID 1023 or custom ID for import process"))
-		}
+		panic(errors.New("expected custom machine ID for import process (unsafe to import as Machine 0)"))
 	}
-
-	assets.SetupMigrations(*migrationsPath)
 
 	var realPsqlPassword string
 	if *postgresPassword == "" {
