@@ -16,6 +16,7 @@ import (
 
 var tempMigrations string
 var tempTemplates string
+var tempAssets string
 
 func SetupMigrations(givenMigrationsPath string) {
 	_, err := os.Stat(givenMigrationsPath)
@@ -55,7 +56,7 @@ func SetupAssets(givenAssetsPath string) {
 	_, err := os.Stat(givenAssetsPath)
 	exists := err == nil || !os.IsNotExist(err)
 	if !exists {
-		tempAssets, err := os.MkdirTemp(os.TempDir(), "media-repo-assets")
+		tempAssets, err = os.MkdirTemp(os.TempDir(), "media-repo-assets")
 		if err != nil {
 			panic(err)
 		}
@@ -75,6 +76,10 @@ func Cleanup() {
 	if tempTemplates != "" {
 		logrus.Info("Cleaning up temporary assets directory: ", tempTemplates)
 		os.Remove(tempTemplates)
+	}
+	if tempAssets != "" {
+		logrus.Info("Cleaning up temporary assets directory: ", tempAssets)
+		os.Remove(tempAssets)
 	}
 }
 

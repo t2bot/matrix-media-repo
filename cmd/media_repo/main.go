@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
@@ -15,7 +16,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/logging"
 	"github.com/turt2live/matrix-media-repo/common/runtime"
 	"github.com/turt2live/matrix-media-repo/common/version"
-	"github.com/turt2live/matrix-media-repo/internal_cache"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/tasks"
 )
@@ -39,7 +39,6 @@ func main() {
 		configPath = &configEnv
 	}
 
-	version.SetDefaults()
 	config.Path = *configPath
 	if config.Get().Sentry.Enabled {
 		logrus.Info("Setting up Sentry for debugging...")
@@ -56,6 +55,7 @@ func main() {
 	defer sentry.Flush(2 * time.Second)
 	defer sentry.Recover()
 
+	defer assets.Cleanup()
 	assets.SetupMigrations(*migrationsPath)
 	assets.SetupTemplates(*templatesPath)
 	assets.SetupAssets(*assetsPath)
@@ -72,7 +72,6 @@ func main() {
 
 	logrus.Info("Starting up...")
 	runtime.RunStartupSequence()
-	internal_cache.ReplaceInstance() // init the cache as we may be using Redis, and it'd be good to get going sooner
 
 	logrus.Info("Checking background tasks...")
 	err = scanAndStartUnfinishedTasks()
@@ -86,7 +85,9 @@ func main() {
 
 	logrus.Info("Starting config watcher...")
 	watcher := config.Watch()
-	defer watcher.Close()
+	defer func(watcher *fsnotify.Watcher) {
+		_ = watcher.Close()
+	}(watcher)
 	setupReloads()
 
 	logrus.Info("Starting media repository...")
@@ -129,9 +130,6 @@ func main() {
 	if !selfStop {
 		stopAllButWeb()
 	}
-
-	// Clean up
-	assets.Cleanup()
 
 	// For debugging
 	logrus.Info("Goodbye!")

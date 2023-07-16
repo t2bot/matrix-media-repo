@@ -1,9 +1,10 @@
 package tasks
 
 import (
-	"github.com/getsentry/sentry-go"
 	"math/rand"
 	"time"
+
+	"github.com/getsentry/sentry-go"
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/config"

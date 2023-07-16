@@ -47,6 +47,8 @@ func main() {
 
 	config.Runtime.IsImportProcess = true // prevents us from creating media by accident
 	config.Path = *configPath
+
+	defer assets.Cleanup()
 	assets.SetupMigrations(*migrationsPath)
 
 	if ids.GetMachineId() == 0 {
@@ -144,9 +146,6 @@ func main() {
 		logrus.Debug("Waiting for import to complete...")
 		time.Sleep(1 * time.Second)
 	}
-
-	// Clean up
-	assets.Cleanup()
 
 	logrus.Info("Import completed")
 }

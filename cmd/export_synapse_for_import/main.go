@@ -39,6 +39,8 @@ func main() {
 	config.Runtime.IsImportProcess = true
 	version.SetDefaults()
 	version.Print(true)
+
+	defer assets.Cleanup()
 	assets.SetupTemplates(*templatesPath)
 
 	var realPsqlPassword string
@@ -143,10 +145,7 @@ func main() {
 		ctx.Log.Fatal(err)
 	}
 
-	ctx.Log.Info("Done export - cleaning up...")
-
-	// Clean up
-	assets.Cleanup()
+	ctx.Log.Info("Done export")
 
 	// Report missing files
 	if len(missing) > 0 {

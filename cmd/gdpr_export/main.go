@@ -35,6 +35,8 @@ func main() {
 
 	config.Runtime.IsImportProcess = true // prevents us from creating media by accident
 	config.Path = *configPath
+
+	defer assets.Cleanup()
 	assets.SetupMigrations(*migrationsPath)
 	assets.SetupTemplates(*templatesPath)
 
