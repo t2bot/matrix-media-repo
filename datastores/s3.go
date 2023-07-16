@@ -10,6 +10,7 @@ import (
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/common/rcontext"
 )
 
 var s3clients = &sync.Map{}
@@ -64,6 +65,19 @@ func getS3(ds config.DatastoreConfig) (*s3, error) {
 	}
 	s3clients.Store(ds.Id, s3c)
 	return s3c, nil
+}
+
+func ListS3Files(ctx rcontext.RequestContext, ds config.DatastoreConfig) (<-chan minio.ObjectInfo, error) {
+	if ds.Type != "s3" {
+		return nil, errors.New("not an S3 datastore")
+	}
+	s3c, err := getS3(ds)
+	if err != nil {
+		return nil, err
+	}
+	return s3c.client.ListObjects(ctx.Context, s3c.bucket, minio.ListObjectsOptions{
+		Recursive: false,
+	}), nil
 }
 
 func GetS3Url(ds config.DatastoreConfig, location string) (string, error) {

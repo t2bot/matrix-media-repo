@@ -36,6 +36,7 @@ const selectMediaExists = "SELECT TRUE FROM media WHERE origin = $1 AND media_id
 const selectMediaById = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, creation_ts, quarantined, datastore_id, location FROM media WHERE origin = $1 AND media_id = $2;"
 const selectMediaByUserId = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, creation_ts, quarantined, datastore_id, location FROM media WHERE user_id = $1;"
 const selectMediaByOrigin = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, creation_ts, quarantined, datastore_id, location FROM media WHERE origin = $1;"
+const selectMediaByLocationExists = "SELECT TRUE FROM media WHERE datastore_id = $1 AND location = $2 LIMIT 1;"
 
 type mediaTableStatements struct {
 	selectDistinctMediaDatastoreIds *sql.Stmt
@@ -46,6 +47,7 @@ type mediaTableStatements struct {
 	selectMediaById                 *sql.Stmt
 	selectMediaByUserId             *sql.Stmt
 	selectMediaByOrigin             *sql.Stmt
+	selectMediaByLocationExists     *sql.Stmt
 }
 
 type mediaTableWithContext struct {
@@ -80,6 +82,9 @@ func prepareMediaTables(db *sql.DB) (*mediaTableStatements, error) {
 	}
 	if stmts.selectMediaByOrigin, err = db.Prepare(selectMediaByOrigin); err != nil {
 		return nil, errors.New("error preparing selectMediaByOrigin: " + err.Error())
+	}
+	if stmts.selectMediaByLocationExists, err = db.Prepare(selectMediaByLocationExists); err != nil {
+		return nil, errors.New("error preparing selectMediaByLocationExists: " + err.Error())
 	}
 
 	return stmts, nil
@@ -169,6 +174,17 @@ func (s *mediaTableWithContext) GetById(origin string, mediaId string) (*DbMedia
 
 func (s *mediaTableWithContext) IdExists(origin string, mediaId string) (bool, error) {
 	row := s.statements.selectMediaExists.QueryRowContext(s.ctx, origin, mediaId)
+	val := false
+	err := row.Scan(&val)
+	if err == sql.ErrNoRows {
+		err = nil
+		val = false
+	}
+	return val, err
+}
+
+func (s *mediaTableWithContext) LocationExists(datastoreId string, location string) (bool, error) {
+	row := s.statements.selectMediaByLocationExists.QueryRowContext(s.ctx, datastoreId, location)
 	val := false
 	err := row.Scan(&val)
 	if err == sql.ErrNoRows {

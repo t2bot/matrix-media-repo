@@ -27,10 +27,12 @@ type DbThumbnail struct {
 
 const selectThumbnailByParams = "SELECT origin, media_id, content_type, width, height, method, animated, sha256_hash, size_bytes, creation_ts, datastore_id, location FROM thumbnails WHERE origin = $1 AND media_id = $2 AND width = $3 AND height = $4 AND method = $5 AND animated = $6;"
 const insertThumbnail = "INSERT INTO thumbnails (origin, media_id, content_type, width, height, method, animated, sha256_hash, size_bytes, creation_ts, datastore_id, location) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);"
+const selectThumbnailByLocationExists = "SELECT TRUE FROM thumbnails WHERE datastore_id = $1 AND location = $2 LIMIT 1;"
 
 type thumbnailsTableStatements struct {
-	selectThumbnailByParams *sql.Stmt
-	insertThumbnail         *sql.Stmt
+	selectThumbnailByParams         *sql.Stmt
+	insertThumbnail                 *sql.Stmt
+	selectThumbnailByLocationExists *sql.Stmt
 }
 
 type thumbnailsTableWithContext struct {
@@ -47,6 +49,9 @@ func prepareThumbnailsTables(db *sql.DB) (*thumbnailsTableStatements, error) {
 	}
 	if stmts.insertThumbnail, err = db.Prepare(insertThumbnail); err != nil {
 		return nil, errors.New("error preparing insertThumbnail: " + err.Error())
+	}
+	if stmts.selectThumbnailByLocationExists, err = db.Prepare(selectThumbnailByLocationExists); err != nil {
+		return nil, errors.New("error preparing selectThumbnailByLocationExists: " + err.Error())
 	}
 
 	return stmts, nil
@@ -73,4 +78,15 @@ func (s *thumbnailsTableWithContext) GetByParams(origin string, mediaId string, 
 func (s *thumbnailsTableWithContext) Insert(record *DbThumbnail) error {
 	_, err := s.statements.insertThumbnail.ExecContext(s.ctx, record.Origin, record.MediaId, record.ContentType, record.Width, record.Height, record.Method, record.Animated, record.Sha256Hash, record.SizeBytes, record.CreationTs, record.DatastoreId, record.Location)
 	return err
+}
+
+func (s *thumbnailsTableWithContext) LocationExists(datastoreId string, location string) (bool, error) {
+	row := s.statements.selectThumbnailByLocationExists.QueryRowContext(s.ctx, datastoreId, location)
+	val := false
+	err := row.Scan(&val)
+	if err == sql.ErrNoRows {
+		err = nil
+		val = false
+	}
+	return val, err
 }
