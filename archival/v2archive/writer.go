@@ -237,7 +237,7 @@ func (w *ArchiveWriter) Finish() error {
 	w.writingManifest = true
 	defer func() { w.writingManifest = false }()
 	manifest := &Manifest{
-		Version:   2,
+		Version:   ManifestVersion,
 		EntityId:  w.entity,
 		CreatedTs: util.NowMillis(),
 		Media:     w.mediaManifest,

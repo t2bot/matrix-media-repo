@@ -4,17 +4,14 @@ import (
 	"flag"
 	"os"
 	"path"
-	"time"
 
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/archival/v2archive"
 	"github.com/turt2live/matrix-media-repo/common/assets"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/logging"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/common/runtime"
-	"github.com/turt2live/matrix-media-repo/controllers/data_controller"
-	"github.com/turt2live/matrix-media-repo/storage"
-	"github.com/turt2live/matrix-media-repo/util"
 )
 
 func main() {
@@ -22,6 +19,7 @@ func main() {
 	migrationsPath := flag.String("migrations", config.DefaultMigrationsPath, "The absolute path for the migrations folder")
 	filesDir := flag.String("directory", "./gdpr-data", "The directory for where the entity's exported files are")
 	verifyMode := flag.Bool("verify", false, "If set, no media will be imported and instead be tested to see if they've been imported already")
+	onlyEntity := flag.String("onlyEntity", "", "The entity (user ID or server name) to import for")
 	flag.Parse()
 
 	// Override config path with config for Docker users
@@ -61,116 +59,58 @@ func main() {
 		files = append(files, path.Join(*filesDir, f.Name()))
 	}
 
-	// Find the manifest so we can import as soon as possible
-	manifestIdx := 0
-	for i, fname := range files {
-		logrus.Infof("Checking %s for export manifest", fname)
+	// Make an archive reader
+	archiver := v2archive.NewReader(rcontext.Initial())
+
+	// Find the manifest
+	for _, fname := range files {
+		logrus.Debugf("Scanning %s for manifest", fname)
 		f, err := os.Open(fname)
 		if err != nil {
 			panic(err)
 		}
-		defer f.Close()
-		names, err := data_controller.GetFileNames(f)
-		if err != nil {
+		if ok, err := archiver.TryGetManifestFrom(f); err != nil {
 			panic(err)
-		}
-
-		if util.ArrayContains(names, "manifest.json") {
-			manifestIdx = i
+		} else if ok {
 			break
 		}
 	}
-
-	ctx := rcontext.Initial().LogWithFields(logrus.Fields{"flagDir": *filesDir})
-
-	f, err := os.Open(files[manifestIdx])
-	if err != nil {
-		panic(err)
+	if len(archiver.GetNotUploadedMxcUris()) <= 0 {
+		logrus.Warn("Found zero or fewer MXC URIs to import. This usually means there was no manifest found.")
+		return
 	}
-	defer f.Close()
+	logrus.Debugf("Importing media for %s", archiver.GetEntityId())
 
-	if *verifyMode {
-		found, expected, missingIds, err := data_controller.VerifyImport(f, ctx)
-		if err != nil {
-			panic(err)
-		}
-		logrus.Info("Known imported media IDs: ", found)
-		logrus.Info("Expected media IDs: ", expected)
-
-		if len(missingIds) > 0 {
-			for _, mxc := range missingIds {
-				logrus.Error("Expected media ID but was not present: ", mxc)
-			}
-			logrus.Warn("Not all media is present. See logs for details.")
-			os.Exit(1)
-		}
-		logrus.Info("All media present!")
-		return // exit 0
+	// Re-process all the files properly this time
+	opts := v2archive.ProcessOpts{
+		LockedEntityId:    *onlyEntity,
+		CheckUploadedOnly: *verifyMode,
 	}
-
-	logrus.Info("Starting import...")
-	task, importId, err := data_controller.StartImport(f, ctx)
-	if err != nil {
-		panic(err)
-	}
-
-	logrus.Info("Appending all other files to import")
-	for i, fname := range files {
-		if i == manifestIdx {
-			continue // already imported
-		}
-
-		logrus.Info("Appending ", fname)
-
-		if !data_controller.IsImportWaiting(importId) {
-			logrus.Info("Import claimed closed - ignoring file")
-			continue
-		}
-
+	for _, fname := range files {
+		logrus.Debugf("Processing %s for media", fname)
 		f, err := os.Open(fname)
 		if err != nil {
 			panic(err)
 		}
-		defer f.Close()
-		ch, err := data_controller.AppendToImport(importId, f, true)
-		if err != nil {
+		if err = archiver.ProcessFile(f, opts); err != nil {
 			panic(err)
 		}
-
-		if ch == nil {
-			logrus.Info("No channel returned by data controller - moving on to next file")
-			continue
+	}
+	if !opts.CheckUploadedOnly {
+		if err = archiver.ProcessS3Files(opts); err != nil {
+			panic(err)
 		}
-
-		logrus.Info("Waiting for file to be processed before moving on")
-		<-ch
-		close(ch)
 	}
 
-	logrus.Info("Waiting for import to complete")
-	waitChan := make(chan bool)
-	defer close(waitChan)
-	go func() {
-		// Initial sleep to let the caches fill
-		time.Sleep(1 * time.Second)
-
-		ctx := rcontext.Initial().LogWithFields(logrus.Fields{"async": true})
-		db := storage.GetDatabase().GetMetadataStore(ctx)
-		for true {
-			ctx.Log.Info("Checking if task is complete")
-
-			task, err := db.GetBackgroundTask(task.ID)
-			if err != nil {
-				logrus.Error(err)
-			} else if task.EndTs > 0 {
-				waitChan <- true
-				return
-			}
-
-			time.Sleep(1 * time.Second)
+	missing := archiver.GetNotUploadedMxcUris()
+	if len(missing) > 0 {
+		for _, mxc := range missing {
+			logrus.Warnf("%s has not been uploaded yet - was it included in the package?", mxc)
 		}
-	}()
-	<-waitChan
-
-	logrus.Infof("Import complete!")
+		logrus.Warnf("%d MXC URIs have not been imported.", len(missing))
+	} else if *verifyMode {
+		logrus.Info("All MXC URIs have been imported.")
+	} else {
+		logrus.Info("Import complete.")
+	}
 }

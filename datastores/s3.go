@@ -1,7 +1,10 @@
 package datastores
 
 import (
+	"errors"
+	"fmt"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/minio/minio-go/v7"
@@ -63,7 +66,7 @@ func getS3(ds config.DatastoreConfig) (*s3, error) {
 	return s3c, nil
 }
 
-func GetS3Url(ds config.DatastoreConfig) (string, error) {
+func GetS3Url(ds config.DatastoreConfig, location string) (string, error) {
 	if ds.Type != "s3" {
 		return "", nil
 	}
@@ -73,5 +76,34 @@ func GetS3Url(ds config.DatastoreConfig) (string, error) {
 		return "", err
 	}
 
-	return s3c.client.EndpointURL().String(), nil
+	// HACK: Surely there's a better way...
+	return fmt.Sprintf("https://%s/%s/%s", s3c.client.EndpointURL(), s3c.bucket, location), nil
+}
+
+func ParseS3Url(s3url string) (config.DatastoreConfig, string, error) {
+	parts := strings.Split(s3url[len("https://"):], "/")
+	if len(parts) < 3 {
+		return config.DatastoreConfig{}, "", errors.New("invalid url")
+	}
+
+	endpoint := parts[0]
+	location := parts[len(parts)-1]
+	bucket := strings.Join(parts[1:len(parts)-1], "/")
+
+	for _, c := range config.Get().DataStores {
+		if c.Type != "s3" {
+			continue
+		}
+
+		s3c, err := getS3(c)
+		if err != nil {
+			return config.DatastoreConfig{}, "", err
+		}
+
+		if s3c.client.EndpointURL().Host == endpoint && s3c.bucket == bucket {
+			return c, location, nil
+		}
+	}
+
+	return config.DatastoreConfig{}, "", errors.New("could not locate datastore")
 }

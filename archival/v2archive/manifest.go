@@ -1,10 +1,19 @@
 package v2archive
 
+const (
+	ManifestVersionV1 = 1
+	ManifestVersionV2 = 2
+)
+const ManifestVersion = ManifestVersionV2
+
 type Manifest struct {
 	Version   int                        `json:"version"`
 	EntityId  string                     `json:"entity_id"`
 	CreatedTs int64                      `json:"created_ts"`
 	Media     map[string]*ManifestRecord `json:"media"`
+
+	// Deprecated: for v1 manifests, now called EntityId
+	UserId string `json:"user_id,omitempty"`
 }
 
 type ManifestRecord struct {

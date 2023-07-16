@@ -61,7 +61,7 @@ func ExportEntityData(ctx rcontext.RequestContext, exportId string, entityId str
 				// "should never happen" because we downloaded the file, in theory
 				ctx.Log.Warnf("Cannot populate S3 URL for %s because datastore for media could not be found", mxc)
 			} else {
-				s3url, err = datastores.GetS3Url(dsConf)
+				s3url, err = datastores.GetS3Url(dsConf, media.Location)
 				if err != nil {
 					ctx.Log.Warnf("Cannot populate S3 URL for %s because there was an error getting S3 information: %s", mxc, err)
 				}
