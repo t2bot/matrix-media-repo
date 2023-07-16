@@ -503,6 +503,9 @@ metrics:
 # Currently there are only antispam plugins, but in future there should be more options.
 # Plugins are not supported on per-domain paths and are instead repo-wide. For more
 # information on writing plugins, please visit #matrix-media-repo:t2bot.io on Matrix.
+#
+# Note: Using plugins will mean that your media repo's memory usage will be higher because
+# uploads are cached in-memory temporarily.
 plugins:
   - exec: /path/to/plugin/executable
     # Note: the exact config varies by plugin.

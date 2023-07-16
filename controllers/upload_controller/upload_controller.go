@@ -1,6 +1,7 @@
 package upload_controller
 
 import (
+	"bytes"
 	"errors"
 	"io"
 	"strconv"
@@ -159,7 +160,7 @@ func trackUploadAsLastAccess(ctx rcontext.RequestContext, media *types.Media) {
 }
 
 func checkSpam(contents []byte, filename string, contentType string, userId string, origin string, mediaId string) error {
-	spam, err := plugins.CheckForSpam(contents, filename, contentType, userId, origin, mediaId)
+	spam, err := plugins.CheckForSpam(bytes.NewBuffer(contents), filename, contentType, userId, origin, mediaId)
 	if err != nil {
 		logrus.Warn("Error checking spam - assuming not spam: " + err.Error())
 		sentry.CaptureException(err)

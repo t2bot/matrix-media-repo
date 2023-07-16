@@ -101,6 +101,8 @@ path/server, for example, then you can simply update the path in the config for 
 ### Fixed
 
 * URL previews now follow redirects properly.
+* Overall memory usage is improved, particularly during media uploads. 
+  * Note: If you use plugins then memory usage will still be somewhat high due to temporary caching of uploads. 
 
 ## [1.2.13] - February 12, 2023
 

@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"github.com/getsentry/sentry-go"
+	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/database"
@@ -14,6 +15,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/pipelines/_steps/quota"
 	"github.com/turt2live/matrix-media-repo/pipelines/_steps/upload"
 	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/readers"
 )
 
 // Execute Media upload. If mediaId is an empty string, one will be generated.
@@ -46,12 +48,34 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, r io.Re
 		return nil, err
 	}
 
-	// Step 4: Buffer to the datastore's temporary path
-	sha256hash, sizeBytes, reader, err := datastores.BufferTemp(dsConf, r)
+	// Step 4: Buffer to the datastore's temporary path, and check for spam
+	spamR, spamW := io.Pipe()
+	spamTee := io.TeeReader(r, spamW)
+	spamChan := upload.CheckSpamAsync(ctx, spamR, upload.FileMetadata{
+		Name:        fileName,
+		ContentType: contentType,
+		UserId:      userId,
+		Origin:      origin,
+		MediaId:     mediaId,
+	})
+	sha256hash, sizeBytes, reader, err := datastores.BufferTemp(dsConf, readers.NewCancelCloser(io.NopCloser(spamTee), func() {
+		r.Close()
+	}))
 	if err != nil {
 		return nil, err
 	}
+	if err = spamW.Close(); err != nil {
+		ctx.Log.Warn("Failed to close writer for spam checker: ", err)
+		spamChan <- upload.SpamResponse{Err: errors.New("failed to close")}
+	}
 	defer reader.Close()
+	spam := <-spamChan
+	if spam.Err != nil {
+		return nil, err
+	}
+	if spam.IsSpam {
+		return nil, common.ErrMediaQuarantined
+	}
 
 	// Step 5: Split the buffer to calculate a blurhash & populate cache later
 	bhR, bhW := io.Pipe()

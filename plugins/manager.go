@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"encoding/base64"
+	"io"
 
 	"github.com/hashicorp/go-plugin"
 	"github.com/sirupsen/logrus"
@@ -40,7 +41,8 @@ func StopPlugins() {
 	existingPlugins = make([]*mmrPlugin, 0)
 }
 
-func CheckForSpam(contents []byte, filename string, contentType string, userId string, origin string, mediaId string) (bool, error) {
+func CheckForSpam(r io.Reader, filename string, contentType string, userId string, origin string, mediaId string) (bool, error) {
+	b := make([]byte, 0)
 	for _, pl := range existingPlugins {
 		as, err := pl.Antispam()
 		if err != nil {
@@ -48,7 +50,14 @@ func CheckForSpam(contents []byte, filename string, contentType string, userId s
 			continue
 		}
 
-		b64 := base64.StdEncoding.EncodeToString(contents)
+		if len(b) == 0 {
+			b, err = io.ReadAll(r)
+			if err != nil {
+				return false, err
+			}
+		}
+
+		b64 := base64.StdEncoding.EncodeToString(b)
 		spam, err := as.CheckForSpam(b64, filename, contentType, userId, origin, mediaId)
 		if err != nil {
 			return false, err
