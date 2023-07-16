@@ -3,7 +3,7 @@ package assets
 import (
 	"bytes"
 	"compress/gzip"
-	"encoding/hex"
+	"encoding/base64"
 	"io"
 	"os"
 	"path"
@@ -84,13 +84,13 @@ func Cleanup() {
 }
 
 func extractPrefixTo(pathName string, destination string) {
-	for f, h := range compressedFiles {
+	for f, b64 := range f2CompressedFiles {
 		if !strings.HasPrefix(f, pathName) {
 			continue
 		}
 
 		logrus.Infof("Decoding %s", f)
-		b, err := hex.DecodeString(h)
+		b, err := base64.StdEncoding.DecodeString(b64)
 		if err != nil {
 			panic(err)
 		}
