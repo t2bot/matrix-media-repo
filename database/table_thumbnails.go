@@ -28,11 +28,13 @@ type DbThumbnail struct {
 const selectThumbnailByParams = "SELECT origin, media_id, content_type, width, height, method, animated, sha256_hash, size_bytes, creation_ts, datastore_id, location FROM thumbnails WHERE origin = $1 AND media_id = $2 AND width = $3 AND height = $4 AND method = $5 AND animated = $6;"
 const insertThumbnail = "INSERT INTO thumbnails (origin, media_id, content_type, width, height, method, animated, sha256_hash, size_bytes, creation_ts, datastore_id, location) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);"
 const selectThumbnailByLocationExists = "SELECT TRUE FROM thumbnails WHERE datastore_id = $1 AND location = $2 LIMIT 1;"
+const selectThumbnailsForMedia = "SELECT origin, media_id, content_type, width, height, method, animated, sha256_hash, size_bytes, creation_ts, datastore_id, location FROM thumbnails WHERE origin = $1 AND media_id = $2;"
 
 type thumbnailsTableStatements struct {
 	selectThumbnailByParams         *sql.Stmt
 	insertThumbnail                 *sql.Stmt
 	selectThumbnailByLocationExists *sql.Stmt
+	selectThumbnailsForMedia        *sql.Stmt
 }
 
 type thumbnailsTableWithContext struct {
@@ -52,6 +54,9 @@ func prepareThumbnailsTables(db *sql.DB) (*thumbnailsTableStatements, error) {
 	}
 	if stmts.selectThumbnailByLocationExists, err = db.Prepare(selectThumbnailByLocationExists); err != nil {
 		return nil, errors.New("error preparing selectThumbnailByLocationExists: " + err.Error())
+	}
+	if stmts.selectThumbnailsForMedia, err = db.Prepare(selectThumbnailsForMedia); err != nil {
+		return nil, errors.New("error preparing selectThumbnailsForMedia: " + err.Error())
 	}
 
 	return stmts, nil
@@ -73,6 +78,25 @@ func (s *thumbnailsTableWithContext) GetByParams(origin string, mediaId string, 
 		val = nil
 	}
 	return val, err
+}
+
+func (s *thumbnailsTableWithContext) GetForMedia(origin string, mediaId string) ([]*DbThumbnail, error) {
+	results := make([]*DbThumbnail, 0)
+	rows, err := s.statements.selectThumbnailsForMedia.QueryContext(s.ctx, origin, mediaId)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return results, nil
+		}
+		return nil, err
+	}
+	for rows.Next() {
+		val := &DbThumbnail{Locatable: &Locatable{}}
+		if err = rows.Scan(&val.Origin, &val.MediaId, &val.ContentType, &val.Width, &val.Height, &val.Method, &val.Animated, &val.Sha256Hash, &val.SizeBytes, &val.CreationTs, &val.DatastoreId, &val.Location); err != nil {
+			return nil, err
+		}
+		results = append(results, val)
+	}
+	return results, nil
 }
 
 func (s *thumbnailsTableWithContext) Insert(record *DbThumbnail) error {

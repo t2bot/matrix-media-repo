@@ -1,29 +1,24 @@
 package unstable
 
 import (
-	"bytes"
-	"database/sql"
-	"io"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/disintegration/imaging"
 	"github.com/getsentry/sentry-go"
+	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api/_apimeta"
 	"github.com/turt2live/matrix-media-repo/api/_responses"
 	"github.com/turt2live/matrix-media-repo/api/_routers"
-	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/stream_util"
-
-	"github.com/disintegration/imaging"
-	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/controllers/download_controller"
-	"github.com/turt2live/matrix-media-repo/storage"
+	"github.com/turt2live/matrix-media-repo/database"
+	"github.com/turt2live/matrix-media-repo/pipelines/pipeline_download"
 	"github.com/turt2live/matrix-media-repo/thumbnailing"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/i"
-	"github.com/turt2live/matrix-media-repo/util/util_byte_seeker"
+	"github.com/turt2live/matrix-media-repo/util"
 )
 
 type mediaInfoHashes struct {
@@ -31,9 +26,11 @@ type mediaInfoHashes struct {
 }
 
 type mediaInfoThumbnail struct {
-	Width  int  `json:"width"`
-	Height int  `json:"height"`
-	Ready  bool `json:"ready"`
+	Width       int    `json:"width"`
+	Height      int    `json:"height"`
+	Ready       bool   `json:"ready"`
+	ContentType string `json:"content_type,omitempty"`
+	SizeBytes   int64  `json:"size,omitempty"`
 }
 
 type MediaInfoResponse struct {
@@ -79,65 +76,51 @@ func MediaInfo(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 		return _responses.MediaBlocked()
 	}
 
-	streamedMedia, err := download_controller.GetMedia(server, mediaId, downloadRemote, true, rctx)
+	record, stream, err := pipeline_download.Execute(rctx, server, mediaId, pipeline_download.DownloadOpts{
+		FetchRemoteIfNeeded: downloadRemote,
+		StartByte:           -1,
+		EndByte:             -1,
+		BlockForReadUntil:   30 * time.Second,
+		RecordOnly:          false,
+	})
+	// Error handling copied from download endpoint
 	if err != nil {
 		if err == common.ErrMediaNotFound {
 			return _responses.NotFoundError()
 		} else if err == common.ErrMediaTooLarge {
 			return _responses.RequestTooLarge()
 		} else if err == common.ErrMediaQuarantined {
-			return _responses.NotFoundError() // We lie for security
+			rctx.Log.Debug("Quarantined media accessed. Has stream? ", stream != nil)
+			if stream != nil {
+				return _responses.MakeQuarantinedImageResponse(stream)
+			} else {
+				return _responses.NotFoundError() // We lie for security
+			}
+		} else if err == common.ErrMediaNotYetUploaded {
+			return _responses.NotYetUploaded()
 		}
 		rctx.Log.Error("Unexpected error locating media: ", err)
-		sentry.CaptureException(err)
-		return _responses.InternalServerError("Unexpected Error")
-	}
-	defer stream_util.DumpAndCloseStream(streamedMedia.Stream)
-
-	b, err := io.ReadAll(streamedMedia.Stream)
-	if err != nil {
-		rctx.Log.Error("Unexpected error processing media: ", err)
 		sentry.CaptureException(err)
 		return _responses.InternalServerError("Unexpected Error")
 	}
 
 	response := &MediaInfoResponse{
-		ContentUri:  streamedMedia.KnownMedia.MxcUri(),
-		ContentType: streamedMedia.KnownMedia.ContentType,
-		Size:        streamedMedia.KnownMedia.SizeBytes,
+		ContentUri:  util.MxcUri(record.Origin, record.MediaId),
+		ContentType: record.ContentType,
+		Size:        record.SizeBytes,
 		Hashes: mediaInfoHashes{
-			Sha256: streamedMedia.KnownMedia.Sha256Hash,
+			Sha256: record.Sha256Hash,
 		},
 	}
 
-	img, err := imaging.Decode(bytes.NewBuffer(b))
-	if err == nil {
-		response.Width = img.Bounds().Max.X
-		response.Height = img.Bounds().Max.Y
-	}
-
-	thumbsDb := storage.GetDatabase().GetThumbnailStore(rctx)
-	thumbs, err := thumbsDb.GetAllForMedia(streamedMedia.KnownMedia.Origin, streamedMedia.KnownMedia.MediaId)
-	if err != nil && err != sql.ErrNoRows {
-		rctx.Log.Error("Unexpected error locating media: ", err)
-		sentry.CaptureException(err)
-		return _responses.InternalServerError("Unexpected Error")
-	}
-
-	if thumbs != nil && len(thumbs) > 0 {
-		infoThumbs := make([]*mediaInfoThumbnail, 0)
-		for _, thumb := range thumbs {
-			infoThumbs = append(infoThumbs, &mediaInfoThumbnail{
-				Width:  thumb.Width,
-				Height: thumb.Height,
-				Ready:  true,
-			})
+	if strings.HasPrefix(response.ContentType, "image/") {
+		img, err := imaging.Decode(stream)
+		if err == nil {
+			response.Width = img.Bounds().Max.X
+			response.Height = img.Bounds().Max.Y
 		}
-		response.Thumbnails = infoThumbs
-	}
-
-	if strings.HasPrefix(response.ContentType, "audio/") {
-		generator, reconstructed, err := thumbnailing.GetGenerator(util_byte_seeker.NewByteSeeker(b), response.ContentType, false)
+	} else if strings.HasPrefix(response.ContentType, "audio/") {
+		generator, reconstructed, err := thumbnailing.GetGenerator(stream, response.ContentType, false)
 		if err == nil {
 			if audiogenerator, ok := generator.(i.AudioGenerator); ok {
 				audioInfo, err := audiogenerator.GetAudioData(reconstructed, 768, rctx)
@@ -149,6 +132,27 @@ func MediaInfo(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 				}
 			}
 		}
+	}
+
+	thumbs, err := database.GetInstance().Thumbnails.Prepare(rctx).GetForMedia(record.Origin, record.MediaId)
+	if err != nil {
+		rctx.Log.Error("Unexpected error locating media thumbnails: ", err)
+		sentry.CaptureException(err)
+		return _responses.InternalServerError("Unexpected Error")
+	}
+
+	if thumbs != nil && len(thumbs) > 0 {
+		infoThumbs := make([]*mediaInfoThumbnail, 0)
+		for _, thumb := range thumbs {
+			infoThumbs = append(infoThumbs, &mediaInfoThumbnail{
+				Width:       thumb.Width,
+				Height:      thumb.Height,
+				Ready:       true,
+				ContentType: thumb.ContentType,
+				SizeBytes:   thumb.SizeBytes,
+			})
+		}
+		response.Thumbnails = infoThumbs
 	}
 
 	return response
