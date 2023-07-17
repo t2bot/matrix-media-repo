@@ -89,29 +89,29 @@ func extractPrefixTo(pathName string, destination string) {
 			continue
 		}
 
-		logrus.Infof("Decoding %s", f)
 		b, err := base64.StdEncoding.DecodeString(b64)
 		if err != nil {
 			panic(err)
 		}
 
-		logrus.Infof("Decompressing %s", f)
 		gr, err := gzip.NewReader(bytes.NewBuffer(b))
-		if err != nil {
-			panic(err)
-		}
-		//noinspection GoDeferInLoop,GoUnhandledErrorResult
-		defer gr.Close()
-		uncompressedBytes, err := io.ReadAll(gr)
 		if err != nil {
 			panic(err)
 		}
 
 		dest := path.Join(destination, filepath.Base(f))
-		logrus.Infof("Writing %s to %s", f, dest)
-		err = os.WriteFile(dest, uncompressedBytes, 0644)
+		logrus.Debugf("Writing %s to %s", f, dest)
+		file, err := os.Create(dest)
 		if err != nil {
 			panic(err)
 		}
+
+		_, err = io.Copy(file, gr)
+		if err != nil {
+			panic(err)
+		}
+
+		_ = gr.Close()
+		file.Close()
 	}
 }

@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net"
 	"net/http"
 	"os"
@@ -105,64 +104,62 @@ func GetServerApiUrl(hostname string) (string, string, error) {
 	r, err := http.Get(fmt.Sprintf("https://%s/.well-known/matrix/server", h))
 	if err == nil && r.StatusCode == http.StatusOK {
 		// Try parsing .well-known
-		c, err2 := io.ReadAll(r.Body)
-		if err2 == nil {
-			wk := &wellknownServerResponse{}
-			err3 := json.Unmarshal(c, wk)
-			if err3 == nil && wk.ServerAddr != "" {
-				wkHost, wkPort, err4 := net.SplitHostPort(wk.ServerAddr)
-				wkDefPort := false
-				if err4 != nil && strings.HasSuffix(err4.Error(), "missing port in address") {
-					wkHost, wkPort, err4 = net.SplitHostPort(wk.ServerAddr + ":8448")
-					wkDefPort = true
-				}
-				if err4 == nil {
-					// Step 3a: if the delegated host is an IP address, use that (regardless of port)
-					logrus.Debug("Checking if WK host is an IP: " + wkHost)
-					if is.IP(wkHost) {
-						url := fmt.Sprintf("https://%s", net.JoinHostPort(wkHost, wkPort))
-						server := cachedServer{url, wk.ServerAddr}
-						apiUrlCacheInstance.Set(hostname, server, cache.DefaultExpiration)
-						logrus.Debug("Server API URL for " + hostname + " is " + url + " (WK; IP address)")
-						return url, wk.ServerAddr, nil
-					}
-
-					// Step 3b: if the delegated host is not an IP and an explicit port is given, use that
-					logrus.Debug("Checking if WK is using default port? ", wkDefPort)
-					if !wkDefPort {
-						wkHost = net.JoinHostPort(wkHost, wkPort)
-						url := fmt.Sprintf("https://%s", wkHost)
-						server := cachedServer{url, wkHost}
-						apiUrlCacheInstance.Set(hostname, server, cache.DefaultExpiration)
-						logrus.Debug("Server API URL for " + hostname + " is " + url + " (WK; explicit port)")
-						return url, wkHost, nil
-					}
-
-					// Step 3c: if the delegated host is not an IP and doesn't have a port, start a SRV lookup and use it
-					// Note: we ignore errors here because the hostname will fail elsewhere.
-					logrus.Debug("Doing SRV on WK host ", wkHost)
-					_, addrs, _ := net.LookupSRV("matrix", "tcp", wkHost)
-					if len(addrs) > 0 {
-						// Trim off the trailing period if there is one (golang doesn't like this)
-						realAddr := addrs[0].Target
-						if realAddr[len(realAddr)-1:] == "." {
-							realAddr = realAddr[0 : len(realAddr)-1]
-						}
-						url := fmt.Sprintf("https://%s", net.JoinHostPort(realAddr, strconv.Itoa(int(addrs[0].Port))))
-						server := cachedServer{url, wkHost}
-						apiUrlCacheInstance.Set(hostname, server, cache.DefaultExpiration)
-						logrus.Debug("Server API URL for " + hostname + " is " + url + " (WK; SRV)")
-						return url, wkHost, nil
-					}
-
-					// Step 3d: use the delegated host as-is
-					logrus.Debug("Using .well-known as-is for ", wkHost)
+		decoder := json.NewDecoder(r.Body)
+		wk := &wellknownServerResponse{}
+		err3 := decoder.Decode(&wk)
+		if err3 == nil && wk.ServerAddr != "" {
+			wkHost, wkPort, err4 := net.SplitHostPort(wk.ServerAddr)
+			wkDefPort := false
+			if err4 != nil && strings.HasSuffix(err4.Error(), "missing port in address") {
+				wkHost, wkPort, err4 = net.SplitHostPort(wk.ServerAddr + ":8448")
+				wkDefPort = true
+			}
+			if err4 == nil {
+				// Step 3a: if the delegated host is an IP address, use that (regardless of port)
+				logrus.Debug("Checking if WK host is an IP: " + wkHost)
+				if is.IP(wkHost) {
 					url := fmt.Sprintf("https://%s", net.JoinHostPort(wkHost, wkPort))
+					server := cachedServer{url, wk.ServerAddr}
+					apiUrlCacheInstance.Set(hostname, server, cache.DefaultExpiration)
+					logrus.Debug("Server API URL for " + hostname + " is " + url + " (WK; IP address)")
+					return url, wk.ServerAddr, nil
+				}
+
+				// Step 3b: if the delegated host is not an IP and an explicit port is given, use that
+				logrus.Debug("Checking if WK is using default port? ", wkDefPort)
+				if !wkDefPort {
+					wkHost = net.JoinHostPort(wkHost, wkPort)
+					url := fmt.Sprintf("https://%s", wkHost)
 					server := cachedServer{url, wkHost}
 					apiUrlCacheInstance.Set(hostname, server, cache.DefaultExpiration)
-					logrus.Debug("Server API URL for " + hostname + " is " + url + " (WK; fallback)")
+					logrus.Debug("Server API URL for " + hostname + " is " + url + " (WK; explicit port)")
 					return url, wkHost, nil
 				}
+
+				// Step 3c: if the delegated host is not an IP and doesn't have a port, start a SRV lookup and use it
+				// Note: we ignore errors here because the hostname will fail elsewhere.
+				logrus.Debug("Doing SRV on WK host ", wkHost)
+				_, addrs, _ := net.LookupSRV("matrix", "tcp", wkHost)
+				if len(addrs) > 0 {
+					// Trim off the trailing period if there is one (golang doesn't like this)
+					realAddr := addrs[0].Target
+					if realAddr[len(realAddr)-1:] == "." {
+						realAddr = realAddr[0 : len(realAddr)-1]
+					}
+					url := fmt.Sprintf("https://%s", net.JoinHostPort(realAddr, strconv.Itoa(int(addrs[0].Port))))
+					server := cachedServer{url, wkHost}
+					apiUrlCacheInstance.Set(hostname, server, cache.DefaultExpiration)
+					logrus.Debug("Server API URL for " + hostname + " is " + url + " (WK; SRV)")
+					return url, wkHost, nil
+				}
+
+				// Step 3d: use the delegated host as-is
+				logrus.Debug("Using .well-known as-is for ", wkHost)
+				url := fmt.Sprintf("https://%s", net.JoinHostPort(wkHost, wkPort))
+				server := cachedServer{url, wkHost}
+				apiUrlCacheInstance.Set(hostname, server, cache.DefaultExpiration)
+				logrus.Debug("Server API URL for " + hostname + " is " + url + " (WK; fallback)")
+				return url, wkHost, nil
 			}
 		}
 	}

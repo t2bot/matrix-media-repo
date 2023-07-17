@@ -2,7 +2,6 @@ package custom
 
 import (
 	"encoding/json"
-	"io"
 	"net/http"
 
 	"github.com/getsentry/sentry-go"
@@ -41,15 +40,9 @@ func GetFederationInfo(r *http.Request, rctx rcontext.RequestContext, user _apim
 		return _responses.InternalServerError(err.Error())
 	}
 
-	c, err := io.ReadAll(versionResponse.Body)
-	if err != nil {
-		rctx.Log.Error(err)
-		sentry.CaptureException(err)
-		return _responses.InternalServerError(err.Error())
-	}
-
+	decoder := json.NewDecoder(versionResponse.Body)
 	out := make(map[string]interface{})
-	err = json.Unmarshal(c, &out)
+	err = decoder.Decode(&out)
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
