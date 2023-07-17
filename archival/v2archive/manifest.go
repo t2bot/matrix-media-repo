@@ -1,8 +1,10 @@
 package v2archive
 
+type ManifestVersionVal int
+
 const (
-	ManifestVersionV1 = 1
-	ManifestVersionV2 = 2
+	ManifestVersionV1 ManifestVersionVal = 1
+	ManifestVersionV2 ManifestVersionVal = 2
 )
 const ManifestVersion = ManifestVersionV2
 
