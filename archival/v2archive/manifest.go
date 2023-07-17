@@ -9,7 +9,7 @@ const (
 const ManifestVersion = ManifestVersionV2
 
 type Manifest struct {
-	Version   int                        `json:"version"`
+	Version   ManifestVersionVal         `json:"version"`
 	EntityId  string                     `json:"entity_id"`
 	CreatedTs int64                      `json:"created_ts"`
 	Media     map[string]*ManifestRecord `json:"media"`
