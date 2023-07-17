@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/stream_util"
 
 	"github.com/djherbis/stream"
@@ -140,7 +139,7 @@ func downloadResourceWorkFn(request *resource_handler.WorkRequest) (resp *worker
 			resp.filename = ""
 			resp.contentType = ""
 			resp.media = nil
-			resp.err = util.PanicToError(err)
+			resp.err = nil
 		}
 	}()
 
