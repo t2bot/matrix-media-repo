@@ -259,6 +259,11 @@ uploads:
         # complete before starting another one. Defaults to maxPending above. Set to 0 to
         # disable.
         maxPending: 5
+        # The maximum number of uploaded files a user can have. Defaults to zero (no limit).
+        # If both maxBytes and maxFiles are in use then the first condition a user triggers
+        # will prevent upload. Note that a user can still have uploads contributing to maxPending,
+        # but will not be able to complete them if they are at maxFiles.
+        maxFiles: 0
 
 # Settings related to downloading files from the media repository
 downloads:

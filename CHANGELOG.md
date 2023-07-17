@@ -83,7 +83,8 @@ path/server, for example, then you can simply update the path in the config for 
 ### Added
 
 * Added a `federation.ignoredHosts` config option to block media from individual homeservers.
-* Support for MSC2246 (async uploads) is added, with per-user quota limiting options.
+* Support for [MSC2246](https://github.com/matrix-org/matrix-spec-proposals/pull/2246) (async uploads) is added, with per-user quota limiting options.
+* Support for [MSC4034](https://github.com/matrix-org/matrix-spec-proposals/pull/4034) (self-serve usage information) is added, alongside a new "maximum file count" quota limit.
 
 ### Removed
 

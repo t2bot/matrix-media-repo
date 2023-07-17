@@ -47,6 +47,7 @@ func buildRoutes() http.Handler {
 	register([]string{"GET"}, PrefixMedia, "info/:server/:mediaId", mxUnstable, router, makeRoute(_routers.RequireAccessToken(unstable.MediaInfo), "info", counter))
 	purgeOneRoute := makeRoute(_routers.RequireAccessToken(custom.PurgeIndividualRecord), "purge_individual_media", counter)
 	register([]string{"DELETE"}, PrefixMedia, "download/:server/:mediaId", mxUnstable, router, purgeOneRoute)
+	register([]string{"GET"}, PrefixMedia, "usage", msc4034, router, makeRoute(_routers.RequireAccessToken(unstable.PublicUsage), "usage", counter))
 
 	// Custom and top-level features
 	router.Handler("GET", fmt.Sprintf("%s/version", PrefixMedia), makeRoute(_routers.OptionalAccessToken(custom.GetVersion), "get_version", counter))
@@ -111,8 +112,9 @@ func makeRoute(generator _routers.GeneratorFn, name string, counter *_routers.Re
 type matrixVersions []string
 
 var (
-	//mxAllSpec            matrixVersions = []string{"r0", "v1", "v3", "unstable", "unstable/io.t2bot.media"}
+	//mxAllSpec            matrixVersions = []string{"r0", "v1", "v3", "unstable", "unstable/io.t2bot.media" /* and MSC routes */}
 	mxUnstable           matrixVersions = []string{"unstable", "unstable/io.t2bot.media"}
+	msc4034              matrixVersions = []string{"unstable/org.matrix.msc4034"}
 	mxSpecV3Transition   matrixVersions = []string{"r0", "v1", "v3"}
 	mxSpecV3TransitionCS matrixVersions = []string{"r0", "v3"}
 	mxR0                 matrixVersions = []string{"r0"}

@@ -10,6 +10,7 @@ type QuotaUserConfig struct {
 	Glob       string `yaml:"glob"`
 	MaxBytes   int64  `yaml:"maxBytes"`
 	MaxPending int64  `yaml:"maxPending"`
+	MaxFiles   int64  `yaml:"maxFiles"`
 }
 
 type QuotasConfig struct {
