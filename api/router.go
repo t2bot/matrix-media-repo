@@ -11,6 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api/_responses"
 	"github.com/turt2live/matrix-media-repo/api/_routers"
+	"github.com/turt2live/matrix-media-repo/util"
 )
 
 func buildPrimaryRouter() *httprouter.Router {
@@ -54,7 +55,7 @@ func finishCorsFn(w http.ResponseWriter, r *http.Request) {
 }
 
 func panicFn(w http.ResponseWriter, r *http.Request, i interface{}) {
-	logrus.Errorf("Panic received on %s %s: %s", r.Method, r.URL.String(), i)
+	logrus.Errorf("Panic received on %s %s: %s", r.Method, util.GetLogSafeUrl(r), i)
 
 	if e, ok := i.(error); ok {
 		sentry.CaptureException(e)

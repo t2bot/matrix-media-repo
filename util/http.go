@@ -2,6 +2,7 @@ package util
 
 import (
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/sirupsen/logrus"
@@ -36,4 +37,10 @@ func GetLogSafeQueryString(r *http.Request) string {
 	}
 
 	return qs.Encode()
+}
+
+func GetLogSafeUrl(r *http.Request) string {
+	copyUrl, _ := url.ParseRequestURI(r.URL.String())
+	copyUrl.RawQuery = GetLogSafeQueryString(r)
+	return copyUrl.String()
 }
