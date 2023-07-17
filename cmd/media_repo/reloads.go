@@ -7,7 +7,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/runtime"
 	"github.com/turt2live/matrix-media-repo/database"
 	"github.com/turt2live/matrix-media-repo/errcache"
-	"github.com/turt2live/matrix-media-repo/internal_cache"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/plugins"
 	"github.com/turt2live/matrix-media-repo/pool"
@@ -134,10 +133,8 @@ func reloadCacheOnChan(reloadChan chan bool) {
 			shouldReload := <-reloadChan
 			if shouldReload {
 				redislib.Reconnect()
-				internal_cache.ReplaceInstance()
 			} else {
 				redislib.Stop()
-				internal_cache.Get().Stop()
 			}
 		}
 	}()

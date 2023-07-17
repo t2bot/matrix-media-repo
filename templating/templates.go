@@ -16,7 +16,7 @@ type templates struct {
 var instance *templates
 var singletonLock = &sync.Once{}
 
-func GetInstance() *templates {
+func getInstance() *templates {
 	if instance == nil {
 		singletonLock.Do(func() {
 			instance = &templates{
@@ -28,7 +28,7 @@ func GetInstance() *templates {
 }
 
 func GetTemplate(name string) (*template.Template, error) {
-	i := GetInstance()
+	i := getInstance()
 	if v, ok := i.cached[name]; ok {
 		return v, nil
 	}
