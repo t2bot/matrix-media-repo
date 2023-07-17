@@ -14,17 +14,18 @@ import (
 )
 
 type Database struct {
-	conn          *sql.DB
-	Media         *mediaTableStatements
-	ExpiringMedia *expiringMediaTableStatements
-	UserStats     *userStatsTableStatements
-	ReservedMedia *reservedMediaTableStatements
-	MetadataView  *metadataVirtualTableStatements
-	Blurhashes    *blurhashesTableStatements
-	HeldMedia     *heldMediaTableStatements
-	Thumbnails    *thumbnailsTableStatements
-	LastAccess    *lastAccessTableStatements
-	UrlPreviews   *urlPreviewsTableStatements
+	conn            *sql.DB
+	Media           *mediaTableStatements
+	ExpiringMedia   *expiringMediaTableStatements
+	UserStats       *userStatsTableStatements
+	ReservedMedia   *reservedMediaTableStatements
+	MetadataView    *metadataVirtualTableStatements
+	Blurhashes      *blurhashesTableStatements
+	HeldMedia       *heldMediaTableStatements
+	Thumbnails      *thumbnailsTableStatements
+	LastAccess      *lastAccessTableStatements
+	UrlPreviews     *urlPreviewsTableStatements
+	MediaAttributes *mediaAttributesTableStatements
 }
 
 var instance *Database
@@ -107,6 +108,9 @@ func openDatabase(connectionString string, maxConns int, maxIdleConns int) error
 	}
 	if d.UrlPreviews, err = prepareUrlPreviewsTables(d.conn); err != nil {
 		return errors.New("failed to create url previews table accessor: " + err.Error())
+	}
+	if d.MediaAttributes, err = prepareMediaAttributesTables(d.conn); err != nil {
+		return errors.New("failed to create media attributes table accessor: " + err.Error())
 	}
 
 	instance = d

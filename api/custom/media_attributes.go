@@ -1,27 +1,22 @@
 package custom
 
 import (
-	"database/sql"
 	"encoding/json"
-	"io"
 	"net/http"
 
 	"github.com/getsentry/sentry-go"
+	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api/_apimeta"
 	"github.com/turt2live/matrix-media-repo/api/_responses"
 	"github.com/turt2live/matrix-media-repo/api/_routers"
-	"github.com/turt2live/matrix-media-repo/util/stream_util"
-
-	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
+	"github.com/turt2live/matrix-media-repo/database"
 	"github.com/turt2live/matrix-media-repo/matrix"
-	"github.com/turt2live/matrix-media-repo/storage"
-	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
 type Attributes struct {
-	Purpose string `json:"purpose"`
+	Purpose database.Purpose `json:"purpose"`
 }
 
 func canChangeAttributes(rctx rcontext.RequestContext, r *http.Request, origin string, user _apimeta.UserInfo) bool {
@@ -55,29 +50,32 @@ func GetAttributes(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 	}
 
 	// Check to see if the media exists
-	mediaDb := storage.GetDatabase().GetMediaStore(rctx)
-	media, err := mediaDb.Get(origin, mediaId)
-	if err != nil && err != sql.ErrNoRows {
+	mediaDb := database.GetInstance().Media.Prepare(rctx)
+	media, err := mediaDb.GetById(origin, mediaId)
+	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
 		return _responses.InternalServerError("failed to get media record")
 	}
-	if media == nil || err == sql.ErrNoRows {
+	if media == nil {
 		return _responses.NotFoundError()
 	}
 
-	db := storage.GetDatabase().GetMediaAttributesStore(rctx)
-
-	attrs, err := db.GetAttributesDefaulted(origin, mediaId)
+	attrDb := database.GetInstance().MediaAttributes.Prepare(rctx)
+	attrs, err := attrDb.Get(origin, mediaId)
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("failed to get attributes")
+		return _responses.InternalServerError("failed to get attributes record")
+	}
+	retAttrs := &Attributes{
+		Purpose: database.PurposeNone,
+	}
+	if attrs != nil {
+		retAttrs.Purpose = attrs.Purpose
 	}
 
-	return &_responses.DoNotCacheResponse{Payload: &Attributes{
-		Purpose: attrs.Purpose,
-	}}
+	return &_responses.DoNotCacheResponse{Payload: retAttrs}
 }
 
 func SetAttributes(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
@@ -97,36 +95,29 @@ func SetAttributes(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 		return _responses.AuthFailed()
 	}
 
-	defer stream_util.DumpAndCloseStream(r.Body)
-	b, err := io.ReadAll(r.Body)
+	defer r.Body.Close()
+	newAttrs := &Attributes{}
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&newAttrs)
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
 		return _responses.InternalServerError("failed to read attributes")
 	}
 
-	newAttrs := &Attributes{}
-	err = json.Unmarshal(b, &newAttrs)
-	if err != nil {
-		rctx.Log.Error(err)
-		sentry.CaptureException(err)
-		return _responses.InternalServerError("failed to parse attributes")
-	}
-
-	db := storage.GetDatabase().GetMediaAttributesStore(rctx)
-
-	attrs, err := db.GetAttributesDefaulted(origin, mediaId)
+	attrDb := database.GetInstance().MediaAttributes.Prepare(rctx)
+	attrs, err := attrDb.Get(origin, mediaId)
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
 		return _responses.InternalServerError("failed to get attributes")
 	}
 
-	if attrs.Purpose != newAttrs.Purpose {
-		if !util.ArrayContains(types.AllPurposes, newAttrs.Purpose) {
+	if attrs == nil || attrs.Purpose != newAttrs.Purpose {
+		if !database.IsPurpose(newAttrs.Purpose) {
 			return _responses.BadRequest("unknown purpose")
 		}
-		err = db.UpsertPurpose(origin, mediaId, newAttrs.Purpose)
+		err = attrDb.UpsertPurpose(origin, mediaId, newAttrs.Purpose)
 		if err != nil {
 			rctx.Log.Error(err)
 			sentry.CaptureException(err)
