@@ -5,6 +5,8 @@ import (
 	"github.com/turt2live/matrix-media-repo/api/_apimeta"
 	"github.com/turt2live/matrix-media-repo/api/_responses"
 	"github.com/turt2live/matrix-media-repo/api/_routers"
+	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/datastores"
 
 	"net/http"
 	"strconv"
@@ -12,7 +14,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/maintenance_controller"
-	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
@@ -24,20 +25,18 @@ type DatastoreMigration struct {
 }
 
 func GetDatastores(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
-	datastores, err := storage.GetDatabase().GetMediaStore(rctx).GetAllDatastores()
-	if err != nil {
-		rctx.Log.Error(err)
-		sentry.CaptureException(err)
-		return _responses.InternalServerError("Error getting datastores")
-	}
-
 	response := make(map[string]interface{})
-
-	for _, ds := range datastores {
+	for _, ds := range config.UniqueDatastores() {
+		uri, err := datastores.GetUri(ds)
+		if err != nil {
+			sentry.CaptureException(err)
+			rctx.Log.Error("Error getting datastore URI: ", err)
+			return _responses.InternalServerError("unexpected error getting datastore information")
+		}
 		dsMap := make(map[string]interface{})
 		dsMap["type"] = ds.Type
-		dsMap["uri"] = ds.Uri
-		response[ds.DatastoreId] = dsMap
+		dsMap["uri"] = uri
+		response[ds.Id] = dsMap
 	}
 
 	return &_responses.DoNotCacheResponse{Payload: response}
