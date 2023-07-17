@@ -80,6 +80,10 @@ to start.
 This new configuration style additionally allows for out-of-band datastore transfers. If you move all your data to a new
 path/server, for example, then you can simply update the path in the config for that datastore.
 
+### Deprecations
+
+* The `GET /_matrix/media/unstable/local_copy/:server/:mediaId` (and `unstable/io.t2bot.media` variant) endpoint is deprecated and scheduled for removal. If you are using this endpoint, please comment on [this issue](https://github.com/turt2live/matrix-media-repo/issues/422) to explain your use case.
+
 ### Added
 
 * Added a `federation.ignoredHosts` config option to block media from individual homeservers.
