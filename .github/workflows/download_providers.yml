@@ -1,0 +1,16 @@
+name: "Update oEmbed providers"
+on:
+  schedule:
+    - cron: "0 0 * * 2"
+jobs:
+  update_providers:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v2
+      - name: "Download new providers.json"
+        run: "curl -s --fail https://oembed.com/providers.json > assets/providers.json"
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "[automated] Update providers.json"
