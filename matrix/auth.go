@@ -9,8 +9,8 @@ import (
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
-var ErrInvalidToken = errors.New("Missing or invalid access token")
-var ErrGuestToken = errors.New("Token belongs to a guest")
+var ErrInvalidToken = errors.New("missing or invalid access token")
+var ErrGuestToken = errors.New("token belongs to a guest")
 
 func doBreakerRequest(ctx rcontext.RequestContext, serverName string, accessToken string, appserviceUserId string, ipAddr string, method string, path string, resp interface{}) error {
 	if accessToken == "" {
@@ -50,7 +50,7 @@ func doBreakerRequest(ctx rcontext.RequestContext, serverName string, accessToke
 
 func GetUserIdFromToken(ctx rcontext.RequestContext, serverName string, accessToken string, appserviceUserId string, ipAddr string) (string, error) {
 	response := &userIdResponse{}
-	err := doBreakerRequest(ctx, serverName, accessToken, appserviceUserId, ipAddr, "GET", "/_matrix/client/r0/account/whoami", response)
+	err := doBreakerRequest(ctx, serverName, accessToken, appserviceUserId, ipAddr, "GET", "/_matrix/client/v3/account/whoami", response)
 	if err != nil {
 		return "", err
 	}
@@ -62,7 +62,7 @@ func GetUserIdFromToken(ctx rcontext.RequestContext, serverName string, accessTo
 
 func Logout(ctx rcontext.RequestContext, serverName string, accessToken string, appserviceUserId string, ipAddr string) error {
 	response := &emptyResponse{}
-	err := doBreakerRequest(ctx, serverName, accessToken, appserviceUserId, ipAddr, "POST", "/_matrix/client/r0/logout", response)
+	err := doBreakerRequest(ctx, serverName, accessToken, appserviceUserId, ipAddr, "POST", "/_matrix/client/v3/logout", response)
 	if err != nil {
 		return err
 	}
@@ -71,7 +71,7 @@ func Logout(ctx rcontext.RequestContext, serverName string, accessToken string, 
 
 func LogoutAll(ctx rcontext.RequestContext, serverName string, accessToken string, appserviceUserId string, ipAddr string) error {
 	response := &emptyResponse{}
-	err := doBreakerRequest(ctx, serverName, accessToken, appserviceUserId, ipAddr, "POST", "/_matrix/client/r0/logout/all", response)
+	err := doBreakerRequest(ctx, serverName, accessToken, appserviceUserId, ipAddr, "POST", "/_matrix/client/v3/logout/all", response)
 	if err != nil {
 		return err
 	}
