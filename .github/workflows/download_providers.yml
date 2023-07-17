@@ -1,7 +1,7 @@
 name: "Update oEmbed providers"
 on:
-  schedule:
-    - cron: "0 0 * * 2"
+#  schedule:
+#    - cron: "0 0 * * 2"
   workflow_dispatch:
 jobs:
   update_providers:
@@ -14,5 +14,4 @@ jobs:
         run: "curl -s --fail https://oembed.com/providers.json > assets/providers.json"
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
-          commit_message: "[automated] Update providers.json"
-          commit_author: ""
+          commit_message: "Update providers.json"
