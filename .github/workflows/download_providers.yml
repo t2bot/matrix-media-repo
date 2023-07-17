@@ -2,6 +2,7 @@ name: "Update oEmbed providers"
 on:
   schedule:
     - cron: "0 0 * * 2"
+  workflow_dispatch:
 jobs:
   update_providers:
     runs-on: ubuntu-latest
