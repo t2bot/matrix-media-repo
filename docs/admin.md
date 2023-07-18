@@ -242,9 +242,9 @@ Similar to [Per-user usage (all known users)](#per-user-usage-all-known-users), 
 * parameterized querying ability
 * relaxed authorization restrictions (to allow homeserver admins to query against their own homeserver)
 
-This end-point attempts to be a loose equivalent to
-[this](https://matrix-org.github.io/synapse/develop/admin_api/statistics.html#users-media-usage-statistics) Synapse
-endpoint, with the main difference being the absence of "displayname".
+This endpoint attempts to be a loose equivalent to
+[this](https://matrix-org.github.io/synapse/v1.88/admin_api/statistics.html#users-media-usage-statistics) Synapse
+endpoint, with the main difference being the `displayname` will be the user ID.
 
 URL: `GET /_matrix/media/unstable/admin/usage/<server name>/users-stats?access_token=your_access_token`
 
@@ -257,17 +257,22 @@ Example response:
     {
       "media_count" : 12,
       "media_length" : 39546,
-      "user_id" : "@alice:example.com"
+      "user_id" : "@alice:example.com",
+      "displayname": "@alice:example.com"
     },
     {
       "media_count" : 46,
       "media_length" : 5935234,
-      "user_id" : "@bob:example.com"
+      "user_id" : "@bob:example.com",
+      "displayname": "@bob:example.com"
     },
     ...
   ]
 }
 ```
+
+**Note**: This endpoint is also available at the normal Synapse API location: `GET /_synapse/admin/v1/statistics/users/media`.
+This will use the server name implied by the `Host` header as the server name.
 
 #### Per-upload usage (all uploads)
 

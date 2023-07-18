@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 
+	"github.com/lib/pq"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 )
 
@@ -38,6 +39,8 @@ const selectMediaByUserId = "SELECT origin, media_id, upload_name, content_type,
 const selectMediaByOrigin = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, creation_ts, quarantined, datastore_id, location FROM media WHERE origin = $1;"
 const selectMediaByLocationExists = "SELECT TRUE FROM media WHERE datastore_id = $1 AND location = $2 LIMIT 1;"
 const selectMediaByUserCount = "SELECT COUNT(*) FROM media WHERE user_id = $1;"
+const selectMediaByOriginAndUserIds = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, creation_ts, quarantined, datastore_id, location FROM media WHERE origin = $1 AND user_id = ANY($2);"
+const selectMediaByOriginAndIds = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, creation_ts, quarantined, datastore_id, location FROM media WHERE origin = $1 AND media_id = ANY($2);"
 
 type mediaTableStatements struct {
 	selectDistinctMediaDatastoreIds *sql.Stmt
@@ -50,6 +53,8 @@ type mediaTableStatements struct {
 	selectMediaByOrigin             *sql.Stmt
 	selectMediaByLocationExists     *sql.Stmt
 	selectMediaByUserCount          *sql.Stmt
+	selectMediaByOriginAndUserIds   *sql.Stmt
+	selectMediaByOriginAndIds       *sql.Stmt
 }
 
 type mediaTableWithContext struct {
@@ -90,6 +95,12 @@ func prepareMediaTables(db *sql.DB) (*mediaTableStatements, error) {
 	}
 	if stmts.selectMediaByUserCount, err = db.Prepare(selectMediaByUserCount); err != nil {
 		return nil, errors.New("error preparing selectMediaByUserCount: " + err.Error())
+	}
+	if stmts.selectMediaByOriginAndUserIds, err = db.Prepare(selectMediaByOriginAndUserIds); err != nil {
+		return nil, errors.New("error preparing selectMediaByOriginAndUserIds: " + err.Error())
+	}
+	if stmts.selectMediaByOriginAndIds, err = db.Prepare(selectMediaByOriginAndIds); err != nil {
+		return nil, errors.New("error preparing selectMediaByOriginAndIds: " + err.Error())
 	}
 
 	return stmts, nil
@@ -164,6 +175,14 @@ func (s *mediaTableWithContext) GetByUserId(userId string) ([]*DbMedia, error) {
 
 func (s *mediaTableWithContext) GetByOrigin(origin string) ([]*DbMedia, error) {
 	return s.scanRows(s.statements.selectMediaByOrigin.QueryContext(s.ctx, origin))
+}
+
+func (s *mediaTableWithContext) GetByOriginUsers(origin string, userIds []string) ([]*DbMedia, error) {
+	return s.scanRows(s.statements.selectMediaByOriginAndUserIds.QueryContext(s.ctx, origin, pq.Array(userIds)))
+}
+
+func (s *mediaTableWithContext) GetByIds(origin string, mediaIds []string) ([]*DbMedia, error) {
+	return s.scanRows(s.statements.selectMediaByOriginAndIds.QueryContext(s.ctx, origin, pq.Array(mediaIds)))
 }
 
 func (s *mediaTableWithContext) GetById(origin string, mediaId string) (*DbMedia, error) {

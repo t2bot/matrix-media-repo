@@ -1,8 +1,6 @@
 package custom
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -11,16 +9,16 @@ import (
 	"github.com/turt2live/matrix-media-repo/api/_apimeta"
 	"github.com/turt2live/matrix-media-repo/api/_responses"
 	"github.com/turt2live/matrix-media-repo/api/_routers"
+	"github.com/turt2live/matrix-media-repo/database"
+	"github.com/turt2live/matrix-media-repo/homeserver_interop/synapse"
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/storage"
-	"github.com/turt2live/matrix-media-repo/storage/stores"
-	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
 type MinimalUsageInfo struct {
+	// Used in per-user endpoints where we can't count thumbnails
 	Total int64 `json:"total"`
 	Media int64 `json:"media"`
 }
@@ -36,6 +34,7 @@ type CountsUsageResponse struct {
 }
 
 type UserUsageEntry struct {
+	// Returned by per-user endpoints, where we can't count thumbnails
 	RawBytes     *MinimalUsageInfo `json:"raw_bytes"`
 	RawCounts    *MinimalUsageInfo `json:"raw_counts"`
 	UploadedMxcs []string          `json:"uploaded,flow"`
@@ -64,16 +63,16 @@ func GetDomainUsage(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 		"serverName": serverName,
 	})
 
-	db := storage.GetDatabase().GetMetadataStore(rctx)
+	db := database.GetInstance().MetadataView.Prepare(rctx)
 
-	mediaBytes, thumbBytes, err := db.GetByteUsageForServer(serverName)
+	mediaBytes, thumbBytes, err := db.ByteUsageForServer(serverName)
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
 		return _responses.InternalServerError("Failed to get byte usage for server")
 	}
 
-	mediaCount, thumbCount, err := db.GetCountUsageForServer(serverName)
+	mediaCount, thumbCount, err := db.CountUsageForServer(serverName)
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
@@ -112,14 +111,14 @@ func GetUserUsage(r *http.Request, rctx rcontext.RequestContext, user _apimeta.U
 		"serverName": serverName,
 	})
 
-	db := storage.GetDatabase().GetMediaStore(rctx)
+	db := database.GetInstance().Media.Prepare(rctx)
 
-	var records []*types.Media
+	var records []*database.DbMedia
 	var err error
 	if userIds == nil || len(userIds) == 0 {
-		records, err = db.GetAllMediaForServer(serverName)
+		records, err = db.GetByOrigin(serverName)
 	} else {
-		records, err = db.GetAllMediaForServerUsers(serverName, userIds)
+		records, err = db.GetByOriginUsers(serverName, userIds)
 	}
 
 	if err != nil {
@@ -153,7 +152,7 @@ func GetUserUsage(r *http.Request, rctx rcontext.RequestContext, user _apimeta.U
 		entry.RawCounts.Total += 1
 		entry.RawCounts.Media += 1
 
-		entry.UploadedMxcs = append(entry.UploadedMxcs, media.MxcUri())
+		entry.UploadedMxcs = append(entry.UploadedMxcs, util.MxcUri(media.Origin, media.MediaId))
 	}
 
 	return &_responses.DoNotCacheResponse{Payload: parsed}
@@ -171,12 +170,12 @@ func GetUploadsUsage(r *http.Request, rctx rcontext.RequestContext, user _apimet
 		"serverName": serverName,
 	})
 
-	db := storage.GetDatabase().GetMediaStore(rctx)
+	db := database.GetInstance().Media.Prepare(rctx)
 
-	var records []*types.Media
+	var records []*database.DbMedia
 	var err error
 	if mxcs == nil || len(mxcs) == 0 {
-		records, err = db.GetAllMediaForServer(serverName)
+		records, err = db.GetByOrigin(serverName)
 	} else {
 		split := make([]string, 0)
 		for _, mxc := range mxcs {
@@ -193,7 +192,7 @@ func GetUploadsUsage(r *http.Request, rctx rcontext.RequestContext, user _apimet
 
 			split = append(split, i)
 		}
-		records, err = db.GetAllMediaInIds(serverName, split)
+		records, err = db.GetByIds(serverName, split)
 	}
 
 	if err != nil {
@@ -205,7 +204,7 @@ func GetUploadsUsage(r *http.Request, rctx rcontext.RequestContext, user _apimet
 	parsed := make(map[string]*MediaUsageEntry)
 
 	for _, media := range records {
-		parsed[media.MxcUri()] = &MediaUsageEntry{
+		parsed[util.MxcUri(media.Origin, media.MediaId)] = &MediaUsageEntry{
 			SizeBytes:         media.SizeBytes,
 			UploadName:        media.UploadName,
 			ContentType:       media.ContentType,
@@ -221,13 +220,16 @@ func GetUploadsUsage(r *http.Request, rctx rcontext.RequestContext, user _apimet
 	return &_responses.DoNotCacheResponse{Payload: parsed}
 }
 
-// GetUsersUsageStats attempts to provide a loose equivalent to this Synapse admin end-point:
-// https://matrix-org.github.io/synapse/develop/admin_api/statistics.html#users-media-usage-statistics
-func GetUsersUsageStats(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+// SynGetUsersMediaStats attempts to provide a loose equivalent to this Synapse admin endpoint:
+// https://matrix-org.github.io/synapse/v1.88/admin_api/statistics.html#users-media-usage-statistics
+func SynGetUsersMediaStats(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
 	qs := r.URL.Query()
 	var err error
 
 	serverName := _routers.GetParam("serverName", r)
+	if serverName == "" && strings.HasPrefix(r.URL.Path, synapse.PrefixAdminApi) {
+		serverName = r.Host
+	}
 
 	if !_routers.ServerNameRegex.MatchString(serverName) {
 		return _responses.BadRequest("invalid server name")
@@ -238,15 +240,12 @@ func GetUsersUsageStats(r *http.Request, rctx rcontext.RequestContext, user _api
 		return _responses.AuthFailed()
 	}
 
-	orderBy := qs.Get("order_by")
+	orderBy := database.SynStatUserOrderBy(qs.Get("order_by"))
 	if len(qs["order_by"]) == 0 {
-		orderBy = "user_id"
+		orderBy = database.DefaultSynStatUserOrderBy
 	}
-	if !util.ArrayContains(stores.UsersUsageStatsSorts, orderBy) {
-		acceptedValsStr, _ := json.Marshal(stores.UsersUsageStatsSorts)
-		acceptedValsStr = []byte(strings.ReplaceAll(string(acceptedValsStr), "\"", "'"))
-		return _responses.BadRequest(
-			fmt.Sprintf("Query parameter 'order_by' must be one of %s", acceptedValsStr))
+	if !database.IsSynStatUserOrderBy(orderBy) {
+		return _responses.BadRequest("Query parameter 'order_by' must be one of the accepted values")
 	}
 
 	var start int64 = 0
@@ -263,6 +262,9 @@ func GetUsersUsageStats(r *http.Request, rctx rcontext.RequestContext, user _api
 		if err != nil || limit < 0 {
 			return _responses.BadRequest("Query parameter 'limit' must be a non-negative integer")
 		}
+	}
+	if limit > 50 {
+		limit = 50
 	}
 
 	const unspecifiedTS int64 = -1
@@ -291,9 +293,7 @@ func GetUsersUsageStats(r *http.Request, rctx rcontext.RequestContext, user _api
 
 	isAscendingOrder := true
 	direction := qs.Get("dir")
-	if direction == "f" || len(qs["dir"]) == 0 {
-		// Use default order
-	} else if direction == "b" {
+	if direction == "b" && len(qs["dir"]) > 0 {
 		isAscendingOrder = false
 	} else {
 		return _responses.BadRequest("Query parameter 'dir' must be one of ['f', 'b']")
@@ -310,17 +310,9 @@ func GetUsersUsageStats(r *http.Request, rctx rcontext.RequestContext, user _api
 		"isAscendingOrder": isAscendingOrder,
 	})
 
-	db := storage.GetDatabase().GetMediaStore(rctx)
+	db := database.GetInstance().MetadataView.Prepare(rctx)
 
-	stats, totalCount, err := db.GetUsersUsageStatsForServer(
-		serverName,
-		orderBy,
-		start,
-		limit,
-		fromTS,
-		untilTS,
-		searchTerm,
-		isAscendingOrder)
+	stats, totalCount, err := db.UnoptimizedSynapseUserStatsPage(serverName, orderBy, start, limit, fromTS, untilTS, searchTerm, isAscendingOrder)
 
 	if err != nil {
 		rctx.Log.Error(err)
@@ -328,25 +320,22 @@ func GetUsersUsageStats(r *http.Request, rctx rcontext.RequestContext, user _api
 		return _responses.InternalServerError("Failed to get users' usage stats on specified server")
 	}
 
-	var users []map[string]interface{}
-	if len(stats) == 0 {
-		users = []map[string]interface{}{}
-	} else {
-		for _, record := range stats {
-			users = append(users, map[string]interface{}{
-				"media_count":  record.MediaCount,
-				"media_length": record.MediaLength,
-				"user_id":      record.UserId,
-			})
-		}
+	result := &synapse.SynUserStatsResponse{
+		Users:     make([]*synapse.SynUserStatRecord, 0),
+		NextToken: 0, // invoke omitEmpty by default
+		Total:     totalCount,
+	}
+	for _, record := range stats {
+		result.Users = append(result.Users, &synapse.SynUserStatRecord{
+			DisplayName: record.UserId, // TODO: try to populate?
+			UserId:      record.UserId,
+			MediaCount:  record.MediaCount,
+			MediaLength: record.MediaLength,
+		})
 	}
 
-	var result = map[string]interface{}{
-		"users": users,
-		"total": totalCount,
-	}
 	if (start + limit) < totalCount {
-		result["next_token"] = start + int64(len(stats))
+		result.NextToken = start + int64(len(stats))
 	}
 
 	return &_responses.DoNotCacheResponse{Payload: result}

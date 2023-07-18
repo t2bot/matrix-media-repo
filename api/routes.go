@@ -13,6 +13,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/api/r0"
 	"github.com/turt2live/matrix-media-repo/api/unstable"
 	v1 "github.com/turt2live/matrix-media-repo/api/v1"
+	"github.com/turt2live/matrix-media-repo/homeserver_interop/synapse"
 )
 
 const PrefixMedia = "/_matrix/media"
@@ -55,6 +56,10 @@ func buildRoutes() http.Handler {
 	router.Handler("GET", "/healthz", healthzRoute)
 	router.Handler("HEAD", "/healthz", healthzRoute)
 
+	// Register the Synapse admin API endpoints we're compatible with
+	synUserStatsRoute := makeRoute(_routers.RequireAccessToken(custom.SynGetUsersMediaStats), "users_usage_stats", counter)
+	register([]string{"GET"}, synapse.PrefixAdminApi, "statistics/users/media", mxV1, router, synUserStatsRoute)
+
 	// All admin routes are unstable only
 	purgeRemoteRoute := makeRoute(_routers.RequireRepoAdmin(custom.PurgeRemoteMedia), "purge_remote_media", counter)
 	register([]string{"POST"}, PrefixMedia, "admin/purge_remote", mxUnstable, router, purgeRemoteRoute)
@@ -78,7 +83,7 @@ func buildRoutes() http.Handler {
 	register([]string{"GET"}, PrefixMedia, "admin/federation/test/:serverName", mxUnstable, router, makeRoute(_routers.RequireRepoAdmin(custom.GetFederationInfo), "federation_test", counter))
 	register([]string{"GET"}, PrefixMedia, "admin/usage/:serverName", mxUnstable, router, makeRoute(_routers.RequireRepoAdmin(custom.GetDomainUsage), "domain_usage", counter))
 	register([]string{"GET"}, PrefixMedia, "admin/usage/:serverName/users", mxUnstable, router, makeRoute(_routers.RequireRepoAdmin(custom.GetUserUsage), "user_usage", counter))
-	register([]string{"GET"}, PrefixMedia, "admin/usage/:serverName/users-stats", mxUnstable, router, makeRoute(_routers.RequireAccessToken(custom.GetUsersUsageStats), "users_usage_stats", counter))
+	register([]string{"GET"}, PrefixMedia, "admin/usage/:serverName/users-stats", mxUnstable, router, synUserStatsRoute)
 	register([]string{"GET"}, PrefixMedia, "admin/usage/:serverName/uploads", mxUnstable, router, makeRoute(_routers.RequireRepoAdmin(custom.GetUploadsUsage), "uploads_usage", counter))
 	register([]string{"GET"}, PrefixMedia, "admin/task/:taskId", mxUnstable, router, makeRoute(_routers.RequireRepoAdmin(custom.GetTask), "get_background_task", counter))
 	register([]string{"GET"}, PrefixMedia, "admin/tasks/all", mxUnstable, router, makeRoute(_routers.RequireRepoAdmin(custom.ListAllTasks), "list_all_background_tasks", counter))
