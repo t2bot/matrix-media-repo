@@ -10,30 +10,18 @@ import (
 )
 
 type PublicUsageResponse struct {
-	StorageFree  int64 `json:"org.matrix.msc4034.storage.free,omitempty"`
+	StorageUsed  int64 `json:"org.matrix.msc4034.storage.used,omitempty"`
 	StorageFiles int64 `json:"org.matrix.msc4034.storage.files,omitempty"`
 }
 
 func PublicUsage(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
 	storageUsed := int64(0)
-	storageLimit := int64(0)
-	limit, err := quota.Limit(rctx, user.UserId, quota.MaxBytes)
+	current, err := quota.Current(rctx, user.UserId, quota.MaxBytes)
 	if err != nil {
-		rctx.Log.Warn("Non-fatal error getting per-user quota limit (max bytes): ", err)
+		rctx.Log.Warn("Non-fatal error getting per-user quota usage (max bytes @ now): ", err)
 		sentry.CaptureException(err)
-	} else if limit > 0 {
-		storageLimit = limit
-	}
-	if storageLimit > 0 {
-		current, err := quota.Current(rctx, user.UserId, quota.MaxBytes)
-		if err != nil {
-			rctx.Log.Warn("Non-fatal error getting per-user quota usage (max bytes @ now): ", err)
-			sentry.CaptureException(err)
-		} else {
-			storageUsed = current
-		}
 	} else {
-		storageLimit = 0
+		storageUsed = current
 	}
 
 	fileCount, err := quota.Current(rctx, user.UserId, quota.MaxCount)
@@ -43,7 +31,7 @@ func PublicUsage(r *http.Request, rctx rcontext.RequestContext, user _apimeta.Us
 	}
 
 	return &PublicUsageResponse{
-		StorageFree:  storageLimit - storageUsed,
+		StorageUsed:  storageUsed,
 		StorageFiles: fileCount,
 	}
 }
