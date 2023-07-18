@@ -99,7 +99,14 @@ path/server, for example, then you can simply update the path in the config for 
 
 * **Mandatory configuration change**: You must add datastore IDs to your datastore configuration, as matrix-media-repo will no longer manage datastores for you.
 * Datastores no longer use the `enabled` flag set on them. Use `forKinds: []` instead.
-* Some admin endpoints for purging media, quarantining media, and background task information now require additional path components. See [docs/admin.md](./docs/admin.md) for more information.
+* Some admin endpoints for purging media, quarantining media, and background task information now require additional path components.
+  * 
+    | Old endpoint                                                                                       | New endpoint                                                                                             |
+    |----------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------|
+    | `POST /_matrix/media/unstable/admin/purge/<server>/<media id>?access_token=your_access_token`      | `POST /_matrix/media/unstable/admin/purge/media/<server>/<media id>?access_token=your_access_token`      |
+    | `POST /_matrix/media/unstable/admin/quarantine/<server>/<media id>?access_token=your_access_token` | `POST /_matrix/media/unstable/admin/quarantine/media/<server>/<media id>?access_token=your_access_token` |
+    | `GET /_matrix/media/unstable/admin/tasks/<task ID>`                                                | `GET /_matrix/media/unstable/admin/task/<task ID>`                                                       |
+  
 * Per-user upload quotas now do not allow users to exceed the maximum values, even by 1 byte. Previously, users could exceed the limits by a little bit.
 * Updated to Go 1.19
 * Logs are now less noisy by default.
