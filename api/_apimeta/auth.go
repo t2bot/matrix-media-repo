@@ -21,7 +21,7 @@ func GetRequestUserAdminStatus(r *http.Request, rctx rcontext.RequestContext, us
 	isLocalAdmin, err := matrix.IsUserAdmin(rctx, r.Host, user.AccessToken, r.RemoteAddr)
 	if err != nil {
 		sentry.CaptureException(err)
-		rctx.Log.Error("Error verifying local admin: ", err)
+		rctx.Log.Debug("Error verifying local admin: ", err)
 		return isGlobalAdmin, false
 	}
 

@@ -99,7 +99,7 @@ func ExportServerData(r *http.Request, rctx rcontext.RequestContext, user _apime
 
 		isLocalAdmin, err := matrix.IsUserAdmin(rctx, serverName, user.AccessToken, r.RemoteAddr)
 		if err != nil {
-			rctx.Log.Error("Error verifying local admin: ", err)
+			rctx.Log.Debug("Error verifying local admin: ", err)
 			isLocalAdmin = false
 		}
 		if !isLocalAdmin {
