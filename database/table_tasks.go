@@ -19,12 +19,14 @@ const selectTask = "SELECT id, task, params, start_ts, end_ts FROM background_ta
 const insertTask = "INSERT INTO background_tasks (task, params, start_ts, end_ts) VALUES ($1, $2, $3, 0) RETURNING id, task, params, start_ts, end_ts;"
 const selectAllTasks = "SELECT id, task, params, start_ts, end_ts FROM background_tasks;"
 const selectIncompleteTasks = "SELECT id, task, params, start_ts, end_ts FROM background_tasks WHERE end_ts <= 0;"
+const updateTaskEndTime = "UPDATE background_tasks SET end_ts = $2 WHERE id = $1;"
 
 type tasksTableStatements struct {
 	selectTask            *sql.Stmt
 	insertTask            *sql.Stmt
 	selectAllTasks        *sql.Stmt
 	selectIncompleteTasks *sql.Stmt
+	updateTaskEndTime     *sql.Stmt
 }
 
 type tasksTableWithContext struct {
@@ -48,6 +50,9 @@ func prepareTasksTables(db *sql.DB) (*tasksTableStatements, error) {
 	if stmts.selectIncompleteTasks, err = db.Prepare(selectIncompleteTasks); err != nil {
 		return nil, errors.New("error preparing selectIncompleteTasks: " + err.Error())
 	}
+	if stmts.updateTaskEndTime, err = db.Prepare(updateTaskEndTime); err != nil {
+		return nil, errors.New("error preparing updateTaskEndTime: " + err.Error())
+	}
 
 	return stmts, nil
 }
@@ -67,6 +72,11 @@ func (s *tasksTableWithContext) Insert(name string, params *AnonymousJson, start
 		return nil, err
 	}
 	return val, nil
+}
+
+func (s *tasksTableWithContext) SetEndTime(taskId int, endTs int64) error {
+	_, err := s.statements.updateTaskEndTime.ExecContext(s.ctx, taskId, endTs)
+	return err
 }
 
 func (s *tasksTableWithContext) Get(id int) (*DbTask, error) {

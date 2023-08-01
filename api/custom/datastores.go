@@ -7,14 +7,13 @@ import (
 	"github.com/turt2live/matrix-media-repo/api/_routers"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/datastores"
+	"github.com/turt2live/matrix-media-repo/tasks"
 
 	"net/http"
 	"strconv"
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/controllers/maintenance_controller"
-	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
@@ -64,17 +63,11 @@ func MigrateBetweenDatastores(r *http.Request, rctx rcontext.RequestContext, use
 	if sourceDsId == targetDsId {
 		return _responses.BadRequest("Source and target datastore cannot be the same")
 	}
-
-	sourceDatastore, err := datastore.LocateDatastore(rctx, sourceDsId)
-	if err != nil {
-		rctx.Log.Error(err)
-		return _responses.BadRequest("Error getting source datastore. Does it exist?")
+	if _, ok := datastores.Get(rctx, sourceDsId); !ok {
+		return _responses.BadRequest("Source datastore does not appear to exist")
 	}
-
-	targetDatastore, err := datastore.LocateDatastore(rctx, targetDsId)
-	if err != nil {
-		rctx.Log.Error(err)
-		return _responses.BadRequest("Error getting target datastore. Does it exist?")
+	if _, ok := datastores.Get(rctx, targetDsId); !ok {
+		return _responses.BadRequest("Target datastore does not appear to exist")
 	}
 
 	estimate, err := datastores.SizeOfDsIdWithAge(rctx, sourceDsId, beforeTs)
@@ -85,7 +78,7 @@ func MigrateBetweenDatastores(r *http.Request, rctx rcontext.RequestContext, use
 	}
 
 	rctx.Log.Infof("User %s has started a datastore media transfer", user.UserId)
-	task, err := maintenance_controller.StartStorageMigration(sourceDatastore, targetDatastore, beforeTs, rctx)
+	task, err := tasks.RunDatastoreMigration(rctx, sourceDsId, targetDsId, beforeTs)
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
@@ -94,7 +87,7 @@ func MigrateBetweenDatastores(r *http.Request, rctx rcontext.RequestContext, use
 
 	migration := &DatastoreMigration{
 		SizeEstimate: estimate,
-		TaskID:       task.ID,
+		TaskID:       task.TaskId,
 	}
 
 	return &_responses.DoNotCacheResponse{Payload: migration}

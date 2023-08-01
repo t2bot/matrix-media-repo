@@ -31,6 +31,7 @@ const selectThumbnailByLocationExists = "SELECT TRUE FROM thumbnails WHERE datas
 const selectThumbnailsForMedia = "SELECT origin, media_id, content_type, width, height, method, animated, sha256_hash, size_bytes, creation_ts, datastore_id, location FROM thumbnails WHERE origin = $1 AND media_id = $2;"
 const selectOldThumbnails = "SELECT origin, media_id, content_type, width, height, method, animated, sha256_hash, size_bytes, creation_ts, datastore_id, location FROM thumbnails WHERE sha256_hash IN (SELECT t2.sha256_hash FROM thumbnails AS t2 WHERE t2.creation_ts < $1);"
 const deleteThumbnail = "DELETE FROM thumbnails WHERE origin = $1 AND media_id = $2 AND content_type = $3 AND width = $4 AND height = $5 AND method = $6 AND animated = $7 AND sha256_hash = $8 AND size_bytes = $9 AND creation_ts = $10 AND datastore_id = $11 AND location = $11;"
+const updateThumbnailLocation = "UPDATE thumbnails SET datastore_id = $3, location = $4 WHERE datastore_id = $1 AND location = $2;"
 
 type thumbnailsTableStatements struct {
 	selectThumbnailByParams         *sql.Stmt
@@ -39,6 +40,7 @@ type thumbnailsTableStatements struct {
 	selectThumbnailsForMedia        *sql.Stmt
 	selectOldThumbnails             *sql.Stmt
 	deleteThumbnail                 *sql.Stmt
+	updateThumbnailLocation         *sql.Stmt
 }
 
 type thumbnailsTableWithContext struct {
@@ -67,6 +69,9 @@ func prepareThumbnailsTables(db *sql.DB) (*thumbnailsTableStatements, error) {
 	}
 	if stmts.deleteThumbnail, err = db.Prepare(deleteThumbnail); err != nil {
 		return nil, errors.New("error preparing deleteThumbnail: " + err.Error())
+	}
+	if stmts.updateThumbnailLocation, err = db.Prepare(updateThumbnailLocation); err != nil {
+		return nil, errors.New("error preparing updateThumbnailLocation: " + err.Error())
 	}
 
 	return stmts, nil
@@ -146,5 +151,10 @@ func (s *thumbnailsTableWithContext) LocationExists(datastoreId string, location
 
 func (s *thumbnailsTableWithContext) Delete(record *DbThumbnail) error {
 	_, err := s.statements.deleteThumbnail.ExecContext(s.ctx, record.Origin, record.MediaId, record.ContentType, record.Width, record.Height, record.Method, record.Animated, record.Sha256Hash, record.SizeBytes, record.CreationTs, record.DatastoreId, record.Location)
+	return err
+}
+
+func (s *thumbnailsTableWithContext) UpdateLocation(sourceDsId string, sourceLocation string, targetDsId string, targetLocation string) error {
+	_, err := s.statements.updateThumbnailLocation.ExecContext(s.ctx, sourceDsId, sourceLocation, targetDsId, targetLocation)
 	return err
 }

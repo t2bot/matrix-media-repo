@@ -43,6 +43,7 @@ const selectMediaByOriginAndUserIds = "SELECT origin, media_id, upload_name, con
 const selectMediaByOriginAndIds = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, creation_ts, quarantined, datastore_id, location FROM media WHERE origin = $1 AND media_id = ANY($2);"
 const selectOldMediaExcludingDomains = "SELECT m.origin, m.media_id, m.upload_name, m.content_type, m.user_id, m.sha256_hash, m.size_bytes, m.creation_ts, m.quarantined, m.datastore_id, m.location FROM media AS m WHERE m.origin <> ANY($1) AND m.creation_ts < $2 AND (SELECT COUNT(d.*) FROM media AS d WHERE d.sha256_hash = m.sha256_hash AND d.creation_ts >= $2) = 0 AND (SELECT COUNT(d.*) FROM media AS d WHERE d.sha256_hash = m.sha256_hash AND d.origin = ANY($1)) = 0;"
 const deleteMedia = "DELETE FROM media WHERE origin = $1 AND media_id = $2;"
+const updateMediaLocation = "UPDATE media SET datastore_id = $3, location = $4 WHERE datastore_id = $1 AND location = $2;"
 
 type mediaTableStatements struct {
 	selectDistinctMediaDatastoreIds *sql.Stmt
@@ -59,6 +60,7 @@ type mediaTableStatements struct {
 	selectMediaByOriginAndIds       *sql.Stmt
 	selectOldMediaExcludingDomains  *sql.Stmt
 	deleteMedia                     *sql.Stmt
+	updateMediaLocation             *sql.Stmt
 }
 
 type mediaTableWithContext struct {
@@ -111,6 +113,9 @@ func prepareMediaTables(db *sql.DB) (*mediaTableStatements, error) {
 	}
 	if stmts.deleteMedia, err = db.Prepare(deleteMedia); err != nil {
 		return nil, errors.New("error preparing deleteMedia: " + err.Error())
+	}
+	if stmts.updateMediaLocation, err = db.Prepare(updateMediaLocation); err != nil {
+		return nil, errors.New("error preparing updateMediaLocation: " + err.Error())
 	}
 
 	return stmts, nil
@@ -250,5 +255,10 @@ func (s *mediaTableWithContext) Insert(record *DbMedia) error {
 
 func (s *mediaTableWithContext) Delete(origin string, mediaId string) error {
 	_, err := s.statements.deleteMedia.ExecContext(s.ctx, origin, mediaId)
+	return err
+}
+
+func (s *mediaTableWithContext) UpdateLocation(sourceDsId string, sourceLocation string, targetDsId string, targetLocation string) error {
+	_, err := s.statements.updateMediaLocation.ExecContext(s.ctx, sourceDsId, sourceLocation, targetDsId, targetLocation)
 	return err
 }

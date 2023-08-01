@@ -9,6 +9,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/database"
 	"github.com/turt2live/matrix-media-repo/notifier"
+	"github.com/turt2live/matrix-media-repo/tasks/task_runner"
 	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/ids"
 )
@@ -17,7 +18,7 @@ type TaskName string
 type RecurringTaskName string
 
 const (
-// TaskTesting TaskName = "test1234"
+	TaskDatastoreMigrate TaskName = "storage_migration"
 )
 const (
 	RecurringTaskPurgeThumbnails  RecurringTaskName = "recurring_purge_thumbnails"
@@ -94,4 +95,12 @@ func stopRecurring() {
 	for _, ch := range recurDoneChs {
 		ch <- true
 	}
+}
+
+func RunDatastoreMigration(ctx rcontext.RequestContext, sourceDsId string, targetDsId string, beforeTs int64) (*database.DbTask, error) {
+	return scheduleTask(ctx, TaskDatastoreMigrate, task_runner.DatastoreMigrateParams{
+		SourceDsId: sourceDsId,
+		TargetDsId: targetDsId,
+		BeforeTs:   beforeTs,
+	})
 }
