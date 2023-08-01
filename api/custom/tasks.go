@@ -5,22 +5,22 @@ import (
 	"github.com/turt2live/matrix-media-repo/api/_apimeta"
 	"github.com/turt2live/matrix-media-repo/api/_responses"
 	"github.com/turt2live/matrix-media-repo/api/_routers"
+	"github.com/turt2live/matrix-media-repo/database"
 
 	"net/http"
 	"strconv"
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/storage"
 )
 
 type TaskStatus struct {
-	TaskID     int                    `json:"task_id"`
-	Name       string                 `json:"task_name"`
-	Params     map[string]interface{} `json:"params"`
-	StartTs    int64                  `json:"start_ts"`
-	EndTs      int64                  `json:"end_ts"`
-	IsFinished bool                   `json:"is_finished"`
+	TaskID     int                     `json:"task_id"`
+	Name       string                  `json:"task_name"`
+	Params     *database.AnonymousJson `json:"params"`
+	StartTs    int64                   `json:"start_ts"`
+	EndTs      int64                   `json:"end_ts"`
+	IsFinished bool                    `json:"is_finished"`
 }
 
 func GetTask(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
@@ -35,17 +35,20 @@ func GetTask(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserIn
 		"taskId": taskId,
 	})
 
-	db := storage.GetDatabase().GetMetadataStore(rctx)
+	db := database.GetInstance().Tasks.Prepare(rctx)
 
-	task, err := db.GetBackgroundTask(taskId)
+	task, err := db.Get(taskId)
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
 		return _responses.InternalServerError("failed to get task information")
 	}
+	if task == nil {
+		return _responses.NotFoundError()
+	}
 
 	return &_responses.DoNotCacheResponse{Payload: &TaskStatus{
-		TaskID:     task.ID,
+		TaskID:     task.TaskId,
 		Name:       task.Name,
 		Params:     task.Params,
 		StartTs:    task.StartTs,
@@ -55,9 +58,9 @@ func GetTask(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserIn
 }
 
 func ListAllTasks(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
-	db := storage.GetDatabase().GetMetadataStore(rctx)
+	db := database.GetInstance().Tasks.Prepare(rctx)
 
-	tasks, err := db.GetAllBackgroundTasks()
+	tasks, err := db.GetAll(true)
 	if err != nil {
 		logrus.Error(err)
 		sentry.CaptureException(err)
@@ -67,7 +70,7 @@ func ListAllTasks(r *http.Request, rctx rcontext.RequestContext, user _apimeta.U
 	statusObjs := make([]*TaskStatus, 0)
 	for _, task := range tasks {
 		statusObjs = append(statusObjs, &TaskStatus{
-			TaskID:     task.ID,
+			TaskID:     task.TaskId,
 			Name:       task.Name,
 			Params:     task.Params,
 			StartTs:    task.StartTs,
@@ -80,9 +83,9 @@ func ListAllTasks(r *http.Request, rctx rcontext.RequestContext, user _apimeta.U
 }
 
 func ListUnfinishedTasks(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
-	db := storage.GetDatabase().GetMetadataStore(rctx)
+	db := database.GetInstance().Tasks.Prepare(rctx)
 
-	tasks, err := db.GetAllBackgroundTasks()
+	tasks, err := db.GetAll(false)
 	if err != nil {
 		logrus.Error(err)
 		sentry.CaptureException(err)
@@ -91,11 +94,8 @@ func ListUnfinishedTasks(r *http.Request, rctx rcontext.RequestContext, user _ap
 
 	statusObjs := make([]*TaskStatus, 0)
 	for _, task := range tasks {
-		if task.EndTs > 0 {
-			continue
-		}
 		statusObjs = append(statusObjs, &TaskStatus{
-			TaskID:     task.ID,
+			TaskID:     task.TaskId,
 			Name:       task.Name,
 			Params:     task.Params,
 			StartTs:    task.StartTs,

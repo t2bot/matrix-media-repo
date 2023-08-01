@@ -17,10 +17,14 @@ type DbTask struct {
 
 const selectTask = "SELECT id, task, params, start_ts, end_ts FROM background_tasks WHERE id = $1;"
 const insertTask = "INSERT INTO background_tasks (task, params, start_ts, end_ts) VALUES ($1, $2, $3, 0) RETURNING id, task, params, start_ts, end_ts;"
+const selectAllTasks = "SELECT id, task, params, start_ts, end_ts FROM background_tasks;"
+const selectIncompleteTasks = "SELECT id, task, params, start_ts, end_ts FROM background_tasks WHERE end_ts <= 0;"
 
 type tasksTableStatements struct {
-	selectTask *sql.Stmt
-	insertTask *sql.Stmt
+	selectTask            *sql.Stmt
+	insertTask            *sql.Stmt
+	selectAllTasks        *sql.Stmt
+	selectIncompleteTasks *sql.Stmt
 }
 
 type tasksTableWithContext struct {
@@ -37,6 +41,12 @@ func prepareTasksTables(db *sql.DB) (*tasksTableStatements, error) {
 	}
 	if stmts.insertTask, err = db.Prepare(insertTask); err != nil {
 		return nil, errors.New("error preparing insertTask: " + err.Error())
+	}
+	if stmts.selectAllTasks, err = db.Prepare(selectAllTasks); err != nil {
+		return nil, errors.New("error preparing selectAllTasks: " + err.Error())
+	}
+	if stmts.selectIncompleteTasks, err = db.Prepare(selectIncompleteTasks); err != nil {
+		return nil, errors.New("error preparing selectIncompleteTasks: " + err.Error())
 	}
 
 	return stmts, nil
@@ -68,4 +78,27 @@ func (s *tasksTableWithContext) Get(id int) (*DbTask, error) {
 		val = nil
 	}
 	return val, err
+}
+
+func (s *tasksTableWithContext) GetAll(includingFinished bool) ([]*DbTask, error) {
+	results := make([]*DbTask, 0)
+	q := s.statements.selectAllTasks
+	if !includingFinished {
+		q = s.statements.selectIncompleteTasks
+	}
+	rows, err := q.QueryContext(s.ctx)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return results, nil
+		}
+		return nil, err
+	}
+	for rows.Next() {
+		val := &DbTask{}
+		if err = rows.Scan(&val.TaskId, &val.Name, &val.Params, &val.StartTs, &val.EndTs); err != nil {
+			return nil, err
+		}
+		results = append(results, val)
+	}
+	return results, nil
 }
