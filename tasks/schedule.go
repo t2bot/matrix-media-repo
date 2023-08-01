@@ -17,7 +17,7 @@ type TaskName string
 type RecurringTaskName string
 
 const (
-	TaskTesting TaskName = "test1234"
+// TaskTesting TaskName = "test1234"
 )
 const (
 	RecurringTaskPurgeThumbnails  RecurringTaskName = "recurring_purge_thumbnails"
@@ -94,12 +94,4 @@ func stopRecurring() {
 	for _, ch := range recurDoneChs {
 		ch <- true
 	}
-}
-
-func DoTest(ctx rcontext.RequestContext) (*database.DbTask, error) {
-	return scheduleTask(ctx, TaskTesting, struct {
-		Test string `json:"test_field"`
-	}{
-		Test: "hello world",
-	})
 }
