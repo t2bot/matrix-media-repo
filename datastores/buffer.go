@@ -32,8 +32,15 @@ func BufferTemp(datastore config.DatastoreConfig, contents io.ReadCloser) (strin
 		logrus.Warnf("Datastore %s does not have a valid temporary path configured. This will lead to increased memory usage.", datastore.Id)
 		target = &bytes.Buffer{}
 	} else {
+		err = os.Mkdir(fpath, os.ModeDir)
+		if err != nil && !os.IsExist(err) {
+			return "", 0, nil, errors.New("error creating temp path: " + err.Error())
+		}
 		var file *os.File
 		file, err = os.CreateTemp(fpath, "mmr")
+		if err != nil {
+			return "", 0, nil, errors.New("error generating temporary file: " + err.Error())
+		}
 		target = file
 	}
 
