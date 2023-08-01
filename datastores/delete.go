@@ -35,3 +35,11 @@ func Remove(ctx rcontext.RequestContext, ds config.DatastoreConfig, location str
 
 	return err
 }
+
+func RemoveWithDsId(ctx rcontext.RequestContext, dsId string, location string) error {
+	ds, ok := Get(ctx, dsId)
+	if !ok {
+		return errors.New("unknown datastore")
+	}
+	return Remove(ctx, ds, location)
+}

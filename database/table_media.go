@@ -41,6 +41,8 @@ const selectMediaByLocationExists = "SELECT TRUE FROM media WHERE datastore_id =
 const selectMediaByUserCount = "SELECT COUNT(*) FROM media WHERE user_id = $1;"
 const selectMediaByOriginAndUserIds = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, creation_ts, quarantined, datastore_id, location FROM media WHERE origin = $1 AND user_id = ANY($2);"
 const selectMediaByOriginAndIds = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, creation_ts, quarantined, datastore_id, location FROM media WHERE origin = $1 AND media_id = ANY($2);"
+const selectOldMediaExcludingDomains = "SELECT m.origin, m.media_id, m.upload_name, m.content_type, m.user_id, m.sha256_hash, m.size_bytes, m.creation_ts, m.quarantined, m.datastore_id, m.location FROM media AS m WHERE m.origin <> ANY($1) AND m.creation_ts < $2 AND (SELECT COUNT(d.*) FROM media AS d WHERE d.sha256_hash = m.sha256_hash AND d.creation_ts >= $2) = 0 AND (SELECT COUNT(d.*) FROM media AS d WHERE d.sha256_hash = m.sha256_hash AND d.origin = ANY($1)) = 0;"
+const deleteMedia = "DELETE FROM media WHERE origin = $1 AND media_id = $2;"
 
 type mediaTableStatements struct {
 	selectDistinctMediaDatastoreIds *sql.Stmt
@@ -55,6 +57,8 @@ type mediaTableStatements struct {
 	selectMediaByUserCount          *sql.Stmt
 	selectMediaByOriginAndUserIds   *sql.Stmt
 	selectMediaByOriginAndIds       *sql.Stmt
+	selectOldMediaExcludingDomains  *sql.Stmt
+	deleteMedia                     *sql.Stmt
 }
 
 type mediaTableWithContext struct {
@@ -101,6 +105,12 @@ func prepareMediaTables(db *sql.DB) (*mediaTableStatements, error) {
 	}
 	if stmts.selectMediaByOriginAndIds, err = db.Prepare(selectMediaByOriginAndIds); err != nil {
 		return nil, errors.New("error preparing selectMediaByOriginAndIds: " + err.Error())
+	}
+	if stmts.selectOldMediaExcludingDomains, err = db.Prepare(selectOldMediaExcludingDomains); err != nil {
+		return nil, errors.New("error preparing selectOldMediaExcludingDomains: " + err.Error())
+	}
+	if stmts.deleteMedia, err = db.Prepare(deleteMedia); err != nil {
+		return nil, errors.New("error preparing deleteMedia: " + err.Error())
 	}
 
 	return stmts, nil
@@ -185,6 +195,10 @@ func (s *mediaTableWithContext) GetByIds(origin string, mediaIds []string) ([]*D
 	return s.scanRows(s.statements.selectMediaByOriginAndIds.QueryContext(s.ctx, origin, pq.Array(mediaIds)))
 }
 
+func (s *mediaTableWithContext) GetOldExcluding(origins []string, beforeTs int64) ([]*DbMedia, error) {
+	return s.scanRows(s.statements.selectOldMediaExcludingDomains.QueryContext(s.ctx, pq.Array(origins), beforeTs))
+}
+
 func (s *mediaTableWithContext) GetById(origin string, mediaId string) (*DbMedia, error) {
 	row := s.statements.selectMediaById.QueryRowContext(s.ctx, origin, mediaId)
 	val := &DbMedia{Locatable: &Locatable{}}
@@ -231,5 +245,10 @@ func (s *mediaTableWithContext) LocationExists(datastoreId string, location stri
 
 func (s *mediaTableWithContext) Insert(record *DbMedia) error {
 	_, err := s.statements.insertMedia.ExecContext(s.ctx, record.Origin, record.MediaId, record.UploadName, record.ContentType, record.UserId, record.Sha256Hash, record.SizeBytes, record.CreationTs, record.Quarantined, record.DatastoreId, record.Location)
+	return err
+}
+
+func (s *mediaTableWithContext) Delete(origin string, mediaId string) error {
+	_, err := s.statements.deleteMedia.ExecContext(s.ctx, origin, mediaId)
 	return err
 }

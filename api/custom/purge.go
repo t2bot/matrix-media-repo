@@ -9,6 +9,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/api/_apimeta"
 	"github.com/turt2live/matrix-media-repo/api/_responses"
 	"github.com/turt2live/matrix-media-repo/api/_routers"
+	"github.com/turt2live/matrix-media-repo/tasks/task_runner"
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
@@ -39,7 +40,7 @@ func PurgeRemoteMedia(r *http.Request, rctx rcontext.RequestContext, user _apime
 	})
 
 	// We don't bother clearing the cache because it's still probably useful there
-	removed, err := maintenance_controller.PurgeRemoteMediaBefore(beforeTs, rctx)
+	removed, err := task_runner.PurgeRemoteMediaBefore(rctx, beforeTs)
 	if err != nil {
 		rctx.Log.Error("Error purging remote media: ", err)
 		sentry.CaptureException(err)

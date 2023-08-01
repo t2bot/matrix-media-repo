@@ -2,7 +2,6 @@ package maintenance_controller
 
 import (
 	"database/sql"
-	"fmt"
 	"os"
 
 	"github.com/getsentry/sentry-go"
@@ -161,93 +160,6 @@ func EstimateDatastoreSizeWithAge(beforeTs int64, datastoreId string, ctx rconte
 	}
 
 	return estimates, nil
-}
-
-func PurgeRemoteMediaBefore(beforeTs int64, ctx rcontext.RequestContext) (int, error) {
-	db := storage.GetDatabase().GetMediaStore(ctx)
-	thumbsDb := storage.GetDatabase().GetThumbnailStore(ctx)
-
-	origins, err := db.GetOrigins()
-	if err != nil {
-		return 0, err
-	}
-
-	var excludedOrigins []string
-	for _, origin := range origins {
-		if util.IsServerOurs(origin) {
-			excludedOrigins = append(excludedOrigins, origin)
-		}
-	}
-
-	oldMedia, err := db.GetOldMedia(excludedOrigins, beforeTs)
-	if err != nil {
-		return 0, err
-	}
-
-	ctx.Log.Info(fmt.Sprintf("Starting removal of %d remote media files (db records will be kept)", len(oldMedia)))
-
-	removed := 0
-	for _, media := range oldMedia {
-		if media.Quarantined {
-			ctx.Log.Warn("Not removing quarantined media to maintain quarantined status: " + media.Origin + "/" + media.MediaId)
-			continue
-		}
-
-		ds, err := datastore.LocateDatastore(ctx, media.DatastoreId)
-		if err != nil {
-			ctx.Log.Error("Error finding datastore for media "+media.Origin+"/"+media.MediaId+" because: ", err)
-			sentry.CaptureException(err)
-			continue
-		}
-
-		// Delete the file first
-		err = ds.DeleteObject(media.Location)
-		if err != nil {
-			ctx.Log.Warn("Cannot remove media "+media.Origin+"/"+media.MediaId+" because: ", err)
-			sentry.CaptureException(err)
-		} else {
-			removed++
-			ctx.Log.Info("Removed remote media file: " + media.Origin + "/" + media.MediaId)
-		}
-
-		// Try to remove the record from the database now
-		err = db.Delete(media.Origin, media.MediaId)
-		if err != nil {
-			ctx.Log.Warn("Error removing media "+media.Origin+"/"+media.MediaId+" from database: ", err)
-			sentry.CaptureException(err)
-		}
-
-		// Delete the thumbnails too
-		thumbs, err := thumbsDb.GetAllForMedia(media.Origin, media.MediaId)
-		if err != nil {
-			ctx.Log.Warn("Error getting thumbnails for media "+media.Origin+"/"+media.MediaId+" from database: ", err)
-			sentry.CaptureException(err)
-			continue
-		}
-		for _, thumb := range thumbs {
-			ctx.Log.Info("Deleting thumbnail with hash: ", thumb.Sha256Hash)
-			ds, err := datastore.LocateDatastore(ctx, thumb.DatastoreId)
-			if err != nil {
-				ctx.Log.Warn("Error removing thumbnail for media "+media.Origin+"/"+media.MediaId+" from database: ", err)
-				sentry.CaptureException(err)
-				continue
-			}
-
-			err = ds.DeleteObject(thumb.Location)
-			if err != nil {
-				ctx.Log.Warn("Error removing thumbnail for media "+media.Origin+"/"+media.MediaId+" from database: ", err)
-				sentry.CaptureException(err)
-				continue
-			}
-		}
-		err = thumbsDb.DeleteAllForMedia(media.Origin, media.MediaId)
-		if err != nil {
-			ctx.Log.Warn("Error removing thumbnails for media "+media.Origin+"/"+media.MediaId+" from database: ", err)
-			sentry.CaptureException(err)
-		}
-	}
-
-	return removed, nil
 }
 
 func PurgeQuarantined(ctx rcontext.RequestContext) ([]*types.Media, error) {

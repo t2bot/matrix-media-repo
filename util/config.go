@@ -30,3 +30,11 @@ func IsHostIgnored(serverName string) bool {
 	}
 	return false
 }
+
+func GetOurDomains() []string {
+	vals := make([]string, 0)
+	for _, d := range config.AllDomains() {
+		vals = append(vals, d.Name)
+	}
+	return vals
+}
