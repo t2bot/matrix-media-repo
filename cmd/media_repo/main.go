@@ -73,13 +73,6 @@ func main() {
 	logrus.Info("Starting up...")
 	runtime.RunStartupSequence()
 
-	logrus.Info("Checking background tasks...")
-	err = scanAndStartUnfinishedTasks()
-	if err != nil {
-		sentry.CaptureException(err)
-		logrus.Fatal(err)
-	}
-
 	logrus.Info("Starting recurring tasks...")
 	tasks.StartAll()
 

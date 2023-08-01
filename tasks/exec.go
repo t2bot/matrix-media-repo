@@ -56,6 +56,10 @@ func tryBeginTask(id int, recur bool) {
 }
 
 func beginTask(task *database.DbTask) {
+	if task.EndTs > 0 {
+		return // just skip it
+	}
+	// TODO: Worker group: https://github.com/turt2live/matrix-media-repo/issues/425
 	runnerCtx := rcontext.Initial().LogWithFields(logrus.Fields{"task_id": task.TaskId})
 	if task.Name == string(TaskDatastoreMigrate) {
 		go task_runner.DatastoreMigrate(runnerCtx, task)

@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/database"
@@ -94,6 +95,23 @@ func stopRecurring() {
 	defer recurLock.RUnlock()
 	for _, ch := range recurDoneChs {
 		ch <- true
+	}
+}
+
+func scheduleUnfinished() {
+	if ids.GetMachineId() != 0 {
+		return // don't schedule here
+	}
+	ctx := rcontext.Initial().LogWithFields(logrus.Fields{"startup": true})
+	taskDb := database.GetInstance().Tasks.Prepare(ctx)
+	tasks, err := taskDb.GetAll(false)
+	if err != nil {
+		sentry.CaptureException(err)
+		ctx.Log.Fatal("Error getting unfinished tasks: ", err)
+		return
+	}
+	for _, task := range tasks {
+		beginTask(task)
 	}
 }
 

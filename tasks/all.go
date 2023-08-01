@@ -10,6 +10,8 @@ func StartAll() {
 	scheduleHourly(RecurringTaskPurgeRemoteMedia, task_runner.PurgeRemoteMedia)
 	scheduleHourly(RecurringTaskPurgeThumbnails, task_runner.PurgeThumbnails)
 	scheduleHourly(RecurringTaskPurgePreviews, task_runner.PurgePreviews)
+
+	scheduleUnfinished()
 }
 
 func StopAll() {
