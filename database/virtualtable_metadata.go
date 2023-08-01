@@ -9,9 +9,18 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 )
 
+type VirtLastAccess struct {
+	*Locatable
+	SizeBytes    int64
+	CreationTs   int64
+	LastAccessTs int64
+}
+
 const selectEstimatedDatastoreSize = "SELECT COALESCE(SUM(m2.size_bytes), 0) + COALESCE((SELECT SUM(t2.size_bytes) FROM (SELECT DISTINCT t.sha256_hash, MAX(t.size_bytes) AS size_bytes FROM thumbnails AS t WHERE t.datastore_id = $1 GROUP BY t.sha256_hash) AS t2), 0) AS size_total FROM (SELECT DISTINCT m.sha256_hash, MAX(m.size_bytes) AS size_bytes FROM media AS m WHERE m.datastore_id = $1 GROUP BY m.sha256_hash) AS m2;"
 const selectUploadSizesForServer = "SELECT COALESCE((SELECT SUM(size_bytes) FROM media WHERE origin = $1), 0) AS media, COALESCE((SELECT SUM(size_bytes) FROM thumbnails WHERE origin = $1), 0) AS thumbnails;"
 const selectUploadCountsForServer = "SELECT COALESCE((SELECT COUNT(origin) FROM media WHERE origin = $1), 0) AS media, COALESCE((SELECT COUNT(origin) FROM thumbnails WHERE origin = $1), 0) AS thumbnails;"
+const selectMediaForDatastoreWithLastAccess = "SELECT m.sha256_hash, m.size_bytes, m.datastore_id, m.location, m.creation_ts, a.last_access_ts FROM media AS m JOIN last_access AS a ON m.sha256_hash = a.sha256_hash WHERE a.last_access_ts < $1 AND m.datastore_id = $2;"
+const selectThumbnailsForDatastoreWithLastAccess = "SELECT m.sha256_hash, m.size_bytes, m.datastore_id, m.location, m.creation_ts, a.last_access_ts FROM thumbnails AS m JOIN last_access AS a ON m.sha256_hash = a.sha256_hash WHERE a.last_access_ts < $1 AND m.datastore_id = $2;"
 
 type SynStatUserOrderBy string
 
@@ -36,9 +45,11 @@ type DbSynUserStat struct {
 type metadataVirtualTableStatements struct {
 	db *sql.DB
 
-	selectEstimatedDatastoreSize *sql.Stmt
-	selectUploadSizesForServer   *sql.Stmt
-	selectUploadCountsForServer  *sql.Stmt
+	selectEstimatedDatastoreSize               *sql.Stmt
+	selectUploadSizesForServer                 *sql.Stmt
+	selectUploadCountsForServer                *sql.Stmt
+	selectMediaForDatastoreWithLastAccess      *sql.Stmt
+	selectThumbnailsForDatastoreWithLastAccess *sql.Stmt
 }
 
 type metadataVirtualTableWithContext struct {
@@ -60,6 +71,12 @@ func prepareMetadataVirtualTables(db *sql.DB) (*metadataVirtualTableStatements, 
 	}
 	if stmts.selectUploadCountsForServer, err = db.Prepare(selectUploadCountsForServer); err != nil {
 		return nil, errors.New("error preparing selectUploadCountsForServer: " + err.Error())
+	}
+	if stmts.selectMediaForDatastoreWithLastAccess, err = db.Prepare(selectMediaForDatastoreWithLastAccess); err != nil {
+		return nil, errors.New("error preparing selectMediaForDatastoreWithLastAccess: " + err.Error())
+	}
+	if stmts.selectThumbnailsForDatastoreWithLastAccess, err = db.Prepare(selectThumbnailsForDatastoreWithLastAccess); err != nil {
+		return nil, errors.New("error preparing selectThumbnailsForDatastoreWithLastAccess: " + err.Error())
 	}
 
 	return stmts, nil
@@ -182,4 +199,31 @@ func (s *metadataVirtualTableWithContext) UnoptimizedSynapseUserStatsPage(server
 	}
 
 	return results, total, nil
+}
+
+func (s *metadataVirtualTableWithContext) scanLastAccess(rows *sql.Rows, err error) ([]*VirtLastAccess, error) {
+	results := make([]*VirtLastAccess, 0)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return results, nil
+		}
+		return nil, err
+	}
+	for rows.Next() {
+		val := &VirtLastAccess{Locatable: &Locatable{}}
+		if err = rows.Scan(&val.Sha256Hash, &val.SizeBytes, &val.DatastoreId, &val.Location, &val.CreationTs, &val.LastAccessTs); err != nil {
+			return nil, err
+		}
+		results = append(results, val)
+	}
+
+	return results, nil
+}
+
+func (s *metadataVirtualTableWithContext) GetMediaForDatastoreByLastAccess(datastoreId string, lastAccessTs int64) ([]*VirtLastAccess, error) {
+	return s.scanLastAccess(s.statements.selectMediaForDatastoreWithLastAccess.QueryContext(s.ctx, lastAccessTs, datastoreId))
+}
+
+func (s *metadataVirtualTableWithContext) GetThumbnailsForDatastoreByLastAccess(datastoreId string, lastAccessTs int64) ([]*VirtLastAccess, error) {
+	return s.scanLastAccess(s.statements.selectThumbnailsForDatastoreWithLastAccess.QueryContext(s.ctx, lastAccessTs, datastoreId))
 }

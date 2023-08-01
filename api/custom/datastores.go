@@ -15,12 +15,11 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/controllers/maintenance_controller"
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
-	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
 type DatastoreMigration struct {
-	*types.DatastoreMigrationEstimate
+	*datastores.SizeEstimate
 	TaskID int `json:"task_id"`
 }
 
@@ -78,7 +77,14 @@ func MigrateBetweenDatastores(r *http.Request, rctx rcontext.RequestContext, use
 		return _responses.BadRequest("Error getting target datastore. Does it exist?")
 	}
 
-	rctx.Log.Info("User ", user.UserId, " has started a datastore media transfer")
+	estimate, err := datastores.SizeOfDsIdWithAge(rctx, sourceDsId, beforeTs)
+	if err != nil {
+		rctx.Log.Error(err)
+		sentry.CaptureException(err)
+		return _responses.InternalServerError("Unexpected error getting storage estimate")
+	}
+
+	rctx.Log.Infof("User %s has started a datastore media transfer", user.UserId)
 	task, err := maintenance_controller.StartStorageMigration(sourceDatastore, targetDatastore, beforeTs, rctx)
 	if err != nil {
 		rctx.Log.Error(err)
@@ -86,16 +92,9 @@ func MigrateBetweenDatastores(r *http.Request, rctx rcontext.RequestContext, use
 		return _responses.InternalServerError("Unexpected error starting migration")
 	}
 
-	estimate, err := maintenance_controller.EstimateDatastoreSizeWithAge(beforeTs, sourceDsId, rctx)
-	if err != nil {
-		rctx.Log.Error(err)
-		sentry.CaptureException(err)
-		return _responses.InternalServerError("Unexpected error getting storage estimate")
-	}
-
 	migration := &DatastoreMigration{
-		DatastoreMigrationEstimate: estimate,
-		TaskID:                     task.ID,
+		SizeEstimate: estimate,
+		TaskID:       task.ID,
 	}
 
 	return &_responses.DoNotCacheResponse{Payload: migration}
@@ -119,7 +118,7 @@ func GetDatastoreStorageEstimate(r *http.Request, rctx rcontext.RequestContext, 
 		"datastoreId": datastoreId,
 	})
 
-	result, err := maintenance_controller.EstimateDatastoreSizeWithAge(beforeTs, datastoreId, rctx)
+	result, err := datastores.SizeOfDsIdWithAge(rctx, datastoreId, beforeTs)
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
