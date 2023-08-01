@@ -26,6 +26,7 @@ type Database struct {
 	LastAccess      *lastAccessTableStatements
 	UrlPreviews     *urlPreviewsTableStatements
 	MediaAttributes *mediaAttributesTableStatements
+	Tasks           *tasksTableStatements
 }
 
 var instance *Database
@@ -111,6 +112,9 @@ func openDatabase(connectionString string, maxConns int, maxIdleConns int) error
 	}
 	if d.MediaAttributes, err = prepareMediaAttributesTables(d.conn); err != nil {
 		return errors.New("failed to create media attributes table accessor: " + err.Error())
+	}
+	if d.Tasks, err = prepareTasksTables(d.conn); err != nil {
+		return errors.New("failed to create tasks table accessor: " + err.Error())
 	}
 
 	instance = d

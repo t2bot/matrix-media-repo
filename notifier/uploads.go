@@ -10,38 +10,38 @@ import (
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
-var localWaiters = make(map[string][]chan *database.DbMedia)
-var mu = new(sync.Mutex)
-var redisChan <-chan string
+var localUploadWaiters = make(map[string][]chan *database.DbMedia)
+var uploadMutex = new(sync.Mutex)
+var uploadsRedisChan <-chan string
 
 const uploadsNotifyRedisChannel = "mmr:upload_mxc"
 
 func GetUploadWaitChannel(origin string, mediaId string) (<-chan *database.DbMedia, func()) {
-	subscribeRedis()
+	subscribeRedisUploads()
 	mxc := util.MxcUri(origin, mediaId)
 
-	mu.Lock()
-	defer mu.Unlock()
+	uploadMutex.Lock()
+	defer uploadMutex.Unlock()
 
-	if _, ok := localWaiters[mxc]; !ok {
-		localWaiters[mxc] = make([]chan *database.DbMedia, 0)
+	if _, ok := localUploadWaiters[mxc]; !ok {
+		localUploadWaiters[mxc] = make([]chan *database.DbMedia, 0)
 	}
 
 	ch := make(chan *database.DbMedia)
-	localWaiters[mxc] = append(localWaiters[mxc], ch)
+	localUploadWaiters[mxc] = append(localUploadWaiters[mxc], ch)
 
 	finishFn := func() {
-		mu.Lock()
-		defer mu.Unlock()
+		uploadMutex.Lock()
+		defer uploadMutex.Unlock()
 
-		if arr, ok := localWaiters[mxc]; ok {
+		if arr, ok := localUploadWaiters[mxc]; ok {
 			newArr := make([]chan *database.DbMedia, 0)
 			for _, xch := range arr {
 				if xch != ch {
 					newArr = append(newArr, xch)
 				}
 			}
-			localWaiters[mxc] = newArr
+			localUploadWaiters[mxc] = newArr
 		}
 
 		close(ch)
@@ -60,33 +60,33 @@ func noRelayNotifyUpload(record *database.DbMedia) {
 	go func() {
 		mxc := util.MxcUri(record.Origin, record.MediaId)
 
-		mu.Lock()
-		defer mu.Unlock()
+		uploadMutex.Lock()
+		defer uploadMutex.Unlock()
 
-		if arr, ok := localWaiters[mxc]; ok {
+		if arr, ok := localUploadWaiters[mxc]; ok {
 			for _, ch := range arr {
 				ch <- record
 			}
-			delete(localWaiters, mxc)
+			delete(localUploadWaiters, mxc)
 		}
 	}()
 }
 
-func subscribeRedis() {
-	if redisChan != nil {
+func subscribeRedisUploads() {
+	if uploadsRedisChan != nil {
 		return
 	}
 
-	mu.Lock()
-	defer mu.Unlock()
+	uploadMutex.Lock()
+	defer uploadMutex.Unlock()
 
-	redisChan = redislib.Subscribe(uploadsNotifyRedisChannel)
-	if redisChan == nil {
+	uploadsRedisChan = redislib.Subscribe(uploadsNotifyRedisChannel)
+	if uploadsRedisChan == nil {
 		return // no redis to subscribe with
 	}
 	go func() {
 		for {
-			val := <-redisChan
+			val := <-uploadsRedisChan
 			logrus.Debug("Received value from uploads notify channel: ", val)
 
 			origin, mediaId, err := util.SplitMxc(val)
