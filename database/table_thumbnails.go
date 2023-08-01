@@ -29,12 +29,16 @@ const selectThumbnailByParams = "SELECT origin, media_id, content_type, width, h
 const insertThumbnail = "INSERT INTO thumbnails (origin, media_id, content_type, width, height, method, animated, sha256_hash, size_bytes, creation_ts, datastore_id, location) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);"
 const selectThumbnailByLocationExists = "SELECT TRUE FROM thumbnails WHERE datastore_id = $1 AND location = $2 LIMIT 1;"
 const selectThumbnailsForMedia = "SELECT origin, media_id, content_type, width, height, method, animated, sha256_hash, size_bytes, creation_ts, datastore_id, location FROM thumbnails WHERE origin = $1 AND media_id = $2;"
+const selectOldThumbnails = "SELECT origin, media_id, content_type, width, height, method, animated, sha256_hash, size_bytes, creation_ts, datastore_id, location FROM thumbnails WHERE sha256_hash IN (SELECT t2.sha256_hash FROM thumbnails AS t2 WHERE t2.creation_ts < $1);"
+const deleteThumbnail = "DELETE FROM thumbnails WHERE origin = $1 AND media_id = $2 AND content_type = $3 AND width = $4 AND height = $5 AND method = $6 AND animated = $7 AND sha256_hash = $8 AND size_bytes = $9 AND creation_ts = $10 AND datastore_id = $11 AND location = $11 LIMIT 1;"
 
 type thumbnailsTableStatements struct {
 	selectThumbnailByParams         *sql.Stmt
 	insertThumbnail                 *sql.Stmt
 	selectThumbnailByLocationExists *sql.Stmt
 	selectThumbnailsForMedia        *sql.Stmt
+	selectOldThumbnails             *sql.Stmt
+	deleteThumbnail                 *sql.Stmt
 }
 
 type thumbnailsTableWithContext struct {
@@ -57,6 +61,12 @@ func prepareThumbnailsTables(db *sql.DB) (*thumbnailsTableStatements, error) {
 	}
 	if stmts.selectThumbnailsForMedia, err = db.Prepare(selectThumbnailsForMedia); err != nil {
 		return nil, errors.New("error preparing selectThumbnailsForMedia: " + err.Error())
+	}
+	if stmts.selectOldThumbnails, err = db.Prepare(selectOldThumbnails); err != nil {
+		return nil, errors.New("error preparing selectOldThumbnails: " + err.Error())
+	}
+	if stmts.deleteThumbnail, err = db.Prepare(deleteThumbnail); err != nil {
+		return nil, errors.New("error preparing deleteThumbnail: " + err.Error())
 	}
 
 	return stmts, nil
@@ -99,6 +109,25 @@ func (s *thumbnailsTableWithContext) GetForMedia(origin string, mediaId string) 
 	return results, nil
 }
 
+func (s *thumbnailsTableWithContext) GetOlderThan(ts int64) ([]*DbThumbnail, error) {
+	results := make([]*DbThumbnail, 0)
+	rows, err := s.statements.selectOldThumbnails.QueryContext(s.ctx, ts)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return results, nil
+		}
+		return nil, err
+	}
+	for rows.Next() {
+		val := &DbThumbnail{Locatable: &Locatable{}}
+		if err = rows.Scan(&val.Origin, &val.MediaId, &val.ContentType, &val.Width, &val.Height, &val.Method, &val.Animated, &val.Sha256Hash, &val.SizeBytes, &val.CreationTs, &val.DatastoreId, &val.Location); err != nil {
+			return nil, err
+		}
+		results = append(results, val)
+	}
+	return results, nil
+}
+
 func (s *thumbnailsTableWithContext) Insert(record *DbThumbnail) error {
 	_, err := s.statements.insertThumbnail.ExecContext(s.ctx, record.Origin, record.MediaId, record.ContentType, record.Width, record.Height, record.Method, record.Animated, record.Sha256Hash, record.SizeBytes, record.CreationTs, record.DatastoreId, record.Location)
 	return err
@@ -113,4 +142,9 @@ func (s *thumbnailsTableWithContext) LocationExists(datastoreId string, location
 		val = false
 	}
 	return val, err
+}
+
+func (s *thumbnailsTableWithContext) Delete(record *DbThumbnail) error {
+	_, err := s.statements.deleteThumbnail.ExecContext(s.ctx, record.Origin, record.MediaId, record.ContentType, record.Width, record.Height, record.Method, record.Animated, record.Sha256Hash, record.SizeBytes, record.CreationTs, record.DatastoreId, record.Location)
+	return err
 }
