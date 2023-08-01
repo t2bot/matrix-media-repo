@@ -27,10 +27,12 @@ type DbUrlPreview struct {
 
 const selectUrlPreview = "SELECT url, error_code, bucket_ts, site_url, site_name, resource_type, description, title, image_mxc, image_type, image_size, image_width, image_height, language_header FROM url_previews WHERE url = $1 AND bucket_ts = $2 AND language_header = $3;"
 const insertUrlPreview = "INSERT INTO url_previews (url, error_code, bucket_ts, site_url, site_name, resource_type, description, title, image_mxc, image_type, image_size, image_width, image_height, language_header) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14);"
+const deleteOldUrlPreviews = "DELETE FROM url_previews WHERE bucket_ts <= $1;"
 
 type urlPreviewsTableStatements struct {
-	selectUrlPreview *sql.Stmt
-	insertUrlPreview *sql.Stmt
+	selectUrlPreview     *sql.Stmt
+	insertUrlPreview     *sql.Stmt
+	deleteOldUrlPreviews *sql.Stmt
 }
 
 type urlPreviewsTableWithContext struct {
@@ -47,6 +49,9 @@ func prepareUrlPreviewsTables(db *sql.DB) (*urlPreviewsTableStatements, error) {
 	}
 	if stmts.insertUrlPreview, err = db.Prepare(insertUrlPreview); err != nil {
 		return nil, errors.New("error preparing insertUrlPreview: " + err.Error())
+	}
+	if stmts.deleteOldUrlPreviews, err = db.Prepare(deleteOldUrlPreviews); err != nil {
+		return nil, errors.New("error preparing deleteOldUrlPreviews: " + err.Error())
 	}
 
 	return stmts, nil
@@ -81,4 +86,9 @@ func (s *urlPreviewsTableWithContext) InsertError(url string, errorCode string) 
 		BucketTs:  util.GetHourBucket(util.NowMillis()),
 		// remainder of fields don't matter
 	})
+}
+
+func (s *urlPreviewsTableWithContext) DeleteOlderThan(ts int64) error {
+	_, err := s.statements.deleteOldUrlPreviews.ExecContext(s.ctx, ts)
+	return err
 }
