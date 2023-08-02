@@ -411,6 +411,7 @@ thumbnails:
     - "image/gif"
     - "image/heif"
     - "image/webp"
+    - "image/bmp"
     #- "image/svg+xml" # Be sure to have ImageMagick installed to thumbnail SVG files
     - "audio/mpeg"
     - "audio/ogg"
