@@ -121,6 +121,8 @@ func reloadAccessTokensOnChan(reloadChan chan bool) {
 			shouldReload := <-reloadChan
 			if shouldReload {
 				_auth_cache.FlushCache()
+			} else {
+				return // received stop
 			}
 		}
 	}()
@@ -135,6 +137,7 @@ func reloadCacheOnChan(reloadChan chan bool) {
 				redislib.Reconnect()
 			} else {
 				redislib.Stop()
+				return // received stop
 			}
 		}
 	}()
@@ -149,6 +152,7 @@ func reloadPluginsOnChan(reloadChan chan bool) {
 				plugins.ReloadPlugins()
 			} else {
 				plugins.StopPlugins()
+				return // received stop
 			}
 		}
 	}()
@@ -163,6 +167,7 @@ func reloadPoolOnChan(reloadChan chan bool) {
 				pool.AdjustSize()
 			} else {
 				pool.Drain()
+				return // received stop
 			}
 		}
 	}()
@@ -175,6 +180,8 @@ func reloadErrorCachesOnChan(reloadChan chan bool) {
 			shouldReload := <-reloadChan
 			if shouldReload {
 				errcache.AdjustSize()
+			} else {
+				return // received stop
 			}
 		}
 	}()
