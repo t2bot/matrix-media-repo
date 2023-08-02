@@ -12,7 +12,6 @@ import (
 	"path"
 
 	"github.com/dhowden/tag"
-	"github.com/disintegration/imaging"
 	"github.com/faiface/beep"
 	"github.com/faiface/beep/mp3"
 	"github.com/sirupsen/logrus"
@@ -65,7 +64,7 @@ func (d mp3Generator) GenerateThumbnail(b io.Reader, contentType string, width i
 
 	//goland:noinspection GoUnhandledErrorResult
 	defer audio.Close()
-	return d.GenerateFromStream(audio, format, tags, width, height)
+	return d.GenerateFromStream(audio, format, tags, width, height, ctx)
 }
 
 func (d mp3Generator) GetAudioData(b io.Reader, nKeys int, ctx rcontext.RequestContext) (*m.AudioInfo, error) {
@@ -94,7 +93,7 @@ func (d mp3Generator) GetDataFromStream(audio beep.StreamSeekCloser, format beep
 	}, nil
 }
 
-func (d mp3Generator) GenerateFromStream(audio beep.StreamSeekCloser, format beep.Format, meta tag.Metadata, width int, height int) (*m.Thumbnail, error) {
+func (d mp3Generator) GenerateFromStream(audio beep.StreamSeekCloser, format beep.Format, meta tag.Metadata, width int, height int, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
 	bgColor := color.RGBA{A: 255, R: 41, G: 57, B: 92}
 	fgColor := color.RGBA{A: 255, R: 240, G: 240, B: 240}
 
@@ -199,7 +198,7 @@ func (d mp3Generator) GenerateFromStream(audio beep.StreamSeekCloser, format bee
 	// Encode to a png
 	pr, pw := io.Pipe()
 	go func(pw *io.PipeWriter, p image.Image) {
-		err = imaging.Encode(pw, p, imaging.PNG)
+		err = u.Encode(ctx, pw, p)
 		if err != nil {
 			_ = pw.CloseWithError(errors.New("beep-visual: error encoding thumbnail: " + err.Error()))
 		} else {

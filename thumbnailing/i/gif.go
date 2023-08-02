@@ -8,9 +8,9 @@ import (
 	"io"
 	"math"
 
-	"github.com/disintegration/imaging"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/m"
+	"github.com/turt2live/matrix-media-repo/thumbnailing/u"
 )
 
 type gifGenerator struct {
@@ -78,7 +78,7 @@ func (d gifGenerator) GenerateThumbnail(b io.Reader, contentType string, width i
 			// The thumbnailer decided that it shouldn't thumbnail, so encode it ourselves
 			pr, pw := io.Pipe()
 			go func(pw *io.PipeWriter, p *image.Paletted) {
-				err = imaging.Encode(pw, p, imaging.PNG)
+				err = u.Encode(ctx, pw, p)
 				if err != nil {
 					_ = pw.CloseWithError(errors.New("gif: error encoding still frame thumbnail: " + err.Error()))
 				} else {

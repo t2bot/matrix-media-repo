@@ -7,13 +7,12 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/turt2live/matrix-media-repo/api/_apimeta"
-	"github.com/turt2live/matrix-media-repo/api/_responses"
-	"github.com/turt2live/matrix-media-repo/api/_routers"
-
 	"github.com/cupcake/sigil/gen"
 	"github.com/disintegration/imaging"
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/api/_apimeta"
+	"github.com/turt2live/matrix-media-repo/api/_responses"
+	"github.com/turt2live/matrix-media-repo/api/_routers"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 )
 
@@ -90,6 +89,7 @@ func Identicon(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 
 	pr, pw := io.Pipe()
 	go func() {
+		// dev note: we specifically hardcode this to PNG for ease of return type later (don't use u.Encode())
 		err = imaging.Encode(pw, img, imaging.PNG)
 		if err != nil {
 			_ = pw.CloseWithError(err)

@@ -53,7 +53,7 @@ func (d wavGenerator) GenerateThumbnail(b io.Reader, contentType string, width i
 
 	//goland:noinspection GoUnhandledErrorResult
 	defer audio.Close()
-	return mp3Generator{}.GenerateFromStream(audio, format, tags, width, height)
+	return mp3Generator{}.GenerateFromStream(audio, format, tags, width, height, ctx)
 }
 
 func (d wavGenerator) GetAudioData(b io.Reader, nKeys int, ctx rcontext.RequestContext) (*m.AudioInfo, error) {

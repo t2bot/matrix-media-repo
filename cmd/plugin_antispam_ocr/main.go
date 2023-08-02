@@ -109,7 +109,7 @@ func (a *AntispamOCR) CheckForSpam(b64 string, filename string, contentType stri
 	img = imaging.Grayscale(img)
 
 	imgData := &bytes.Buffer{}
-	err = imaging.Encode(imgData, img, imaging.PNG)
+	err = imaging.Encode(imgData, img, imaging.PNG) // dev note: deliberately png (don't use u.Encode())
 	if err != nil {
 		return false, err
 	}

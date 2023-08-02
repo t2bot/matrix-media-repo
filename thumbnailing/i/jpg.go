@@ -58,7 +58,7 @@ func (d jpgGenerator) GenerateThumbnail(b io.Reader, contentType string, width i
 
 	pr, pw := io.Pipe()
 	go func(pw *io.PipeWriter, p image.Image) {
-		err = imaging.Encode(pw, p, imaging.JPEG)
+		err = u.Encode(ctx, pw, p, u.JpegSource)
 		if err != nil {
 			_ = pw.CloseWithError(errors.New("jpg: error encoding thumbnail: " + err.Error()))
 		} else {

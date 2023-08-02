@@ -52,7 +52,7 @@ func (d pngGenerator) GenerateThumbnailOf(src image.Image, width int, height int
 
 	pr, pw := io.Pipe()
 	go func(pw *io.PipeWriter, p image.Image) {
-		err = imaging.Encode(pw, p, imaging.PNG)
+		err = u.Encode(ctx, pw, p)
 		if err != nil {
 			_ = pw.CloseWithError(errors.New("png: error encoding thumbnail: " + err.Error()))
 		} else {
