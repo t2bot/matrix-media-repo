@@ -1,29 +1,24 @@
 package custom
 
 import (
-	"database/sql"
 	"net/http"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/turt2live/matrix-media-repo/api/_apimeta"
 	"github.com/turt2live/matrix-media-repo/api/_responses"
 	"github.com/turt2live/matrix-media-repo/api/_routers"
+	"github.com/turt2live/matrix-media-repo/database"
+	"github.com/turt2live/matrix-media-repo/tasks/task_runner"
 
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/internal_cache"
 	"github.com/turt2live/matrix-media-repo/matrix"
-	"github.com/turt2live/matrix-media-repo/storage"
-	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
 type MediaQuarantinedResponse struct {
-	NumQuarantined int `json:"num_quarantined"`
+	NumQuarantined int64 `json:"num_quarantined"`
 }
-
-// Developer note: This isn't broken out into a dedicated controller class because the logic is slightly
-// too complex to do so. If anything, the logic should be improved and moved.
 
 func QuarantineRoomMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
 	canQuarantine, allowOtherHosts, isLocalAdmin := getQuarantineRequestInfo(r, rctx, user)
@@ -47,31 +42,13 @@ func QuarantineRoomMedia(r *http.Request, rctx rcontext.RequestContext, user _ap
 
 	var mxcs []string
 	mxcs = append(mxcs, allMedia.LocalMxcs...)
-	mxcs = append(mxcs, allMedia.RemoteMxcs...)
-
-	total := 0
-	for _, mxc := range mxcs {
-		server, mediaId, err := util.SplitMxc(mxc)
-		if err != nil {
-			rctx.Log.Error("Error parsing MXC URI ("+mxc+"): ", err)
-			sentry.CaptureException(err)
-			return _responses.InternalServerError("error parsing mxc uri")
-		}
-
-		if !allowOtherHosts && r.Host != server {
-			rctx.Log.Warn("Skipping media " + mxc + " because it is on a different host")
-			continue
-		}
-
-		resp, ok := doQuarantine(rctx, server, mediaId, allowOtherHosts)
-		if !ok {
-			return resp
-		}
-
-		total += resp.(*MediaQuarantinedResponse).NumQuarantined
+	if allowOtherHosts {
+		mxcs = append(mxcs, allMedia.RemoteMxcs...)
 	}
 
-	return &_responses.DoNotCacheResponse{Payload: &MediaQuarantinedResponse{NumQuarantined: total}}
+	return performQuarantineRequest(rctx, r.Host, allowOtherHosts, &task_runner.QuarantineThis{
+		MxcUris: mxcs,
+	})
 }
 
 func QuarantineUserMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
@@ -98,25 +75,17 @@ func QuarantineUserMedia(r *http.Request, rctx rcontext.RequestContext, user _ap
 		return _responses.AuthFailed()
 	}
 
-	db := storage.GetDatabase().GetMediaStore(rctx)
-	userMedia, err := db.GetMediaByUser(userId)
+	db := database.GetInstance().Media.Prepare(rctx)
+	userMedia, err := db.GetByUserId(userId)
 	if err != nil {
 		rctx.Log.Error("Error while listing media for the user: ", err)
 		sentry.CaptureException(err)
 		return _responses.InternalServerError("error retrieving media for user")
 	}
 
-	total := 0
-	for _, media := range userMedia {
-		resp, ok := doQuarantineOn(media, allowOtherHosts, rctx)
-		if !ok {
-			return resp
-		}
-
-		total += resp.(*MediaQuarantinedResponse).NumQuarantined
-	}
-
-	return &_responses.DoNotCacheResponse{Payload: &MediaQuarantinedResponse{NumQuarantined: total}}
+	return performQuarantineRequest(rctx, r.Host, allowOtherHosts, &task_runner.QuarantineThis{
+		DbMedia: userMedia,
+	})
 }
 
 func QuarantineDomainMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
@@ -140,25 +109,17 @@ func QuarantineDomainMedia(r *http.Request, rctx rcontext.RequestContext, user _
 		return _responses.AuthFailed()
 	}
 
-	db := storage.GetDatabase().GetMediaStore(rctx)
-	userMedia, err := db.GetAllMediaForServer(serverName)
+	db := database.GetInstance().Media.Prepare(rctx)
+	domainMedia, err := db.GetByOrigin(serverName)
 	if err != nil {
 		rctx.Log.Error("Error while listing media for the server: ", err)
 		sentry.CaptureException(err)
 		return _responses.InternalServerError("error retrieving media for server")
 	}
 
-	total := 0
-	for _, media := range userMedia {
-		resp, ok := doQuarantineOn(media, allowOtherHosts, rctx)
-		if !ok {
-			return resp
-		}
-
-		total += resp.(*MediaQuarantinedResponse).NumQuarantined
-	}
-
-	return &_responses.DoNotCacheResponse{Payload: &MediaQuarantinedResponse{NumQuarantined: total}}
+	return performQuarantineRequest(rctx, r.Host, allowOtherHosts, &task_runner.QuarantineThis{
+		DbMedia: domainMedia,
+	})
 }
 
 func QuarantineMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
@@ -184,80 +145,28 @@ func QuarantineMedia(r *http.Request, rctx rcontext.RequestContext, user _apimet
 		return _responses.BadRequest("unable to quarantine media on other homeservers")
 	}
 
-	resp, _ := doQuarantine(rctx, server, mediaId, allowOtherHosts)
-	return &_responses.DoNotCacheResponse{Payload: resp}
+	return performQuarantineRequest(rctx, r.Host, allowOtherHosts, &task_runner.QuarantineThis{
+		Single: &task_runner.QuarantineRecord{
+			Origin:  server,
+			MediaId: mediaId,
+		},
+	})
 }
 
-func doQuarantine(ctx rcontext.RequestContext, origin string, mediaId string, allowOtherHosts bool) (interface{}, bool) {
-	db := storage.GetDatabase().GetMediaStore(ctx)
-	media, err := db.Get(origin, mediaId)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			ctx.Log.Warn("Media not found, could not quarantine: " + origin + "/" + mediaId)
-			return &MediaQuarantinedResponse{0}, true
-		}
+func performQuarantineRequest(ctx rcontext.RequestContext, host string, allowOtherHosts bool, toQuarantine *task_runner.QuarantineThis) interface{} {
+	lockedHost := host
+	if allowOtherHosts {
+		lockedHost = ""
+	}
 
-		ctx.Log.Error("Error fetching media: ", err)
+	total, err := task_runner.QuarantineMedia(ctx, lockedHost, toQuarantine)
+	if err != nil {
+		ctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("error quarantining media"), false
+		return _responses.InternalServerError("error quarantining media")
 	}
 
-	return doQuarantineOn(media, allowOtherHosts, ctx)
-}
-
-func doQuarantineOn(media *types.Media, allowOtherHosts bool, ctx rcontext.RequestContext) (interface{}, bool) {
-	// Check to make sure the media doesn't have a purpose in staying
-	attrDb := storage.GetDatabase().GetMediaAttributesStore(ctx)
-	attr, err := attrDb.GetAttributesDefaulted(media.Origin, media.MediaId)
-	if err != nil {
-		ctx.Log.Error("Error while getting attributes for media: ", err)
-		sentry.CaptureException(err)
-		return _responses.InternalServerError("Error quarantining media"), false
-	}
-	if attr.Purpose == types.PurposePinned {
-		ctx.Log.Warn("Refusing to quarantine media due to it being pinned")
-		return &MediaQuarantinedResponse{NumQuarantined: 0}, true
-	}
-
-	// We reset the entire cache to avoid any lingering links floating around, such as thumbnails or other media.
-	// The reset is done before actually quarantining the media because that could fail for some reason
-	internal_cache.Get().Reset()
-
-	num, err := setMediaQuarantined(media, true, allowOtherHosts, ctx)
-	if err != nil {
-		ctx.Log.Error("Error quarantining media: ", err)
-		sentry.CaptureException(err)
-		return _responses.InternalServerError("Error quarantining media"), false
-	}
-
-	return &MediaQuarantinedResponse{NumQuarantined: num}, true
-}
-
-func setMediaQuarantined(media *types.Media, isQuarantined bool, allowOtherHosts bool, ctx rcontext.RequestContext) (int, error) {
-	db := storage.GetDatabase().GetMediaStore(ctx)
-	numQuarantined := 0
-
-	// Quarantine all media with the same hash, including the one requested
-	otherMedia, err := db.GetByHash(media.Sha256Hash)
-	if err != nil {
-		return numQuarantined, err
-	}
-	for _, m := range otherMedia {
-		if m.Origin != media.Origin && !allowOtherHosts {
-			ctx.Log.Warn("Skipping quarantine on " + m.Origin + "/" + m.MediaId + " because it is on a different host from " + media.Origin + "/" + media.MediaId)
-			continue
-		}
-
-		err := db.SetQuarantined(m.Origin, m.MediaId, isQuarantined)
-		if err != nil {
-			return numQuarantined, err
-		}
-
-		numQuarantined++
-		ctx.Log.Warn("Media has been quarantined: " + m.Origin + "/" + m.MediaId)
-	}
-
-	return numQuarantined, nil
+	return &_responses.DoNotCacheResponse{Payload: &MediaQuarantinedResponse{NumQuarantined: total}}
 }
 
 func getQuarantineRequestInfo(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) (bool, bool, bool) {
@@ -277,7 +186,6 @@ func getQuarantineRequestInfo(r *http.Request, rctx rcontext.RequestContext, use
 			}
 
 			if !isLocalAdmin {
-				rctx.Log.Warn(user.UserId + " tried to quarantine media on another server")
 				canQuarantine = false
 				return canQuarantine, allowOtherHosts, isLocalAdmin
 			}
@@ -285,10 +193,6 @@ func getQuarantineRequestInfo(r *http.Request, rctx rcontext.RequestContext, use
 			// They have local admin status and we allow local admins to quarantine
 			canQuarantine = true
 		}
-	}
-
-	if !canQuarantine {
-		rctx.Log.Warn(user.UserId + " tried to quarantine media")
 	}
 
 	return canQuarantine, allowOtherHosts, isLocalAdmin

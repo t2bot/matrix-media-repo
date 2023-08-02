@@ -22,6 +22,8 @@ const selectUploadSizesForServer = "SELECT COALESCE((SELECT SUM(size_bytes) FROM
 const selectUploadCountsForServer = "SELECT COALESCE((SELECT COUNT(origin) FROM media WHERE origin = $1), 0) AS media, COALESCE((SELECT COUNT(origin) FROM thumbnails WHERE origin = $1), 0) AS thumbnails;"
 const selectMediaForDatastoreWithLastAccess = "SELECT m.sha256_hash, m.size_bytes, m.datastore_id, m.location, m.creation_ts, a.last_access_ts, m.content_type FROM media AS m JOIN last_access AS a ON m.sha256_hash = a.sha256_hash WHERE a.last_access_ts < $1 AND m.datastore_id = $2;"
 const selectThumbnailsForDatastoreWithLastAccess = "SELECT m.sha256_hash, m.size_bytes, m.datastore_id, m.location, m.creation_ts, a.last_access_ts, m.content_type FROM thumbnails AS m JOIN last_access AS a ON m.sha256_hash = a.sha256_hash WHERE a.last_access_ts < $1 AND m.datastore_id = $2;"
+const updateQuarantineByHash = "WITH t AS (SELECT m.origin AS origin, m.media_id AS media_id, a.purpose AS purpose FROM media AS m LEFT JOIN media_attributes AS a ON m.origin = a.origin AND m.media_id = a.media_id WHERE m.sha256_hash = $1 AND (a.purpose IS NULL OR a.purpose <> $2) AND m.quarantined <> $3) UPDATE media AS m2 SET quarantined = $3 FROM t WHERE m2.origin = t.origin AND m2.media_id = t.media_id;"
+const updateQuarantineByHashAndOrigin = "WITH t AS (SELECT m.origin AS origin, m.media_id AS media_id, a.purpose AS purpose FROM media AS m LEFT JOIN media_attributes AS a ON m.origin = a.origin AND m.media_id = a.media_id WHERE m.origin = $1 AND m.sha256_hash = $2 AND (a.purpose IS NULL OR a.purpose <> $3) AND m.quarantined <> $4) UPDATE media AS m2 SET quarantined = $4 FROM t WHERE m2.origin = t.origin AND m2.media_id = t.media_id;"
 
 type SynStatUserOrderBy string
 
@@ -51,6 +53,8 @@ type metadataVirtualTableStatements struct {
 	selectUploadCountsForServer                *sql.Stmt
 	selectMediaForDatastoreWithLastAccess      *sql.Stmt
 	selectThumbnailsForDatastoreWithLastAccess *sql.Stmt
+	updateQuarantineByHash                     *sql.Stmt
+	updateQuarantineByHashAndOrigin            *sql.Stmt
 }
 
 type metadataVirtualTableWithContext struct {
@@ -78,6 +82,12 @@ func prepareMetadataVirtualTables(db *sql.DB) (*metadataVirtualTableStatements, 
 	}
 	if stmts.selectThumbnailsForDatastoreWithLastAccess, err = db.Prepare(selectThumbnailsForDatastoreWithLastAccess); err != nil {
 		return nil, errors.New("error preparing selectThumbnailsForDatastoreWithLastAccess: " + err.Error())
+	}
+	if stmts.updateQuarantineByHash, err = db.Prepare(updateQuarantineByHash); err != nil {
+		return nil, errors.New("error preparing updateQuarantineByHash: " + err.Error())
+	}
+	if stmts.updateQuarantineByHashAndOrigin, err = db.Prepare(updateQuarantineByHashAndOrigin); err != nil {
+		return nil, errors.New("error preparing updateQuarantineByHashAndOrigin: " + err.Error())
 	}
 
 	return stmts, nil
@@ -227,4 +237,20 @@ func (s *metadataVirtualTableWithContext) GetMediaForDatastoreByLastAccess(datas
 
 func (s *metadataVirtualTableWithContext) GetThumbnailsForDatastoreByLastAccess(datastoreId string, lastAccessTs int64) ([]*VirtLastAccess, error) {
 	return s.scanLastAccess(s.statements.selectThumbnailsForDatastoreWithLastAccess.QueryContext(s.ctx, lastAccessTs, datastoreId))
+}
+
+func (s *metadataVirtualTableWithContext) UpdateQuarantineByHash(hash string, quarantined bool) (int64, error) {
+	c, err := s.statements.updateQuarantineByHash.ExecContext(s.ctx, hash, PurposePinned, quarantined)
+	if err != nil {
+		return 0, err
+	}
+	return c.RowsAffected()
+}
+
+func (s *metadataVirtualTableWithContext) UpdateQuarantineByHashAndOrigin(origin string, hash string, quarantined bool) (int64, error) {
+	c, err := s.statements.updateQuarantineByHashAndOrigin.ExecContext(s.ctx, origin, hash, PurposePinned, quarantined)
+	if err != nil {
+		return 0, err
+	}
+	return c.RowsAffected()
 }

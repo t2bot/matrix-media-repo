@@ -82,3 +82,12 @@ func TryGetMedia(ctx rcontext.RequestContext, hash string, startByte int64, endB
 	metrics.CacheHits.With(prometheus.Labels{"cache": "media"}).Inc()
 	return bytes.NewBuffer([]byte(s)), nil
 }
+
+func DeleteMedia(ctx rcontext.RequestContext, hash string) {
+	makeConnection()
+	if ring == nil {
+		return
+	}
+
+	ring.Del(ctx, hash)
+}
