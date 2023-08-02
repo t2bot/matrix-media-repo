@@ -91,6 +91,7 @@ path/server, for example, then you can simply update the path in the config for 
 * Support for [MSC4034](https://github.com/matrix-org/matrix-spec-proposals/pull/4034) (self-serve usage information) is added, alongside a new "maximum file count" quota limit.
 * The `GET /_synapse/admin/v1/statistics/users/media` [endpoint](https://matrix-org.github.io/synapse/v1.88/admin_api/statistics.html#users-media-usage-statistics) from Synapse is now supported at the same path for local server admins.
 * Thumbnailing support for BMP images.
+* Thumbnailing support for TIFF images.
 
 ### Removed
 
