@@ -1,6 +1,7 @@
 package matrix
 
 import (
+	"errors"
 	"sync"
 
 	"github.com/rubyist/circuitbreaker"
@@ -35,7 +36,8 @@ func filterError(err error) (error, error) {
 	}
 
 	// Unknown token errors should be filtered out explicitly to ensure we don't break on bad requests
-	if httpErr, ok := err.(*errorResponse); ok {
+	var httpErr *errorResponse
+	if errors.As(err, &httpErr) {
 		// We send back our own version of errors to ensure we can filter them out elsewhere
 		if httpErr.ErrorCode == common.ErrCodeUnknownToken {
 			return nil, ErrInvalidToken

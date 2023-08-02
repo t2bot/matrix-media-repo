@@ -8,6 +8,16 @@ import (
 
 const selectLocalMedia = "SELECT media_id, media_type, media_length, created_ts, upload_name, user_id, url_cache FROM local_media_repository;"
 
+type LocalMedia struct {
+	MediaId     string
+	ContentType string
+	SizeBytes   int64
+	CreatedTs   int64
+	UploadName  string
+	UserId      string
+	UrlCache    string
+}
+
 type SynDatabase struct {
 	db         *sql.DB
 	statements statements

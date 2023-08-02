@@ -35,7 +35,7 @@ func doBreakerRequest(ctx rcontext.RequestContext, serverName string, accessToke
 		target.RawQuery = q.Encode()
 		err := doRequest(ctx, method, target.String(), nil, resp, accessToken, ipAddr)
 		if err != nil {
-			ctx.Log.Warn("Error from homeserver: ", err)
+			ctx.Log.Debug("Error from homeserver: ", err)
 			err, authError = filterError(err)
 			return err
 		}

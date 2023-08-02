@@ -35,20 +35,20 @@ type RequestContext struct {
 	context.Context
 
 	// These are also stored on the context object itself
-	Log     *logrus.Entry           // mr.logger
-	Config  config.DomainRepoConfig // mr.serverConfig
-	Request *http.Request           // mr.request
+	Log     *logrus.Entry           // mmr.logger
+	Config  config.DomainRepoConfig // mmr.serverConfig
+	Request *http.Request           // mmr.request
 }
 
 func (c RequestContext) populate() RequestContext {
-	c.Context = context.WithValue(c.Context, "mr.logger", c.Log)
-	c.Context = context.WithValue(c.Context, "mr.serverConfig", c.Config)
-	c.Context = context.WithValue(c.Context, "mr.request", c.Request)
+	c.Context = context.WithValue(c.Context, "mmr.logger", c.Log)
+	c.Context = context.WithValue(c.Context, "mmr.serverConfig", c.Config)
+	c.Context = context.WithValue(c.Context, "mmr.request", c.Request)
 	return c
 }
 
 func (c RequestContext) ReplaceLogger(log *logrus.Entry) RequestContext {
-	ctx := context.WithValue(c.Context, "mr.logger", log)
+	ctx := context.WithValue(c.Context, "mmr.logger", log)
 	return RequestContext{
 		Context: ctx,
 		Log:     log,
