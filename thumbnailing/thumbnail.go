@@ -19,10 +19,6 @@ func IsSupported(contentType string) bool {
 	return util.ArrayContains(i.GetSupportedContentTypes(), contentType)
 }
 
-func IsAnimationSupported(contentType string) bool {
-	return util.ArrayContains(i.GetSupportedAnimationTypes(), contentType)
-}
-
 func GenerateThumbnail(imgStream io.ReadCloser, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
 	defer imgStream.Close()
 	if !IsSupported(contentType) {
