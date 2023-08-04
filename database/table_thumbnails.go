@@ -32,6 +32,7 @@ const selectThumbnailsForMedia = "SELECT origin, media_id, content_type, width, 
 const selectOldThumbnails = "SELECT origin, media_id, content_type, width, height, method, animated, sha256_hash, size_bytes, creation_ts, datastore_id, location FROM thumbnails WHERE sha256_hash IN (SELECT t2.sha256_hash FROM thumbnails AS t2 WHERE t2.creation_ts < $1);"
 const deleteThumbnail = "DELETE FROM thumbnails WHERE origin = $1 AND media_id = $2 AND content_type = $3 AND width = $4 AND height = $5 AND method = $6 AND animated = $7 AND sha256_hash = $8 AND size_bytes = $9 AND creation_ts = $10 AND datastore_id = $11 AND location = $11;"
 const updateThumbnailLocation = "UPDATE thumbnails SET datastore_id = $3, location = $4 WHERE datastore_id = $1 AND location = $2;"
+const selectThumbnailsByLocation = "SELECT origin, media_id, content_type, width, height, method, animated, sha256_hash, size_bytes, creation_ts, datastore_id, location FROM thumbnails WHERE datastore_id = $1 AND location = $2;"
 
 type thumbnailsTableStatements struct {
 	selectThumbnailByParams         *sql.Stmt
@@ -41,6 +42,7 @@ type thumbnailsTableStatements struct {
 	selectOldThumbnails             *sql.Stmt
 	deleteThumbnail                 *sql.Stmt
 	updateThumbnailLocation         *sql.Stmt
+	selectThumbnailsByLocation      *sql.Stmt
 }
 
 type thumbnailsTableWithContext struct {
@@ -73,6 +75,9 @@ func prepareThumbnailsTables(db *sql.DB) (*thumbnailsTableStatements, error) {
 	if stmts.updateThumbnailLocation, err = db.Prepare(updateThumbnailLocation); err != nil {
 		return nil, errors.New("error preparing updateThumbnailLocation: " + err.Error())
 	}
+	if stmts.selectThumbnailsByLocation, err = db.Prepare(selectThumbnailsByLocation); err != nil {
+		return nil, errors.New("error preparing selectThumbnailsByLocation: " + err.Error())
+	}
 
 	return stmts, nil
 }
@@ -95,9 +100,8 @@ func (s *thumbnailsTableWithContext) GetByParams(origin string, mediaId string, 
 	return val, err
 }
 
-func (s *thumbnailsTableWithContext) GetForMedia(origin string, mediaId string) ([]*DbThumbnail, error) {
+func (s *thumbnailsTableWithContext) scanRows(rows *sql.Rows, err error) ([]*DbThumbnail, error) {
 	results := make([]*DbThumbnail, 0)
-	rows, err := s.statements.selectThumbnailsForMedia.QueryContext(s.ctx, origin, mediaId)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return results, nil
@@ -111,26 +115,20 @@ func (s *thumbnailsTableWithContext) GetForMedia(origin string, mediaId string) 
 		}
 		results = append(results, val)
 	}
+
 	return results, nil
 }
 
+func (s *thumbnailsTableWithContext) GetForMedia(origin string, mediaId string) ([]*DbThumbnail, error) {
+	return s.scanRows(s.statements.selectThumbnailsForMedia.QueryContext(s.ctx, origin, mediaId))
+}
+
 func (s *thumbnailsTableWithContext) GetOlderThan(ts int64) ([]*DbThumbnail, error) {
-	results := make([]*DbThumbnail, 0)
-	rows, err := s.statements.selectOldThumbnails.QueryContext(s.ctx, ts)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return results, nil
-		}
-		return nil, err
-	}
-	for rows.Next() {
-		val := &DbThumbnail{Locatable: &Locatable{}}
-		if err = rows.Scan(&val.Origin, &val.MediaId, &val.ContentType, &val.Width, &val.Height, &val.Method, &val.Animated, &val.Sha256Hash, &val.SizeBytes, &val.CreationTs, &val.DatastoreId, &val.Location); err != nil {
-			return nil, err
-		}
-		results = append(results, val)
-	}
-	return results, nil
+	return s.scanRows(s.statements.selectOldThumbnails.QueryContext(s.ctx, ts))
+}
+
+func (s *thumbnailsTableWithContext) GetByLocation(datastoreId string, location string) ([]*DbThumbnail, error) {
+	return s.scanRows(s.statements.selectThumbnailsByLocation.QueryContext(s.ctx, datastoreId, location))
 }
 
 func (s *thumbnailsTableWithContext) Insert(record *DbThumbnail) error {

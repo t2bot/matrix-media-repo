@@ -15,6 +15,7 @@ func GenerateMediaId(ctx rcontext.RequestContext, origin string) (string, error)
 	}
 	heldDb := database.GetInstance().HeldMedia.Prepare(ctx)
 	mediaDb := database.GetInstance().Media.Prepare(ctx)
+	reservedDb := database.GetInstance().ReservedMedia.Prepare(ctx)
 	var mediaId string
 	var err error
 	var exists bool
@@ -34,6 +35,15 @@ func GenerateMediaId(ctx rcontext.RequestContext, origin string) (string, error)
 
 		// Check if there's a media table record for this media as well (there shouldn't be)
 		exists, err = mediaDb.IdExists(origin, mediaId)
+		if err != nil {
+			return "", err
+		}
+		if exists {
+			continue
+		}
+
+		// Also check to see if the media ID is reserved due to a past action
+		exists, err = reservedDb.IdExists(origin, mediaId)
 		if err != nil {
 			return "", err
 		}

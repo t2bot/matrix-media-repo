@@ -36,7 +36,9 @@ const insertMedia = "INSERT INTO media (origin, media_id, upload_name, content_t
 const selectMediaExists = "SELECT TRUE FROM media WHERE origin = $1 AND media_id = $2 LIMIT 1;"
 const selectMediaById = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, creation_ts, quarantined, datastore_id, location FROM media WHERE origin = $1 AND media_id = $2;"
 const selectMediaByUserId = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, creation_ts, quarantined, datastore_id, location FROM media WHERE user_id = $1;"
+const selectOldMediaByUserId = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, creation_ts, quarantined, datastore_id, location FROM media WHERE user_id = $1 AND creation_ts < $2;"
 const selectMediaByOrigin = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, creation_ts, quarantined, datastore_id, location FROM media WHERE origin = $1;"
+const selectOldMediaByOrigin = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, creation_ts, quarantined, datastore_id, location FROM media WHERE origin = $1 AND creation_ts < $2;"
 const selectMediaByLocationExists = "SELECT TRUE FROM media WHERE datastore_id = $1 AND location = $2 LIMIT 1;"
 const selectMediaByUserCount = "SELECT COUNT(*) FROM media WHERE user_id = $1;"
 const selectMediaByOriginAndUserIds = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, creation_ts, quarantined, datastore_id, location FROM media WHERE origin = $1 AND user_id = ANY($2);"
@@ -44,23 +46,31 @@ const selectMediaByOriginAndIds = "SELECT origin, media_id, upload_name, content
 const selectOldMediaExcludingDomains = "SELECT m.origin, m.media_id, m.upload_name, m.content_type, m.user_id, m.sha256_hash, m.size_bytes, m.creation_ts, m.quarantined, m.datastore_id, m.location FROM media AS m WHERE m.origin <> ANY($1) AND m.creation_ts < $2 AND (SELECT COUNT(d.*) FROM media AS d WHERE d.sha256_hash = m.sha256_hash AND d.creation_ts >= $2) = 0 AND (SELECT COUNT(d.*) FROM media AS d WHERE d.sha256_hash = m.sha256_hash AND d.origin = ANY($1)) = 0;"
 const deleteMedia = "DELETE FROM media WHERE origin = $1 AND media_id = $2;"
 const updateMediaLocation = "UPDATE media SET datastore_id = $3, location = $4 WHERE datastore_id = $1 AND location = $2;"
+const selectMediaByLocation = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, creation_ts, quarantined, datastore_id, location FROM media WHERE datastore_id = $1 AND location = $2;"
+const selectMediaByQuarantine = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, creation_ts, quarantined, datastore_id, location FROM media WHERE quarantined = TRUE;"
+const selectMediaByQuarantineAndOrigin = "SELECT origin, media_id, upload_name, content_type, user_id, sha256_hash, size_bytes, creation_ts, quarantined, datastore_id, location FROM media WHERE quarantined = TRUE AND origin = $1;"
 
 type mediaTableStatements struct {
-	selectDistinctMediaDatastoreIds *sql.Stmt
-	selectMediaIsQuarantinedByHash  *sql.Stmt
-	selectMediaByHash               *sql.Stmt
-	insertMedia                     *sql.Stmt
-	selectMediaExists               *sql.Stmt
-	selectMediaById                 *sql.Stmt
-	selectMediaByUserId             *sql.Stmt
-	selectMediaByOrigin             *sql.Stmt
-	selectMediaByLocationExists     *sql.Stmt
-	selectMediaByUserCount          *sql.Stmt
-	selectMediaByOriginAndUserIds   *sql.Stmt
-	selectMediaByOriginAndIds       *sql.Stmt
-	selectOldMediaExcludingDomains  *sql.Stmt
-	deleteMedia                     *sql.Stmt
-	updateMediaLocation             *sql.Stmt
+	selectDistinctMediaDatastoreIds  *sql.Stmt
+	selectMediaIsQuarantinedByHash   *sql.Stmt
+	selectMediaByHash                *sql.Stmt
+	insertMedia                      *sql.Stmt
+	selectMediaExists                *sql.Stmt
+	selectMediaById                  *sql.Stmt
+	selectMediaByUserId              *sql.Stmt
+	selectOldMediaByUserId           *sql.Stmt
+	selectMediaByOrigin              *sql.Stmt
+	selectOldMediaByOrigin           *sql.Stmt
+	selectMediaByLocationExists      *sql.Stmt
+	selectMediaByUserCount           *sql.Stmt
+	selectMediaByOriginAndUserIds    *sql.Stmt
+	selectMediaByOriginAndIds        *sql.Stmt
+	selectOldMediaExcludingDomains   *sql.Stmt
+	deleteMedia                      *sql.Stmt
+	updateMediaLocation              *sql.Stmt
+	selectMediaByLocation            *sql.Stmt
+	selectMediaByQuarantine          *sql.Stmt
+	selectMediaByQuarantineAndOrigin *sql.Stmt
 }
 
 type mediaTableWithContext struct {
@@ -93,8 +103,14 @@ func prepareMediaTables(db *sql.DB) (*mediaTableStatements, error) {
 	if stmts.selectMediaByUserId, err = db.Prepare(selectMediaByUserId); err != nil {
 		return nil, errors.New("error preparing selectMediaByUserId: " + err.Error())
 	}
+	if stmts.selectOldMediaByUserId, err = db.Prepare(selectOldMediaByUserId); err != nil {
+		return nil, errors.New("error preparing selectOldMediaByUserId: " + err.Error())
+	}
 	if stmts.selectMediaByOrigin, err = db.Prepare(selectMediaByOrigin); err != nil {
 		return nil, errors.New("error preparing selectMediaByOrigin: " + err.Error())
+	}
+	if stmts.selectOldMediaByOrigin, err = db.Prepare(selectOldMediaByOrigin); err != nil {
+		return nil, errors.New("error preparing selectOldMediaByOrigin: " + err.Error())
 	}
 	if stmts.selectMediaByLocationExists, err = db.Prepare(selectMediaByLocationExists); err != nil {
 		return nil, errors.New("error preparing selectMediaByLocationExists: " + err.Error())
@@ -116,6 +132,15 @@ func prepareMediaTables(db *sql.DB) (*mediaTableStatements, error) {
 	}
 	if stmts.updateMediaLocation, err = db.Prepare(updateMediaLocation); err != nil {
 		return nil, errors.New("error preparing updateMediaLocation: " + err.Error())
+	}
+	if stmts.selectMediaByLocation, err = db.Prepare(selectMediaByLocation); err != nil {
+		return nil, errors.New("error preparing selectMediaByLocation: " + err.Error())
+	}
+	if stmts.selectMediaByQuarantine, err = db.Prepare(selectMediaByQuarantine); err != nil {
+		return nil, errors.New("error preparing selectMediaByQuarantine: " + err.Error())
+	}
+	if stmts.selectMediaByQuarantineAndOrigin, err = db.Prepare(selectMediaByQuarantineAndOrigin); err != nil {
+		return nil, errors.New("error preparing selectMediaByQuarantineAndOrigin: " + err.Error())
 	}
 
 	return stmts, nil
@@ -188,8 +213,16 @@ func (s *mediaTableWithContext) GetByUserId(userId string) ([]*DbMedia, error) {
 	return s.scanRows(s.statements.selectMediaByUserId.QueryContext(s.ctx, userId))
 }
 
+func (s *mediaTableWithContext) GetOldByUserId(userId string, beforeTs int64) ([]*DbMedia, error) {
+	return s.scanRows(s.statements.selectOldMediaByUserId.QueryContext(s.ctx, userId, beforeTs))
+}
+
 func (s *mediaTableWithContext) GetByOrigin(origin string) ([]*DbMedia, error) {
 	return s.scanRows(s.statements.selectMediaByOrigin.QueryContext(s.ctx, origin))
+}
+
+func (s *mediaTableWithContext) GetOldByOrigin(origin string, beforeTs int64) ([]*DbMedia, error) {
+	return s.scanRows(s.statements.selectOldMediaByOrigin.QueryContext(s.ctx, origin, beforeTs))
 }
 
 func (s *mediaTableWithContext) GetByOriginUsers(origin string, userIds []string) ([]*DbMedia, error) {
@@ -202,6 +235,18 @@ func (s *mediaTableWithContext) GetByIds(origin string, mediaIds []string) ([]*D
 
 func (s *mediaTableWithContext) GetOldExcluding(origins []string, beforeTs int64) ([]*DbMedia, error) {
 	return s.scanRows(s.statements.selectOldMediaExcludingDomains.QueryContext(s.ctx, pq.Array(origins), beforeTs))
+}
+
+func (s *mediaTableWithContext) GetByLocation(datastoreId string, location string) ([]*DbMedia, error) {
+	return s.scanRows(s.statements.selectMediaByLocation.QueryContext(s.ctx, datastoreId, location))
+}
+
+func (s *mediaTableWithContext) GetByQuarantine() ([]*DbMedia, error) {
+	return s.scanRows(s.statements.selectMediaByQuarantine.QueryContext(s.ctx))
+}
+
+func (s *mediaTableWithContext) GetByOriginQuarantine(origin string) ([]*DbMedia, error) {
+	return s.scanRows(s.statements.selectMediaByQuarantineAndOrigin.QueryContext(s.ctx, origin))
 }
 
 func (s *mediaTableWithContext) GetById(origin string, mediaId string) (*DbMedia, error) {

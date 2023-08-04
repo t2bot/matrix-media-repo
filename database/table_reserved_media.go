@@ -13,10 +13,12 @@ type DbReservedMedia struct {
 	Reason  string
 }
 
-const insertReservedMedia = "INSERT INTO reserved_media (origin, media_id, reason) VALUES ($1, $2, $3);"
+const insertReservedMediaNoConflict = "INSERT INTO reserved_media (origin, media_id, reason) VALUES ($1, $2, $3) ON CONFLICT (origin, media_id) DO NOTHING;"
+const selectReservedMediaExists = "SELECT TRUE FROM reserved_media WHERE origin = $1 AND media_id = $2 LIMIT 1;"
 
 type reservedMediaTableStatements struct {
-	insertReservedMedia *sql.Stmt
+	insertReservedMediaNoConflict *sql.Stmt
+	selectReservedMediaExists     *sql.Stmt
 }
 
 type reservedMediaTableWithContext struct {
@@ -28,8 +30,11 @@ func prepareReservedMediaTables(db *sql.DB) (*reservedMediaTableStatements, erro
 	var err error
 	var stmts = &reservedMediaTableStatements{}
 
-	if stmts.insertReservedMedia, err = db.Prepare(insertReservedMedia); err != nil {
-		return nil, errors.New("error preparing insertReservedMedia: " + err.Error())
+	if stmts.insertReservedMediaNoConflict, err = db.Prepare(insertReservedMediaNoConflict); err != nil {
+		return nil, errors.New("error preparing insertReservedMediaNoConflict: " + err.Error())
+	}
+	if stmts.selectReservedMediaExists, err = db.Prepare(selectReservedMediaExists); err != nil {
+		return nil, errors.New("error preparing selectReservedMediaExists: " + err.Error())
 	}
 
 	return stmts, nil
@@ -42,7 +47,18 @@ func (s *reservedMediaTableStatements) Prepare(ctx rcontext.RequestContext) *res
 	}
 }
 
-func (s *reservedMediaTableWithContext) TryInsert(origin string, mediaId string, reason string) error {
-	_, err := s.statements.insertReservedMedia.ExecContext(s.ctx, origin, mediaId, reason)
+func (s *reservedMediaTableWithContext) InsertNoConflict(origin string, mediaId string, reason string) error {
+	_, err := s.statements.insertReservedMediaNoConflict.ExecContext(s.ctx, origin, mediaId, reason)
 	return err
+}
+
+func (s *reservedMediaTableWithContext) IdExists(origin string, mediaId string) (bool, error) {
+	row := s.statements.selectReservedMediaExists.QueryRowContext(s.ctx, origin, mediaId)
+	val := false
+	err := row.Scan(&val)
+	if err == sql.ErrNoRows {
+		err = nil
+		val = false
+	}
+	return val, err
 }
