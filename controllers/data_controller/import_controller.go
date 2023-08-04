@@ -34,44 +34,6 @@ type importUpdate struct {
 
 var openImports = &sync.Map{} // importId => updateChan
 
-func VerifyImport(data io.Reader, ctx rcontext.RequestContext) (int, int, []string, error) {
-	// Prepare the first update for the import (sync, so we can error)
-	// We do this before anything else because if the archive is invalid then we shouldn't
-	// even bother with an import.
-	results, err := processArchive(data)
-	if err != nil {
-		return 0, 0, nil, err
-	}
-
-	manifestFile, ok := results["manifest.json"]
-	if !ok {
-		return 0, 0, nil, errors.New("no manifest provided in data package")
-	}
-
-	archiveManifest := &Manifest{}
-	err = json.Unmarshal(manifestFile.Bytes(), archiveManifest)
-	if err != nil {
-		return 0, 0, nil, err
-	}
-
-	expected := 0
-	found := 0
-	missing := make([]string, 0)
-	db := storage.GetDatabase().GetMediaStore(ctx)
-	for mxc, r := range archiveManifest.Media {
-		ctx.Log.Info("Checking file: ", mxc)
-		expected++
-		_, err = db.Get(r.Origin, r.MediaId)
-		if err == nil {
-			found++
-		} else {
-			missing = append(missing, mxc)
-		}
-	}
-
-	return found, expected, missing, nil
-}
-
 func StartImport(data io.Reader, ctx rcontext.RequestContext) (*types.BackgroundTask, string, error) {
 	// Prepare the first update for the import (sync, so we can error)
 	// We do this before anything else because if the archive is invalid then we shouldn't
@@ -102,14 +64,6 @@ func StartImport(data io.Reader, ctx rcontext.RequestContext) (*types.Background
 	updateChan <- &importUpdate{stop: false, fileMap: results}
 
 	return task, importId, nil
-}
-
-func IsImportWaiting(importId string) bool {
-	runningImport, ok := openImports.Load(importId)
-	if !ok || runningImport == nil {
-		return false
-	}
-	return true
 }
 
 func AppendToImport(importId string, data io.Reader, withReturnChan bool) (chan bool, error) {
@@ -149,38 +103,6 @@ func StopImport(importId string) error {
 	updateChan <- &importUpdate{stop: true, fileMap: make(map[string]*bytes.Buffer)}
 
 	return nil
-}
-
-func GetFileNames(data io.Reader) ([]string, error) {
-	archiver, err := gzip.NewReader(data)
-	if err != nil {
-		return nil, err
-	}
-
-	defer archiver.Close()
-
-	tarFile := tar.NewReader(archiver)
-	names := make([]string, 0)
-	for {
-		header, err := tarFile.Next()
-		if err == io.EOF {
-			break // we're done
-		}
-		if err != nil {
-			return nil, err
-		}
-
-		if header == nil {
-			continue // skip this weird file
-		}
-		if header.Typeflag != tar.TypeReg {
-			continue // skip directories and other stuff
-		}
-
-		names = append(names, header.Name)
-	}
-
-	return names, nil
 }
 
 func processArchive(data io.Reader) (map[string]*bytes.Buffer, error) {

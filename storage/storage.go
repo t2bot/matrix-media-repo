@@ -2,7 +2,6 @@ package storage
 
 import (
 	"database/sql"
-	"github.com/getsentry/sentry-go"
 	"sync"
 
 	"github.com/DavidHuie/gomigrate"
@@ -43,19 +42,6 @@ func GetDatabase() *Database {
 		})
 	}
 	return dbInstance
-}
-
-func ReloadDatabase() {
-	if dbInstance != nil {
-		if err := dbInstance.db.Close(); err != nil {
-			logrus.Error(err)
-			sentry.CaptureException(err)
-		}
-	}
-
-	dbInstance = nil
-	singletonDbLock = &sync.Once{}
-	GetDatabase()
 }
 
 func OpenDatabase(connectionString string, maxConns int, maxIdleConns int) error {

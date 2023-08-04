@@ -37,10 +37,10 @@ func IsUserAdmin(ctx rcontext.RequestContext, serverName string, accessToken str
 	return isAdmin, replyError
 }
 
-func ListMedia(ctx rcontext.RequestContext, serverName string, accessToken string, roomId string, ipAddr string) (*mediaListResponse, error) {
+func ListMedia(ctx rcontext.RequestContext, serverName string, accessToken string, roomId string, ipAddr string) (*MediaListResponse, error) {
 	hs, cb := getBreakerAndConfig(serverName)
 
-	response := &mediaListResponse{}
+	response := &MediaListResponse{}
 	var replyError error
 	replyError = cb.CallContext(ctx, func() error {
 		path := ""

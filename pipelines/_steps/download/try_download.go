@@ -29,11 +29,6 @@ type downloadResult struct {
 	err         error
 }
 
-type uploadResult struct {
-	m   *database.DbMedia
-	err error
-}
-
 func TryDownload(ctx rcontext.RequestContext, origin string, mediaId string) (*database.DbMedia, io.ReadCloser, error) {
 	if util.IsServerOurs(origin) {
 		return nil, nil, common.ErrMediaNotFound

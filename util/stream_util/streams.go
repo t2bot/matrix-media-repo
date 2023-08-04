@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"io"
 	"math"
-
-	"github.com/turt2live/matrix-media-repo/util/util_byte_seeker"
 )
 
 func BufferToStream(buf *bytes.Buffer) io.ReadCloser {
@@ -19,30 +17,6 @@ func BufferToStream(buf *bytes.Buffer) io.ReadCloser {
 
 func BytesToStream(b []byte) io.ReadCloser {
 	return io.NopCloser(bytes.NewBuffer(b))
-}
-
-func CloneReader(input io.ReadCloser, numReaders int) []io.ReadCloser {
-	readers := make([]io.ReadCloser, 0)
-	writers := make([]io.WriteCloser, 0)
-
-	for i := 0; i < numReaders; i++ {
-		r, w := io.Pipe()
-		readers = append(readers, r)
-		writers = append(writers, w)
-	}
-
-	go func() {
-		plainWriters := make([]io.Writer, 0)
-		for _, w := range writers {
-			defer w.Close()
-			plainWriters = append(plainWriters, w)
-		}
-
-		mw := io.MultiWriter(plainWriters...)
-		io.Copy(mw, input)
-	}()
-
-	return readers
 }
 
 func GetSha256HashOfStream(r io.ReadCloser) (string, error) {
@@ -55,10 +29,6 @@ func GetSha256HashOfStream(r io.ReadCloser) (string, error) {
 	}
 
 	return hex.EncodeToString(hasher.Sum(nil)), nil
-}
-
-func ClonedBufReader(buf bytes.Buffer) util_byte_seeker.ByteSeeker {
-	return util_byte_seeker.NewByteSeeker(buf.Bytes())
 }
 
 func ForceDiscard(r io.Reader, nBytes int64) error {
@@ -97,21 +67,6 @@ func ForceDiscard(r io.Reader, nBytes int64) error {
 	}
 
 	return nil
-}
-
-func ManualSeekStream(r io.Reader, bytesStart int64, bytesToRead int64) (io.Reader, error) {
-	if sr, ok := r.(io.ReadSeeker); ok {
-		_, err := sr.Seek(bytesStart, io.SeekStart)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		err := ForceDiscard(r, bytesStart)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return io.LimitReader(r, bytesToRead), nil
 }
 
 func DumpAndCloseStream(r io.ReadCloser) {

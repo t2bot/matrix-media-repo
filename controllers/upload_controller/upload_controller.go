@@ -4,152 +4,25 @@ import (
 	"bytes"
 	"errors"
 	"io"
-	"strconv"
-	"time"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/turt2live/matrix-media-repo/util/ids"
 	"github.com/turt2live/matrix-media-repo/util/stream_util"
 
-	"github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/internal_cache"
 	"github.com/turt2live/matrix-media-repo/plugins"
 	"github.com/turt2live/matrix-media-repo/storage"
 	"github.com/turt2live/matrix-media-repo/storage/datastore"
 	"github.com/turt2live/matrix-media-repo/types"
 	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/util_byte_seeker"
 )
 
 const NoApplicableUploadUser = ""
 
-var recentMediaIds = cache.New(30*time.Second, 60*time.Second)
-
 type AlreadyUploadedFile struct {
 	DS         *datastore.DatastoreRef
 	ObjectInfo *types.ObjectInfo
-}
-
-func IsRequestTooLarge(contentLength int64, contentLengthHeader string, ctx rcontext.RequestContext) bool {
-	if ctx.Config.Uploads.MaxSizeBytes <= 0 {
-		return false
-	}
-	if contentLength >= 0 {
-		return contentLength > ctx.Config.Uploads.MaxSizeBytes
-	}
-	if contentLengthHeader != "" {
-		parsed, err := strconv.ParseInt(contentLengthHeader, 10, 64)
-		if err != nil {
-			ctx.Log.Warn("Invalid content length header given; assuming too large. Value received: " + contentLengthHeader)
-			sentry.CaptureException(err)
-			return true // Invalid header
-		}
-
-		return parsed > ctx.Config.Uploads.MaxSizeBytes
-	}
-
-	return false // We can only assume
-}
-
-func IsRequestTooSmall(contentLength int64, contentLengthHeader string, ctx rcontext.RequestContext) bool {
-	if ctx.Config.Uploads.MinSizeBytes <= 0 {
-		return false
-	}
-	if contentLength >= 0 {
-		return contentLength < ctx.Config.Uploads.MinSizeBytes
-	}
-	if contentLengthHeader != "" {
-		parsed, err := strconv.ParseInt(contentLengthHeader, 10, 64)
-		if err != nil {
-			ctx.Log.Warn("Invalid content length header given; assuming too small. Value received: " + contentLengthHeader)
-			sentry.CaptureException(err)
-			return true // Invalid header
-		}
-
-		return parsed < ctx.Config.Uploads.MinSizeBytes
-	}
-
-	return false // We can only assume
-}
-
-func EstimateContentLength(contentLength int64, contentLengthHeader string) int64 {
-	if contentLength >= 0 {
-		return contentLength
-	}
-	if contentLengthHeader != "" {
-		parsed, err := strconv.ParseInt(contentLengthHeader, 10, 64)
-		if err != nil {
-			logrus.Warn("Invalid content length header given. Value received: " + contentLengthHeader)
-			sentry.CaptureException(err)
-			return -1 // unknown
-		}
-
-		return parsed
-	}
-
-	return -1 // unknown
-}
-
-func UploadMedia(contents io.ReadCloser, contentLength int64, contentType string, filename string, userId string, origin string, ctx rcontext.RequestContext) (*types.Media, error) {
-	defer stream_util.DumpAndCloseStream(contents)
-
-	var data io.ReadCloser
-	if ctx.Config.Uploads.MaxSizeBytes > 0 {
-		data = io.NopCloser(io.LimitReader(contents, ctx.Config.Uploads.MaxSizeBytes))
-	} else {
-		data = contents
-	}
-
-	dataBytes, err := io.ReadAll(data)
-	if err != nil {
-		return nil, err
-	}
-
-	metadataDb := storage.GetDatabase().GetMetadataStore(ctx)
-
-	mediaTaken := true
-	var mediaId string
-	attempts := 0
-	for mediaTaken {
-		attempts += 1
-		if attempts > 10 {
-			return nil, errors.New("failed to generate a media ID after 10 rounds")
-		}
-
-		mediaId, err = ids.NewUniqueId()
-		if err != nil {
-			return nil, err
-		}
-
-		// Because we use the current time in the media ID, we don't need to worry about
-		// collisions from the database.
-		if _, present := recentMediaIds.Get(mediaId); present {
-			mediaTaken = true
-			continue
-		}
-
-		mediaTaken, err = metadataDb.IsReserved(origin, mediaId)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	_ = recentMediaIds.Add(mediaId, true, cache.DefaultExpiration)
-
-	m, err := StoreDirect(nil, util_byte_seeker.NewByteSeeker(dataBytes), contentLength, contentType, filename, userId, origin, mediaId, common.KindLocalMedia, ctx, true)
-	if err != nil {
-		return m, err
-	}
-	if m != nil {
-		err = internal_cache.Get().UploadMedia(m.Sha256Hash, util_byte_seeker.NewByteSeeker(dataBytes), ctx)
-		if err != nil {
-			ctx.Log.Warn("Unexpected error trying to cache media: ", err)
-		}
-	}
-	return m, err
 }
 
 func trackUploadAsLastAccess(ctx rcontext.RequestContext, media *types.Media) {

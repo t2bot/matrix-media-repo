@@ -17,7 +17,7 @@ type whoisResponse struct {
 	// We don't actually care about any of the fields here
 }
 
-type mediaListResponse struct {
+type MediaListResponse struct {
 	LocalMxcs  []string `json:"local"`
 	RemoteMxcs []string `json:"remote"`
 }
