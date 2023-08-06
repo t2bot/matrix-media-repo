@@ -22,6 +22,7 @@ func NewQueue(workers int, name string) (*Queue, error) {
 		PanicHandler: func(err interface{}) {
 			logrus.Errorf("Panic from internal queue %s", name)
 			logrus.Error(err)
+			//goland:noinspection GoTypeAssertionOnErrors
 			if e, ok := err.(error); ok {
 				sentry.CaptureException(e)
 			}

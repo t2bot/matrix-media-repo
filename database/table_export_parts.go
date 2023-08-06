@@ -64,7 +64,7 @@ func (s *exportPartsTableWithContext) GetForExport(exportId string) ([]*DbExport
 	results := make([]*DbExportPart, 0)
 	rows, err := s.statements.selectExportPartsById.QueryContext(s.ctx, exportId)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return results, nil
 		}
 		return nil, err
@@ -83,7 +83,7 @@ func (s *exportPartsTableWithContext) Get(exportId string, partNum int) (*DbExpo
 	row := s.statements.selectExportPartById.QueryRowContext(s.ctx, exportId, partNum)
 	val := &DbExportPart{}
 	err := row.Scan(&val.ExportId, &val.PartNum, &val.SizeBytes, &val.FileName, &val.DatastoreId, &val.Location)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		err = nil
 		val = nil
 	}

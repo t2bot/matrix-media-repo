@@ -53,7 +53,7 @@ func (p *mmrPlugin) Antispam() (plugin_interfaces.Antispam, error) {
 	}
 
 	p.antispamPlugin = raw.(plugin_interfaces.Antispam)
-	p.antispamPlugin.HandleConfig(p.config)
+	_ = p.antispamPlugin.HandleConfig(p.config)
 	return p.antispamPlugin, nil
 }
 

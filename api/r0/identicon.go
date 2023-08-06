@@ -80,7 +80,7 @@ func Identicon(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 	}
 
 	rctx.Log.Info("Generating identicon")
-	img := sig.Make(width, false, []byte(hashed))
+	img := sig.Make(width, false, hashed)
 	if width != height {
 		// Resize to the desired height
 		rctx.Log.Info("Resizing image to fit height")

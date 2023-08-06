@@ -49,12 +49,11 @@ func Upload(ctx rcontext.RequestContext, ds config.DatastoreConfig, data io.Read
 			metrics.S3Operations.With(prometheus.Labels{"operation": "StatObject"}).Inc()
 			_, err = s3c.client.StatObject(ctx.Context, s3c.bucket, objectName, minio.StatObjectOptions{})
 			if err != nil {
-				if merr, ok := err.(minio.ErrorResponse); ok {
+				var merr minio.ErrorResponse
+				if errors.As(err, &merr) {
 					if merr.Code == "NoSuchKey" || merr.StatusCode == http.StatusNotFound {
 						exists = false
 					}
-				} else {
-					return "", err
 				}
 			}
 		}

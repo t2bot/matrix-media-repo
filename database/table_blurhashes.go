@@ -55,7 +55,7 @@ func (s *blurhashesTableWithContext) Get(hash string) (string, error) {
 	row := s.statements.selectBlurhash.QueryRowContext(s.ctx, hash)
 	val := ""
 	err := row.Scan(&val)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		err = nil
 		val = ""
 	}

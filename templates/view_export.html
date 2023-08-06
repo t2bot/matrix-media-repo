@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <title>{{.Entity}} media export</title>
-    <style type="text/css">
+    <style>
         body, html {
             margin: 0;
             padding: 0;
@@ -24,7 +24,7 @@
         }
     </style>
     <noscript>
-        <style type="text/css">
+        <style>
             #delete-option {
                 display: none;
             }
@@ -33,12 +33,12 @@
     <script type="text/javascript">
         <!--
         function deleteExport() {
-            var url = "/_matrix/media/unstable/admin/export/{{.ExportID}}/delete";
-            var xhr = new XMLHttpRequest();
+            const url = "/_matrix/media/unstable/admin/export/{{.ExportID}}/delete";
+            const xhr = new XMLHttpRequest();
             xhr.open("DELETE", url, true);
             xhr.onreadystatechange = function() {
                 if (this.readyState !== 4) return;
-                var element = document.getElementById("main");
+                const element = document.getElementById("main");
                 if (!element) return;
 
                 if (this.status === 200) {
@@ -62,7 +62,7 @@
         </p>
         <ul>
             {{range .ExportParts}}
-                <li><a href="/_matrix/media/unstable/admin/export/{{.ExportID}}/part/{{.Index}}" download>{{.FileName}}</a> ({{.SizeBytesHuman}})</li>
+                <li><!--suppress HtmlUnknownTarget --><a href="/_matrix/media/unstable/admin/export/{{.ExportID}}/part/{{.Index}}" download>{{.FileName}}</a> ({{.SizeBytesHuman}})</li>
             {{end}}
         </ul>
         <p id="delete-option">Downloaded all your data? <a href="javascript:deleteExport()">Delete your export</a></p>

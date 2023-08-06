@@ -83,8 +83,12 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, r io.Re
 	allWriters := io.MultiWriter(cacheW, bhW)
 	tee := io.TeeReader(reader, allWriters)
 
-	defer bhW.CloseWithError(errors.New("failed to finish write"))
-	defer cacheW.CloseWithError(errors.New("failed to finish write"))
+	defer func(bhW *io.PipeWriter, err error) {
+		_ = bhW.CloseWithError(err)
+	}(bhW, errors.New("failed to finish write"))
+	defer func(cacheW *io.PipeWriter, err error) {
+		_ = cacheW.CloseWithError(err)
+	}(cacheW, errors.New("failed to finish write"))
 
 	// Step 6: Check quarantine
 	if err = upload.CheckQuarantineStatus(ctx, sha256hash); err != nil {

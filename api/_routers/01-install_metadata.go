@@ -67,14 +67,6 @@ func (i *InstallMetadataRouter) ServeHTTP(w http.ResponseWriter, r *http.Request
 	}
 }
 
-func GetRequestId(r *http.Request) string {
-	x, ok := r.Context().Value(requestIdCtxKey).(string)
-	if !ok {
-		return "REQ-ID-UNKNOWN"
-	}
-	return x
-}
-
 func GetActionName(r *http.Request) string {
 	x, ok := r.Context().Value(actionNameCtxKey).(string)
 	if !ok {

@@ -173,7 +173,7 @@ func AppendImportFile(ctx rcontext.RequestContext, importId string, data io.Read
 	// caller *just* started the import job and is already trying to append.
 	for i := 0; i < 5; i++ {
 		err := try()
-		if err == common.ErrMediaNotFound {
+		if errors.Is(err, common.ErrMediaNotFound) {
 			time.Sleep(100 * time.Millisecond)
 		} else {
 			return err

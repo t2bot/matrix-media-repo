@@ -1,6 +1,7 @@
 package r0
 
 import (
+	"errors"
 	"net/http"
 	"path/filepath"
 
@@ -47,21 +48,21 @@ func UploadMediaAsync(r *http.Request, rctx rcontext.RequestContext, user _apime
 	// Actually upload
 	media, err := pipeline_upload.ExecutePut(rctx, server, mediaId, r.Body, contentType, filename, user.UserId)
 	if err != nil {
-		if err == common.ErrQuotaExceeded {
+		if errors.Is(err, common.ErrQuotaExceeded) {
 			return _responses.QuotaExceeded()
-		} else if err == common.ErrAlreadyUploaded {
+		} else if errors.Is(err, common.ErrAlreadyUploaded) {
 			return _responses.ErrorResponse{
 				Code:         common.ErrCodeCannotOverwrite,
 				Message:      "This media has already been uploaded.",
 				InternalCode: common.ErrCodeCannotOverwrite,
 			}
-		} else if err == common.ErrWrongUser {
+		} else if errors.Is(err, common.ErrWrongUser) {
 			return _responses.ErrorResponse{
 				Code:         common.ErrCodeForbidden,
 				Message:      "You do not have permission to upload this media.",
 				InternalCode: common.ErrCodeForbidden,
 			}
-		} else if err == common.ErrExpired {
+		} else if errors.Is(err, common.ErrExpired) {
 			return _responses.ErrorResponse{
 				Code:         common.ErrCodeNotFound,
 				Message:      "Media expired or not found.",

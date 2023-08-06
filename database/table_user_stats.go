@@ -45,7 +45,7 @@ func (s *userStatsTableWithContext) UserUploadedBytes(userId string) (int64, err
 	row := s.statements.selectUserStatsUploadedBytes.QueryRowContext(s.ctx, userId)
 	val := int64(0)
 	err := row.Scan(&val)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		err = nil
 		val = 0
 	}

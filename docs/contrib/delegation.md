@@ -17,12 +17,12 @@ media-repo.yaml:
 ```yaml
 repo:
   useForwaredHost: true  # See notes below
-  ...
+  #...
 
 homeservers:
   - name: example.com
     csApi: https://matrix.example.com # The base URL to where the homeserver can actually be reached
-    ...
+    #...
 ```
 
 A full sample config can be found [here](https://github.com/turt2live/matrix-media-repo/blob/master/config.sample.yaml).

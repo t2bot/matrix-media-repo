@@ -103,7 +103,7 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 
 		return r, nil
 	})
-	if err == common.ErrMediaQuarantined {
+	if errors.Is(err, common.ErrMediaQuarantined) {
 		cancel()
 		return nil, r, err
 	}

@@ -75,7 +75,7 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Th
 		// Step 4: Get the associated media record (without stream)
 		mediaRecord, dr, err := pipeline_download.Execute(ctx, origin, mediaId, opts.ImpliedDownloadOpts())
 		if err != nil {
-			if err == common.ErrMediaQuarantined {
+			if errors.Is(err, common.ErrMediaQuarantined) {
 				go serveRecord(recordCh, nil) // async function to prevent deadlock
 				if dr != nil {
 					dr.Close()
@@ -116,7 +116,7 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Th
 		// Step 7: Create a limited stream
 		return download.CreateLimitedStream(ctx, r, opts.StartByte, opts.EndByte)
 	})
-	if err == common.ErrMediaQuarantined {
+	if errors.Is(err, common.ErrMediaQuarantined) {
 		cancel()
 		return nil, r, err
 	}

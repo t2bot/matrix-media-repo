@@ -55,8 +55,9 @@ func getFederationBreaker(hostname string) *circuit.Breaker {
 	return cb
 }
 
-// Note: URL lookups are not covered by the breaker because otherwise it might never close.
 func GetServerApiUrl(hostname string) (string, string, error) {
+	// dev note: URL lookups are not covered by the breaker because otherwise it might never close.
+
 	logrus.Debug("Getting server API URL for " + hostname)
 
 	// Check to see if we've cached this hostname at all

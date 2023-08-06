@@ -1,6 +1,8 @@
 package url_preview
 
 import (
+	"errors"
+
 	"github.com/getsentry/sentry-go"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
@@ -12,11 +14,11 @@ func Process(ctx rcontext.RequestContext, previewUrl string, preview m.PreviewRe
 	previewDb := database.GetInstance().UrlPreviews.Prepare(ctx)
 
 	if err != nil {
-		if err == m.ErrPreviewUnsupported {
+		if errors.Is(err, m.ErrPreviewUnsupported) {
 			err = common.ErrMediaNotFound
 		}
 
-		if err == common.ErrMediaNotFound {
+		if errors.Is(err, common.ErrMediaNotFound) {
 			previewDb.InsertError(previewUrl, common.ErrCodeNotFound)
 		} else {
 			previewDb.InsertError(previewUrl, common.ErrCodeUnknown)

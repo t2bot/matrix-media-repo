@@ -1,6 +1,7 @@
 package unstable
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -66,18 +67,18 @@ func LocalCopy(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 	})
 	// Error handling copied from download endpoint
 	if err != nil {
-		if err == common.ErrMediaNotFound {
+		if errors.Is(err, common.ErrMediaNotFound) {
 			return _responses.NotFoundError()
-		} else if err == common.ErrMediaTooLarge {
+		} else if errors.Is(err, common.ErrMediaTooLarge) {
 			return _responses.RequestTooLarge()
-		} else if err == common.ErrMediaQuarantined {
+		} else if errors.Is(err, common.ErrMediaQuarantined) {
 			rctx.Log.Debug("Quarantined media accessed. Has stream? ", stream != nil)
 			if stream != nil {
 				return _responses.MakeQuarantinedImageResponse(stream)
 			} else {
 				return _responses.NotFoundError() // We lie for security
 			}
-		} else if err == common.ErrMediaNotYetUploaded {
+		} else if errors.Is(err, common.ErrMediaNotYetUploaded) {
 			return _responses.NotYetUploaded()
 		}
 		rctx.Log.Error("Unexpected error locating media: ", err)
@@ -88,7 +89,7 @@ func LocalCopy(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 	record, err = pipeline_upload.Execute(rctx, server, mediaId, stream, record.ContentType, record.UploadName, user.UserId, datastores.LocalMediaKind)
 	// Error handling copied from upload(sync) endpoint
 	if err != nil {
-		if err == common.ErrQuotaExceeded {
+		if errors.Is(err, common.ErrQuotaExceeded) {
 			return _responses.QuotaExceeded()
 		}
 		rctx.Log.Error("Unexpected error uploading media: ", err)

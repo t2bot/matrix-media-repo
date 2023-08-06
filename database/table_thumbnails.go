@@ -93,7 +93,7 @@ func (s *thumbnailsTableWithContext) GetByParams(origin string, mediaId string, 
 	row := s.statements.selectThumbnailByParams.QueryRowContext(s.ctx, origin, mediaId, width, height, method, animated)
 	val := &DbThumbnail{Locatable: &Locatable{}}
 	err := row.Scan(&val.Origin, &val.MediaId, &val.ContentType, &val.Width, &val.Height, &val.Method, &val.Animated, &val.Sha256Hash, &val.SizeBytes, &val.CreationTs, &val.DatastoreId, &val.Location)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		err = nil
 		val = nil
 	}
@@ -103,7 +103,7 @@ func (s *thumbnailsTableWithContext) GetByParams(origin string, mediaId string, 
 func (s *thumbnailsTableWithContext) scanRows(rows *sql.Rows, err error) ([]*DbThumbnail, error) {
 	results := make([]*DbThumbnail, 0)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return results, nil
 		}
 		return nil, err
@@ -140,7 +140,7 @@ func (s *thumbnailsTableWithContext) LocationExists(datastoreId string, location
 	row := s.statements.selectThumbnailByLocationExists.QueryRowContext(s.ctx, datastoreId, location)
 	val := false
 	err := row.Scan(&val)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		err = nil
 		val = false
 	}

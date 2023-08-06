@@ -1,6 +1,7 @@
 package custom
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/getsentry/sentry-go"
@@ -64,7 +65,7 @@ func AppendToImport(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 
 	err := task_runner.AppendImportFile(rctx, importId, r.Body)
 	if err != nil {
-		if err == common.ErrMediaNotFound {
+		if errors.Is(err, common.ErrMediaNotFound) {
 			return _responses.NotFoundError()
 		}
 		rctx.Log.Error(err)
@@ -91,7 +92,7 @@ func StopImport(r *http.Request, rctx rcontext.RequestContext, user _apimeta.Use
 
 	err := task_runner.FinishImport(rctx, importId)
 	if err != nil {
-		if err == common.ErrMediaNotFound {
+		if errors.Is(err, common.ErrMediaNotFound) {
 			return _responses.NotFoundError()
 		}
 		rctx.Log.Error(err)

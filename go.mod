@@ -4,7 +4,6 @@ go 1.19
 
 require (
 	github.com/DavidHuie/gomigrate v0.0.0-20190826182718-4adc4b3de142
-	github.com/Jeffail/tunny v0.1.4
 	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/adrium/goheif v0.0.0-20230113233934-ca402e77a786
 	github.com/alioygur/is v1.0.3
@@ -31,8 +30,6 @@ require (
 	github.com/kettek/apng v0.0.0-20220823221153-ff692776a607
 	github.com/lestrrat/go-file-rotatelogs v0.0.0-20180223000712-d3151e2a480f
 	github.com/lib/pq v1.10.9
-	github.com/minio/minio-go/v6 v6.0.57
-	github.com/olebedev/emitter v0.0.0-20230411050614-349169dec2ba
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.16.0
@@ -86,7 +83,6 @@ require (
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/mewkiz/flac v1.0.8 // indirect
 	github.com/mewkiz/pkg v0.0.0-20230226050401-4010bf0fec14 // indirect
-	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/prometheus/client_model v0.4.0 // indirect

@@ -83,7 +83,7 @@ func (s *tasksTableWithContext) Get(id int) (*DbTask, error) {
 	row := s.statements.selectTask.QueryRowContext(s.ctx, id)
 	val := &DbTask{}
 	err := row.Scan(&val.TaskId, &val.Name, &val.Params, &val.StartTs, &val.EndTs)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		err = nil
 		val = nil
 	}
@@ -98,7 +98,7 @@ func (s *tasksTableWithContext) GetAll(includingFinished bool) ([]*DbTask, error
 	}
 	rows, err := q.QueryContext(s.ctx)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return results, nil
 		}
 		return nil, err

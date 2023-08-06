@@ -49,16 +49,3 @@ func GetSupportedContentTypes() []string {
 	}
 	return a
 }
-
-func GetSupportedAnimationTypes() []string {
-	a := make([]string, 0)
-	for _, d := range generators {
-		if !d.supportsAnimation() {
-			continue
-		}
-		for _, c := range d.supportedContentTypes() {
-			a = append(a, c)
-		}
-	}
-	return a
-}

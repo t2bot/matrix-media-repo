@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <title>{{.Entity}} media export</title>
-    <style type="text/css">
+    <style>
         body, html {
             margin: 0;
             padding: 0;
@@ -63,6 +63,7 @@
         {{range .Media}}
         <tr>
             <td>
+                <!--suppress HtmlUnknownTarget -->
                 <a href="{{.ArchivedName}}"><code>{{if eq .FileName ""}}&lt;no name&gt;{{else}}{{.FileName}}{{end}}</code></a>
                 <span class="muted"><code>mxc://{{.Origin}}/{{.MediaID}}</code></span>
             </td>

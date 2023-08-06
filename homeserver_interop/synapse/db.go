@@ -2,6 +2,7 @@ package synapse
 
 import (
 	"database/sql"
+	"errors"
 
 	_ "github.com/lib/pq" // postgres driver
 )
@@ -45,7 +46,7 @@ func OpenDatabase(connectionString string) (*SynDatabase, error) {
 func (d *SynDatabase) GetAllMedia() ([]*LocalMedia, error) {
 	rows, err := d.statements.selectLocalMedia.Query()
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return []*LocalMedia{}, nil // no records
 		}
 		return nil, err

@@ -72,7 +72,7 @@ func (s *expiringMediaTableWithContext) ByUserCount(userId string) (int64, error
 	row := s.statements.selectExpiringMediaByUserCount.QueryRowContext(s.ctx, userId, util.NowMillis())
 	val := int64(0)
 	err := row.Scan(&val)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		err = nil
 		val = 0
 	}
@@ -83,7 +83,7 @@ func (s *expiringMediaTableWithContext) Get(origin string, mediaId string) (*DbE
 	row := s.statements.selectExpiringMediaById.QueryRowContext(s.ctx, origin, mediaId)
 	val := &DbExpiringMedia{}
 	err := row.Scan(&val.Origin, &val.MediaId, &val.UserId, &val.ExpiresTs)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		err = nil
 		val = nil
 	}

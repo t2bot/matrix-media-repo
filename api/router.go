@@ -57,6 +57,7 @@ func finishCorsFn(w http.ResponseWriter, r *http.Request) {
 func panicFn(w http.ResponseWriter, r *http.Request, i interface{}) {
 	logrus.Errorf("Panic received on %s %s: %s", r.Method, util.GetLogSafeUrl(r), i)
 
+	//goland:noinspection GoTypeAssertionOnErrors
 	if e, ok := i.(error); ok {
 		sentry.CaptureException(e)
 	} else {

@@ -157,7 +157,7 @@ func (s *mediaTableWithContext) GetDistinctDatastoreIds() ([]string, error) {
 	results := make([]string, 0)
 	rows, err := s.statements.selectDistinctMediaDatastoreIds.QueryContext(s.ctx)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return results, nil
 		}
 		return nil, err
@@ -179,7 +179,7 @@ func (s *mediaTableWithContext) IsHashQuarantined(sha256hash string) (bool, erro
 	row := s.statements.selectMediaIsQuarantinedByHash.QueryRowContext(s.ctx, sha256hash)
 	val := false
 	err := row.Scan(&val)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		err = nil
 		val = false
 	}
@@ -189,7 +189,7 @@ func (s *mediaTableWithContext) IsHashQuarantined(sha256hash string) (bool, erro
 func (s *mediaTableWithContext) scanRows(rows *sql.Rows, err error) ([]*DbMedia, error) {
 	results := make([]*DbMedia, 0)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return results, nil
 		}
 		return nil, err
@@ -253,7 +253,7 @@ func (s *mediaTableWithContext) GetById(origin string, mediaId string) (*DbMedia
 	row := s.statements.selectMediaById.QueryRowContext(s.ctx, origin, mediaId)
 	val := &DbMedia{Locatable: &Locatable{}}
 	err := row.Scan(&val.Origin, &val.MediaId, &val.UploadName, &val.ContentType, &val.UserId, &val.Sha256Hash, &val.SizeBytes, &val.CreationTs, &val.Quarantined, &val.DatastoreId, &val.Location)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		err = nil
 		val = nil
 	}
@@ -264,7 +264,7 @@ func (s *mediaTableWithContext) ByUserCount(userId string) (int64, error) {
 	row := s.statements.selectMediaByUserCount.QueryRowContext(s.ctx, userId)
 	val := int64(0)
 	err := row.Scan(&val)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		err = nil
 		val = 0
 	}
@@ -275,7 +275,7 @@ func (s *mediaTableWithContext) IdExists(origin string, mediaId string) (bool, e
 	row := s.statements.selectMediaExists.QueryRowContext(s.ctx, origin, mediaId)
 	val := false
 	err := row.Scan(&val)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		err = nil
 		val = false
 	}
@@ -286,7 +286,7 @@ func (s *mediaTableWithContext) LocationExists(datastoreId string, location stri
 	row := s.statements.selectMediaByLocationExists.QueryRowContext(s.ctx, datastoreId, location)
 	val := false
 	err := row.Scan(&val)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		err = nil
 		val = false
 	}

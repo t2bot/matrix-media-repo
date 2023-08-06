@@ -68,7 +68,7 @@ func (s *urlPreviewsTableWithContext) Get(url string, ts int64, languageHeader s
 	row := s.statements.selectUrlPreview.QueryRowContext(s.ctx, url, ts, languageHeader)
 	val := &DbUrlPreview{}
 	err := row.Scan(&val.Url, &val.ErrorCode, &val.BucketTs, &val.SiteUrl, &val.SiteName, &val.ResourceType, &val.Description, &val.Title, &val.ImageMxc, &val.ImageType, &val.ImageSize, &val.ImageWidth, &val.ImageHeight, &val.LanguageHeader)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
 	return val, err

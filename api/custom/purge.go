@@ -1,6 +1,7 @@
 package custom
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -69,7 +70,7 @@ func PurgeIndividualRecord(r *http.Request, rctx rcontext.RequestContext, user _
 		},
 	})
 	if err != nil {
-		if err == common.ErrWrongUser {
+		if errors.Is(err, common.ErrWrongUser) {
 			return _responses.AuthFailed()
 		}
 		rctx.Log.Error(err)
@@ -104,7 +105,7 @@ func PurgeQuarantined(r *http.Request, rctx rcontext.RequestContext, user _apime
 		DbMedia: affected,
 	})
 	if err != nil {
-		if err == common.ErrWrongUser {
+		if errors.Is(err, common.ErrWrongUser) {
 			return _responses.AuthFailed()
 		}
 		rctx.Log.Error(err)
@@ -157,7 +158,7 @@ func PurgeOldMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 		DbMedia: records,
 	})
 	if err != nil {
-		if err == common.ErrWrongUser {
+		if errors.Is(err, common.ErrWrongUser) {
 			return _responses.AuthFailed()
 		}
 		rctx.Log.Error(err)
@@ -214,7 +215,7 @@ func PurgeUserMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 		DbMedia: records,
 	})
 	if err != nil {
-		if err == common.ErrWrongUser {
+		if errors.Is(err, common.ErrWrongUser) {
 			return _responses.AuthFailed()
 		}
 		rctx.Log.Error(err)
@@ -287,7 +288,7 @@ func PurgeRoomMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 		MxcUris: mxcs,
 	})
 	if err != nil {
-		if err == common.ErrWrongUser {
+		if errors.Is(err, common.ErrWrongUser) {
 			return _responses.AuthFailed()
 		}
 		rctx.Log.Error(err)
@@ -341,7 +342,7 @@ func PurgeDomainMedia(r *http.Request, rctx rcontext.RequestContext, user _apime
 		DbMedia: records,
 	})
 	if err != nil {
-		if err == common.ErrWrongUser {
+		if errors.Is(err, common.ErrWrongUser) {
 			return _responses.AuthFailed()
 		}
 		rctx.Log.Error(err)

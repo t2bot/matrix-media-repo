@@ -60,7 +60,7 @@ func (s *exportsTableWithContext) GetEntity(exportId string) (string, error) {
 	row := s.statements.selectExportEntity.QueryRowContext(s.ctx, exportId)
 	val := ""
 	err := row.Scan(&val)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		err = nil
 		val = ""
 	}

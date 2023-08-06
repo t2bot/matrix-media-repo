@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"context"
+	"errors"
 	"net"
 	"net/http"
 	"strconv"
@@ -32,8 +33,9 @@ func Init() {
 	address := net.JoinHostPort(config.Get().Metrics.BindAddress, strconv.Itoa(config.Get().Metrics.Port))
 	srv = &http.Server{Addr: address, Handler: rtr}
 	go func() {
+		//goland:noinspection HttpUrlsUsage
 		logrus.WithField("address", address).Info("Started metrics listener. Listening at http://" + address)
-		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+		if err := srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 			sentry.CaptureException(err)
 			logrus.Fatal(err)
 		}

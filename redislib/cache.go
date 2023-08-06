@@ -34,7 +34,7 @@ func StoreMedia(ctx rcontext.RequestContext, hash string, content io.Reader, siz
 	}
 
 	buf := make([]byte, appendBufferSize)
-	for true {
+	for {
 		read, err := content.Read(buf)
 		if err == io.EOF {
 			break

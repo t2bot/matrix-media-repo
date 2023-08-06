@@ -20,7 +20,7 @@ func GenerateMediaId(ctx rcontext.RequestContext, origin string) (string, error)
 	var err error
 	var exists bool
 	attempts := 0
-	for true {
+	for {
 		attempts += 1
 		if attempts > 10 {
 			return "", errors.New("internal limit reached: unable to generate media ID")

@@ -1,6 +1,7 @@
 package p
 
 import (
+	"errors"
 	"net/url"
 	"strconv"
 	"strings"
@@ -26,7 +27,7 @@ func GenerateOpenGraphPreview(urlPayload *m.UrlPayload, languageHeader string, c
 		ctx.Log.Error("Error downloading content: ", err)
 
 		// Make sure the unsupported error gets passed through
-		if err == m.ErrPreviewUnsupported {
+		if errors.Is(err, m.ErrPreviewUnsupported) {
 			return m.PreviewResult{}, m.ErrPreviewUnsupported
 		}
 

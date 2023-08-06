@@ -1,6 +1,7 @@
 package r0
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -69,18 +70,18 @@ func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 		BlockForReadUntil:   blockFor,
 	})
 	if err != nil {
-		if err == common.ErrMediaNotFound {
+		if errors.Is(err, common.ErrMediaNotFound) {
 			return _responses.NotFoundError()
-		} else if err == common.ErrMediaTooLarge {
+		} else if errors.Is(err, common.ErrMediaTooLarge) {
 			return _responses.RequestTooLarge()
-		} else if err == common.ErrMediaQuarantined {
+		} else if errors.Is(err, common.ErrMediaQuarantined) {
 			rctx.Log.Debug("Quarantined media accessed. Has stream? ", stream != nil)
 			if stream != nil {
 				return _responses.MakeQuarantinedImageResponse(stream)
 			} else {
 				return _responses.NotFoundError() // We lie for security
 			}
-		} else if err == common.ErrMediaNotYetUploaded {
+		} else if errors.Is(err, common.ErrMediaNotYetUploaded) {
 			return _responses.NotYetUploaded()
 		}
 		rctx.Log.Error("Unexpected error locating media: ", err)

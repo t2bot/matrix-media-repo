@@ -62,7 +62,7 @@ func (s *mediaAttributesTableWithContext) Get(origin string, mediaId string) (*D
 	row := s.statements.selectMediaAttributes.QueryRowContext(s.ctx, origin, mediaId)
 	val := &DbMediaAttributes{}
 	err := row.Scan(&val.Origin, &val.MediaId, &val.Purpose)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		err = nil
 		val = nil
 	}

@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net"
 	"net/http"
 	"strconv"
@@ -53,8 +54,9 @@ func Init() *sync.WaitGroup {
 	reload = false
 
 	go func() {
+		//goland:noinspection HttpUrlsUsage
 		logrus.WithField("address", address).Info("Started up. Listening at http://" + address)
-		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+		if err := srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 			sentry.CaptureException(err)
 			logrus.Fatal(err)
 		}

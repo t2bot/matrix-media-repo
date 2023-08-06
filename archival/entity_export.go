@@ -1,6 +1,7 @@
 package archival
 
 import (
+	"errors"
 	"time"
 
 	"github.com/turt2live/matrix-media-repo/archival/v2archive"
@@ -46,10 +47,10 @@ func ExportEntityData(ctx rcontext.RequestContext, exportId string, entityId str
 			BlockForReadUntil:   1 * time.Minute,
 			RecordOnly:          false,
 		})
-		if err == common.ErrMediaQuarantined {
+		if errors.Is(err, common.ErrMediaQuarantined) {
 			ctx.Log.Warnf("%s is quarantined and will not be included in the export", mxc)
 			continue
-		} else if err == common.ErrMediaNotYetUploaded {
+		} else if errors.Is(err, common.ErrMediaNotYetUploaded) {
 			ctx.Log.Debug("Media not uploaded yet - skipping")
 			continue
 		} else if err != nil {

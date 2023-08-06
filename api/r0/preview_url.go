@@ -53,6 +53,7 @@ func PreviewUrl(r *http.Request, rctx rcontext.RequestContext, user _apimeta.Use
 	if urlStr == "" {
 		return _responses.BadRequest("No url provided")
 	}
+	//goland:noinspection HttpUrlsUsage
 	if strings.Index(urlStr, "http://") != 0 && strings.Index(urlStr, "https://") != 0 {
 		return _responses.BadRequest("Scheme not accepted")
 	}
@@ -76,9 +77,9 @@ func PreviewUrl(r *http.Request, rctx rcontext.RequestContext, user _apimeta.Use
 		}
 	}
 	if err != nil {
-		if err == common.ErrMediaNotFound || err == common.ErrHostNotFound {
+		if errors.Is(err, common.ErrMediaNotFound) || errors.Is(err, common.ErrHostNotFound) {
 			return _responses.NotFoundError()
-		} else if err == common.ErrInvalidHost || err == common.ErrHostNotAllowed {
+		} else if errors.Is(err, common.ErrInvalidHost) || errors.Is(err, common.ErrHostNotAllowed) {
 			return _responses.BadRequest(err.Error())
 		} else {
 			sentry.CaptureException(err)

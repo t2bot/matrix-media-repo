@@ -56,7 +56,7 @@ func (s *reservedMediaTableWithContext) IdExists(origin string, mediaId string) 
 	row := s.statements.selectReservedMediaExists.QueryRowContext(s.ctx, origin, mediaId)
 	val := false
 	err := row.Scan(&val)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		err = nil
 		val = false
 	}

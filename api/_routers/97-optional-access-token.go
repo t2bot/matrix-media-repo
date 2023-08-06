@@ -1,6 +1,7 @@
 package _routers
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/getsentry/sentry-go"
@@ -35,7 +36,7 @@ func OptionalAccessToken(generator GeneratorWithUserFn) GeneratorFn {
 		appserviceUserId := util.GetAppserviceUserIdFromRequest(r)
 		userId, err := _auth_cache.GetUserId(ctx, accessToken, appserviceUserId)
 		if err != nil {
-			if err != matrix.ErrInvalidToken {
+			if !errors.Is(err, matrix.ErrInvalidToken) {
 				sentry.CaptureException(err)
 				ctx.Log.Error("Error verifying token: ", err)
 				return _responses.InternalServerError("unexpected error validating access token")

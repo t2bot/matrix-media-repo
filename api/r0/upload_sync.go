@@ -1,6 +1,7 @@
 package r0
 
 import (
+	"errors"
 	"net/http"
 	"path/filepath"
 	"strconv"
@@ -42,7 +43,7 @@ func UploadMediaSync(r *http.Request, rctx rcontext.RequestContext, user _apimet
 	// Actually upload
 	media, err := pipeline_upload.Execute(rctx, r.Host, "", r.Body, contentType, filename, user.UserId, datastores.LocalMediaKind)
 	if err != nil {
-		if err == common.ErrQuotaExceeded {
+		if errors.Is(err, common.ErrQuotaExceeded) {
 			return _responses.QuotaExceeded()
 		}
 		rctx.Log.Error("Unexpected error uploading media: ", err)

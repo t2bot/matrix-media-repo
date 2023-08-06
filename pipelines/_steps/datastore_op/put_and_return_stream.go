@@ -32,7 +32,9 @@ func PutAndReturnStream(ctx rcontext.RequestContext, origin string, mediaId stri
 
 	pr, pw := io.Pipe()
 	tee := io.TeeReader(input, pw)
-	defer pw.CloseWithError(errors.New("failed to finish write"))
+	defer func(pw *io.PipeWriter, err error) {
+		_ = pw.CloseWithError(err)
+	}(pw, errors.New("failed to finish write"))
 
 	wg := new(sync.WaitGroup)
 	wg.Add(2)

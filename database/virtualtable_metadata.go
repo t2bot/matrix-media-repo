@@ -104,7 +104,7 @@ func (s *metadataVirtualTableWithContext) EstimateDatastoreSize(datastoreId stri
 	row := s.statements.selectEstimatedDatastoreSize.QueryRowContext(s.ctx, datastoreId)
 	val := int64(0)
 	err := row.Scan(&val)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		err = nil
 		val = 0
 	}
@@ -116,7 +116,7 @@ func (s *metadataVirtualTableWithContext) ByteUsageForServer(serverName string) 
 	media := int64(0)
 	thumbs := int64(0)
 	err := row.Scan(&media, &thumbs)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		err = nil
 		media = int64(0)
 		thumbs = int64(0)
@@ -129,7 +129,7 @@ func (s *metadataVirtualTableWithContext) CountUsageForServer(serverName string)
 	media := int64(0)
 	thumbs := int64(0)
 	err := row.Scan(&media, &thumbs)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		err = nil
 		media = int64(0)
 		thumbs = int64(0)
@@ -183,7 +183,7 @@ func (s *metadataVirtualTableWithContext) UnoptimizedSynapseUserStatsPage(server
 	results := make([]*DbSynUserStat, 0)
 	rows, err := s.statements.db.QueryContext(s.ctx, sqlPageQ, sqlParams...)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return results, 0, nil
 		}
 		return nil, 0, err
@@ -203,7 +203,7 @@ func (s *metadataVirtualTableWithContext) UnoptimizedSynapseUserStatsPage(server
 	total := int64(0)
 	err = row.Scan(&total)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return make([]*DbSynUserStat, 0), 0, nil
 		}
 		return nil, 0, err
@@ -215,7 +215,7 @@ func (s *metadataVirtualTableWithContext) UnoptimizedSynapseUserStatsPage(server
 func (s *metadataVirtualTableWithContext) scanLastAccess(rows *sql.Rows, err error) ([]*VirtLastAccess, error) {
 	results := make([]*VirtLastAccess, 0)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return results, nil
 		}
 		return nil, err

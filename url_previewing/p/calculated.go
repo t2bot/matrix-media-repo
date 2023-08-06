@@ -1,6 +1,8 @@
 package p
 
 import (
+	"errors"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
@@ -16,7 +18,7 @@ func GenerateCalculatedPreview(urlPayload *m.UrlPayload, languageHeader string, 
 		ctx.Log.Warn("Error downloading content: ", err)
 
 		// Make sure the unsupported error gets passed through
-		if err == m.ErrPreviewUnsupported {
+		if errors.Is(err, m.ErrPreviewUnsupported) {
 			return m.PreviewResult{}, m.ErrPreviewUnsupported
 		}
 
