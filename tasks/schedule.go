@@ -20,6 +20,7 @@ type RecurringTaskName string
 
 const (
 	TaskDatastoreMigrate TaskName = "storage_migration"
+	TaskExportData       TaskName = "export_data"
 )
 const (
 	RecurringTaskPurgeThumbnails  RecurringTaskName = "recurring_purge_thumbnails"
@@ -121,4 +122,30 @@ func RunDatastoreMigration(ctx rcontext.RequestContext, sourceDsId string, targe
 		TargetDsId: targetDsId,
 		BeforeTs:   beforeTs,
 	})
+}
+
+func RunUserExport(ctx rcontext.RequestContext, userId string, includeS3Urls bool) (*database.DbTask, string, error) {
+	return runExport(ctx, task_runner.ExportDataParams{
+		UserId:        userId,
+		IncludeS3Urls: includeS3Urls,
+		//ExportId:      "", // populated by runExport
+	})
+}
+
+func RunServerExport(ctx rcontext.RequestContext, serverName string, includeS3Urls bool) (*database.DbTask, string, error) {
+	return runExport(ctx, task_runner.ExportDataParams{
+		ServerName:    serverName,
+		IncludeS3Urls: includeS3Urls,
+		//ExportId:      "", // populated by runExport
+	})
+}
+
+func runExport(ctx rcontext.RequestContext, paramsTemplate task_runner.ExportDataParams) (*database.DbTask, string, error) {
+	exportId, err := ids.NewUniqueId()
+	if err != nil {
+		return nil, "", err
+	}
+	paramsTemplate.ExportId = exportId
+	task, err := scheduleTask(ctx, TaskExportData, paramsTemplate)
+	return task, exportId, err
 }

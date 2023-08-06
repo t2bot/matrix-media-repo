@@ -63,6 +63,8 @@ func beginTask(task *database.DbTask) {
 	runnerCtx := rcontext.Initial().LogWithFields(logrus.Fields{"task_id": task.TaskId})
 	if task.Name == string(TaskDatastoreMigrate) {
 		go task_runner.DatastoreMigrate(runnerCtx, task)
+	} else if task.Name == string(TaskExportData) {
+		go task_runner.ExportData(runnerCtx, task)
 	} else {
 		m := fmt.Sprintf("Received unknown task to run %s (ID: %d)", task.Name, task.TaskId)
 		logrus.Warn(m)

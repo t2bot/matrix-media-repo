@@ -27,6 +27,8 @@ type Database struct {
 	UrlPreviews     *urlPreviewsTableStatements
 	MediaAttributes *mediaAttributesTableStatements
 	Tasks           *tasksTableStatements
+	Exports         *exportsTableStatements
+	ExportParts     *exportPartsTableStatements
 }
 
 var instance *Database
@@ -115,6 +117,12 @@ func openDatabase(connectionString string, maxConns int, maxIdleConns int) error
 	}
 	if d.Tasks, err = prepareTasksTables(d.conn); err != nil {
 		return errors.New("failed to create tasks table accessor: " + err.Error())
+	}
+	if d.Exports, err = prepareExportsTables(d.conn); err != nil {
+		return errors.New("failed to create exports table accessor: " + err.Error())
+	}
+	if d.ExportParts, err = prepareExportPartsTables(d.conn); err != nil {
+		return errors.New("failed to create export parts table accessor: " + err.Error())
 	}
 
 	instance = d

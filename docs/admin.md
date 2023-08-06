@@ -395,9 +395,9 @@ Exports (and therefore imports) are currently done on a per-user basis. This is 
 
 #### Exporting data for a user
 
-URL: `POST /_matrix/media/unstable/admin/user/<user ID>/export?include_data=true&s3_urls=true`
+URL: `POST /_matrix/media/unstable/admin/user/<user ID>/export?s3_urls=true`
 
-Both query params are optional, and their default values are shown. If `include_data` is false, only metadata will be returned by the export. `s3_urls`, when true, includes the s3 URL to the media in the metadata if one is available.
+Both query params are optional, and their default values are shown. `s3_urls`, when true, includes the s3 URL to the media in the metadata if one is available.
 
 The response is a task ID and export ID to put into the 'view export' URL:
 
@@ -414,7 +414,7 @@ The response is a task ID and export ID to put into the 'view export' URL:
 
 #### Exporting data for a domain
 
-URL: `POST /_matrix/media/unstable/admin/server/<server name>/export?include_data=true&s3_urls=true`
+URL: `POST /_matrix/media/unstable/admin/server/<server name>/export?s3_urls=true`
 
 Response is the same as the user export endpoint above. The `<server name>` does not need to be configured in the repo - it will export data it has on a remote server if you ask it to.
 
@@ -472,7 +472,7 @@ The response is an empty JSON object if successful.
 
 Once an export has been completed it can be imported back into the media repo. Files that are already known to the repo will not be overwritten - it'll use its known copy first.
 
-**Note**: Imports happen in memory, which can balloon quickly depending on how you exported your data. Although you can import data without s3 it is recommended that you only import from archives generated with `include_data=false`.
+**Note**: Imports happen in memory, which can balloon quickly depending on how you exported your data.
 
 **Note**: Only repository administrators can perform imports, regardless of who they are for.
 
