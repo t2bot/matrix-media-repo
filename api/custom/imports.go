@@ -1,16 +1,18 @@
 package custom
 
 import (
+	"net/http"
+
 	"github.com/getsentry/sentry-go"
 	"github.com/turt2live/matrix-media-repo/api/_apimeta"
 	"github.com/turt2live/matrix-media-repo/api/_responses"
 	"github.com/turt2live/matrix-media-repo/api/_routers"
-	"github.com/turt2live/matrix-media-repo/util/stream_util"
-
-	"net/http"
+	"github.com/turt2live/matrix-media-repo/common"
+	"github.com/turt2live/matrix-media-repo/tasks"
+	"github.com/turt2live/matrix-media-repo/tasks/task_runner"
+	"github.com/turt2live/matrix-media-repo/util/ids"
 
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/controllers/data_controller"
 )
 
 type ImportStarted struct {
@@ -22,17 +24,26 @@ func StartImport(r *http.Request, rctx rcontext.RequestContext, user _apimeta.Us
 	if !rctx.Config.Archiving.Enabled {
 		return _responses.BadRequest("archiving is not enabled")
 	}
+	if ids.GetMachineId() != tasks.ExecutingMachineId {
+		return _responses.BadRequest("archival import can only be done on the background tasks worker")
+	}
 
-	defer stream_util.DumpAndCloseStream(r.Body)
-	task, importId, err := data_controller.StartImport(r.Body, rctx)
+	task, importId, err := tasks.RunImport(rctx)
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
 		return _responses.InternalServerError("fatal error starting import")
 	}
 
+	err = task_runner.AppendImportFile(rctx, importId, r.Body)
+	if err != nil {
+		rctx.Log.Error(err)
+		sentry.CaptureException(err)
+		return _responses.InternalServerError("error appending first file to import")
+	}
+
 	return &_responses.DoNotCacheResponse{Payload: &ImportStarted{
-		TaskID:   task.ID,
+		TaskID:   task.TaskId,
 		ImportID: importId,
 	}}
 }
@@ -41,6 +52,9 @@ func AppendToImport(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 	if !rctx.Config.Archiving.Enabled {
 		return _responses.BadRequest("archiving is not enabled")
 	}
+	if ids.GetMachineId() != tasks.ExecutingMachineId {
+		return _responses.BadRequest("archival import can only be done on the background tasks worker")
+	}
 
 	importId := _routers.GetParam("importId", r)
 
@@ -48,12 +62,14 @@ func AppendToImport(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 		return _responses.BadRequest("invalid import ID")
 	}
 
-	defer stream_util.DumpAndCloseStream(r.Body)
-	_, err := data_controller.AppendToImport(importId, r.Body, false)
+	err := task_runner.AppendImportFile(rctx, importId, r.Body)
 	if err != nil {
+		if err == common.ErrMediaNotFound {
+			return _responses.NotFoundError()
+		}
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("fatal error appending to import")
+		return _responses.InternalServerError("error appending to import")
 	}
 
 	return &_responses.DoNotCacheResponse{Payload: &_responses.EmptyResponse{}}
@@ -63,6 +79,9 @@ func StopImport(r *http.Request, rctx rcontext.RequestContext, user _apimeta.Use
 	if !rctx.Config.Archiving.Enabled {
 		return _responses.BadRequest("archiving is not enabled")
 	}
+	if ids.GetMachineId() != tasks.ExecutingMachineId {
+		return _responses.BadRequest("archival import can only be done on the background tasks worker")
+	}
 
 	importId := _routers.GetParam("importId", r)
 
@@ -70,11 +89,14 @@ func StopImport(r *http.Request, rctx rcontext.RequestContext, user _apimeta.Use
 		return _responses.BadRequest("invalid import ID")
 	}
 
-	err := data_controller.StopImport(importId)
+	err := task_runner.FinishImport(rctx, importId)
 	if err != nil {
+		if err == common.ErrMediaNotFound {
+			return _responses.NotFoundError()
+		}
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("fatal error stopping import")
+		return _responses.InternalServerError("error stopping import")
 	}
 
 	return &_responses.DoNotCacheResponse{Payload: &_responses.EmptyResponse{}}

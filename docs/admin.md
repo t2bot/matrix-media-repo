@@ -472,13 +472,13 @@ The response is an empty JSON object if successful.
 
 Once an export has been completed it can be imported back into the media repo. Files that are already known to the repo will not be overwritten - it'll use its known copy first.
 
-**Note**: Imports happen in memory, which can balloon quickly depending on how you exported your data.
-
 **Note**: Only repository administrators can perform imports, regardless of who they are for.
 
 **Note**: Imports done through this method can affect other homeservers! For example, a user's data export could contain
 an entry for a homeserver other than their own, which the media repo will happily import. Always validate the manifest
 of an import before running it!
+
+**Note**: Imports can only be done on Machine 0 in a cluster. For non-cluster setups, the single process *should* already be Machine 0.
 
 URL: `POST /_matrix/media/unstable/admin/import`
 

@@ -74,10 +74,14 @@ func readArchive(file io.ReadCloser, workFn archiveWorkFn) error {
 }
 
 func (r *ArchiveReader) GetEntityId() string {
-	if r.manifest != nil {
+	if r.HasManifest() {
 		return r.manifest.EntityId
 	}
 	return ""
+}
+
+func (r *ArchiveReader) HasManifest() bool {
+	return r.manifest != nil
 }
 
 func (r *ArchiveReader) GetNotUploadedMxcUris() []string {
@@ -92,7 +96,7 @@ func (r *ArchiveReader) GetNotUploadedMxcUris() []string {
 
 func (r *ArchiveReader) TryGetManifestFrom(file io.ReadCloser) (bool, error) {
 	defer file.Close()
-	if r.manifest != nil {
+	if r.HasManifest() {
 		return false, errors.New("manifest already discovered")
 	}
 
@@ -134,11 +138,11 @@ func (r *ArchiveReader) TryGetManifestFrom(file io.ReadCloser) (bool, error) {
 		}
 		return nil
 	})
-	return r.manifest != nil, err
+	return r.HasManifest(), err
 }
 
 func (r *ArchiveReader) ProcessS3Files(opts ProcessOpts) error {
-	if r.manifest == nil {
+	if !r.HasManifest() {
 		return errors.New("missing manifest")
 	}
 
@@ -168,7 +172,7 @@ func (r *ArchiveReader) ProcessS3Files(opts ProcessOpts) error {
 
 func (r *ArchiveReader) ProcessFile(file io.ReadCloser, opts ProcessOpts) error {
 	defer file.Close()
-	if r.manifest == nil {
+	if !r.HasManifest() {
 		return errors.New("missing manifest")
 	}
 

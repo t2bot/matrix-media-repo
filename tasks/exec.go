@@ -19,7 +19,7 @@ func executeEnable() {
 	if notiferCh != nil {
 		return
 	}
-	if ids.GetMachineId() == 0 {
+	if ids.GetMachineId() == ExecutingMachineId {
 		notiferCh = notifier.SubscribeToTasks()
 		if notiferCh != nil {
 			go func() {
@@ -65,6 +65,8 @@ func beginTask(task *database.DbTask) {
 		go task_runner.DatastoreMigrate(runnerCtx, task)
 	} else if task.Name == string(TaskExportData) {
 		go task_runner.ExportData(runnerCtx, task)
+	} else if task.Name == string(TaskImportData) {
+		go task_runner.ImportData(runnerCtx, task)
 	} else {
 		m := fmt.Sprintf("Received unknown task to run %s (ID: %d)", task.Name, task.TaskId)
 		logrus.Warn(m)

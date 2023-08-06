@@ -21,12 +21,15 @@ type RecurringTaskName string
 const (
 	TaskDatastoreMigrate TaskName = "storage_migration"
 	TaskExportData       TaskName = "export_data"
+	TaskImportData       TaskName = "import_data"
 )
 const (
 	RecurringTaskPurgeThumbnails  RecurringTaskName = "recurring_purge_thumbnails"
 	RecurringTaskPurgePreviews    RecurringTaskName = "recurring_purge_previews"
 	RecurringTaskPurgeRemoteMedia RecurringTaskName = "recurring_purge_remote_media"
 )
+
+const ExecutingMachineId = int64(0)
 
 type RecurringTaskFn func(ctx rcontext.RequestContext)
 
@@ -45,7 +48,7 @@ func scheduleTask(ctx rcontext.RequestContext, name TaskName, params interface{}
 		return nil, err
 	}
 
-	if ids.GetMachineId() == 0 {
+	if ids.GetMachineId() == ExecutingMachineId {
 		// we'll run the task on this machine too
 		beginTask(r)
 	} else {
@@ -58,8 +61,8 @@ func scheduleTask(ctx rcontext.RequestContext, name TaskName, params interface{}
 }
 
 func scheduleHourly(name RecurringTaskName, workFn RecurringTaskFn) {
-	if ids.GetMachineId() != 0 {
-		return // don't run tasks on non-zero machine IDs
+	if ids.GetMachineId() != ExecutingMachineId {
+		return // don't run tasks on this machine
 	}
 
 	ticker := time.NewTicker((1 * time.Hour) + (time.Duration(localRand.Intn(15)) * time.Minute))
@@ -100,7 +103,7 @@ func stopRecurring() {
 }
 
 func scheduleUnfinished() {
-	if ids.GetMachineId() != 0 {
+	if ids.GetMachineId() != ExecutingMachineId {
 		return // don't schedule here
 	}
 	ctx := rcontext.Initial().LogWithFields(logrus.Fields{"startup": true})
@@ -148,4 +151,15 @@ func runExport(ctx rcontext.RequestContext, paramsTemplate task_runner.ExportDat
 	paramsTemplate.ExportId = exportId
 	task, err := scheduleTask(ctx, TaskExportData, paramsTemplate)
 	return task, exportId, err
+}
+
+func RunImport(ctx rcontext.RequestContext) (*database.DbTask, string, error) {
+	importId, err := ids.NewUniqueId()
+	if err != nil {
+		return nil, "", err
+	}
+	task, err := scheduleTask(ctx, TaskImportData, task_runner.ImportDataParams{
+		ImportId: importId,
+	})
+	return task, importId, err
 }

@@ -121,7 +121,7 @@ path/server, for example, then you can simply update the path in the config for 
 ### Fixed
 
 * URL previews now follow redirects properly.
-* Overall memory usage is improved, particularly during media uploads. 
+* Overall memory usage is improved, particularly during media uploads and API-initiated imports.
   * Note: If you use plugins then memory usage will still be somewhat high due to temporary caching of uploads.
 * Fixed shutdown stall if the config was reloaded more than once while running.
 
