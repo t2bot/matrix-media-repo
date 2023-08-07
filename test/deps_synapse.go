@@ -32,7 +32,16 @@ type SynapseDep struct {
 	ServerName         string
 }
 
-func MakeSynapse(domainName string) (*SynapseDep, error) {
+type fixNetwork struct {
+	testcontainers.ContainerCustomizer
+	NetId string
+}
+
+func (f *fixNetwork) Customize(req *testcontainers.GenericContainerRequest) {
+	req.Networks = []string{f.NetId}
+}
+
+func MakeSynapse(domainName string, depNet *NetworkDep) (*SynapseDep, error) {
 	ctx := context.Background()
 
 	// Start postgresql database
@@ -41,6 +50,8 @@ func MakeSynapse(domainName string) (*SynapseDep, error) {
 		postgres.WithDatabase("synapse"),
 		postgres.WithUsername("postgres"),
 		postgres.WithPassword("test1234"),
+		WithEnvironment("POSTGRES_INITDB_ARGS", "--encoding=UTF8 --locale=C"),
+		depNet.ApplyToContainer(),
 		testcontainers.WithWaitStrategy(
 			wait.ForLog("database system is ready to accept connections").WithOccurrence(2).WithStartupTimeout(5*time.Second)),
 	)
@@ -57,15 +68,11 @@ func MakeSynapse(domainName string) (*SynapseDep, error) {
 	if err != nil {
 		return nil, err
 	}
-	pgport, err := pgContainer.MappedPort(ctx, "5432/tcp")
-	if err != nil {
-		return nil, err
-	}
 	w := new(strings.Builder)
 	err = t.Execute(w, synapseTmplArgs{
 		ServerName: domainName,
 		PgHost:     pghost,
-		PgPort:     pgport.Int(),
+		PgPort:     5432, // we're behind the network here
 	})
 	if err != nil {
 		return nil, err
@@ -105,6 +112,7 @@ func MakeSynapse(domainName string) (*SynapseDep, error) {
 				testcontainers.BindMount(d, "/app"),
 			},
 			WaitingFor: wait.ForHTTP("/health").WithPort(p),
+			Networks:   []string{depNet.NetId},
 		},
 		Started: true,
 	})
@@ -113,7 +121,7 @@ func MakeSynapse(domainName string) (*SynapseDep, error) {
 	}
 
 	// Prepare the CS API URL
-	synHost, err := synContainer.Host(ctx)
+	synHost, err := synContainer.ContainerIP(ctx)
 	if err != nil {
 		return nil, err
 	}

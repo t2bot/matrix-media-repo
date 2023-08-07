@@ -10,6 +10,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/docker/go-connections/nat"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
@@ -34,7 +35,7 @@ type mmrContainer struct {
 	MachineId int
 }
 
-func makeMmrInstances(ctx context.Context, count int, tmplArgs mmrTmplArgs) ([]*mmrContainer, error) {
+func makeMmrInstances(ctx context.Context, count int, depNet *NetworkDep, tmplArgs mmrTmplArgs) ([]*mmrContainer, error) {
 	// Prepare a config template
 	t, err := template.New("mmr.config.yaml").ParseFiles(path.Join(".", "test", "templates", "mmr.config.yaml"))
 	if err != nil {
@@ -64,6 +65,7 @@ func makeMmrInstances(ctx context.Context, count int, tmplArgs mmrTmplArgs) ([]*
 	mmrs := make([]*mmrContainer, 0)
 	for i := 0; i < count; i++ {
 		// Create the docker container (from dockerfile)
+		p, _ := nat.NewPort("tcp", "8000")
 		container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 			ContainerRequest: testcontainers.ContainerRequest{
 				FromDockerfile: testcontainers.FromDockerfile{
@@ -76,7 +78,8 @@ func makeMmrInstances(ctx context.Context, count int, tmplArgs mmrTmplArgs) ([]*
 				Env: map[string]string{
 					"MACHINE_ID": strconv.Itoa(i),
 				},
-				WaitingFor: wait.ForHTTP("/healthz"),
+				Networks:   []string{depNet.NetId},
+				WaitingFor: wait.ForHTTP("/healthz").WithPort(p),
 			},
 			Started: true,
 		})

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"path"
 	"time"
 
@@ -18,17 +19,24 @@ type ContainerDeps struct {
 	redisContainer testcontainers.Container
 	homeservers    []*SynapseDep
 	machines       []*mmrContainer
+	depNet         *NetworkDep
 }
 
 func MakeTestDeps() (*ContainerDeps, error) {
 	ctx := context.Background()
 
-	// Start two synapses for testing
-	syn1, err := MakeSynapse("first.example.org")
+	// Create a network
+	depNet, err := MakeNetwork()
 	if err != nil {
 		return nil, err
 	}
-	syn2, err := MakeSynapse("second.example.org")
+
+	// Start two synapses for testing
+	syn1, err := MakeSynapse("first.example.org", depNet)
+	if err != nil {
+		return nil, err
+	}
+	syn2, err := MakeSynapse("second.example.org", depNet)
 	if err != nil {
 		return nil, err
 	}
@@ -39,6 +47,7 @@ func MakeTestDeps() (*ContainerDeps, error) {
 		postgres.WithDatabase("mmr"),
 		postgres.WithUsername("postgres"),
 		postgres.WithPassword("test1234"),
+		depNet.ApplyToContainer(),
 		testcontainers.WithWaitStrategy(
 			wait.ForLog("database system is ready to accept connections").WithOccurrence(2).WithStartupTimeout(5*time.Second)),
 	)
@@ -51,31 +60,32 @@ func MakeTestDeps() (*ContainerDeps, error) {
 	}
 
 	// Start a redis container
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
 	redisContainer, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
 			Image:        "docker.io/library/redis:7",
 			ExposedPorts: []string{"6379/tcp"},
 			Mounts: []testcontainers.ContainerMount{
-				testcontainers.BindMount(path.Join(".", "dev", "redis.conf"), "/usr/local/etc/redis/redis.conf"),
+				testcontainers.BindMount(path.Join(cwd, ".", "dev", "redis.conf"), "/usr/local/etc/redis/redis.conf"),
 			},
-			Cmd: []string{"redis-server", "/usr/local/etc/redis/redis.conf"},
+			Cmd:      []string{"redis-server", "/usr/local/etc/redis/redis.conf"},
+			Networks: []string{depNet.NetId},
 		},
 		Started: true,
 	})
 	if err != nil {
 		return nil, err
 	}
-	redisHost, err := redisContainer.Host(ctx)
-	if err != nil {
-		return nil, err
-	}
-	redisPort, err := redisContainer.MappedPort(ctx, "6379/tcp")
+	redisHost, err := redisContainer.ContainerIP(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	// Start two MMRs for testing
-	mmrs, err := makeMmrInstances(ctx, 2, mmrTmplArgs{
+	mmrs, err := makeMmrInstances(ctx, 2, depNet, mmrTmplArgs{
 		Homeservers: []mmrHomeserverTmplArgs{
 			{
 				ServerName:         syn1.ServerName,
@@ -86,7 +96,7 @@ func MakeTestDeps() (*ContainerDeps, error) {
 				ClientServerApiUrl: syn2.ClientServerApiUrl,
 			},
 		},
-		RedisAddr:          fmt.Sprintf("%s:%d", redisHost, redisPort.Int()),
+		RedisAddr:          fmt.Sprintf("%s:%d", redisHost, 6379), // we're behind the network for redis
 		PgConnectionString: pgConnStr,
 	})
 
@@ -96,6 +106,7 @@ func MakeTestDeps() (*ContainerDeps, error) {
 		redisContainer: redisContainer,
 		homeservers:    []*SynapseDep{syn1, syn2},
 		machines:       mmrs,
+		depNet:         depNet,
 	}, nil
 }
 
@@ -112,4 +123,5 @@ func (c *ContainerDeps) Teardown() {
 	if err := c.pgContainer.Terminate(c.ctx); err != nil {
 		log.Fatalf("Error shutting down mmr-postgres container: %s", err.Error())
 	}
+	c.depNet.Teardown()
 }
