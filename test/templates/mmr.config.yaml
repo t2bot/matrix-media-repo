@@ -1,0 +1,27 @@
+repo:
+  bindAddress: '0.0.0.0'
+  port: 8000
+  logDirectory: "-"
+  logColors: false
+  jsonLogs: false
+  logLevel: "debug"
+  trustAnyForwardedAddress: false
+  useForwardedHost: true
+database:
+  postgres: "{{.PgConnectionString}}"
+  pool:
+    maxConnections: 25
+    maxIdleConnections: 5
+homeservers:
+  {{range .Homeservers}}
+  - name: "{{.ServerName}}"
+    csApi: "{{.ClientServerApiUrl}}"
+    backoffAt: 10
+    adminApiKind: "synapse"
+  {{end}}
+redis:
+  enabled: true
+  databaseNumber: 0
+  shards:
+    - name: "server1"
+      addr: "{{.RedisAddr}}"

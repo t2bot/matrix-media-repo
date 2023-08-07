@@ -1,0 +1,32 @@
+server_name: "{{.ServerName}}"
+pid_file: /app/homeserver.pid
+listeners:
+  - port: 8008
+    tls: false
+    type: http
+    x_forwarded: true
+    resources:
+      - names: [client, federation]
+        compress: false
+database:
+  name: psycopg2
+  args:
+    cp_min: 5
+    cp_max: 10
+    sslmode: "disable"
+    host: "{{.PgHost}}"
+    port: {{.PgPort}}
+    user: postgres
+    password: test1234
+    database: synapse
+log_config: "/data/log.config"
+media_store_path: /app/media_store
+registration_shared_secret: "l,jbms,sR_Z82JNP2,sv-~^5bXqFTV-T=j,,~=OKZ8I_Tardk;"
+report_stats: false
+macaroon_secret_key: "KV*8qANyBE28e*pZ-9RP+u86~i8+.j9IZEKU8Vb4+jdIoe~ncw"
+form_secret: "mQrUxtt6^F3uQ3nVrGdg7yAK64p*#Uf@2n=e9y8ggLbhy3-QIy"
+signing_key_path: "/app/signing.key"
+enable_media_repo: false
+enable_registration: true
+enable_registration_without_verification: true
+trusted_key_servers: []
