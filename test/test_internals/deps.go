@@ -1,4 +1,4 @@
-package test
+package test_internals
 
 import (
 	"context"
@@ -17,9 +17,10 @@ type ContainerDeps struct {
 	ctx            context.Context
 	pgContainer    *postgres.PostgresContainer
 	redisContainer testcontainers.Container
-	homeservers    []*SynapseDep
-	machines       []*mmrContainer
 	depNet         *NetworkDep
+
+	Homeservers []*SynapseDep
+	Machines    []*mmrContainer
 }
 
 func MakeTestDeps() (*ContainerDeps, error) {
@@ -54,10 +55,12 @@ func MakeTestDeps() (*ContainerDeps, error) {
 	if err != nil {
 		return nil, err
 	}
-	pgConnStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
+	pgHost, err := pgContainer.ContainerIP(ctx)
 	if err != nil {
 		return nil, err
 	}
+	// we can hardcode the port and most of the connection details because we're behind the docker network here
+	pgConnStr := fmt.Sprintf("host=%s port=5432 user=postgres password=test1234 dbname=mmr sslmode=disable", pgHost)
 
 	// Start a redis container
 	cwd, err := os.Getwd()
@@ -89,32 +92,35 @@ func MakeTestDeps() (*ContainerDeps, error) {
 		Homeservers: []mmrHomeserverTmplArgs{
 			{
 				ServerName:         syn1.ServerName,
-				ClientServerApiUrl: syn1.ClientServerApiUrl,
+				ClientServerApiUrl: syn1.InternalClientServerApiUrl,
 			},
 			{
 				ServerName:         syn2.ServerName,
-				ClientServerApiUrl: syn2.ClientServerApiUrl,
+				ClientServerApiUrl: syn2.InternalClientServerApiUrl,
 			},
 		},
 		RedisAddr:          fmt.Sprintf("%s:%d", redisHost, 6379), // we're behind the network for redis
 		PgConnectionString: pgConnStr,
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	return &ContainerDeps{
 		ctx:            ctx,
 		pgContainer:    pgContainer,
 		redisContainer: redisContainer,
-		homeservers:    []*SynapseDep{syn1, syn2},
-		machines:       mmrs,
+		Homeservers:    []*SynapseDep{syn1, syn2},
+		Machines:       mmrs,
 		depNet:         depNet,
 	}, nil
 }
 
 func (c *ContainerDeps) Teardown() {
-	for _, mmr := range c.machines {
+	for _, mmr := range c.Machines {
 		mmr.Teardown()
 	}
-	for _, hs := range c.homeservers {
+	for _, hs := range c.Homeservers {
 		hs.Teardown()
 	}
 	if err := c.redisContainer.Terminate(c.ctx); err != nil {

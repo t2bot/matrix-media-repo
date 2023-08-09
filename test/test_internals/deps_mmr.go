@@ -1,7 +1,8 @@
-package test
+package test_internals
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -35,6 +36,40 @@ type mmrContainer struct {
 	MachineId int
 }
 
+var mmrCachedImage string
+
+func reuseMmrBuild(ctx context.Context) (string, error) {
+	if mmrCachedImage != "" {
+		return mmrCachedImage, nil
+	}
+	log.Println("[Test Deps] Building MMR image...")
+	buildReq := testcontainers.GenericContainerRequest{
+		ContainerRequest: testcontainers.ContainerRequest{
+			FromDockerfile: testcontainers.FromDockerfile{
+				Dockerfile:    "Dockerfile",
+				Context:       ".",
+				PrintBuildLog: true,
+			},
+		},
+		Started: false,
+	}
+	provider, err := buildReq.ProviderType.GetProvider(testcontainers.WithLogger(testcontainers.Logger))
+	if err != nil {
+		return "", err
+	}
+	c, err := provider.CreateContainer(ctx, buildReq.ContainerRequest)
+	if err != nil {
+		return "", err
+	}
+	if dockerC, ok := c.(*testcontainers.DockerContainer); !ok {
+		return "", errors.New("failed to convert built MMR container to a DockerContainer")
+	} else {
+		mmrCachedImage = dockerC.Image
+	}
+	log.Println("[Test Deps] Cached build as ", mmrCachedImage)
+	return mmrCachedImage, nil
+}
+
 func makeMmrInstances(ctx context.Context, count int, depNet *NetworkDep, tmplArgs mmrTmplArgs) ([]*mmrContainer, error) {
 	// Prepare a config template
 	t, err := template.New("mmr.config.yaml").ParseFiles(path.Join(".", "test", "templates", "mmr.config.yaml"))
@@ -61,6 +96,12 @@ func makeMmrInstances(ctx context.Context, count int, depNet *NetworkDep, tmplAr
 		return nil, err
 	}
 
+	// Cache the MMR image
+	mmrImage, err := reuseMmrBuild(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	// Start the containers (using the same DB and config)
 	mmrs := make([]*mmrContainer, 0)
 	for i := 0; i < count; i++ {
@@ -68,9 +109,7 @@ func makeMmrInstances(ctx context.Context, count int, depNet *NetworkDep, tmplAr
 		p, _ := nat.NewPort("tcp", "8000")
 		container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 			ContainerRequest: testcontainers.ContainerRequest{
-				FromDockerfile: testcontainers.FromDockerfile{
-					Dockerfile: "Dockerfile",
-				},
+				Image:        mmrImage,
 				ExposedPorts: []string{"8000/tcp"},
 				Mounts: []testcontainers.ContainerMount{
 					testcontainers.BindMount(f.Name(), "/data/media-repo.yaml"),
@@ -98,6 +137,7 @@ func makeMmrInstances(ctx context.Context, count int, depNet *NetworkDep, tmplAr
 		}
 		//goland:noinspection HttpUrlsUsage
 		csApiUrl := fmt.Sprintf("http://%s:%d", mmrHost, mmrPort.Int())
+		log.Println("@@@@@@@@@@@@@@@@@@@@@@ ", csApiUrl)
 
 		// Create the container object
 		mmrs = append(mmrs, &mmrContainer{

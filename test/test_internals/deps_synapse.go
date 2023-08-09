@@ -1,9 +1,15 @@
-package test
+package test_internals
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"strings"
@@ -28,8 +34,16 @@ type SynapseDep struct {
 	synContainer  testcontainers.Container
 	tmpConfigPath string
 
-	ClientServerApiUrl string
-	ServerName         string
+	InternalClientServerApiUrl string
+	ExternalClientServerApiUrl string
+	ServerName                 string
+
+	AdminUserId                  string
+	AdminAccessToken             string
+	UnprivilegedAliceUserId      string
+	UnprivilegedAliceAccessToken string
+	UnprivilegedBobUserId        string
+	UnprivilegedBobAccessToken   string
 }
 
 type fixNetwork struct {
@@ -121,7 +135,11 @@ func MakeSynapse(domainName string, depNet *NetworkDep) (*SynapseDep, error) {
 	}
 
 	// Prepare the CS API URL
-	synHost, err := synContainer.ContainerIP(ctx)
+	synHost, err := synContainer.Host(ctx)
+	if err != nil {
+		return nil, err
+	}
+	synIp, err := synContainer.ContainerIP(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -130,16 +148,105 @@ func MakeSynapse(domainName string, depNet *NetworkDep) (*SynapseDep, error) {
 		return nil, err
 	}
 	//goland:noinspection HttpUrlsUsage
-	csApiUrl := fmt.Sprintf("http://%s:%d", synHost, synPort.Int())
+	intCsApiUrl := fmt.Sprintf("http://%s:%d", synIp, 8008)
+	extCsApiUrl := fmt.Sprintf("http://%s:%d", synHost, synPort.Int())
+
+	// Register the accounts
+	registerUser := func(localpart string, admin bool) (string, string, error) { // userId, accessToken, err
+		adminFlag := "--admin"
+		if !admin {
+			adminFlag = "--no-admin"
+		}
+		cmd := fmt.Sprintf("register_new_matrix_user -c /data/homeserver.yaml -u %s -p test1234 %s", localpart, adminFlag)
+		log.Println("[Synapse Command] " + cmd)
+		i, r, err := synContainer.Exec(ctx, strings.Split(cmd, " "))
+		if err != nil {
+			return "", "", err
+		}
+		b, err := io.ReadAll(r)
+		if err != nil {
+			return "", "", err
+		}
+		if i != 0 {
+			return "", "", errors.New(string(b))
+		}
+
+		// Get user ID and access token from admin API
+		log.Println("[Synapse API] Logging in")
+		endpoint, err := url.JoinPath(extCsApiUrl, "/_matrix/client/v3/login")
+		if err != nil {
+			return "", "", err
+		}
+		b, err = json.Marshal(map[string]interface{}{
+			"type": "m.login.password",
+			"identifier": map[string]interface{}{
+				"type": "m.id.user",
+				"user": localpart,
+			},
+			"password":      "test1234",
+			"refresh_token": false,
+		})
+		if err != nil {
+			return "", "", err
+		}
+		res, err := http.DefaultClient.Post(endpoint, "application/json", bytes.NewBuffer(b))
+		if err != nil {
+			return "", "", err
+		}
+		b, err = io.ReadAll(res.Body)
+		if err != nil {
+			return "", "", err
+		}
+		if res.StatusCode != http.StatusOK {
+			return "", "", errors.New(res.Status + "\n" + string(b))
+		}
+		log.Println("[Synapse API] " + string(b))
+		m := make(map[string]interface{})
+		err = json.Unmarshal(b, &m)
+		if err != nil {
+			return "", "", err
+		}
+
+		var userId interface{}
+		var accessToken interface{}
+		var ok bool
+		if userId, ok = m["user_id"]; !ok {
+			return "", "", errors.New("missing user_id")
+		}
+		if accessToken, ok = m["access_token"]; !ok {
+			return "", "", errors.New("missing access_token")
+		}
+
+		return userId.(string), accessToken.(string), nil
+	}
+	adminUserId, adminAccessToken, err := registerUser("admin", true)
+	if err != nil {
+		return nil, err
+	}
+	aliceUserId, aliceAccessToken, err := registerUser("user_alice", false)
+	if err != nil {
+		return nil, err
+	}
+	bobUserId, bobAccessToken, err := registerUser("user_bob", false)
+	if err != nil {
+		return nil, err
+	}
 
 	// Create the dependency
 	return &SynapseDep{
-		ctx:                ctx,
-		pgContainer:        pgContainer,
-		synContainer:       synContainer,
-		tmpConfigPath:      f.Name(),
-		ClientServerApiUrl: csApiUrl,
-		ServerName:         domainName,
+		ctx:                          ctx,
+		pgContainer:                  pgContainer,
+		synContainer:                 synContainer,
+		tmpConfigPath:                f.Name(),
+		InternalClientServerApiUrl:   intCsApiUrl,
+		ExternalClientServerApiUrl:   extCsApiUrl,
+		ServerName:                   domainName,
+		AdminUserId:                  adminUserId,
+		AdminAccessToken:             adminAccessToken,
+		UnprivilegedAliceUserId:      aliceUserId,
+		UnprivilegedAliceAccessToken: aliceAccessToken,
+		UnprivilegedBobUserId:        bobUserId,
+		UnprivilegedBobAccessToken:   bobAccessToken,
 	}, nil
 }
 

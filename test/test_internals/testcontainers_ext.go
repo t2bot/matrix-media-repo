@@ -1,4 +1,4 @@
-package test
+package test_internals
 
 import "github.com/testcontainers/testcontainers-go"
 

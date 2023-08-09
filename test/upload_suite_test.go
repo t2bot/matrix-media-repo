@@ -6,15 +6,17 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"github.com/turt2live/matrix-media-repo/test/test_internals"
+	"github.com/turt2live/matrix-media-repo/util"
 )
 
 type UploadTestSuite struct {
 	suite.Suite
-	deps *ContainerDeps
+	deps *test_internals.ContainerDeps
 }
 
 func (s *UploadTestSuite) SetupSuite() {
-	deps, err := MakeTestDeps()
+	deps, err := test_internals.MakeTestDeps()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -30,7 +32,16 @@ func (s *UploadTestSuite) TearDownSuite() {
 func (s *UploadTestSuite) TestUpload() {
 	t := s.T()
 
-	assert.NoError(t, nil)
+	client := &test_internals.MatrixClient{
+		AccessToken:     s.deps.Homeservers[0].UnprivilegedAliceAccessToken,
+		ClientServerUrl: s.deps.Machines[0].HttpUrl,
+	}
+
+	contentType, img, err := test_internals.MakeTestImage(512, 512)
+	res, err := client.Upload("image"+util.ExtensionForContentType(contentType), contentType, img)
+	assert.NoError(t, err)
+	log.Println(res.MxcUri)
+	assert.NotEmpty(t, res.MxcUri)
 }
 
 func TestUploadTestSuite(t *testing.T) {
