@@ -37,18 +37,25 @@ type mmrContainer struct {
 }
 
 var mmrCachedImage string
+var mmrCachedContext *os.File
 
 func reuseMmrBuild(ctx context.Context) (string, error) {
 	if mmrCachedImage != "" {
 		return mmrCachedImage, nil
 	}
 	log.Println("[Test Deps] Building MMR image...")
+	cr, err := createDockerContext()
+	if err != nil {
+		return "", err
+	}
+	mmrCachedContext = cr
 	buildReq := testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
 			FromDockerfile: testcontainers.FromDockerfile{
-				Dockerfile:    "Dockerfile",
-				Context:       ".",
-				PrintBuildLog: true,
+				Dockerfile:     "Dockerfile",
+				Context:        ".",
+				ContextArchive: cr,
+				PrintBuildLog:  true,
 			},
 		},
 		Started: false,
@@ -158,5 +165,13 @@ func (c *mmrContainer) Teardown() {
 	}
 	if err := os.Remove(c.tmpConfigPath); err != nil && !os.IsNotExist(err) {
 		log.Fatalf("Error cleaning up MMR config file '%s': %s", c.tmpConfigPath, err.Error())
+	}
+	if mmrCachedContext != nil {
+		if err := mmrCachedContext.Close(); err != nil && !os.IsNotExist(err) {
+			log.Fatalf("Error closing up MMR cached context file '%s': %s", mmrCachedContext.Name(), err.Error())
+		}
+		if err := os.Remove(mmrCachedContext.Name()); err != nil && !os.IsNotExist(err) {
+			log.Fatalf("Error cleaning up MMR cached context file '%s': %s", mmrCachedContext.Name(), err.Error())
+		}
 	}
 }

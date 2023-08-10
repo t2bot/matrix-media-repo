@@ -45,11 +45,13 @@ require (
 )
 
 require (
+	github.com/docker/go-connections v0.4.0
 	github.com/go-redsync/redsync/v4 v4.8.1
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/minio/minio-go/v7 v7.0.61
 	github.com/panjf2000/ants/v2 v2.8.1
 	github.com/redis/go-redis/v9 v9.0.5
+	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
 	github.com/stretchr/testify v1.8.4
 	github.com/t2bot/go-singleflight-streams v0.0.3
 	github.com/testcontainers/testcontainers-go v0.22.0
@@ -72,7 +74,6 @@ require (
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/docker/distribution v2.8.2+incompatible // indirect
 	github.com/docker/docker v24.0.5+incompatible // indirect
-	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dsoprea/go-utility/v2 v2.0.0-20221003172846-a3e1774ef349 // indirect
 	github.com/fatih/color v1.15.0 // indirect
