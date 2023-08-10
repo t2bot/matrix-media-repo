@@ -160,7 +160,7 @@ func MakeSynapse(domainName string, depNet *NetworkDep) (*SynapseDep, error) {
 			return errors.New(string(b))
 		}
 
-		// Get user ID and access token from admin API
+		// Get user ID and access token from login API
 		log.Println("[Synapse API] Logging in")
 		endpoint, err := url.JoinPath(extCsApiUrl, "/_matrix/client/v3/login")
 		if err != nil {
