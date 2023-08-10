@@ -38,21 +38,8 @@ type SynapseDep struct {
 	ExternalClientServerApiUrl string
 	ServerName                 string
 
-	AdminUserId                  string
-	AdminAccessToken             string
-	UnprivilegedAliceUserId      string
-	UnprivilegedAliceAccessToken string
-	UnprivilegedBobUserId        string
-	UnprivilegedBobAccessToken   string
-}
-
-type fixNetwork struct {
-	testcontainers.ContainerCustomizer
-	NetId string
-}
-
-func (f *fixNetwork) Customize(req *testcontainers.GenericContainerRequest) {
-	req.Networks = []string{f.NetId}
+	AdminUsers        []*MatrixClient // uses ExternalClientServerApiUrl
+	UnprivilegedUsers []*MatrixClient // uses ExternalClientServerApiUrl
 }
 
 func MakeSynapse(domainName string, depNet *NetworkDep) (*SynapseDep, error) {
@@ -152,7 +139,9 @@ func MakeSynapse(domainName string, depNet *NetworkDep) (*SynapseDep, error) {
 	extCsApiUrl := fmt.Sprintf("http://%s:%d", synHost, synPort.Int())
 
 	// Register the accounts
-	registerUser := func(localpart string, admin bool) (string, string, error) { // userId, accessToken, err
+	adminUsers := make([]*MatrixClient, 0)
+	unprivilegedUsers := make([]*MatrixClient, 0)
+	registerUser := func(localpart string, admin bool) error {
 		adminFlag := "--admin"
 		if !admin {
 			adminFlag = "--no-admin"
@@ -161,21 +150,21 @@ func MakeSynapse(domainName string, depNet *NetworkDep) (*SynapseDep, error) {
 		log.Println("[Synapse Command] " + cmd)
 		i, r, err := synContainer.Exec(ctx, strings.Split(cmd, " "))
 		if err != nil {
-			return "", "", err
+			return err
 		}
 		b, err := io.ReadAll(r)
 		if err != nil {
-			return "", "", err
+			return err
 		}
 		if i != 0 {
-			return "", "", errors.New(string(b))
+			return errors.New(string(b))
 		}
 
 		// Get user ID and access token from admin API
 		log.Println("[Synapse API] Logging in")
 		endpoint, err := url.JoinPath(extCsApiUrl, "/_matrix/client/v3/login")
 		if err != nil {
-			return "", "", err
+			return err
 		}
 		b, err = json.Marshal(map[string]interface{}{
 			"type": "m.login.password",
@@ -187,66 +176,75 @@ func MakeSynapse(domainName string, depNet *NetworkDep) (*SynapseDep, error) {
 			"refresh_token": false,
 		})
 		if err != nil {
-			return "", "", err
+			return err
 		}
 		res, err := http.DefaultClient.Post(endpoint, "application/json", bytes.NewBuffer(b))
 		if err != nil {
-			return "", "", err
+			return err
 		}
 		b, err = io.ReadAll(res.Body)
 		if err != nil {
-			return "", "", err
+			return err
 		}
 		if res.StatusCode != http.StatusOK {
-			return "", "", errors.New(res.Status + "\n" + string(b))
+			return errors.New(res.Status + "\n" + string(b))
 		}
 		log.Println("[Synapse API] " + string(b))
 		m := make(map[string]interface{})
 		err = json.Unmarshal(b, &m)
 		if err != nil {
-			return "", "", err
+			return err
 		}
 
 		var userId interface{}
 		var accessToken interface{}
 		var ok bool
 		if userId, ok = m["user_id"]; !ok {
-			return "", "", errors.New("missing user_id")
+			return errors.New("missing user_id")
 		}
 		if accessToken, ok = m["access_token"]; !ok {
-			return "", "", errors.New("missing access_token")
+			return errors.New("missing access_token")
 		}
 
-		return userId.(string), accessToken.(string), nil
+		mxClient := &MatrixClient{
+			AccessToken:     accessToken.(string),
+			ClientServerUrl: extCsApiUrl,
+			UserId:          userId.(string),
+			ServerName:      domainName,
+		}
+
+		if admin {
+			adminUsers = append(adminUsers, mxClient)
+		} else {
+			unprivilegedUsers = append(unprivilegedUsers, mxClient)
+		}
+
+		return nil
 	}
-	adminUserId, adminAccessToken, err := registerUser("admin", true)
+	err = registerUser("admin", true)
 	if err != nil {
 		return nil, err
 	}
-	aliceUserId, aliceAccessToken, err := registerUser("user_alice", false)
+	err = registerUser("user_alice", false)
 	if err != nil {
 		return nil, err
 	}
-	bobUserId, bobAccessToken, err := registerUser("user_bob", false)
+	err = registerUser("user_bob", false)
 	if err != nil {
 		return nil, err
 	}
 
 	// Create the dependency
 	return &SynapseDep{
-		ctx:                          ctx,
-		pgContainer:                  pgContainer,
-		synContainer:                 synContainer,
-		tmpConfigPath:                f.Name(),
-		InternalClientServerApiUrl:   intCsApiUrl,
-		ExternalClientServerApiUrl:   extCsApiUrl,
-		ServerName:                   domainName,
-		AdminUserId:                  adminUserId,
-		AdminAccessToken:             adminAccessToken,
-		UnprivilegedAliceUserId:      aliceUserId,
-		UnprivilegedAliceAccessToken: aliceAccessToken,
-		UnprivilegedBobUserId:        bobUserId,
-		UnprivilegedBobAccessToken:   bobAccessToken,
+		ctx:                        ctx,
+		pgContainer:                pgContainer,
+		synContainer:               synContainer,
+		tmpConfigPath:              f.Name(),
+		InternalClientServerApiUrl: intCsApiUrl,
+		ExternalClientServerApiUrl: extCsApiUrl,
+		ServerName:                 domainName,
+		AdminUsers:                 adminUsers,
+		UnprivilegedUsers:          unprivilegedUsers,
 	}, nil
 }
 

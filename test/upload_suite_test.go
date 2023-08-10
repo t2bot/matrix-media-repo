@@ -35,10 +35,7 @@ func (s *UploadTestSuite) TearDownSuite() {
 func (s *UploadTestSuite) TestUpload() {
 	t := s.T()
 
-	client := &test_internals.MatrixClient{
-		AccessToken:     s.deps.Homeservers[0].UnprivilegedAliceAccessToken,
-		ClientServerUrl: s.deps.Machines[0].HttpUrl,
-	}
+	client := s.deps.Homeservers[0].UnprivilegedUsers[0].WithCsUrl(s.deps.Machines[0].HttpUrl)
 
 	contentType, img, err := test_internals.MakeTestImage(512, 512)
 	res, err := client.Upload("image"+util.ExtensionForContentType(contentType), contentType, img)

@@ -14,6 +14,17 @@ import (
 type MatrixClient struct {
 	AccessToken     string
 	ClientServerUrl string
+	UserId          string
+	ServerName      string
+}
+
+func (c *MatrixClient) WithCsUrl(newUrl string) *MatrixClient {
+	return &MatrixClient{
+		AccessToken:     c.AccessToken,
+		ClientServerUrl: newUrl,
+		UserId:          c.UserId,
+		ServerName:      c.ServerName,
+	}
 }
 
 func (c *MatrixClient) Upload(filename string, contentType string, body io.Reader) (*MatrixUploadResponse, error) {
