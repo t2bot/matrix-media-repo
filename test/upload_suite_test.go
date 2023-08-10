@@ -40,7 +40,7 @@ func (s *UploadTestSuite) TestUpload() {
 	contentType, img, err := test_internals.MakeTestImage(512, 512)
 	res, err := client.Upload("image"+util.ExtensionForContentType(contentType), contentType, img)
 	assert.NoError(t, err)
-	log.Println(res.MxcUri)
+	log.Println(res.MxcUri) // TODO: Test download (from other instance) matches what we uploaded
 	assert.NotEmpty(t, res.MxcUri)
 }
 

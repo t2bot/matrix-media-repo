@@ -27,3 +27,14 @@ redis:
       addr: "{{.RedisAddr}}"
 accessTokens:
   maxCacheTimeSeconds: 43200
+datastores:
+  - type: s3
+    id: "s3_internal"
+    forKinds: [ "thumbnails", "remote_media", "local_media", "archives" ]
+    opts:
+      tempPath: "/tmp/mediarepo_s3_upload"
+      endpoint: "{{.S3Endpoint}}"
+      bucketName: "mybucket"
+      accessKeyId: "mykey"
+      accessSecret: "mysecret"
+      ssl: false

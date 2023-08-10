@@ -18,6 +18,7 @@ type ContainerDeps struct {
 	ctx            context.Context
 	pgContainer    *postgres.PostgresContainer
 	redisContainer testcontainers.Container
+	minioDep       *MinioDep
 	depNet         *NetworkDep
 
 	Homeservers []*SynapseDep
@@ -88,6 +89,12 @@ func MakeTestDeps() (*ContainerDeps, error) {
 		return nil, err
 	}
 
+	// Start a minio (s3) container
+	minioDep, err := MakeMinio(depNet)
+	if err != nil {
+		return nil, err
+	}
+
 	// Start two MMRs for testing
 	mmrs, err := makeMmrInstances(ctx, 2, depNet, mmrTmplArgs{
 		Homeservers: []mmrHomeserverTmplArgs{
@@ -102,6 +109,7 @@ func MakeTestDeps() (*ContainerDeps, error) {
 		},
 		RedisAddr:          fmt.Sprintf("%s:%d", redisHost, 6379), // we're behind the network for redis
 		PgConnectionString: pgConnStr,
+		S3Endpoint:         minioDep.Endpoint,
 	})
 	if err != nil {
 		return nil, err
@@ -111,6 +119,7 @@ func MakeTestDeps() (*ContainerDeps, error) {
 		ctx:            ctx,
 		pgContainer:    pgContainer,
 		redisContainer: redisContainer,
+		minioDep:       minioDep,
 		Homeservers:    []*SynapseDep{syn1, syn2},
 		Machines:       mmrs,
 		depNet:         depNet,
@@ -130,6 +139,7 @@ func (c *ContainerDeps) Teardown() {
 	if err := c.pgContainer.Terminate(c.ctx); err != nil {
 		log.Fatalf("Error shutting down mmr-postgres container: %s", err.Error())
 	}
+	c.minioDep.Teardown()
 	c.depNet.Teardown()
 }
 
