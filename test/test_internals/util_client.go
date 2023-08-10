@@ -65,6 +65,9 @@ func (c *MatrixClient) DoRaw(method string, endpoint string, qs url.Values, cont
 	if err != nil {
 		return nil, err
 	}
+	if c.ServerName != "" {
+		req.Host = c.ServerName
+	}
 	if contentType != "" {
 		req.Header.Set("Content-Type", contentType)
 	}
@@ -72,6 +75,6 @@ func (c *MatrixClient) DoRaw(method string, endpoint string, qs url.Values, cont
 		req.Header.Set("Authorization", "Bearer "+c.AccessToken)
 	}
 
-	log.Println(fmt.Sprintf("[HTTP] [Auth=%s] %s %s", c.AccessToken, req.Method, req.RequestURI))
+	log.Println(fmt.Sprintf("[HTTP] [Auth=%s] [Host=%s] %s %s", c.AccessToken, c.ServerName, req.Method, req.URL.String()))
 	return http.DefaultClient.Do(req)
 }

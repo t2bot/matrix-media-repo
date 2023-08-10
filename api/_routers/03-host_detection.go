@@ -59,7 +59,7 @@ func (h *HostRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			"action": GetActionName(r),
 			"method": r.Method,
 		}).Inc()
-		logger.Warn("The server name provided in the Host header is not configured, or the request was made directly to the media repo. Please specify a Host header and check your reverse proxy configuration. The request is being rejected.")
+		logger.Warnf("The server name provided ('%s') in the Host header is not configured, or the request was made directly to the media repo. Please specify a Host header and check your reverse proxy configuration. The request is being rejected.", r.Host)
 		w.WriteHeader(http.StatusBadGateway)
 		if b, err := json.Marshal(_responses.BadGatewayError("Review server logs to continue")); err != nil {
 			panic(errors.New("error preparing BadGatewayError: " + err.Error()))
