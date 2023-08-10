@@ -7,7 +7,7 @@ RUN apk add --no-cache git musl-dev dos2unix build-base
 
 WORKDIR /opt
 COPY . /opt
-RUN dos2unix ./build.sh ./docker/run.sh
+RUN dos2unix ./build.sh ./docker/run.sh && chmod 744 ./build.sh
 RUN ./build.sh
 
 # ---- Stage 1 ----
@@ -27,7 +27,7 @@ RUN apk add --no-cache \
 
 COPY ./config.sample.yaml /etc/media-repo.yaml.sample
 COPY ./docker/run.sh /usr/local/bin/
-RUN dos2unix /usr/local/bin/run.sh
+RUN dos2unix /usr/local/bin/run.sh && chmod 744 /usr/local/bin/run.sh
 
 ENV REPO_CONFIG=/data/media-repo.yaml
 

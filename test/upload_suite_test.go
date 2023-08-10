@@ -25,6 +25,9 @@ func (s *UploadTestSuite) SetupSuite() {
 
 func (s *UploadTestSuite) TearDownSuite() {
 	if s.deps != nil {
+		if s.T().Failed() {
+			s.deps.Debug()
+		}
 		s.deps.Teardown()
 	}
 }

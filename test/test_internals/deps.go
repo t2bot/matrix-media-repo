@@ -3,6 +3,7 @@ package test_internals
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path"
@@ -130,4 +131,24 @@ func (c *ContainerDeps) Teardown() {
 		log.Fatalf("Error shutting down mmr-postgres container: %s", err.Error())
 	}
 	c.depNet.Teardown()
+}
+
+func (c *ContainerDeps) Debug() {
+	for i, m := range c.Machines {
+		logs, err := m.Logs()
+		if err != nil {
+			log.Fatal(err)
+		}
+		b, err := io.ReadAll(logs)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("[MMR Deps] Logs from index %d (%s)", i, m.HttpUrl)
+		fmt.Println()
+		fmt.Println(string(b))
+		err = logs.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 }

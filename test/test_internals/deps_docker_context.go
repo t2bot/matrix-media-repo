@@ -2,7 +2,6 @@ package test_internals
 
 import (
 	"archive/tar"
-	"fmt"
 	"io"
 	"io/fs"
 	"os"
@@ -19,8 +18,7 @@ func createDockerContext() (*os.File, error) {
 	}
 
 	tmpF, err := os.CreateTemp(os.TempDir(), "mmr-docker-context")
-	pw := io.MultiWriter(tmpF)
-	tarContext := tar.NewWriter(pw)
+	tarContext := tar.NewWriter(tmpF)
 
 	err = filepath.WalkDir(".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -37,7 +35,7 @@ func createDockerContext() (*os.File, error) {
 		if match := ignoreFile.MatchesPath(path); match {
 			return nil
 		}
-		fmt.Println("[Image Build] Including file: ", path)
+		//fmt.Println("[Image Build] Including file: ", path)
 		err = tarContext.WriteHeader(&tar.Header{
 			Name:    strings.ReplaceAll(path, "\\", "/"),
 			Mode:    int64(info.Mode()),
@@ -67,11 +65,6 @@ func createDockerContext() (*os.File, error) {
 	}
 
 	err = tmpF.Close()
-	if err != nil {
-		return nil, err
-	}
-
-	tmpF, err = os.Open(tmpF.Name())
 	if err != nil {
 		return nil, err
 	}

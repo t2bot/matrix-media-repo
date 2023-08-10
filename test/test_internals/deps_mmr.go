@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path"
@@ -167,11 +168,13 @@ func (c *mmrContainer) Teardown() {
 		log.Fatalf("Error cleaning up MMR config file '%s': %s", c.tmpConfigPath, err.Error())
 	}
 	if mmrCachedContext != nil {
-		if err := mmrCachedContext.Close(); err != nil && !os.IsNotExist(err) {
-			log.Fatalf("Error closing up MMR cached context file '%s': %s", mmrCachedContext.Name(), err.Error())
-		}
+		_ = mmrCachedContext.Close() // ignore errors because testcontainers might have already closed it
 		if err := os.Remove(mmrCachedContext.Name()); err != nil && !os.IsNotExist(err) {
 			log.Fatalf("Error cleaning up MMR cached context file '%s': %s", mmrCachedContext.Name(), err.Error())
 		}
 	}
+}
+
+func (c *mmrContainer) Logs() (io.ReadCloser, error) {
+	return c.container.Logs(c.ctx)
 }
