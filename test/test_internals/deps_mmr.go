@@ -145,7 +145,6 @@ func makeMmrInstances(ctx context.Context, count int, depNet *NetworkDep, tmplAr
 		}
 		//goland:noinspection HttpUrlsUsage
 		csApiUrl := fmt.Sprintf("http://%s:%d", mmrHost, mmrPort.Int())
-		log.Println("@@@@@@@@@@@@@@@@@@@@@@ ", csApiUrl)
 
 		// Create the container object
 		mmrs = append(mmrs, &mmrContainer{

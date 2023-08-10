@@ -25,3 +25,5 @@ redis:
   shards:
     - name: "server1"
       addr: "{{.RedisAddr}}"
+accessTokens:
+  maxCacheTimeSeconds: 43200
