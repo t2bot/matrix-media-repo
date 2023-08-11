@@ -366,8 +366,8 @@ github.com/t2bot/go-singleflight-streams v0.0.3 h1:vedZM34NuCMx7YJkPek2b73zjzV8Q
 github.com/t2bot/go-singleflight-streams v0.0.3/go.mod h1:oiZ5Zj2o6p3SuMWTPXAmye7Ou86WCrQ2oGcr32bEEq8=
 github.com/tebeka/strftime v0.1.3 h1:5HQXOqWKYRFfNyBMNVc9z5+QzuBtIXy03psIhtdJYto=
 github.com/tebeka/strftime v0.1.3/go.mod h1:7wJm3dZlpr4l/oVK0t1HYIc4rMzQ2XJlOMIUJUJH6XQ=
-github.com/testcontainers/testcontainers-go v0.22.0 h1:hOK4NzNu82VZcKEB1aP9LO1xYssVFMvlfeuDW9JMmV0=
-github.com/testcontainers/testcontainers-go v0.22.0/go.mod h1:k0YiPa26xJCRUbUkYqy5rY6NGvSbVCeUBXCvucscBR4=
+github.com/testcontainers/testcontainers-go v0.22.1-0.20230811072958-c4236fb35017 h1:LHNEIfYBqw81IAWymOrDQpZOODFMWN6bune62xbscEA=
+github.com/testcontainers/testcontainers-go v0.22.1-0.20230811072958-c4236fb35017/go.mod h1:/q8isQIixz3/gNm2h/G6NiNC/gHXU4Sjf+QD3EDSKWw=
 github.com/testcontainers/testcontainers-go/modules/postgres v0.22.0 h1:OHVaqu9MRGMSlro9AD5UCfj8XiHwQdhB9thE4vINq+E=
 github.com/testcontainers/testcontainers-go/modules/postgres v0.22.0/go.mod h1:Gv5Gcp3JWOKdCa1CXkC2KZmE9Ofnx6e3bMTD+osHzKQ=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
