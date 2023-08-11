@@ -67,14 +67,14 @@ func reuseMmrBuild(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	c, err := provider.CreateContainer(ctx, buildReq.ContainerRequest)
-	if err != nil {
-		return "", err
-	}
-	if dockerC, ok := c.(*testcontainers.DockerContainer); !ok {
-		return "", errors.New("failed to convert built MMR container to a DockerContainer")
+	if dockerProvider, ok := provider.(*testcontainers.DockerProvider); !ok {
+		return "", errors.New("expected a docker provider")
 	} else {
-		mmrCachedImage = dockerC.Image
+		tag, err := dockerProvider.BuildImage(ctx, &buildReq)
+		if err != nil {
+			return "", err
+		}
+		mmrCachedImage = tag
 	}
 	log.Println("[Test Deps] Cached build as ", mmrCachedImage)
 	return mmrCachedImage, nil
