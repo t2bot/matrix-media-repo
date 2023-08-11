@@ -103,6 +103,10 @@ func MakeSynapse(domainName string, depNet *NetworkDep) (*SynapseDep, error) {
 	if err != nil {
 		return nil, err
 	}
+	err = os.Chmod(d, 0755)
+	if err != nil {
+		return nil, err
+	}
 	cwd, err := os.Getwd()
 	if err != nil {
 		return nil, err
