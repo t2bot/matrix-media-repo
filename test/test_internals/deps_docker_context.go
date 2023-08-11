@@ -18,6 +18,9 @@ func createDockerContext() (*os.File, error) {
 	}
 
 	tmpF, err := os.CreateTemp(os.TempDir(), "mmr-docker-context")
+	if err != nil {
+		return nil, err
+	}
 	tarContext := tar.NewWriter(tmpF)
 
 	err = filepath.WalkDir(".", func(path string, d fs.DirEntry, err error) error {
