@@ -1,6 +1,7 @@
 # ---- Stage 0 ----
 # Builds media repo binaries
 FROM golang:1.20-alpine AS builder
+LABEL io.t2bot.mmr.cleanup="true"
 
 # Install build dependencies
 RUN apk add --no-cache git musl-dev dos2unix build-base

@@ -177,6 +177,7 @@ func (c *ContainerDeps) Teardown() {
 	if err := os.Remove(c.mmrExtConfigPath); err != nil && !os.IsNotExist(err) {
 		log.Fatalf("Error cleaning up MMR-External config file '%s': %s", c.mmrExtConfigPath, err.Error())
 	}
+	TeardownMmrCaches()
 }
 
 func (c *ContainerDeps) Debug() {

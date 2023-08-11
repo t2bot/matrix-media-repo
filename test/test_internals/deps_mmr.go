@@ -12,6 +12,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/docker/docker/api/types"
 	"github.com/docker/go-connections/nat"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -181,14 +182,43 @@ func (c *mmrContainer) Teardown() {
 	if err := os.Remove(c.tmpConfigPath); err != nil && !os.IsNotExist(err) {
 		log.Fatalf("Error cleaning up MMR config file '%s': %s", c.tmpConfigPath, err.Error())
 	}
+}
+
+func (c *mmrContainer) Logs() (io.ReadCloser, error) {
+	return c.container.Logs(c.ctx)
+}
+
+func TeardownMmrCaches() {
 	if mmrCachedContext != nil {
 		_ = mmrCachedContext.Close() // ignore errors because testcontainers might have already closed it
 		if err := os.Remove(mmrCachedContext.Name()); err != nil && !os.IsNotExist(err) {
 			log.Fatalf("Error cleaning up MMR cached context file '%s': %s", mmrCachedContext.Name(), err.Error())
 		}
 	}
-}
-
-func (c *mmrContainer) Logs() (io.ReadCloser, error) {
-	return c.container.Logs(c.ctx)
+	if mmrCachedImage != "" {
+		if p, err := (testcontainers.GenericContainerRequest{}.ProviderType.GetProvider()); err != nil {
+			log.Fatalf("Error cleaning up MMR cached build image '%s': %s", mmrCachedImage, err.Error())
+		} else if dockerProvider, ok := p.(*testcontainers.DockerProvider); !ok {
+			log.Fatalf("Error cleaning up MMR cached build image '%s': unable to cast provider to DockerProvider", mmrCachedImage)
+		} else {
+			rmImage := func(imageName string) {
+				if _, err = dockerProvider.Client().ImageRemove(context.Background(), imageName, types.ImageRemoveOptions{
+					PruneChildren: true,
+				}); err != nil {
+					log.Printf("Error removing MMR cached build image '%s': %s", imageName, err.Error())
+					log.Println()
+				}
+			}
+			if images, err := dockerProvider.Client().ImageList(context.Background(), types.ImageListOptions{All: true}); err != nil {
+				log.Fatalf("Error listing Docker images to clean up MMR image '%s': %s", mmrCachedImage, err.Error())
+			} else {
+				rmImage(mmrCachedImage)
+				for _, i := range images {
+					if i.Labels != nil && i.Labels["io.t2bot.mmr.cleanup"] == "true" {
+						rmImage(i.ID)
+					}
+				}
+			}
+		}
+	}
 }
