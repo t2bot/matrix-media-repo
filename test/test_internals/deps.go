@@ -12,14 +12,17 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
+	"github.com/turt2live/matrix-media-repo/common/assets"
+	"github.com/turt2live/matrix-media-repo/common/config"
 )
 
 type ContainerDeps struct {
-	ctx            context.Context
-	pgContainer    *postgres.PostgresContainer
-	redisContainer testcontainers.Container
-	minioDep       *MinioDep
-	depNet         *NetworkDep
+	ctx              context.Context
+	pgContainer      *postgres.PostgresContainer
+	redisContainer   testcontainers.Container
+	minioDep         *MinioDep
+	depNet           *NetworkDep
+	mmrExtConfigPath string
 
 	Homeservers []*SynapseDep
 	Machines    []*mmrContainer
@@ -63,6 +66,10 @@ func MakeTestDeps() (*ContainerDeps, error) {
 	}
 	// we can hardcode the port and most of the connection details because we're behind the docker network here
 	pgConnStr := fmt.Sprintf("host=%s port=5432 user=postgres password=test1234 dbname=mmr sslmode=disable", pgHost)
+	extPgConnStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
+	if err != nil {
+		return nil, err
+	}
 
 	// Start a redis container
 	cwd, err := os.Getwd()
@@ -76,15 +83,24 @@ func MakeTestDeps() (*ContainerDeps, error) {
 			Mounts: []testcontainers.ContainerMount{
 				testcontainers.BindMount(path.Join(cwd, ".", "dev", "redis.conf"), "/usr/local/etc/redis/redis.conf"),
 			},
-			Cmd:      []string{"redis-server", "/usr/local/etc/redis/redis.conf"},
-			Networks: []string{depNet.NetId},
+			Cmd:        []string{"redis-server", "/usr/local/etc/redis/redis.conf"},
+			Networks:   []string{depNet.NetId},
+			WaitingFor: wait.ForListeningPort("6379/tcp"),
 		},
 		Started: true,
 	})
 	if err != nil {
 		return nil, err
 	}
-	redisHost, err := redisContainer.ContainerIP(ctx)
+	redisIp, err := redisContainer.ContainerIP(ctx)
+	if err != nil {
+		return nil, err
+	}
+	redisHost, err := redisContainer.Host(ctx)
+	if err != nil {
+		return nil, err
+	}
+	redisPort, err := redisContainer.MappedPort(ctx, "6379/tcp")
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +112,7 @@ func MakeTestDeps() (*ContainerDeps, error) {
 	}
 
 	// Start two MMRs for testing
-	mmrs, err := makeMmrInstances(ctx, 2, depNet, mmrTmplArgs{
+	tmplArgs := mmrTmplArgs{
 		Homeservers: []mmrHomeserverTmplArgs{
 			{
 				ServerName:         syn1.ServerName,
@@ -107,22 +123,39 @@ func MakeTestDeps() (*ContainerDeps, error) {
 				ClientServerApiUrl: syn2.InternalClientServerApiUrl,
 			},
 		},
-		RedisAddr:          fmt.Sprintf("%s:%d", redisHost, 6379), // we're behind the network for redis
+		RedisAddr:          fmt.Sprintf("%s:%d", redisIp, 6379), // we're behind the network for redis
 		PgConnectionString: pgConnStr,
 		S3Endpoint:         minioDep.Endpoint,
-	})
+	}
+	mmrs, err := makeMmrInstances(ctx, 2, depNet, tmplArgs)
 	if err != nil {
 		return nil, err
 	}
 
+	// Generate a config that's safe to use in tests, for inspecting state of the containers
+	tmplArgs.RedisAddr = fmt.Sprintf("%s:%d", redisHost, redisPort.Int())
+	tmplArgs.PgConnectionString = extPgConnStr
+	tmplArgs.S3Endpoint = minioDep.ExternalEndpoint
+	tmplArgs.Homeservers[0].ClientServerApiUrl = syn1.ExternalClientServerApiUrl
+	tmplArgs.Homeservers[1].ClientServerApiUrl = syn2.ExternalClientServerApiUrl
+	tmpPath, err := writeMmrConfig(tmplArgs)
+	if err != nil {
+		return nil, err
+	}
+	config.Path = tmpPath
+	assets.SetupMigrations(config.DefaultMigrationsPath)
+	assets.SetupTemplates(config.DefaultTemplatesPath)
+	assets.SetupAssets(config.DefaultAssetsPath)
+
 	return &ContainerDeps{
-		ctx:            ctx,
-		pgContainer:    pgContainer,
-		redisContainer: redisContainer,
-		minioDep:       minioDep,
-		Homeservers:    []*SynapseDep{syn1, syn2},
-		Machines:       mmrs,
-		depNet:         depNet,
+		ctx:              ctx,
+		pgContainer:      pgContainer,
+		redisContainer:   redisContainer,
+		minioDep:         minioDep,
+		mmrExtConfigPath: tmpPath,
+		Homeservers:      []*SynapseDep{syn1, syn2},
+		Machines:         mmrs,
+		depNet:           depNet,
 	}, nil
 }
 
@@ -141,6 +174,9 @@ func (c *ContainerDeps) Teardown() {
 	}
 	c.minioDep.Teardown()
 	c.depNet.Teardown()
+	if err := os.Remove(c.mmrExtConfigPath); err != nil && !os.IsNotExist(err) {
+		log.Fatalf("Error cleaning up MMR-External config file '%s': %s", c.mmrExtConfigPath, err.Error())
+	}
 }
 
 func (c *ContainerDeps) Debug() {

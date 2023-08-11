@@ -30,9 +30,10 @@ type mmrTmplArgs struct {
 }
 
 type mmrContainer struct {
-	ctx           context.Context
-	container     testcontainers.Container
-	tmpConfigPath string
+	ctx                   context.Context
+	container             testcontainers.Container
+	tmpConfigPath         string
+	tmpExternalConfigPath string
 
 	HttpUrl   string
 	MachineId int
@@ -79,28 +80,37 @@ func reuseMmrBuild(ctx context.Context) (string, error) {
 	return mmrCachedImage, nil
 }
 
-func makeMmrInstances(ctx context.Context, count int, depNet *NetworkDep, tmplArgs mmrTmplArgs) ([]*mmrContainer, error) {
+func writeMmrConfig(tmplArgs mmrTmplArgs) (string, error) {
 	// Prepare a config template
 	t, err := template.New("mmr.config.yaml").ParseFiles(path.Join(".", "test", "templates", "mmr.config.yaml"))
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	w := new(strings.Builder)
 	err = t.Execute(w, tmplArgs)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	// Write the MMR config to a temp file
 	f, err := os.CreateTemp(os.TempDir(), "mmr-tests-mediarepo")
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	_, err = f.Write([]byte(w.String()))
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	err = f.Close()
+	if err != nil {
+		return "", err
+	}
+
+	return f.Name(), nil
+}
+
+func makeMmrInstances(ctx context.Context, count int, depNet *NetworkDep, tmplArgs mmrTmplArgs) ([]*mmrContainer, error) {
+	intTmpName, err := writeMmrConfig(tmplArgs)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +131,7 @@ func makeMmrInstances(ctx context.Context, count int, depNet *NetworkDep, tmplAr
 				Image:        mmrImage,
 				ExposedPorts: []string{"8000/tcp"},
 				Mounts: []testcontainers.ContainerMount{
-					testcontainers.BindMount(f.Name(), "/data/media-repo.yaml"),
+					testcontainers.BindMount(intTmpName, "/data/media-repo.yaml"),
 				},
 				Env: map[string]string{
 					"MACHINE_ID": strconv.Itoa(i),
@@ -151,7 +161,7 @@ func makeMmrInstances(ctx context.Context, count int, depNet *NetworkDep, tmplAr
 		mmrs = append(mmrs, &mmrContainer{
 			ctx:           ctx,
 			container:     container,
-			tmpConfigPath: f.Name(),
+			tmpConfigPath: intTmpName,
 			HttpUrl:       csApiUrl,
 			MachineId:     i,
 		})

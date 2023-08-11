@@ -23,7 +23,8 @@ type MinioDep struct {
 	ctx       context.Context
 	container testcontainers.Container
 
-	Endpoint string
+	Endpoint         string
+	ExternalEndpoint string
 }
 
 func MakeMinio(depNet *NetworkDep) (*MinioDep, error) {
@@ -55,6 +56,14 @@ func MakeMinio(depNet *NetworkDep) (*MinioDep, error) {
 
 	// Find the minio connection details
 	minioIp, err := container.ContainerIP(ctx)
+	if err != nil {
+		return nil, err
+	}
+	minioHost, err := container.Host(ctx)
+	if err != nil {
+		return nil, err
+	}
+	minioPort, err := container.MappedPort(ctx, "9090/tcp")
 	if err != nil {
 		return nil, err
 	}
@@ -103,9 +112,10 @@ func MakeMinio(depNet *NetworkDep) (*MinioDep, error) {
 	}
 
 	return &MinioDep{
-		ctx:       ctx,
-		container: container,
-		Endpoint:  fmt.Sprintf("%s:%d", minioIp, 9000), // we're behind the network
+		ctx:              ctx,
+		container:        container,
+		Endpoint:         fmt.Sprintf("%s:%d", minioIp, 9000), // we're behind the network
+		ExternalEndpoint: fmt.Sprintf("%s:%d", minioHost, minioPort.Int()),
 	}, nil
 }
 
