@@ -84,6 +84,10 @@ func MakeSynapse(domainName string, depNet *NetworkDep) (*SynapseDep, error) {
 	if err != nil {
 		return nil, err
 	}
+	err = f.Chmod(0644)
+	if err != nil {
+		return nil, err
+	}
 	_, err = f.Write([]byte(w.String()))
 	if err != nil {
 		return nil, err

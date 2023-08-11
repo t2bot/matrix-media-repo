@@ -85,6 +85,10 @@ func MakeMinio(depNet *NetworkDep) (*MinioDep, error) {
 	if err != nil {
 		return nil, err
 	}
+	err = f.Chmod(0644)
+	if err != nil {
+		return nil, err
+	}
 	_, err = f.Write([]byte(strings.ReplaceAll(w.String(), "\r\n", "\n"))) // dos2unix now instead of in the container
 	if err != nil {
 		return nil, err

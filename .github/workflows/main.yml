@@ -11,5 +11,5 @@ jobs:
         with:
           go-version: '1.20'
       - run: './build.sh' # verify the thing compiles first
-      - run: 'go test -c -v ./test && ./test.test'
+      - run: 'go test -c -v ./test && ./test.test' # cheat and work around working directory issues
         timeout-minutes: 30

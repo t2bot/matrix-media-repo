@@ -97,6 +97,10 @@ func writeMmrConfig(tmplArgs mmrTmplArgs) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	err = f.Chmod(0644)
+	if err != nil {
+		return "", err
+	}
 	_, err = f.Write([]byte(w.String()))
 	if err != nil {
 		return "", err

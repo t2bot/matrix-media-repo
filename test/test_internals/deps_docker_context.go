@@ -21,6 +21,10 @@ func createDockerContext() (*os.File, error) {
 	if err != nil {
 		return nil, err
 	}
+	err = tmpF.Chmod(0644)
+	if err != nil {
+		return nil, err
+	}
 	tarContext := tar.NewWriter(tmpF)
 
 	err = filepath.WalkDir(".", func(path string, d fs.DirEntry, err error) error {
