@@ -16,15 +16,15 @@ RUN ./build.sh
 FROM alpine
 
 RUN mkdir /plugins
-COPY --from=builder /opt/bin/plugin_antispam_ocr /plugins/
-COPY --from=builder /opt/bin/media_repo /opt/bin/import_synapse /opt/bin/export_synapse_for_import /opt/bin/gdpr_export /opt/bin/gdpr_import /opt/bin/s3_consistency_check /usr/local/bin/
-
 RUN apk add --no-cache \
         su-exec \
         ca-certificates \
         dos2unix \
         imagemagick \
         ffmpeg
+
+COPY --from=builder /opt/bin/plugin_antispam_ocr /plugins/
+COPY --from=builder /opt/bin/media_repo /opt/bin/import_synapse /opt/bin/export_synapse_for_import /opt/bin/gdpr_export /opt/bin/gdpr_import /opt/bin/s3_consistency_check /usr/local/bin/
 
 COPY ./config.sample.yaml /etc/media-repo.yaml.sample
 COPY ./docker/run.sh /usr/local/bin/
