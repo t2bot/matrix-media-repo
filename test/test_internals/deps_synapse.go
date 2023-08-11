@@ -103,7 +103,7 @@ func MakeSynapse(domainName string, depNet *NetworkDep) (*SynapseDep, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = os.Chmod(d, 0755)
+	err = os.Chmod(d, 0766)
 	if err != nil {
 		return nil, err
 	}
