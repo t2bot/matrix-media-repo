@@ -16,6 +16,7 @@ assets.bin.go
 media-repo*.yaml
 homeserver.yaml
 s3-probably-safe-to-delete.txt
+/test.test
 
 # Binaries for programs and plugins
 *.exe
