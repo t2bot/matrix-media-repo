@@ -205,8 +205,7 @@ func TeardownMmrCaches() {
 				if _, err = dockerProvider.Client().ImageRemove(context.Background(), imageName, types.ImageRemoveOptions{
 					PruneChildren: true,
 				}); err != nil {
-					log.Printf("Error removing MMR cached build image '%s': %s", imageName, err.Error())
-					log.Println()
+					log.Fatalf("Error removing MMR cached build image '%s': %s", imageName, err.Error())
 				}
 			}
 			if images, err := dockerProvider.Client().ImageList(context.Background(), types.ImageListOptions{All: true}); err != nil {
