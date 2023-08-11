@@ -2,8 +2,8 @@ name: Main
 on:
   push:
 jobs:
-  build_and_test:
-    name: 'Go Build and Test (1.20)'
+  build:
+    name: 'Go Build (1.20)'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -11,5 +11,13 @@ jobs:
         with:
           go-version: '1.20'
       - run: './build.sh' # verify the thing compiles first
-      - run: 'go test -c -v ./test && ./test.test' # cheat and work around working directory issues
+  test:
+    name: 'Go Test (1.20)'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '1.20'
+      - run: "go test -c -v ./test && ./test.test '-test.v'" # cheat and work around working directory issues
         timeout-minutes: 30
