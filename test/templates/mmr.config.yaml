@@ -38,3 +38,5 @@ datastores:
       accessKeyId: "mykey"
       accessSecret: "mysecret"
       ssl: false
+rateLimit:
+  enabled: false # we've got tests which intentionally spam
