@@ -2,6 +2,7 @@ package test_internals
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -44,6 +45,13 @@ func (c *MatrixClient) DoReturnJson(method string, endpoint string, qs url.Value
 	res, err := c.DoRaw(method, endpoint, qs, contentType, body)
 	if err != nil {
 		return nil, err
+	}
+	if res.StatusCode != http.StatusOK {
+		b, err := io.ReadAll(res.Body)
+		if err != nil {
+			return nil, err
+		}
+		return nil, errors.New(fmt.Sprintf("%d : %s", res.StatusCode, string(b)))
 	}
 
 	decoder := json.NewDecoder(res.Body)
