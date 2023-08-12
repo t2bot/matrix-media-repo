@@ -55,7 +55,7 @@ func (s *UploadTestSuite) TestUpload() {
 
 	origin, mediaId, err := util.SplitMxc(res.MxcUri)
 	assert.NoError(t, err)
-	assert.Equal(t, origin, client1.ServerName)
+	assert.Equal(t, client1.ServerName, origin)
 	assert.NotEmpty(t, mediaId)
 
 	raw, err := client2.DoRaw("GET", fmt.Sprintf("/_matrix/media/v3/download/%s/%s", origin, mediaId), nil, "", nil)
@@ -77,7 +77,7 @@ func (s *UploadTestSuite) TestUploadDeduplicationSameUser() {
 
 	origin, mediaId, err := util.SplitMxc(res1.MxcUri)
 	assert.NoError(t, err)
-	assert.Equal(t, origin, client1.ServerName)
+	assert.Equal(t, client1.ServerName, origin)
 	assert.NotEmpty(t, mediaId)
 
 	contentType, img, err = test_internals.MakeTestImage(512, 512)
@@ -102,7 +102,7 @@ func (s *UploadTestSuite) TestUploadDeduplicationSameUserDifferentMetadata() {
 
 	origin1, mediaId1, err := util.SplitMxc(res1.MxcUri)
 	assert.NoError(t, err)
-	assert.Equal(t, origin1, client1.ServerName)
+	assert.Equal(t, client1.ServerName, origin1)
 	assert.NotEmpty(t, mediaId1)
 
 	contentType, img, err = test_internals.MakeTestImage(512, 512)
@@ -113,7 +113,7 @@ func (s *UploadTestSuite) TestUploadDeduplicationSameUserDifferentMetadata() {
 
 	origin2, mediaId2, err := util.SplitMxc(res2.MxcUri)
 	assert.NoError(t, err)
-	assert.Equal(t, origin2, client1.ServerName) // still the same server though
+	assert.Equal(t, client1.ServerName, origin2) // still the same server though
 	assert.NotEmpty(t, mediaId2)
 
 	assert.NotEqual(t, res1.MxcUri, res2.MxcUri) // should be different media IDs
@@ -143,7 +143,7 @@ func (s *UploadTestSuite) TestUploadDeduplicationDifferentUser() {
 
 	origin1, mediaId1, err := util.SplitMxc(res1.MxcUri)
 	assert.NoError(t, err)
-	assert.Equal(t, origin1, client1.ServerName)
+	assert.Equal(t, client1.ServerName, origin1)
 	assert.NotEmpty(t, mediaId1)
 
 	contentType, img, err = test_internals.MakeTestImage(512, 512)
@@ -154,7 +154,7 @@ func (s *UploadTestSuite) TestUploadDeduplicationDifferentUser() {
 
 	origin2, mediaId2, err := util.SplitMxc(res2.MxcUri)
 	assert.NoError(t, err)
-	assert.Equal(t, origin2, client2.ServerName)
+	assert.Equal(t, client2.ServerName, origin2)
 	assert.NotEmpty(t, mediaId2)
 
 	assert.NotEqual(t, res1.MxcUri, res2.MxcUri) // should be different URIs
