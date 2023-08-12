@@ -103,7 +103,7 @@ func MakeMinio(depNet *NetworkDep) (*MinioDep, error) {
 		ContainerRequest: testcontainers.ContainerRequest{
 			Image:      "docker.io/alpine:3.18.3",
 			Networks:   []string{depNet.NetId},
-			WaitingFor: wait.ForLog("This line marks WaitFor as done").WithStartupTimeout(30 * time.Second),
+			WaitingFor: wait.ForLog("This line marks WaitFor as done").WithStartupTimeout(120 * time.Second),
 			Mounts: []testcontainers.ContainerMount{
 				testcontainers.BindMount(f.Name(), "/run.sh"),
 			},
