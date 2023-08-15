@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/api/_auth_cache"
 	"github.com/turt2live/matrix-media-repo/common/globals"
@@ -29,15 +30,25 @@ func setupReloads() {
 
 func stopReloads() {
 	// send stop signal to reload fns
+	logrus.Debug("Stopping WebReloadChan")
 	globals.WebReloadChan <- false
+	logrus.Debug("Stopping MetricsReloadChan")
 	globals.MetricsReloadChan <- false
+	logrus.Debug("Stopping DatabaseReloadChan")
 	globals.DatabaseReloadChan <- false
+	logrus.Debug("Stopping DatastoresReloadChan")
 	globals.DatastoresReloadChan <- false
+	logrus.Debug("Stopping AccessTokenReloadChan")
 	globals.AccessTokenReloadChan <- false
+	logrus.Debug("Stopping RecurringTasksReloadChan")
 	globals.RecurringTasksReloadChan <- false
+	logrus.Debug("Stopping CacheReplaceChan")
 	globals.CacheReplaceChan <- false
+	logrus.Debug("Stopping PluginReloadChan")
 	globals.PluginReloadChan <- false
+	logrus.Debug("Stopping PoolReloadChan")
 	globals.PoolReloadChan <- false
+	logrus.Debug("Stopping ErrorCacheReloadChan")
 	globals.ErrorCacheReloadChan <- false
 }
 
