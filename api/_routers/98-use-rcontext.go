@@ -149,6 +149,9 @@ beforeParseDownload:
 	}
 
 	// Try to find a suitable error code, if one is needed
+	if errRes, isError := res.(_responses.ErrorResponse); isError {
+		res = &errRes // just fix it
+	}
 	if errRes, isError := res.(*_responses.ErrorResponse); isError && proposedStatusCode == http.StatusOK {
 		switch errRes.InternalCode {
 		case common.ErrCodeUnknownToken:
