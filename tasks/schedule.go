@@ -71,15 +71,23 @@ func scheduleHourly(name RecurringTaskName, workFn RecurringTaskFn) {
 	recurLock.Lock()
 	defer recurLock.Unlock()
 	if val, ok := recurDoneChs[name]; ok {
-		val <- true // close that channel
+		// Check if closed, and close if needed
+		select {
+		case <-val:
+			break // already closed
+		default:
+			val <- true // close that channel
+		}
 	}
 	recurDoneChs[name] = ch
 	go func() {
-		defer close(ch)
 		defer func() {
+			close(ch)
 			recurLock.Lock()
 			defer recurLock.Unlock()
-			delete(recurDoneChs, name)
+			if recurDoneChs[name] == ch {
+				delete(recurDoneChs, name)
+			}
 		}()
 
 		for {
