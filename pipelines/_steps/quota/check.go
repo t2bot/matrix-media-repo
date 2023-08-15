@@ -23,7 +23,7 @@ func Check(ctx rcontext.RequestContext, userId string, quotaType Type) error {
 		return err
 	}
 
-	if quotaType == MaxBytes || quotaType == MaxCount {
+	if quotaType == MaxBytes || quotaType == MaxCount || quotaType == MaxPending {
 		if limit <= 0 {
 			return nil
 		}
