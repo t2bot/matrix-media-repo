@@ -36,6 +36,7 @@ func Check(ctx rcontext.RequestContext, userId string, quotaType Type) error {
 	if count < limit {
 		return nil
 	} else {
+		ctx.Log.Debugf("Quota %d current=%d limit=%d", int64(quotaType), count, limit)
 		return common.ErrQuotaExceeded
 	}
 }
@@ -72,6 +73,7 @@ func CanUpload(ctx rcontext.RequestContext, userId string, bytes int64) error {
 	}
 
 	if (count + bytes) > limit {
+		ctx.Log.Debugf("Quota %s current=%d bytes=%d limit=%d", "CanUpload", count, bytes, limit)
 		return common.ErrQuotaExceeded
 	}
 
