@@ -62,6 +62,10 @@ func Reload() {
 	GetInstance()
 }
 
+func GetAccessorForTests() *sql.DB {
+	return GetInstance().conn
+}
+
 func openDatabase(connectionString string, maxConns int, maxIdleConns int) error {
 	d := &Database{}
 	var err error

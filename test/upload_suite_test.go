@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"sync"
 	"testing"
 
@@ -248,6 +249,97 @@ func (s *UploadTestSuite) TestUploadSpam() {
 		assert.Equal(t, dsId, r.DatastoreId)
 		assert.Equal(t, dsLocation, r.Location)
 	}
+}
+
+func (s *UploadTestSuite) TestUploadAsyncFlow() {
+	t := s.T()
+
+	client1 := s.deps.Homeservers[0].UnprivilegedUsers[0].WithCsUrl(s.deps.Machines[0].HttpUrl)
+	client2 := &test_internals.MatrixClient{
+		ClientServerUrl: s.deps.Machines[1].HttpUrl,       // deliberately the second machine
+		ServerName:      s.deps.Homeservers[1].ServerName, // deliberately the second machine
+		AccessToken:     "",                               // no auth for downloads
+		UserId:          "",                               // no auth for downloads
+	}
+
+	contentType, img, err := test_internals.MakeTestImage(512, 512)
+	assert.NoError(t, err)
+
+	response := new(test_internals.MatrixCreatedMediaResponse)
+	err = client1.DoReturnJson("POST", "/_matrix/media/v1/create", nil, "", nil, response)
+	assert.NoError(t, err)
+	assert.NotNil(t, response)
+	assert.NotEmpty(t, response.MxcUri)
+	assert.Greater(t, response.ExpiresTs, int64(0))
+
+	origin, mediaId, err := util.SplitMxc(response.MxcUri)
+	assert.NoError(t, err)
+	assert.Equal(t, client1.ServerName, origin)
+	assert.NotEmpty(t, mediaId)
+
+	// Do a test download to ensure that the media doesn't (yet) exist
+	errRes, err := client2.DoExpectError("GET", fmt.Sprintf("/_matrix/media/v3/download/%s/%s", origin, mediaId), url.Values{
+		"timeout_ms": []string{"1000"},
+	}, "", nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, errRes)
+	assert.Equal(t, "M_NOT_YET_UPLOADED", errRes.Code)
+	assert.Equal(t, http.StatusGatewayTimeout, errRes.InjectedStatusCode)
+
+	// Do the upload
+	uploadResponse := new(test_internals.MatrixUploadResponse)
+	err = client1.DoReturnJson("PUT", fmt.Sprintf("/_matrix/media/v3/upload/%s/%s", origin, mediaId), nil, contentType, img, uploadResponse)
+	assert.NoError(t, err)
+	assert.NotNil(t, uploadResponse)
+	assert.Empty(t, uploadResponse.MxcUri) // not returned by this endpoint
+
+	// Upload again, expecting error
+	contentType, img, err = test_internals.MakeTestImage(512, 512)
+	assert.NoError(t, err)
+	errRes, err = client1.DoExpectError("PUT", fmt.Sprintf("/_matrix/media/v3/upload/%s/%s", origin, mediaId), nil, contentType, img)
+	assert.NoError(t, err)
+	assert.NotNil(t, errRes)
+	assert.Equal(t, "M_CANNOT_OVERWRITE_MEDIA", errRes.Code)
+	assert.Equal(t, http.StatusConflict, errRes.InjectedStatusCode)
+
+	// Download and test the upload
+	raw, err := client2.DoRaw("GET", fmt.Sprintf("/_matrix/media/v3/download/%s/%s", origin, mediaId), nil, "", nil)
+	assert.NoError(t, err)
+	assert.Equal(t, raw.StatusCode, http.StatusOK)
+	test_internals.AssertIsTestImage(t, raw.Body)
+}
+
+func (s *UploadTestSuite) TestUploadAsyncExpiredFlow() {
+	t := s.T()
+
+	client1 := s.deps.Homeservers[0].UnprivilegedUsers[0].WithCsUrl(s.deps.Machines[0].HttpUrl)
+
+	contentType, img, err := test_internals.MakeTestImage(512, 512)
+	assert.NoError(t, err)
+
+	response := new(test_internals.MatrixCreatedMediaResponse)
+	err = client1.DoReturnJson("POST", "/_matrix/media/v1/create", nil, "", nil, response)
+	assert.NoError(t, err)
+	assert.NotNil(t, response)
+	assert.NotEmpty(t, response.MxcUri)
+	assert.Greater(t, response.ExpiresTs, int64(0))
+
+	origin, mediaId, err := util.SplitMxc(response.MxcUri)
+	assert.NoError(t, err)
+	assert.Equal(t, client1.ServerName, origin)
+	assert.NotEmpty(t, mediaId)
+
+	// Expire the media
+	db := database.GetAccessorForTests()
+	_, err = db.Exec("UPDATE expiring_media SET expires_ts = 5 WHERE origin = $1 AND media_id = $2;", origin, mediaId)
+	assert.NoError(t, err)
+
+	// Upload, expecting error
+	errRes, err := client1.DoExpectError("PUT", fmt.Sprintf("/_matrix/media/v3/upload/%s/%s", origin, mediaId), nil, contentType, img)
+	assert.NoError(t, err)
+	assert.NotNil(t, errRes)
+	assert.Equal(t, "M_NOT_FOUND", errRes.Code)
+	assert.Equal(t, http.StatusNotFound, errRes.InjectedStatusCode)
 }
 
 func TestUploadTestSuite(t *testing.T) {

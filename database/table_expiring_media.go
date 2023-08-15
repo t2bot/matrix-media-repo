@@ -24,6 +24,8 @@ const selectExpiringMediaByUserCount = "SELECT COUNT(*) FROM expiring_media WHER
 const selectExpiringMediaById = "SELECT origin, media_id, user_id, expires_ts FROM expiring_media WHERE origin = $1 AND media_id = $2;"
 const deleteExpiringMediaById = "DELETE FROM expiring_media WHERE origin = $1 AND media_id = $2;"
 
+// Dev note: there is an UPDATE query in the Upload test suite.
+
 type expiringMediaTableStatements struct {
 	insertExpiringMedia            *sql.Stmt
 	selectExpiringMediaByUserCount *sql.Stmt

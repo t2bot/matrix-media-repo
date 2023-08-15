@@ -8,8 +8,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-
-	"github.com/turt2live/matrix-media-repo/database"
 )
 
 type MatrixClient struct {
@@ -29,39 +27,42 @@ func (c *MatrixClient) WithCsUrl(newUrl string) *MatrixClient {
 }
 
 func (c *MatrixClient) Upload(filename string, contentType string, body io.Reader) (*MatrixUploadResponse, error) {
-	j, err := c.DoReturnJson("POST", "/_matrix/media/v3/upload", url.Values{"filename": []string{filename}}, contentType, body)
-	if err != nil {
-		return nil, err
-	}
 	val := new(MatrixUploadResponse)
-	err = j.ApplyTo(&val)
-	if err != nil {
-		return nil, err
-	}
-	return val, nil
+	err := c.DoReturnJson("POST", "/_matrix/media/v3/upload", url.Values{"filename": []string{filename}}, contentType, body, val)
+	return val, err
 }
 
-func (c *MatrixClient) DoReturnJson(method string, endpoint string, qs url.Values, contentType string, body io.Reader) (*database.AnonymousJson, error) {
+func (c *MatrixClient) DoReturnJson(method string, endpoint string, qs url.Values, contentType string, body io.Reader, retVal interface{}) error {
 	res, err := c.DoRaw(method, endpoint, qs, contentType, body)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if res.StatusCode != http.StatusOK {
 		b, err := io.ReadAll(res.Body)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		return nil, errors.New(fmt.Sprintf("%d : %s", res.StatusCode, string(b)))
+		return errors.New(fmt.Sprintf("%d : %s", res.StatusCode, string(b)))
 	}
 
 	decoder := json.NewDecoder(res.Body)
-	val := new(database.AnonymousJson)
-	err = decoder.Decode(&val)
+	return decoder.Decode(&retVal)
+}
+
+func (c *MatrixClient) DoExpectError(method string, endpoint string, qs url.Values, contentType string, body io.Reader) (*MatrixErrorResponse, error) {
+	res, err := c.DoRaw(method, endpoint, qs, contentType, body)
 	if err != nil {
 		return nil, err
 	}
+	if res.StatusCode == http.StatusOK {
+		return nil, errors.New("expected non-200 status code")
+	}
 
-	return val, nil
+	decoder := json.NewDecoder(res.Body)
+	retVal := new(MatrixErrorResponse)
+	err = decoder.Decode(&retVal)
+	retVal.InjectedStatusCode = res.StatusCode
+	return retVal, err
 }
 
 func (c *MatrixClient) DoRaw(method string, endpoint string, qs url.Values, contentType string, body io.Reader) (*http.Response, error) {
