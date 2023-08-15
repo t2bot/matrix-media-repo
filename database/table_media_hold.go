@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
+	"github.com/turt2live/matrix-media-repo/util"
 )
 
 type DbHeldMedia struct {
@@ -19,10 +20,12 @@ const (
 	ForCreateHeldReason HeldReason = "media_create"
 )
 
-const insertHeldMedia = "INSERT INTO media_id_hold (origin, media_id, reason) VALUES ($1, $2, $3);"
+const insertHeldMedia = "INSERT INTO media_id_hold (origin, media_id, reason, held_ts) VALUES ($1, $2, $3, $4);"
+const deleteHeldMedia = "DELETE FROM media_id_hold WHERE reason = $1 AND held_ts <= $2;"
 
 type heldMediaTableStatements struct {
 	insertHeldMedia *sql.Stmt
+	deleteHeldMedia *sql.Stmt
 }
 
 type heldMediaTableWithContext struct {
@@ -37,6 +40,9 @@ func prepareHeldMediaTables(db *sql.DB) (*heldMediaTableStatements, error) {
 	if stmts.insertHeldMedia, err = db.Prepare(insertHeldMedia); err != nil {
 		return nil, errors.New("error preparing insertHeldMedia: " + err.Error())
 	}
+	if stmts.deleteHeldMedia, err = db.Prepare(deleteHeldMedia); err != nil {
+		return nil, errors.New("error preparing deleteHeldMedia: " + err.Error())
+	}
 
 	return stmts, nil
 }
@@ -49,6 +55,11 @@ func (s *heldMediaTableStatements) Prepare(ctx rcontext.RequestContext) *heldMed
 }
 
 func (s *heldMediaTableWithContext) TryInsert(origin string, mediaId string, reason HeldReason) error {
-	_, err := s.statements.insertHeldMedia.ExecContext(s.ctx, origin, mediaId, reason)
+	_, err := s.statements.insertHeldMedia.ExecContext(s.ctx, origin, mediaId, reason, util.NowMillis())
+	return err
+}
+
+func (s *heldMediaTableWithContext) DeleteOlderThan(reason HeldReason, olderThanTs int64) error {
+	_, err := s.statements.deleteHeldMedia.ExecContext(s.ctx, reason, olderThanTs)
 	return err
 }

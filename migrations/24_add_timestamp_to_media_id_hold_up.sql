@@ -1,0 +1,1 @@
+ALTER TABLE media_id_hold ADD COLUMN held_ts BIGINT NOT NULL DEFAULT 0;

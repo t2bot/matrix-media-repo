@@ -24,9 +24,10 @@ const (
 	TaskImportData       TaskName = "import_data"
 )
 const (
-	RecurringTaskPurgeThumbnails  RecurringTaskName = "recurring_purge_thumbnails"
-	RecurringTaskPurgePreviews    RecurringTaskName = "recurring_purge_previews"
-	RecurringTaskPurgeRemoteMedia RecurringTaskName = "recurring_purge_remote_media"
+	RecurringTaskPurgeThumbnails   RecurringTaskName = "recurring_purge_thumbnails"
+	RecurringTaskPurgePreviews     RecurringTaskName = "recurring_purge_previews"
+	RecurringTaskPurgeRemoteMedia  RecurringTaskName = "recurring_purge_remote_media"
+	RecurringTaskPurgeHeldMediaIds RecurringTaskName = "recurring_purge_held_media_ids"
 )
 
 const ExecutingMachineId = int64(0)
