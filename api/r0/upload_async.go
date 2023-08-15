@@ -28,7 +28,7 @@ func UploadMediaAsync(r *http.Request, rctx rcontext.RequestContext, user _apime
 	})
 
 	if r.Host != server {
-		return _responses.ErrorResponse{
+		return &_responses.ErrorResponse{
 			Code:         common.ErrCodeNotFound,
 			Message:      "Upload request is for another domain.",
 			InternalCode: common.ErrCodeForbidden,
@@ -51,19 +51,19 @@ func UploadMediaAsync(r *http.Request, rctx rcontext.RequestContext, user _apime
 		if errors.Is(err, common.ErrQuotaExceeded) {
 			return _responses.QuotaExceeded()
 		} else if errors.Is(err, common.ErrAlreadyUploaded) {
-			return _responses.ErrorResponse{
+			return &_responses.ErrorResponse{
 				Code:         common.ErrCodeCannotOverwrite,
 				Message:      "This media has already been uploaded.",
 				InternalCode: common.ErrCodeCannotOverwrite,
 			}
 		} else if errors.Is(err, common.ErrWrongUser) {
-			return _responses.ErrorResponse{
+			return &_responses.ErrorResponse{
 				Code:         common.ErrCodeForbidden,
 				Message:      "You do not have permission to upload this media.",
 				InternalCode: common.ErrCodeForbidden,
 			}
 		} else if errors.Is(err, common.ErrExpired) {
-			return _responses.ErrorResponse{
+			return &_responses.ErrorResponse{
 				Code:         common.ErrCodeNotFound,
 				Message:      "Media expired or not found.",
 				InternalCode: common.ErrCodeNotFound,
