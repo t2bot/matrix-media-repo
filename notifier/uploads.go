@@ -27,12 +27,13 @@ func GetUploadWaitChannel(origin string, mediaId string) (<-chan *database.DbMed
 		localUploadWaiters[mxc] = make([]chan *database.DbMedia, 0)
 	}
 
-	ch := make(chan *database.DbMedia)
+	ch := make(chan *database.DbMedia, 1)
 	localUploadWaiters[mxc] = append(localUploadWaiters[mxc], ch)
 
 	finishFn := func() {
 		uploadMutex.Lock()
 		defer uploadMutex.Unlock()
+		defer close(ch)
 
 		if arr, ok := localUploadWaiters[mxc]; ok {
 			newArr := make([]chan *database.DbMedia, 0)
@@ -43,8 +44,6 @@ func GetUploadWaitChannel(origin string, mediaId string) (<-chan *database.DbMed
 			}
 			localUploadWaiters[mxc] = newArr
 		}
-
-		close(ch)
 	}
 
 	return ch, finishFn

@@ -61,7 +61,7 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Th
 	ctx.Context, cancel = context.WithTimeout(ctx.Context, opts.BlockForReadUntil)
 
 	// Step 3: Join the singleflight queue
-	recordCh := make(chan *database.DbThumbnail)
+	recordCh := make(chan *database.DbThumbnail, 1)
 	defer close(recordCh)
 	r, err, _ := sf.Do(fmt.Sprintf("%s/%s?%s", origin, mediaId, opts.String()), func() (io.ReadCloser, error) {
 		serveRecord := func(recordCh chan *database.DbThumbnail, record *database.DbThumbnail) {
