@@ -1,6 +1,6 @@
-DROP INDEX media_index;
-DROP INDEX thumbnails_index;
-DROP INDEX url_previews_index;
-DROP TABLE url_previews;
-DROP TABLE thumbnails;
-DROP TABLE media;
+DROP INDEX IF EXISTS media_index;
+DROP INDEX IF EXISTS thumbnails_index;
+DROP INDEX IF EXISTS url_previews_index;
+DROP TABLE IF EXISTS url_previews;
+DROP TABLE IF EXISTS thumbnails;
+DROP TABLE IF EXISTS media;
