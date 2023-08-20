@@ -39,7 +39,7 @@ require (
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d
 	github.com/sebest/xff v0.0.0-20210106013422-671bd2870b3a
 	github.com/sirupsen/logrus v1.9.3
-	golang.org/x/crypto v0.12.0
+	golang.org/x/crypto v0.12.0 // indirect
 	golang.org/x/image v0.11.0
 	golang.org/x/net v0.14.0
 )
@@ -49,15 +49,16 @@ require (
 	github.com/docker/go-connections v0.4.0
 	github.com/go-redsync/redsync/v4 v4.8.1
 	github.com/julienschmidt/httprouter v1.3.0
-	github.com/minio/minio-go/v7 v7.0.61
+	github.com/minio/minio-go/v7 v7.0.62
 	github.com/panjf2000/ants/v2 v2.8.1
-	github.com/redis/go-redis/v9 v9.0.5
+	github.com/redis/go-redis/v9 v9.1.0
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
 	github.com/stretchr/testify v1.8.4
-	github.com/t2bot/go-singleflight-streams v0.0.3
+	github.com/t2bot/go-singleflight-streams v0.0.4
 	github.com/testcontainers/testcontainers-go v0.23.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.23.0
 	golang.org/x/sync v0.3.0
+	golang.org/x/term v0.11.0
 )
 
 require (
@@ -115,13 +116,12 @@ require (
 	github.com/rs/xid v1.5.0 // indirect
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd // indirect
 	github.com/smartystreets/assertions v1.0.0 // indirect
-	golang.org/x/exp v0.0.0-20230811145659-89c5cff77bcb // indirect
+	golang.org/x/exp v0.0.0-20230817173708-d852ddb80c63 // indirect
 	golang.org/x/mod v0.12.0 // indirect
 	golang.org/x/sys v0.11.0 // indirect
-	golang.org/x/term v0.11.0 // indirect
 	golang.org/x/text v0.12.0 // indirect
-	golang.org/x/tools v0.12.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20230814215434-ca7cfce7776a // indirect
+	golang.org/x/tools v0.12.1-0.20230815132531-74c255bcf846 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20230815205213-6bfd019c3878 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
