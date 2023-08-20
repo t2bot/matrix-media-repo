@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -268,7 +267,7 @@ func FederatedGet(url string, realHost string, ctx rcontext.RequestContext) (*ht
 			return err
 		}
 		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
-			return errors.New(fmt.Sprintf("response not ok: %d", resp.StatusCode))
+			return fmt.Errorf("response not ok: %d", resp.StatusCode)
 		}
 		return nil
 	}, 1*time.Minute)

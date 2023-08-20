@@ -142,7 +142,7 @@ func MediaInfo(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 		return _responses.InternalServerError("Unexpected Error")
 	}
 
-	if thumbs != nil && len(thumbs) > 0 {
+	if len(thumbs) > 0 {
 		infoThumbs := make([]*mediaInfoThumbnail, 0)
 		for _, thumb := range thumbs {
 			infoThumbs = append(infoThumbs, &mediaInfoThumbnail{

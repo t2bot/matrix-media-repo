@@ -11,7 +11,7 @@ func FixContentType(ct string) string {
 
 func ExtensionForContentType(ct string) string {
 	exts, _ := mime.ExtensionsByType(ct)
-	if exts != nil && len(exts) > 0 {
+	if len(exts) > 0 {
 		return exts[0]
 	}
 	return ".bin"

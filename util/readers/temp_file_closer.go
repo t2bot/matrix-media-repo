@@ -26,10 +26,10 @@ func (c *TempFileCloser) Close() error {
 	if c.closed {
 		return nil
 	}
-	var upstreamErr error
-	if upstreamErr = c.upstream.Close(); upstreamErr != nil {
-		// don't return the error yet because we want to try to delete the temp file
-	}
+
+	upstreamErr := c.upstream.Close()
+	// don't return upstreamErr yet because we want to try to delete the temp file
+
 	var err error
 	if err = os.Remove(c.fname); err != nil && !os.IsNotExist(err) {
 		return err

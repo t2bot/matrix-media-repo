@@ -17,7 +17,7 @@ func Pick(ctx rcontext.RequestContext, kind Kind) (config.DatastoreConfig, error
 		usable = append(usable, conf)
 	}
 
-	if len(usable) < 0 {
+	if len(usable) == 0 {
 		return config.DatastoreConfig{}, errors.New("unable to locate a usable datastore")
 	}
 	if len(usable) == 1 {

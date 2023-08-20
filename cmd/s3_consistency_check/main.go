@@ -104,7 +104,6 @@ func main() {
 	}
 
 	f, err := os.Create(*outFile)
-	defer f.Close()
 	if err != nil {
 		panic(err)
 	}
@@ -113,6 +112,10 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
+	}
+	err = f.Close()
+	if err != nil {
+		panic(err)
 	}
 	logrus.Info("Done!")
 }

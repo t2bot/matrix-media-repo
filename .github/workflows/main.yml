@@ -10,8 +10,19 @@ jobs:
       - uses: actions/setup-go@v4
         with:
           go-version: '1.20'
-      - run: './build.sh' # verify the thing compiles first
+      - run: './build.sh' # verify the thing compiles
+  static:
+    name: 'Go Static (1.20)'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version: '1.20'
       - run: 'go vet ./...'
+      - run: 'go install honnef.co/go/tools/cmd/staticcheck@latest'
+        name: "Install staticcheck"
+      - run: 'staticcheck ./...'
   test:
     name: 'Go Test (1.20)'
     runs-on: ubuntu-latest

@@ -77,6 +77,9 @@ func ExportEntityData(ctx rcontext.RequestContext, exportId string, entityId str
 			S3Url:       s3url,
 			UserId:      media.UserId,
 		})
+		if err != nil {
+			return err
+		}
 		if exportedHash != media.Sha256Hash {
 			ctx.Log.Warnf("%s should have had hash %s but it had %s when placed in the archive", mxc, media.Sha256Hash, exportedHash)
 		}

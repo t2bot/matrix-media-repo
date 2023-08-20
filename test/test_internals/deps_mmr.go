@@ -31,10 +31,9 @@ type mmrTmplArgs struct {
 }
 
 type mmrContainer struct {
-	ctx                   context.Context
-	container             testcontainers.Container
-	tmpConfigPath         string
-	tmpExternalConfigPath string
+	ctx           context.Context
+	container     testcontainers.Container
+	tmpConfigPath string
 
 	HttpUrl   string
 	MachineId int

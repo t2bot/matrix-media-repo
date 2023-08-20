@@ -22,8 +22,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
-const statusCodeCtxKey = "mmr.status_code"
-
 type GeneratorFn = func(r *http.Request, ctx rcontext.RequestContext) interface{}
 
 type RContextRouter struct {
@@ -229,7 +227,7 @@ beforeParseDownload:
 }
 
 func GetStatusCode(r *http.Request) int {
-	x, ok := r.Context().Value(statusCodeCtxKey).(int)
+	x, ok := r.Context().Value(common.ContextStatusCode).(int)
 	if !ok {
 		return http.StatusOK
 	}
@@ -238,7 +236,7 @@ func GetStatusCode(r *http.Request) int {
 
 func writeStatusCode(w http.ResponseWriter, r *http.Request, statusCode int) *http.Request {
 	w.WriteHeader(statusCode)
-	return r.WithContext(context.WithValue(r.Context(), statusCodeCtxKey, statusCode))
+	return r.WithContext(context.WithValue(r.Context(), common.ContextStatusCode, statusCode))
 }
 
 func parseRange(r *http.Request, res *_responses.DownloadResponse) (bool, int64, int64, string) {

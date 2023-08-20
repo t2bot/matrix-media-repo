@@ -37,7 +37,7 @@ type UserUsageEntry struct {
 	// Returned by per-user endpoints, where we can't count thumbnails
 	RawBytes     *MinimalUsageInfo `json:"raw_bytes"`
 	RawCounts    *MinimalUsageInfo `json:"raw_counts"`
-	UploadedMxcs []string          `json:"uploaded,flow"`
+	UploadedMxcs []string          `json:"uploaded"`
 }
 
 type MediaUsageEntry struct {
@@ -115,7 +115,7 @@ func GetUserUsage(r *http.Request, rctx rcontext.RequestContext, user _apimeta.U
 
 	var records []*database.DbMedia
 	var err error
-	if userIds == nil || len(userIds) == 0 {
+	if len(userIds) == 0 {
 		records, err = db.GetByOrigin(serverName)
 	} else {
 		records, err = db.GetByOriginUsers(serverName, userIds)
@@ -174,7 +174,7 @@ func GetUploadsUsage(r *http.Request, rctx rcontext.RequestContext, user _apimet
 
 	var records []*database.DbMedia
 	var err error
-	if mxcs == nil || len(mxcs) == 0 {
+	if len(mxcs) == 0 {
 		records, err = db.GetByOrigin(serverName)
 	} else {
 		split := make([]string, 0)

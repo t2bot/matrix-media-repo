@@ -17,7 +17,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/version"
 	"github.com/turt2live/matrix-media-repo/homeserver_interop/synapse"
 	"github.com/turt2live/matrix-media-repo/util"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 func main() {
@@ -45,14 +45,14 @@ func main() {
 
 	var realPsqlPassword string
 	if *postgresPassword == "" {
-		if !terminal.IsTerminal(int(os.Stdin.Fd())) {
+		if !term.IsTerminal(int(os.Stdin.Fd())) {
 			fmt.Println("Sorry, your terminal does not support reading passwords. Please supply a -dbPassword or use a different terminal.")
 			fmt.Println("If you're on Windows, try using a plain Command Prompt window instead of a bash-like terminal.")
 			os.Exit(1)
 			return // for good measure
 		}
 		fmt.Printf("Postgres password: ")
-		pass, err := terminal.ReadPassword(int(os.Stdin.Fd()))
+		pass, err := term.ReadPassword(int(os.Stdin.Fd()))
 		if err != nil {
 			panic(err)
 		}

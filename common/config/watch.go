@@ -119,11 +119,7 @@ func onFileChanged() {
 }
 
 func hasWebFeatureChanged(configNew *MainRepoConfig, configNow *MainRepoConfig) bool {
-	if configNew.Features.MSC2448Blurhash.Enabled != configNow.Features.MSC2448Blurhash.Enabled {
-		return true
-	}
-
-	return false
+	return configNew.Features.MSC2448Blurhash.Enabled != configNow.Features.MSC2448Blurhash.Enabled
 }
 
 func hasRedisShardConfigChanged(configNew *MainRepoConfig, configNow *MainRepoConfig) bool {

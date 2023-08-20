@@ -13,12 +13,11 @@ import (
 	"github.com/sebest/xff"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api/_responses"
+	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/metrics"
 	"github.com/turt2live/matrix-media-repo/util"
 )
-
-const domainConfigCtxKey = "mmr.domain_config"
 
 type HostRouter struct {
 	next http.Handler
@@ -78,7 +77,7 @@ func (h *HostRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	ctx = context.WithValue(ctx, domainConfigCtxKey, cfg)
+	ctx = context.WithValue(ctx, common.ContextDomainConfig, cfg)
 	r = r.WithContext(ctx)
 
 	if h.next != nil {
@@ -87,7 +86,7 @@ func (h *HostRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetDomainConfig(r *http.Request) *config.DomainRepoConfig {
-	x, ok := r.Context().Value(domainConfigCtxKey).(*config.DomainRepoConfig)
+	x, ok := r.Context().Value(common.ContextDomainConfig).(*config.DomainRepoConfig)
 	if !ok {
 		return nil
 	}

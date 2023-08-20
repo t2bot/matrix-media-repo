@@ -10,7 +10,7 @@ type SynUserStatRecord struct {
 }
 
 type SynUserStatsResponse struct {
-	Users     []*SynUserStatRecord `json:"users,flow"`
+	Users     []*SynUserStatRecord `json:"users"`
 	NextToken int64                `json:"next_token,omitempty"`
 	Total     int64                `json:"total"`
 }

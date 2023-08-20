@@ -153,6 +153,9 @@ func (w *ArchiveWriter) AppendMedia(file io.ReadCloser, info MediaInfo) (string,
 	createTime := util.FromMillis(info.CreationTs)
 
 	size, sha256hash, err := w.putFile(br.GetRewoundReader(), internalName, createTime)
+	if err != nil {
+		return "", err
+	}
 	w.mediaManifest[util.MxcUri(info.Origin, info.MediaId)] = &ManifestRecord{
 		FileName:     info.FileName,
 		ArchivedName: internalName,

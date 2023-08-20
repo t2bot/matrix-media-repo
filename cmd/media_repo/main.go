@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
@@ -101,7 +102,7 @@ func main() {
 
 	// Set up a listener for SIGINT
 	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt, os.Kill)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 	selfStop := false
 	go func() {
 		defer close(stop)

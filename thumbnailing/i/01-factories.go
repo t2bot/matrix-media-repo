@@ -43,9 +43,7 @@ func GetGenerator(img io.Reader, contentType string, needsAnimation bool) (Gener
 func GetSupportedContentTypes() []string {
 	a := make([]string, 0)
 	for _, d := range generators {
-		for _, c := range d.supportedContentTypes() {
-			a = append(a, c)
-		}
+		a = append(a, d.supportedContentTypes()...)
 	}
 	return a
 }

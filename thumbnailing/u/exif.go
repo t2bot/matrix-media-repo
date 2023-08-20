@@ -53,7 +53,7 @@ func GetExifOrientation(img io.Reader) (*ExifOrientation, error) {
 	}
 
 	if orientation < 1 || orientation > 8 {
-		return nil, errors.New(fmt.Sprintf("orientation out of range: %d", orientation))
+		return nil, fmt.Errorf("orientation out of range: %d", orientation)
 	}
 
 	flipHorizontal := orientation < 5 && (orientation%2) == 0

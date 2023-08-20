@@ -6,13 +6,9 @@ import (
 	"strconv"
 
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/util"
 )
-
-const requestIdCtxKey = "mmr.request_id"
-const actionNameCtxKey = "mmr.action"
-const shouldIgnoreHostCtxKey = "mmr.ignore_host"
-const loggerCtxKey = "mmr.logger"
 
 type RequestCounter struct {
 	lastId uint64
@@ -56,10 +52,10 @@ func (i *InstallMetadataRouter) ServeHTTP(w http.ResponseWriter, r *http.Request
 	})
 
 	ctx := r.Context()
-	ctx = context.WithValue(ctx, requestIdCtxKey, requestId)
-	ctx = context.WithValue(ctx, actionNameCtxKey, i.actionName)
-	ctx = context.WithValue(ctx, shouldIgnoreHostCtxKey, i.ignoreHost)
-	ctx = context.WithValue(ctx, loggerCtxKey, logger)
+	ctx = context.WithValue(ctx, common.ContextRequestId, requestId)
+	ctx = context.WithValue(ctx, common.ContextAction, i.actionName)
+	ctx = context.WithValue(ctx, common.ContextIgnoreHost, i.ignoreHost)
+	ctx = context.WithValue(ctx, common.ContextLogger, logger)
 	r = r.WithContext(ctx)
 
 	if i.next != nil {
@@ -68,7 +64,7 @@ func (i *InstallMetadataRouter) ServeHTTP(w http.ResponseWriter, r *http.Request
 }
 
 func GetActionName(r *http.Request) string {
-	x, ok := r.Context().Value(actionNameCtxKey).(string)
+	x, ok := r.Context().Value(common.ContextAction).(string)
 	if !ok {
 		return "<UNKNOWN>"
 	}
@@ -76,7 +72,7 @@ func GetActionName(r *http.Request) string {
 }
 
 func ShouldIgnoreHost(r *http.Request) bool {
-	x, ok := r.Context().Value(shouldIgnoreHostCtxKey).(bool)
+	x, ok := r.Context().Value(common.ContextIgnoreHost).(bool)
 	if !ok {
 		return false
 	}
@@ -84,7 +80,7 @@ func ShouldIgnoreHost(r *http.Request) bool {
 }
 
 func GetLogger(r *http.Request) *logrus.Entry {
-	x, ok := r.Context().Value(loggerCtxKey).(*logrus.Entry)
+	x, ok := r.Context().Value(common.ContextLogger).(*logrus.Entry)
 	if !ok {
 		return nil
 	}

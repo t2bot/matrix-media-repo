@@ -34,7 +34,7 @@ func reloadConfig() (*MainRepoConfig, map[string]*DomainRepoConfig, error) {
 	domainConfs := make(map[string]*DomainRepoConfig)
 
 	// Write a default config if the one given doesn't exist
-	info, err := os.Stat(Path)
+	_, err := os.Stat(Path)
 	exists := err == nil || !os.IsNotExist(err)
 	if !exists {
 		fmt.Println("Generating new configuration...")
@@ -60,7 +60,7 @@ func reloadConfig() (*MainRepoConfig, map[string]*DomainRepoConfig, error) {
 	}
 
 	// Get new info about the possible directory after creating
-	info, err = os.Stat(Path)
+	info, err := os.Stat(Path)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -241,10 +241,7 @@ func DomainConfigFrom(c MainRepoConfig) DomainRepoConfig {
 
 func UniqueDatastores() []DatastoreConfig {
 	confs := make([]DatastoreConfig, 0)
-
-	for _, dsc := range Get().DataStores {
-		confs = append(confs, dsc)
-	}
+	confs = append(confs, Get().DataStores...)
 
 	for _, d := range AllDomains() {
 		for _, dsc := range d.DataStores {

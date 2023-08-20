@@ -200,8 +200,8 @@ func (s *UploadTestSuite) TestUploadSpam() {
 	uploadWaiter := new(sync.WaitGroup)
 	mediaIds := new(sync.Map)
 	for i := 0; i < concurrentUploads; i++ {
+		uploadWaiter.Add(1)
 		go func(j int) {
-			uploadWaiter.Add(1)
 			defer uploadWaiter.Done()
 
 			img := images[j]

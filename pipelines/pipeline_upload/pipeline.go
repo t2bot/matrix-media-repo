@@ -128,6 +128,9 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, r io.Re
 		},
 	}
 	record, perfect, err := upload.FindRecord(ctx, sha256hash, userId, contentType, fileName)
+	if err != nil {
+		return nil, err
+	}
 	if record != nil {
 		// We already had this record in some capacity
 		if perfect && !mustUseMediaId {

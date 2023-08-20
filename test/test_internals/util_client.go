@@ -42,7 +42,7 @@ func (c *MatrixClient) DoReturnJson(method string, endpoint string, qs url.Value
 		if err != nil {
 			return err
 		}
-		return errors.New(fmt.Sprintf("%d : %s", res.StatusCode, string(b)))
+		return fmt.Errorf("%d : %s", res.StatusCode, string(b))
 	}
 
 	decoder := json.NewDecoder(res.Body)
@@ -84,6 +84,6 @@ func (c *MatrixClient) DoRaw(method string, endpoint string, qs url.Values, cont
 		req.Header.Set("Authorization", "Bearer "+c.AccessToken)
 	}
 
-	log.Println(fmt.Sprintf("[HTTP] [Auth=%s] [Host=%s] %s %s", c.AccessToken, c.ServerName, req.Method, req.URL.String()))
+	log.Printf("[HTTP] [Auth=%s] [Host=%s] %s %s", c.AccessToken, c.ServerName, req.Method, req.URL.String())
 	return http.DefaultClient.Do(req)
 }

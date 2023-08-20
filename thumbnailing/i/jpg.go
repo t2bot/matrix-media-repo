@@ -44,7 +44,7 @@ func (d jpgGenerator) GenerateThumbnail(b io.Reader, contentType string, width i
 	}
 
 	var shouldThumbnail bool
-	shouldThumbnail, width, height, animated, method = u.AdjustProperties(src, width, height, animated, false, method)
+	shouldThumbnail, width, height, _, method = u.AdjustProperties(src, width, height, animated, false, method)
 	if !shouldThumbnail {
 		return nil, nil
 	}

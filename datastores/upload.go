@@ -125,7 +125,7 @@ func Upload(ctx rcontext.RequestContext, ds config.DatastoreConfig, data io.Read
 		if err = Remove(ctx, ds, objectName); err != nil {
 			ctx.Log.Warn("Error deleting upload (delete attempted due to persistence error): ", err)
 		}
-		return "", errors.New(fmt.Sprintf("upload size mismatch: expected %d got %d bytes", size, uploadedBytes))
+		return "", fmt.Errorf("upload size mismatch: expected %d got %d bytes", size, uploadedBytes)
 	}
 
 	uploadedHash := hex.EncodeToString(hasher.Sum(nil))
@@ -133,7 +133,7 @@ func Upload(ctx rcontext.RequestContext, ds config.DatastoreConfig, data io.Read
 		if err = Remove(ctx, ds, objectName); err != nil {
 			ctx.Log.Warn("Error deleting upload (delete attempted due to persistence error): ", err)
 		}
-		return "", errors.New(fmt.Sprintf("upload hash mismatch: expected %s got %s", sha256hash, uploadedHash))
+		return "", fmt.Errorf("upload hash mismatch: expected %s got %s", sha256hash, uploadedHash)
 	}
 
 	return objectName, nil

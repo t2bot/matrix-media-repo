@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"image"
 	"io"
@@ -147,7 +146,7 @@ func (a *AntispamOCR) CheckForSpam(b64 string, filename string, contentType stri
 		return false, err
 	}
 	if res.StatusCode != http.StatusOK {
-		return false, errors.New(fmt.Sprintf("unexpected status code: %d", res.StatusCode))
+		return false, fmt.Errorf("unexpected status code: %d", res.StatusCode)
 	}
 	ocr := strings.ToLower(resp["result"].(string))
 

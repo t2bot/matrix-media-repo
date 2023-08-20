@@ -186,7 +186,7 @@ func ViewExport(r *http.Request, rctx rcontext.RequestContext, user _apimeta.Use
 		return _responses.InternalServerError("failed to render template")
 	}
 
-	return &_responses.HtmlResponse{HTML: string(html.Bytes())}
+	return &_responses.HtmlResponse{HTML: html.String()}
 }
 
 func GetExportMetadata(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
