@@ -54,7 +54,7 @@ require (
 	github.com/redis/go-redis/v9 v9.1.0
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
 	github.com/stretchr/testify v1.8.4
-	github.com/t2bot/go-singleflight-streams v0.0.4
+	github.com/t2bot/go-singleflight-streams v0.0.5
 	github.com/testcontainers/testcontainers-go v0.23.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.23.0
 	golang.org/x/sync v0.3.0
