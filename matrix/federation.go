@@ -102,6 +102,9 @@ func GetServerApiUrl(hostname string) (string, string, error) {
 	// Note that we have sprawling branches here because we need to fall through to step 4 if parsing fails
 	logrus.Debug("Doing .well-known lookup on " + h)
 	r, err := http.Get(fmt.Sprintf("https://%s/.well-known/matrix/server", h))
+	if r != nil {
+		defer r.Body.Close()
+	}
 	if err == nil && r.StatusCode == http.StatusOK {
 		// Try parsing .well-known
 		decoder := json.NewDecoder(r.Body)

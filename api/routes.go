@@ -131,7 +131,13 @@ func register(methods []string, prefix string, postfix string, versions matrixVe
 	for _, method := range methods {
 		for _, version := range versions {
 			path := fmt.Sprintf("%s/%s/%s", prefix, version, postfix)
-			router.Handler(method, path, handler)
+			router.Handler(method, path, http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+				defer func() {
+					// hopefully the body was already closed, but maybe it wasn't
+					_ = request.Body.Close()
+				}()
+				handler.ServeHTTP(writer, request)
+			}))
 			logrus.Debug("Registering route: ", method, path)
 		}
 	}

@@ -43,10 +43,12 @@ func doRequest(ctx rcontext.RequestContext, method string, urlStr string, body i
 		Timeout: time.Duration(ctx.Config.TimeoutSeconds.ClientServer) * time.Second,
 	}
 	res, err := client.Do(req)
+	if res != nil {
+		defer res.Body.Close()
+	}
 	if err != nil {
 		return err
 	}
-	defer res.Body.Close()
 
 	contents, err := io.ReadAll(res.Body)
 	if err != nil {
