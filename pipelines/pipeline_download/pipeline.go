@@ -15,7 +15,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/pipelines/_steps/download"
 	"github.com/turt2live/matrix-media-repo/pipelines/_steps/meta"
 	"github.com/turt2live/matrix-media-repo/pipelines/_steps/quarantine"
-	"github.com/turt2live/matrix-media-repo/util/readers"
 )
 
 var sf = new(sfstreams.Group)
@@ -35,11 +34,11 @@ func (o DownloadOpts) String() string {
 func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts DownloadOpts) (*database.DbMedia, io.ReadCloser, error) {
 	// Step 1: Make our context a timeout context
 	var cancel context.CancelFunc
-	//goland:noinspection GoVetLostCancel - we handle the function in our custom cancelCloser struct
 	ctx.Context, cancel = context.WithTimeout(ctx.Context, opts.BlockForReadUntil)
+	defer cancel()
 
 	// Step 2: Join the singleflight queue
-	recordCh := make(chan *database.DbMedia)
+	recordCh := make(chan *database.DbMedia, 1)
 	defer close(recordCh)
 	r, err, _ := sf.Do(fmt.Sprintf("%s/%s?%s", origin, mediaId, opts.String()), func() (io.ReadCloser, error) {
 		serveRecord := func(recordCh chan *database.DbMedia, record *database.DbMedia) {
@@ -104,11 +103,9 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 		return r, nil
 	})
 	if errors.Is(err, common.ErrMediaQuarantined) {
-		cancel()
 		return nil, r, err
 	}
 	if err != nil {
-		cancel()
 		return nil, nil, err
 	}
 	record := <-recordCh
@@ -119,8 +116,7 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 			sentry.CaptureException(devErr)
 			r.Close()
 		}
-		cancel()
 		return record, nil, nil
 	}
-	return record, readers.NewCancelCloser(r, cancel), nil
+	return record, r, nil
 }
