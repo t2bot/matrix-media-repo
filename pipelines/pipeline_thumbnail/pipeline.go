@@ -16,9 +16,11 @@ import (
 	"github.com/turt2live/matrix-media-repo/pipelines/_steps/thumbnails"
 	"github.com/turt2live/matrix-media-repo/pipelines/pipeline_download"
 	"github.com/turt2live/matrix-media-repo/util/readers"
+	"github.com/turt2live/matrix-media-repo/util/sfcache"
 )
 
-var sf = new(sfstreams.Group)
+var streamSf = new(sfstreams.Group)
+var recordSf = sfcache.NewSingleflightCache[*database.DbThumbnail]()
 
 // ThumbnailOpts are options for generating a thumbnail
 type ThumbnailOpts struct {
@@ -60,23 +62,24 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Th
 	//goland:noinspection GoVetLostCancel - we handle the function in our custom cancelCloser struct
 	ctx.Context, cancel = context.WithTimeout(ctx.Context, opts.BlockForReadUntil)
 
-	// Step 3: Join the singleflight queue
-	recordCh := make(chan *database.DbThumbnail, 1)
-	defer close(recordCh)
-	r, err, _ := sf.Do(fmt.Sprintf("%s/%s?%s", origin, mediaId, opts.String()), func() (io.ReadCloser, error) {
-		serveRecord := func(recordCh chan *database.DbThumbnail, record *database.DbThumbnail) {
-			defer func() {
-				// Don't crash when we send to a closed channel
-				recover()
-			}()
-			recordCh <- record
-		}
-
+	// Step 3: Join the singleflight queue for stream and DB record
+	sfKey := fmt.Sprintf("%s/%s?%s", origin, mediaId, opts.String())
+	fetchRecordFn := func() (*database.DbThumbnail, error) {
+		thumbDb := database.GetInstance().Thumbnails.Prepare(ctx)
+		return thumbDb.GetByParams(origin, mediaId, opts.Width, opts.Height, opts.Method, opts.Animated)
+	}
+	record, err := recordSf.Do(sfKey, fetchRecordFn)
+	defer recordSf.ForgetCacheKey(sfKey)
+	if err != nil {
+		cancel()
+		return nil, nil, err
+	}
+	r, err, _ := streamSf.Do(sfKey, func() (io.ReadCloser, error) {
 		// Step 4: Get the associated media record (without stream)
 		mediaRecord, dr, err := pipeline_download.Execute(ctx, origin, mediaId, opts.ImpliedDownloadOpts())
 		if err != nil {
 			if errors.Is(err, common.ErrMediaQuarantined) {
-				go serveRecord(recordCh, nil) // async function to prevent deadlock
+				recordSf.OverwriteCacheKey(sfKey, nil) // force record to be nil (not found)
 				if dr != nil {
 					dr.Close()
 				}
@@ -89,13 +92,15 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Th
 		}
 
 		// Step 5: See if we're lucky enough to already have this thumbnail
-		thumbDb := database.GetInstance().Thumbnails.Prepare(ctx)
-		record, err := thumbDb.GetByParams(origin, mediaId, opts.Width, opts.Height, opts.Method, opts.Animated)
-		if err != nil {
-			return nil, err
+		// Dev note: we already checked above, but there's a small chance we raced with another singleflight, so
+		// check again if the original record was nil
+		if record == nil {
+			record, err = recordSf.Do(sfKey, fetchRecordFn)
+			if err != nil {
+				return nil, err
+			}
 		}
 		if record != nil {
-			go serveRecord(recordCh, record) // async function to prevent deadlock
 			if opts.RecordOnly {
 				return nil, nil
 			}
@@ -107,7 +112,7 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Th
 		if err != nil {
 			return nil, err
 		}
-		go serveRecord(recordCh, record)
+		recordSf.OverwriteCacheKey(sfKey, record)
 		if opts.RecordOnly {
 			defer r.Close()
 			return nil, nil
@@ -124,7 +129,18 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Th
 		cancel()
 		return nil, nil, err
 	}
-	record := <-recordCh
+	if record == nil {
+		// Re-fetch, hopefully from cache
+		record, err = recordSf.Do(sfKey, fetchRecordFn)
+		if err != nil {
+			cancel()
+			return nil, nil, err
+		}
+		if record == nil {
+			cancel()
+			return nil, nil, errors.New("unexpected error: no viable record and no error condition")
+		}
+	}
 	if opts.RecordOnly {
 		if r != nil {
 			devErr := errors.New("expected no thumbnail stream, but got one anyways")
