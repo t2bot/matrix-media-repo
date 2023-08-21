@@ -16,9 +16,11 @@ import (
 	"github.com/turt2live/matrix-media-repo/pipelines/_steps/meta"
 	"github.com/turt2live/matrix-media-repo/pipelines/_steps/quarantine"
 	"github.com/turt2live/matrix-media-repo/util/readers"
+	"github.com/turt2live/matrix-media-repo/util/sfcache"
 )
 
-var sf = new(sfstreams.Group)
+var streamSf = new(sfstreams.Group)
+var recordSf = sfcache.NewSingleflightCache[*database.DbMedia]()
 
 type DownloadOpts struct {
 	FetchRemoteIfNeeded bool
@@ -38,28 +40,28 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 	//goland:noinspection GoVetLostCancel - we handle the function in our custom cancelCloser struct
 	ctx.Context, cancel = context.WithTimeout(ctx.Context, opts.BlockForReadUntil)
 
-	// Step 2: Join the singleflight queue
-	recordCh := make(chan *database.DbMedia, 1)
-	defer close(recordCh)
-	r, err, _ := sf.Do(fmt.Sprintf("%s/%s?%s", origin, mediaId, opts.String()), func() (io.ReadCloser, error) {
-		serveRecord := func(recordCh chan *database.DbMedia, record *database.DbMedia) {
-			defer func() {
-				// Don't crash when we send to a closed channel
-				recover()
-			}()
-			recordCh <- record
-		}
-
-		// Step 3: Do we already have the media? Serve it if yes.
+	// Step 2: Join the singleflight queue for stream and DB record
+	sfKey := fmt.Sprintf("%s/%s?%s", origin, mediaId, opts.String())
+	fetchRecordFn := func() (*database.DbMedia, error) {
 		mediaDb := database.GetInstance().Media.Prepare(ctx)
 		record, err := mediaDb.GetById(origin, mediaId)
-		didAsyncWait := false
-	handlePossibleRecord:
 		if err != nil {
 			return nil, err
 		}
+		if record == nil {
+			return download.WaitForAsyncMedia(ctx, origin, mediaId)
+		}
+		return record, nil
+	}
+	record, err := recordSf.Do(sfKey, fetchRecordFn)
+	defer recordSf.ForgetCacheKey(sfKey)
+	if err != nil {
+		cancel()
+		return nil, nil, err
+	}
+	r, err, _ := streamSf.Do(sfKey, func() (io.ReadCloser, error) {
+		// Step 3: Do we already have the media? Serve it if yes.
 		if record != nil {
-			go serveRecord(recordCh, record) // async function to prevent deadlock
 			if record.Quarantined {
 				return quarantine.ReturnAppropriateThing(ctx, true, opts.RecordOnly, 512, 512, opts.StartByte, opts.EndByte)
 			}
@@ -70,14 +72,7 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 			return download.OpenStream(ctx, record.Locatable, opts.StartByte, opts.EndByte)
 		}
 
-		// Step 4: Wait for the media, if we can
-		if !didAsyncWait {
-			record, err = download.WaitForAsyncMedia(ctx, origin, mediaId)
-			didAsyncWait = true
-			goto handlePossibleRecord
-		}
-
-		// Step 5: Media record unknown - download it (if possible)
+		// Step 4: Media record unknown - download it (if possible)
 		if !opts.FetchRemoteIfNeeded {
 			return nil, common.ErrMediaNotFound
 		}
@@ -85,7 +80,7 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 		if err != nil {
 			return nil, err
 		}
-		go serveRecord(recordCh, record) // async function to prevent deadlock
+		recordSf.OverwriteCacheKey(sfKey, record)
 		if record.Quarantined {
 			return quarantine.ReturnAppropriateThing(ctx, true, opts.RecordOnly, 512, 512, opts.StartByte, opts.EndByte)
 		}
@@ -95,7 +90,7 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 			return nil, nil
 		}
 
-		// Step 6: Limit the stream if needed
+		// Step 5: Limit the stream if needed
 		r, err = download.CreateLimitedStream(ctx, r, opts.StartByte, opts.EndByte)
 		if err != nil {
 			return nil, err
@@ -111,7 +106,18 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 		cancel()
 		return nil, nil, err
 	}
-	record := <-recordCh
+	if record == nil {
+		// Re-fetch, hopefully from cache
+		record, err = recordSf.Do(sfKey, fetchRecordFn)
+		if err != nil {
+			cancel()
+			return nil, nil, err
+		}
+		if record == nil {
+			cancel()
+			return nil, nil, errors.New("unexpected error: no viable record and no error condition")
+		}
+	}
 	if opts.RecordOnly {
 		if r != nil {
 			devErr := errors.New("expected no download stream, but got one anyways")
