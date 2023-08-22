@@ -130,8 +130,12 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Th
 		return download.CreateLimitedStream(ctx, r, opts.StartByte, opts.EndByte)
 	})
 	if errors.Is(err, common.ErrMediaQuarantined) || errors.Is(err, common.ErrMediaDimensionsTooSmall) {
+		if r != nil {
+			return nil, readers.NewCancelCloser(r, cancel), err
+		}
+
 		cancel()
-		return nil, r, err
+		return nil, nil, err
 	}
 	if err != nil {
 		cancel()
