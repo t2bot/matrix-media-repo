@@ -1,12 +1,8 @@
 package u
 
-import (
-	"image"
-)
-
-func AdjustProperties(img image.Image, desiredWidth int, desiredHeight int, wantAnimated bool, canAnimate bool, method string) (bool, int, int, bool, string) {
-	srcWidth := img.Bounds().Max.X
-	srcHeight := img.Bounds().Max.Y
+func AdjustProperties(srcWidth int, srcHeight int, desiredWidth int, desiredHeight int, wantAnimated bool, canAnimate bool, method string) (bool, int, int, bool, string) {
+	//srcWidth := img.Bounds().Max.X
+	//srcHeight := img.Bounds().Max.Y
 
 	aspectRatio := float32(srcHeight) / float32(srcWidth)
 	targetAspectRatio := float32(desiredHeight) / float32(desiredWidth)

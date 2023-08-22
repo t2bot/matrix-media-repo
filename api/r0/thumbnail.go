@@ -9,6 +9,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/api/_apimeta"
 	"github.com/turt2live/matrix-media-repo/api/_responses"
 	"github.com/turt2live/matrix-media-repo/api/_routers"
+	"github.com/turt2live/matrix-media-repo/database"
 	"github.com/turt2live/matrix-media-repo/pipelines/pipeline_download"
 	"github.com/turt2live/matrix-media-repo/pipelines/pipeline_thumbnail"
 	"github.com/turt2live/matrix-media-repo/util"
@@ -132,6 +133,27 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 			}
 		} else if errors.Is(err, common.ErrMediaNotYetUploaded) {
 			return _responses.NotYetUploaded()
+		} else if errors.Is(err, common.ErrMediaDimensionsTooSmall) {
+			if stream == nil {
+				return _responses.NotFoundError() // something went wrong so just 404 the thumbnail
+			}
+
+			// We have a stream, and an error about image size, so we know there should be a media record
+			mediaDb := database.GetInstance().Media.Prepare(rctx)
+			record, err := mediaDb.GetById(server, mediaId)
+			if err != nil {
+				rctx.Log.Error("Unexpected error locating media record: ", err)
+				sentry.CaptureException(err)
+				return _responses.InternalServerError("Unexpected Error")
+			} else {
+				return &_responses.DownloadResponse{
+					ContentType:       record.ContentType,
+					Filename:          record.UploadName,
+					SizeBytes:         record.SizeBytes,
+					Data:              stream,
+					TargetDisposition: "infer",
+				}
+			}
 		}
 		rctx.Log.Error("Unexpected error locating media: ", err)
 		sentry.CaptureException(err)

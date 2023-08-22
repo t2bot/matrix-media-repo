@@ -45,7 +45,7 @@ func (d pngGenerator) GenerateThumbnail(b io.Reader, contentType string, width i
 }
 
 func (d pngGenerator) GenerateThumbnailOf(src image.Image, width int, height int, method string, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
-	thumb, err := d.GenerateThumbnailImageOf(src, width, height, method, ctx)
+	thumb, err := u.MakeThumbnail(src, method, width, height)
 	if err != nil || thumb == nil {
 		return nil, err
 	}
@@ -65,16 +65,6 @@ func (d pngGenerator) GenerateThumbnailOf(src image.Image, width int, height int
 		ContentType: "image/png",
 		Reader:      pr,
 	}, nil
-}
-
-func (d pngGenerator) GenerateThumbnailImageOf(src image.Image, width int, height int, method string, ctx rcontext.RequestContext) (image.Image, error) {
-	var shouldThumbnail bool
-	shouldThumbnail, width, height, _, method = u.AdjustProperties(src, width, height, false, false, method)
-	if !shouldThumbnail {
-		return nil, nil
-	}
-
-	return u.MakeThumbnail(src, method, width, height)
 }
 
 func init() {

@@ -9,6 +9,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/i"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/m"
+	"github.com/turt2live/matrix-media-repo/thumbnailing/u"
 	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/readers"
 )
@@ -41,6 +42,13 @@ func GenerateThumbnail(imgStream io.ReadCloser, contentType string, width int, h
 	if dimensional && (w*h) >= ctx.Config.Thumbnails.MaxPixels {
 		ctx.Log.Debug("Image too large: too many pixels")
 		return nil, common.ErrMediaTooLarge
+	}
+
+	// TODO: Why does AdjustProperties even take `canAnimate` if it's always been hardcoded to `false`? (see git blame on this comment)
+	var shouldThumbnail bool
+	shouldThumbnail, width, height, _, method = u.AdjustProperties(w, h, width, height, animated, false, method)
+	if !shouldThumbnail {
+		return nil, common.ErrMediaDimensionsTooSmall
 	}
 
 	return generator.GenerateThumbnail(buffered.GetRewoundReader(), contentType, width, height, method, animated, ctx)

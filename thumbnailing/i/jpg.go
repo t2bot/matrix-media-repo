@@ -43,12 +43,6 @@ func (d jpgGenerator) GenerateThumbnail(b io.Reader, contentType string, width i
 		return nil, errors.New("jpg: error decoding thumbnail: " + err.Error())
 	}
 
-	var shouldThumbnail bool
-	shouldThumbnail, width, height, _, method = u.AdjustProperties(src, width, height, animated, false, method)
-	if !shouldThumbnail {
-		return nil, nil
-	}
-
 	thumb, err := u.MakeThumbnail(src, method, width, height)
 	if err != nil {
 		return nil, errors.New("jpg: error making thumbnail: " + err.Error())

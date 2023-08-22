@@ -110,6 +110,14 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Th
 		// Step 6: Generate the thumbnail and return that
 		record, r, err := thumbnails.Generate(ctx, mediaRecord, opts.Width, opts.Height, opts.Method, opts.Animated)
 		if err != nil {
+			if !opts.RecordOnly && errors.Is(err, common.ErrMediaDimensionsTooSmall) {
+				d, err := download.OpenStream(ctx, mediaRecord.Locatable, opts.StartByte, opts.EndByte)
+				if err != nil {
+					return nil, err
+				} else {
+					return d, common.ErrMediaDimensionsTooSmall
+				}
+			}
 			return nil, err
 		}
 		recordSf.OverwriteCacheKey(sfKey, record)
@@ -121,7 +129,7 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Th
 		// Step 7: Create a limited stream
 		return download.CreateLimitedStream(ctx, r, opts.StartByte, opts.EndByte)
 	})
-	if errors.Is(err, common.ErrMediaQuarantined) {
+	if errors.Is(err, common.ErrMediaQuarantined) || errors.Is(err, common.ErrMediaDimensionsTooSmall) {
 		cancel()
 		return nil, r, err
 	}

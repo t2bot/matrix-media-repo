@@ -10,6 +10,7 @@ import (
 	"github.com/kettek/apng"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/m"
+	"github.com/turt2live/matrix-media-repo/thumbnailing/u"
 )
 
 type apngGenerator struct {
@@ -69,7 +70,7 @@ func (d apngGenerator) GenerateThumbnail(b io.Reader, contentType string, width 
 		draw.Draw(frameImg, image.Rect(frame.XOffset, frame.YOffset, frameImg.Rect.Max.X, frameImg.Rect.Max.Y), img, image.Point{X: 0, Y: 0}, draw.Src)
 
 		// Do the thumbnailing on the copied frame
-		frameThumb, err := pngGenerator{}.GenerateThumbnailImageOf(frameImg, width, height, method, ctx)
+		frameThumb, err := u.MakeThumbnail(frameImg, method, width, height)
 		if err != nil {
 			return nil, errors.New("apng: error generating thumbnail frame: " + err.Error())
 		}
