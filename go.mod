@@ -8,7 +8,6 @@ require (
 	github.com/adrium/goheif v0.0.0-20230113233934-ca402e77a786
 	github.com/alioygur/is v1.0.3
 	github.com/bep/debounce v1.2.1
-	github.com/buckket/go-blurhash v1.1.0
 	github.com/bwmarrin/snowflake v0.3.0
 	github.com/cenk/backoff v2.2.1+incompatible // indirect
 	github.com/cupcake/sigil v0.0.0-20131127230922-6bf9722f2ae8
@@ -45,6 +44,7 @@ require (
 )
 
 require (
+	github.com/bbrks/go-blurhash v1.1.1
 	github.com/docker/docker v24.0.5+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/go-redsync/redsync/v4 v4.8.1

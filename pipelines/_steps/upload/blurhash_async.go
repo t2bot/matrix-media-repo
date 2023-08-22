@@ -4,7 +4,7 @@ import (
 	"image"
 	"io"
 
-	"github.com/buckket/go-blurhash"
+	"github.com/bbrks/go-blurhash"
 	"github.com/disintegration/imaging"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/database"
