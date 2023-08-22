@@ -10,7 +10,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/database"
 )
 
-func CalculateBlurhashAsync(ctx rcontext.RequestContext, reader io.Reader, sha256hash string) chan struct{} {
+func CalculateBlurhashAsync(ctx rcontext.RequestContext, reader io.Reader, sizeBytes int64, sha256hash string) chan struct{} {
 	var err error
 	opChan := make(chan struct{})
 	go func() {
@@ -19,6 +19,9 @@ func CalculateBlurhashAsync(ctx rcontext.RequestContext, reader io.Reader, sha25
 		defer close(opChan)
 
 		if !ctx.Config.Features.MSC2448Blurhash.Enabled {
+			return
+		}
+		if ctx.Config.Thumbnails.MaxSourceBytes <= sizeBytes {
 			return
 		}
 

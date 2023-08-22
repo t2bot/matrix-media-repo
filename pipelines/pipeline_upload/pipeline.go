@@ -150,7 +150,7 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, r io.Re
 	}
 
 	// Step 10: Asynchronously calculate blurhash
-	bhChan := upload.CalculateBlurhashAsync(ctx, bhR, sha256hash)
+	bhChan := upload.CalculateBlurhashAsync(ctx, bhR, sizeBytes, sha256hash)
 
 	// Step 11: Asynchronously upload to cache
 	cacheChan := upload.PopulateCacheAsync(ctx, cacheR, sizeBytes, sha256hash)
