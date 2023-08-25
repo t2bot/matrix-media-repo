@@ -44,7 +44,6 @@ func StoreMedia(ctx rcontext.RequestContext, hash string, content io.Reader, siz
 		read, err := content.Read(buf)
 		eof := errors.Is(err, io.EOF)
 		if read > 0 {
-			ctx.Log.Debugf("Appending %d bytes to %s", read, hash)
 			if err = ring.ForEachShard(ctx.Context, func(ctx2 context.Context, client *redis.Client) error {
 				res := client.Append(ctx2, hash, string(buf[0:read]))
 				return res.Err()
