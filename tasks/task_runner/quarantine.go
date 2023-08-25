@@ -1,6 +1,7 @@
 package task_runner
 
 import (
+	"github.com/getsentry/sentry-go"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/database"
 	"github.com/turt2live/matrix-media-repo/redislib"
@@ -43,7 +44,11 @@ func QuarantineMedia(ctx rcontext.RequestContext, onlyHost string, toHandle *Qua
 			return total, err
 		}
 
-		redislib.DeleteMedia(ctx, r.Sha256Hash)
+		err = redislib.DeleteMedia(ctx, r.Sha256Hash)
+		if err != nil {
+			ctx.Log.Warn("Error while deleting cached media: ", err)
+			sentry.CaptureException(err)
+		}
 	}
 
 	return total, nil

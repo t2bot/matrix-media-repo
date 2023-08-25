@@ -28,6 +28,7 @@ func (r limitedCloser) Close() error {
 func OpenStream(ctx rcontext.RequestContext, media *database.Locatable, startByte int64, endByte int64) (io.ReadCloser, error) {
 	reader, err := redislib.TryGetMedia(ctx, media.Sha256Hash, startByte, endByte)
 	if err != nil || reader != nil {
+		ctx.Log.Debugf("Got %s from cache", media.Sha256Hash)
 		return io.NopCloser(reader), err
 	}
 

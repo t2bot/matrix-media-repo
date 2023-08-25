@@ -7,14 +7,15 @@ import (
 	"io"
 	"time"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/redis/go-redis/v9"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/metrics"
 )
 
-const appendBufferSize = 1024 // 1kb
-const mediaExpirationTime = 5 * time.Minute
+const appendBufferSize = 32 * 1024 // 32kb
+const mediaExpirationTime = 15 * time.Minute
 const redisMaxValueSize = 512 * 1024 * 1024 // 512mb
 
 func StoreMedia(ctx rcontext.RequestContext, hash string, content io.Reader, size int64) error {
@@ -23,6 +24,7 @@ func StoreMedia(ctx rcontext.RequestContext, hash string, content io.Reader, siz
 		return nil
 	}
 	if size >= redisMaxValueSize {
+		ctx.Log.Debugf("Not caching %s because %d>%d", hash, size, redisMaxValueSize)
 		return nil
 	}
 
@@ -30,20 +32,32 @@ func StoreMedia(ctx rcontext.RequestContext, hash string, content io.Reader, siz
 		res := client.Set(ctx2, hash, make([]byte, 0), mediaExpirationTime)
 		return res.Err()
 	}); err != nil {
+		if delErr := DeleteMedia(ctx, hash); delErr != nil {
+			ctx.Log.Warn("Error while attempting to clean up cache during another error: ", delErr)
+			sentry.CaptureException(delErr)
+		}
 		return err
 	}
 
 	buf := make([]byte, appendBufferSize)
 	for {
 		read, err := content.Read(buf)
-		if err == io.EOF {
-			break
+		eof := errors.Is(err, io.EOF)
+		if read > 0 {
+			ctx.Log.Debugf("Appending %d bytes to %s", read, hash)
+			if err = ring.ForEachShard(ctx.Context, func(ctx2 context.Context, client *redis.Client) error {
+				res := client.Append(ctx2, hash, string(buf[0:read]))
+				return res.Err()
+			}); err != nil {
+				if delErr := DeleteMedia(ctx, hash); delErr != nil {
+					ctx.Log.Warn("Error while attempting to clean up cache during another error: ", delErr)
+					sentry.CaptureException(delErr)
+				}
+				return err
+			}
 		}
-		if err = ring.ForEachShard(ctx.Context, func(ctx2 context.Context, client *redis.Client) error {
-			res := client.Append(ctx2, hash, string(buf[0:read]))
-			return res.Err()
-		}); err != nil {
-			return err
+		if eof {
+			break
 		}
 	}
 
@@ -61,16 +75,18 @@ func TryGetMedia(ctx rcontext.RequestContext, hash string, startByte int64, endB
 
 	var result *redis.StringCmd
 	if startByte >= 0 && endByte >= 1 {
+		ctx.Log.Debugf("Getting range from cache for %s (bytes %d-%d)", hash, startByte, endByte)
 		if startByte < endByte {
 			result = ring.GetRange(timeoutCtx, hash, startByte, endByte)
 		} else {
 			return nil, errors.New("invalid range - start must be before end")
 		}
 	} else {
+		ctx.Log.Debugf("Getting whole cached object for %s", hash)
 		result = ring.Get(timeoutCtx, hash)
 	}
 
-	s, err := result.Result()
+	s, err := result.Bytes()
 	if err != nil {
 		if err == redis.Nil {
 			metrics.CacheMisses.With(prometheus.Labels{"cache": "media"}).Inc()
@@ -80,14 +96,16 @@ func TryGetMedia(ctx rcontext.RequestContext, hash string, startByte int64, endB
 	}
 
 	metrics.CacheHits.With(prometheus.Labels{"cache": "media"}).Inc()
-	return bytes.NewBuffer([]byte(s)), nil
+	return bytes.NewBuffer(s), nil
 }
 
-func DeleteMedia(ctx rcontext.RequestContext, hash string) {
+func DeleteMedia(ctx rcontext.RequestContext, hash string) error {
 	makeConnection()
 	if ring == nil {
-		return
+		return nil
 	}
 
-	ring.Del(ctx, hash)
+	return ring.ForEachShard(ctx, func(ctx2 context.Context, client *redis.Client) error {
+		return client.Del(ctx2, hash).Err()
+	})
 }
