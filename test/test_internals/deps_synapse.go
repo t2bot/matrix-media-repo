@@ -113,7 +113,7 @@ func MakeSynapse(domainName string, depNet *NetworkDep) (*SynapseDep, error) {
 	}
 	synContainer, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
-			Image:        "docker.io/matrixdotorg/synapse:v1.89.0",
+			Image:        "docker.io/matrixdotorg/synapse:v1.90.0",
 			ExposedPorts: []string{"8008/tcp"},
 			Mounts: []testcontainers.ContainerMount{
 				testcontainers.BindMount(f.Name(), "/data/homeserver.yaml"),
