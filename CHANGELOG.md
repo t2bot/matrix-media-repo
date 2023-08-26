@@ -119,6 +119,7 @@ path/server, for example, then you can simply update the path in the config for 
 * Updated to Go 1.20
 * Logs are now less noisy by default.
 * Connected homeservers must support at least Matrix 1.1 on the Client-Server API.
+* The example Grafana dashboard has been updated.
 
 ### Fixed
 
