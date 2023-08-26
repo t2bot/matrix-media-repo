@@ -3,8 +3,9 @@ package i
 import (
 	"errors"
 	"image"
-	_ "image/jpeg"
 	"io"
+
+	_ "github.com/turt2live/matrix-media-repo/jpeg2"
 
 	"github.com/disintegration/imaging"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
