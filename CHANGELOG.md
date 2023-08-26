@@ -92,6 +92,7 @@ path/server, for example, then you can simply update the path in the config for 
 * The `GET /_synapse/admin/v1/statistics/users/media` [endpoint](https://matrix-org.github.io/synapse/v1.88/admin_api/statistics.html#users-media-usage-statistics) from Synapse is now supported at the same path for local server admins.
 * Thumbnailing support for BMP images.
 * Thumbnailing support for TIFF images.
+* New metrics for HTTP response times.
 
 ### Removed
 

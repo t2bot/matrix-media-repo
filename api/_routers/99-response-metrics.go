@@ -23,6 +23,11 @@ func (m *MetricsResponseRouter) ServeHTTP(w http.ResponseWriter, r *http.Request
 		"method":     r.Method,
 		"statusCode": strconv.Itoa(GetStatusCode(r)),
 	}).Inc()
+	metrics.HttpResponseTime.With(prometheus.Labels{
+		"host":   r.Host,
+		"action": GetActionName(r),
+		"method": r.Method,
+	}).Observe(GetRequestDuration(r))
 
 	if m.next != nil {
 		m.next.ServeHTTP(w, r)

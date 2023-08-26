@@ -52,6 +52,7 @@ func (i *InstallMetadataRouter) ServeHTTP(w http.ResponseWriter, r *http.Request
 	})
 
 	ctx := r.Context()
+	ctx = context.WithValue(ctx, common.ContextRequestStartTime, util.NowMillis())
 	ctx = context.WithValue(ctx, common.ContextRequestId, requestId)
 	ctx = context.WithValue(ctx, common.ContextAction, i.actionName)
 	ctx = context.WithValue(ctx, common.ContextIgnoreHost, i.ignoreHost)
@@ -85,4 +86,12 @@ func GetLogger(r *http.Request) *logrus.Entry {
 		return nil
 	}
 	return x
+}
+
+func GetRequestDuration(r *http.Request) float64 {
+	x, ok := r.Context().Value(common.ContextRequestStartTime).(int64)
+	if !ok {
+		return -1
+	}
+	return float64(util.NowMillis()-x) / 1000.0
 }

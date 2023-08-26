@@ -13,6 +13,9 @@ var InvalidHttpRequests = prometheus.NewCounterVec(prometheus.CounterOpts{
 var HttpResponses = prometheus.NewCounterVec(prometheus.CounterOpts{
 	Name: "media_http_responses_total",
 }, []string{"host", "action", "method", "statusCode"})
+var HttpResponseTime = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	Name: "media_http_response_time_seconds",
+}, []string{"host", "action", "method"})
 var CacheHits = prometheus.NewCounterVec(prometheus.CounterOpts{
 	Name: "media_cache_hits_total",
 }, []string{"cache"})
@@ -51,6 +54,7 @@ func init() {
 	prometheus.MustRegister(HttpRequests)
 	prometheus.MustRegister(InvalidHttpRequests)
 	prometheus.MustRegister(HttpResponses)
+	prometheus.MustRegister(HttpResponseTime)
 	prometheus.MustRegister(CacheHits)
 	prometheus.MustRegister(CacheMisses)
 	prometheus.MustRegister(CacheEvictions)
