@@ -44,7 +44,3 @@ func (r *BufferReadsReader) GetRewoundReader() io.Reader {
 	pr, _ := r.MakeRewoundReader()
 	return pr
 }
-
-func (r *BufferReadsReader) Discard() {
-	r.b.Truncate(0)
-}

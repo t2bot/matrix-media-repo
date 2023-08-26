@@ -58,7 +58,6 @@ require (
 	github.com/t2bot/go-typed-singleflight v0.0.3
 	github.com/testcontainers/testcontainers-go v0.23.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.23.0
-	github.com/viam-labs/go-libjpeg v0.3.2-0.20230621193101-e6b235025092
 	golang.org/x/sync v0.3.0
 	golang.org/x/term v0.11.0
 )
@@ -116,6 +115,7 @@ require (
 	github.com/prometheus/common v0.44.0 // indirect
 	github.com/prometheus/procfs v0.11.1 // indirect
 	github.com/rs/xid v1.5.0 // indirect
+	github.com/smartystreets/assertions v1.0.0 // indirect
 	golang.org/x/exp v0.0.0-20230817173708-d852ddb80c63 // indirect
 	golang.org/x/mod v0.12.0 // indirect
 	golang.org/x/sys v0.11.0 // indirect
