@@ -34,6 +34,9 @@ var UrlPreviewsGenerated = prometheus.NewCounterVec(prometheus.CounterOpts{
 var S3Operations = prometheus.NewCounterVec(prometheus.CounterOpts{
 	Name: "media_s3_operations_total",
 }, []string{"operation"})
+var MediaAgeAccessed = prometheus.NewHistogram(prometheus.HistogramOpts{
+	Name: "media_age_accessed_media_seconds",
+})
 
 func init() {
 	prometheus.MustRegister(HttpRequests)
@@ -46,4 +49,5 @@ func init() {
 	prometheus.MustRegister(MediaDownloaded)
 	prometheus.MustRegister(UrlPreviewsGenerated)
 	prometheus.MustRegister(S3Operations)
+	prometheus.MustRegister(MediaAgeAccessed)
 }

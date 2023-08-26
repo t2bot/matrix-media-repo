@@ -65,7 +65,7 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 			if record.Quarantined {
 				return quarantine.ReturnAppropriateThing(ctx, true, opts.RecordOnly, 512, 512, opts.StartByte, opts.EndByte)
 			}
-			meta.FlagAccess(ctx, record.Sha256Hash)
+			meta.FlagAccess(ctx, record.Sha256Hash, record.CreationTs)
 			if opts.RecordOnly {
 				return nil, nil
 			}
@@ -84,7 +84,7 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 		if record.Quarantined {
 			return quarantine.ReturnAppropriateThing(ctx, true, opts.RecordOnly, 512, 512, opts.StartByte, opts.EndByte)
 		}
-		meta.FlagAccess(ctx, record.Sha256Hash)
+		meta.FlagAccess(ctx, record.Sha256Hash, record.CreationTs)
 		if opts.RecordOnly {
 			r.Close()
 			return nil, nil
