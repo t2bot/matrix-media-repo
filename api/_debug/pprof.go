@@ -16,9 +16,9 @@ func BindPprofEndpoints(httpMux *httprouter.Router, secret string) {
 	httpMux.Handler("GET", "/_matrix/media/unstable/io.t2bot/debug/pprof/goroutine", pprofServe(pprof.Index, secret))
 	httpMux.Handler("GET", "/_matrix/media/unstable/io.t2bot/debug/pprof/heap", pprofServe(pprof.Index, secret))
 	httpMux.Handler("GET", "/_matrix/media/unstable/io.t2bot/debug/pprof/mutex", pprofServe(pprof.Index, secret))
-	httpMux.Handler("GET", "/_matrix/media/unstable/io.t2bot/debug/pprof/profile", pprofServe(pprof.Index, secret))
+	httpMux.Handler("GET", "/_matrix/media/unstable/io.t2bot/debug/pprof/profile", pprofServe(pprof.Profile, secret))
 	httpMux.Handler("GET", "/_matrix/media/unstable/io.t2bot/debug/pprof/threadcreate", pprofServe(pprof.Index, secret))
-	httpMux.Handler("GET", "/_matrix/media/unstable/io.t2bot/debug/pprof/trace", pprofServe(pprof.Index, secret))
+	httpMux.Handler("GET", "/_matrix/media/unstable/io.t2bot/debug/pprof/trace", pprofServe(pprof.Trace, secret))
 }
 
 type generatorFn = func(w http.ResponseWriter, r *http.Request)
