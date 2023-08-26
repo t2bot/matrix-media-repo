@@ -1,6 +1,7 @@
 package i
 
 import (
+	"errors"
 	"image"
 	"io"
 
@@ -35,7 +36,7 @@ func (d heifGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx 
 func (d heifGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
 	src, _, err := image.Decode(b)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("heif: error decoding thumbnail: " + err.Error())
 	}
 
 	return pngGenerator{}.GenerateThumbnailOf(src, width, height, method, ctx)
