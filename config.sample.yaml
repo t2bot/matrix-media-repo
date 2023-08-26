@@ -552,11 +552,6 @@ featureSupport:
     # Whether or not this MSC is enabled for use in the media repo
     enabled: false
 
-    # Maximum dimensions for converting a blurhash to an image. When no width and
-    # height options are supplied, the default will be half these values.
-    maxWidth: 1024
-    maxHeight: 1024
-
     # Thumbnail size in pixels to use to generate the blurhash string
     thumbWidth: 64
     thumbHeight: 64

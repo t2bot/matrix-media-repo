@@ -95,14 +95,12 @@ type FeatureConfig struct {
 }
 
 type MSC2448Config struct {
-	Enabled         bool `yaml:"enabled"`
-	MaxRenderWidth  int  `yaml:"maxWidth"`
-	MaxRenderHeight int  `yaml:"maxHeight"`
-	GenerateWidth   int  `yaml:"thumbWidth"`
-	GenerateHeight  int  `yaml:"thumbHeight"`
-	XComponents     int  `yaml:"xComponents"`
-	YComponents     int  `yaml:"yComponents"`
-	Punch           int  `yaml:"punch"`
+	Enabled        bool `yaml:"enabled"`
+	GenerateWidth  int  `yaml:"thumbWidth"`
+	GenerateHeight int  `yaml:"thumbHeight"`
+	XComponents    int  `yaml:"xComponents"`
+	YComponents    int  `yaml:"yComponents"`
+	Punch          int  `yaml:"punch"`
 }
 
 type AccessTokenConfig struct {

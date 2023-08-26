@@ -46,14 +46,12 @@ func NewDefaultMinimumRepoConfig() MinimumRepoConfig {
 		},
 		Features: FeatureConfig{
 			MSC2448Blurhash: MSC2448Config{
-				Enabled:         false,
-				MaxRenderWidth:  1024,
-				MaxRenderHeight: 1024,
-				GenerateWidth:   64,
-				GenerateHeight:  64,
-				XComponents:     4,
-				YComponents:     3,
-				Punch:           1,
+				Enabled:        false,
+				GenerateWidth:  64,
+				GenerateHeight: 64,
+				XComponents:    4,
+				YComponents:    3,
+				Punch:          1,
 			},
 		},
 		AccessTokens: AccessTokenConfig{
