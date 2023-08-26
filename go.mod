@@ -54,7 +54,7 @@ require (
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
 	github.com/stretchr/testify v1.8.4
 	github.com/strukturag/libheif v1.16.2
-	github.com/t2bot/go-singleflight-streams v0.0.6-0.20230825030520-3269fb2864dd
+	github.com/t2bot/go-singleflight-streams v0.0.6
 	github.com/t2bot/go-typed-singleflight v0.0.3
 	github.com/testcontainers/testcontainers-go v0.23.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.23.0
