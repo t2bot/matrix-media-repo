@@ -23,7 +23,7 @@ type AudioGenerator interface {
 
 var generators = make([]Generator, 0)
 
-func GetGenerator(img io.Reader, contentType string, needsAnimation bool) (Generator, *readers.PrefixedReader) {
+func GetGenerator(img io.Reader, contentType string, needsAnimation bool) (Generator, io.Reader) {
 	br := readers.NewBufferReadsReader(img)
 	for _, g := range generators {
 		if needsAnimation && !g.supportsAnimation() {

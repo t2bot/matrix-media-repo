@@ -11,7 +11,7 @@ type BufferReadsReader struct {
 	r        io.Reader
 	original io.Reader
 	b        *bytes.Buffer
-	pr       *PrefixedReader
+	pr       io.Reader
 }
 
 func NewBufferReadsReader(r io.Reader) *BufferReadsReader {
@@ -32,15 +32,15 @@ func (r *BufferReadsReader) Read(p []byte) (int, error) {
 	return r.r.Read(p)
 }
 
-func (r *BufferReadsReader) MakeRewoundReader() (*PrefixedReader, error) {
+func (r *BufferReadsReader) MakeRewoundReader() (io.Reader, error) {
 	if r.pr != nil {
 		return r.pr, errors.New("prefixed reader already created from this reader")
 	}
-	r.pr = NewPrefixedReader(r.b, r.original)
+	r.pr = io.MultiReader(r.b, r.original)
 	return r.pr, nil
 }
 
-func (r *BufferReadsReader) GetRewoundReader() *PrefixedReader {
+func (r *BufferReadsReader) GetRewoundReader() io.Reader {
 	pr, _ := r.MakeRewoundReader()
 	return pr
 }

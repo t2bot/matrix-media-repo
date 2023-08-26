@@ -54,7 +54,7 @@ func GenerateThumbnail(imgStream io.ReadCloser, contentType string, width int, h
 	return generator.GenerateThumbnail(buffered.GetRewoundReader(), contentType, width, height, method, animated, ctx)
 }
 
-func GetGenerator(imgStream io.Reader, contentType string, animated bool) (i.Generator, *readers.PrefixedReader, error) {
+func GetGenerator(imgStream io.Reader, contentType string, animated bool) (i.Generator, io.Reader, error) {
 	generator, reconstructed := i.GetGenerator(imgStream, contentType, animated)
 	if generator == nil {
 		return nil, reconstructed, ErrUnsupported
