@@ -37,7 +37,7 @@ var S3Operations = prometheus.NewCounterVec(prometheus.CounterOpts{
 var MediaAgeAccessed = prometheus.NewHistogram(prometheus.HistogramOpts{
 	Name: "media_age_accessed_media_seconds",
 	Buckets: []float64{
-		5, 15, 30, 60, 120, 150, 300, 900, 1800, 3600, 9000, 18000, 43200, 86400, 1296000, 2592000,
+		5, 15, 30, 60, 120, 150, 300, 900, 1800, 3600, 9000, 18000, 43200, 86400, 1296000, 2592000, 15811200, 31536000,
 	},
 })
 
