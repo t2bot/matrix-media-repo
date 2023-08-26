@@ -22,21 +22,6 @@ var CacheHits = prometheus.NewCounterVec(prometheus.CounterOpts{
 var CacheMisses = prometheus.NewCounterVec(prometheus.CounterOpts{
 	Name: "media_cache_misses_total",
 }, []string{"cache"})
-var CacheEvictions = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Name: "media_cache_evictions_total",
-}, []string{"cache", "reason"})
-var CacheNumItems = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-	Name: "media_cache_num_items",
-}, []string{"cache"})
-var CacheNumLiveItems = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-	Name: "media_cache_num_live_items",
-}, []string{"cache"})
-var CacheNumBytes = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-	Name: "media_cache_num_bytes_used",
-}, []string{"cache"})
-var CacheLiveNumBytes = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-	Name: "media_cache_num_live_bytes_used",
-}, []string{"cache"})
 var ThumbnailsGenerated = prometheus.NewCounterVec(prometheus.CounterOpts{
 	Name: "media_thumbnails_generated_total",
 }, []string{"width", "height", "method", "animated", "origin"})
@@ -57,11 +42,6 @@ func init() {
 	prometheus.MustRegister(HttpResponseTime)
 	prometheus.MustRegister(CacheHits)
 	prometheus.MustRegister(CacheMisses)
-	prometheus.MustRegister(CacheEvictions)
-	prometheus.MustRegister(CacheNumItems)
-	prometheus.MustRegister(CacheNumLiveItems)
-	prometheus.MustRegister(CacheNumBytes)
-	prometheus.MustRegister(CacheLiveNumBytes)
 	prometheus.MustRegister(ThumbnailsGenerated)
 	prometheus.MustRegister(MediaDownloaded)
 	prometheus.MustRegister(UrlPreviewsGenerated)
