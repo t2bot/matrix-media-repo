@@ -9,6 +9,7 @@
 /ipfs
 /dev/conduit-db
 /dev/psql
+/vcpkg
 
 # Generated files
 assets.bin.go

@@ -5,7 +5,6 @@ go 1.20
 require (
 	github.com/DavidHuie/gomigrate v0.0.0-20190826182718-4adc4b3de142
 	github.com/PuerkitoBio/goquery v1.8.1
-	github.com/adrium/goheif v0.0.0-20230113233934-ca402e77a786
 	github.com/alioygur/is v1.0.3
 	github.com/bep/debounce v1.2.1
 	github.com/bwmarrin/snowflake v0.3.0
@@ -54,6 +53,7 @@ require (
 	github.com/redis/go-redis/v9 v9.1.0
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
 	github.com/stretchr/testify v1.8.4
+	github.com/strukturag/libheif v1.16.2
 	github.com/t2bot/go-singleflight-streams v0.0.6-0.20230825030520-3269fb2864dd
 	github.com/t2bot/go-typed-singleflight v0.0.3
 	github.com/testcontainers/testcontainers-go v0.23.0
@@ -115,7 +115,6 @@ require (
 	github.com/prometheus/common v0.44.0 // indirect
 	github.com/prometheus/procfs v0.11.1 // indirect
 	github.com/rs/xid v1.5.0 // indirect
-	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd // indirect
 	github.com/smartystreets/assertions v1.0.0 // indirect
 	golang.org/x/exp v0.0.0-20230817173708-d852ddb80c63 // indirect
 	golang.org/x/mod v0.12.0 // indirect
