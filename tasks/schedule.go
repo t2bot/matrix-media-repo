@@ -83,9 +83,9 @@ func scheduleHourly(name RecurringTaskName, workFn RecurringTaskFn) {
 	recurDoneChs[name] = ch
 	go func() {
 		defer func() {
-			close(ch)
 			recurLock.Lock()
 			defer recurLock.Unlock()
+			close(ch)
 			if recurDoneChs[name] == ch {
 				delete(recurDoneChs, name)
 			}
