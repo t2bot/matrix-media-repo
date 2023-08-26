@@ -11,7 +11,7 @@ jobs:
         with:
           go-version: '1.20'
       - name: "Install libheif"
-        run: "./.github/workflows/build-libheif.sh"
+        run: "chmod +x ./.github/workflows/build-libheif.sh && ./.github/workflows/build-libheif.sh"
       - run: './build.sh' # verify the thing compiles
   static:
     name: 'Go Static (1.20)'
@@ -22,7 +22,7 @@ jobs:
         with:
           go-version: '1.20'
       - name: "Install libheif"
-        run: "./.github/workflows/build-libheif.sh"
+        run: "chmod +x ./.github/workflows/build-libheif.sh && ./.github/workflows/build-libheif.sh"
       - name: "Prepare: compile assets"
         run: "GOBIN=$PWD/bin go install -v ./cmd/compile_assets"
       - name: "Run: compile assets"
