@@ -23,11 +23,13 @@ func IsSupported(contentType string) bool {
 func GenerateThumbnail(imgStream io.ReadCloser, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
 	defer imgStream.Close()
 	if !IsSupported(contentType) {
+		ctx.Log.Debugf("Unsupported content type '%s'", contentType)
 		return nil, ErrUnsupported
 	}
 
 	generator, reconstructed := i.GetGenerator(imgStream, contentType, animated)
 	if generator == nil {
+		ctx.Log.Debugf("Unsupported thumbnail type at generator for '%s'", contentType)
 		return nil, ErrUnsupported
 	}
 	ctx.Log.Debug("Using generator: ", reflect.TypeOf(generator).Name())

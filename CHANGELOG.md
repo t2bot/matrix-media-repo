@@ -90,10 +90,12 @@ path/server, for example, then you can simply update the path in the config for 
 * Support for [MSC2246](https://github.com/matrix-org/matrix-spec-proposals/pull/2246) (async uploads) is added, with per-user quota limiting options.
 * Support for [MSC4034](https://github.com/matrix-org/matrix-spec-proposals/pull/4034) (self-serve usage information) is added, alongside a new "maximum file count" quota limit.
 * The `GET /_synapse/admin/v1/statistics/users/media` [endpoint](https://matrix-org.github.io/synapse/v1.88/admin_api/statistics.html#users-media-usage-statistics) from Synapse is now supported at the same path for local server admins.
-* Thumbnailing support for BMP images.
-* Thumbnailing support for TIFF images.
-* New metrics for HTTP response times.
-* New metrics for age of accessed (downloaded) media.
+* Thumbnailing support for:
+  * BMP images.
+  * TIFF images.
+* New metrics:
+  * HTTP response times.
+  * Age of downloaded/accessed media.
 
 ### Removed
 
@@ -103,7 +105,9 @@ path/server, for example, then you can simply update the path in the config for 
 ### Changed
 
 * **Mandatory configuration change**: You must add datastore IDs to your datastore configuration, as matrix-media-repo will no longer manage datastores for you.
-* Datastores no longer use the `enabled` flag set on them. Use `forKinds: []` instead.
+* If compiling `matrix-media-repo`, note that new external dependencies are required. See [the docs](https://docs.t2bot.io/matrix-media-repo/installing/method/compilation.html).
+  * Docker images already contain these dependencies. 
+* Datastores no longer use the `enabled` flag set on them. Use `forKinds: []` instead to disable a datastore's usage.
 * Some admin endpoints for purging media, quarantining media, and background task information now require additional path components.
     ```diff
     -POST /_matrix/media/unstable/admin/purge/<server>/<media id>?access_token=your_access_token
@@ -116,8 +120,7 @@ path/server, for example, then you can simply update the path in the config for 
     +GET /_matrix/media/unstable/admin/task/<task ID>
     ```
 * Per-user upload quotas now do not allow users to exceed the maximum values, even by 1 byte. Previously, users could exceed the limits by a little bit.
-* Updated to Go 1.19
-* Updated to Go 1.20
+* Updated to Go 1.19, then Go 1.20 in the same release cycle.
 * Logs are now less noisy by default.
 * Connected homeservers must support at least Matrix 1.1 on the Client-Server API.
 * The example Grafana dashboard has been updated.
