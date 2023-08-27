@@ -127,6 +127,7 @@ path/server, for example, then you can simply update the path in the config for 
 * URL previews now follow redirects properly.
 * Overall memory usage is improved, particularly during media uploads and API-initiated imports.
   * Note: If you use plugins then memory usage will still be somewhat high due to temporary caching of uploads.
+  * Note: This affects RSS primarily. VSZ and other memory metrics may be higher than expected due to how Go releases memory to the OS. This is fixed when there's memory pressure.
 * Fixed shutdown stall if the config was reloaded more than once while running.
 
 ## [1.2.13] - February 12, 2023
