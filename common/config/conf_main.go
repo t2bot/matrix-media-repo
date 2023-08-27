@@ -16,6 +16,7 @@ type MainRepoConfig struct {
 	Plugins           []PluginConfig        `yaml:"plugins,flow"`
 	Sentry            SentryConfig          `yaml:"sentry"`
 	Redis             RedisConfig           `yaml:"redis"`
+	Tasks             TasksConfig           `yaml:"tasks"`
 }
 
 func NewDefaultMainConfig() MainRepoConfig {
@@ -133,6 +134,9 @@ func NewDefaultMainConfig() MainRepoConfig {
 		Redis: RedisConfig{
 			Enabled: false,
 			Shards:  []RedisShardConfig{},
+		},
+		Tasks: TasksConfig{
+			NumWorkers: 5,
 		},
 	}
 }

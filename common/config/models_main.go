@@ -90,3 +90,7 @@ type RedisShardConfig struct {
 	Name    string `yaml:"name"`
 	Address string `yaml:"addr"`
 }
+
+type TasksConfig struct {
+	NumWorkers int `yaml:"numWorkers"`
+}

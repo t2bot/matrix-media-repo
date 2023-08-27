@@ -9,6 +9,7 @@ import (
 var DownloadQueue *Queue
 var ThumbnailQueue *Queue
 var UrlPreviewQueue *Queue
+var TaskQueue *Queue
 
 func Init() {
 	var err error
@@ -27,16 +28,23 @@ func Init() {
 		logrus.Error("Error setting up url previews queue")
 		logrus.Fatal(err)
 	}
+	if TaskQueue, err = NewQueue(config.Get().Tasks.NumWorkers, "tasks"); err != nil {
+		sentry.CaptureException(err)
+		logrus.Error("Error setting up tasks queue")
+		logrus.Fatal(err)
+	}
 }
 
 func AdjustSize() {
 	DownloadQueue.pool.Tune(config.Get().Downloads.NumWorkers)
 	ThumbnailQueue.pool.Tune(config.Get().Thumbnails.NumWorkers)
 	UrlPreviewQueue.pool.Tune(config.Get().UrlPreviews.NumWorkers)
+	TaskQueue.pool.Tune(config.Get().Tasks.NumWorkers)
 }
 
 func Drain() {
 	DownloadQueue.pool.Release()
 	ThumbnailQueue.pool.Release()
 	UrlPreviewQueue.pool.Release()
+	TaskQueue.pool.Release()
 }

@@ -600,3 +600,11 @@ sentry:
 
   # Whether or not to turn on sentry's built in debugging. This will increase log output.
   debug: false
+
+# Configuration for the internal tasks engine in the media repo. Note that this only applies
+# to the media repo process with machine ID zero (the default in single-instance mode).
+#
+# Tasks include things like data imports/exports.
+tasks:
+  # The number of workers to have available for tasks. Defaults to 5.
+  numWorkers: 5

@@ -9,6 +9,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/database"
 	"github.com/turt2live/matrix-media-repo/notifier"
+	"github.com/turt2live/matrix-media-repo/pool"
 	"github.com/turt2live/matrix-media-repo/tasks/task_runner"
 	"github.com/turt2live/matrix-media-repo/util"
 	"github.com/turt2live/matrix-media-repo/util/ids"
@@ -60,7 +61,6 @@ func beginTask(task *database.DbTask) {
 	if task.EndTs > 0 {
 		return // just skip it
 	}
-	// TODO: Worker group: https://github.com/turt2live/matrix-media-repo/issues/425
 	runnerCtx := rcontext.Initial().LogWithFields(logrus.Fields{"task_id": task.TaskId})
 
 	oneHourAgo := util.NowMillis() - (60 * 60 * 1000)
@@ -69,15 +69,24 @@ func beginTask(task *database.DbTask) {
 		return
 	}
 
-	if task.Name == string(TaskDatastoreMigrate) {
-		go task_runner.DatastoreMigrate(runnerCtx, task)
-	} else if task.Name == string(TaskExportData) {
-		go task_runner.ExportData(runnerCtx, task)
-	} else if task.Name == string(TaskImportData) {
-		go task_runner.ImportData(runnerCtx, task)
-	} else {
-		m := fmt.Sprintf("Received unknown task to run %s (ID: %d)", task.Name, task.TaskId)
-		logrus.Warn(m)
+	if err := pool.TaskQueue.Schedule(func() {
+		if task.Name == string(TaskDatastoreMigrate) {
+			task_runner.DatastoreMigrate(runnerCtx, task)
+		} else if task.Name == string(TaskExportData) {
+			task_runner.ExportData(runnerCtx, task)
+		} else if task.Name == string(TaskImportData) {
+			task_runner.ImportData(runnerCtx, task)
+		} else {
+			m := fmt.Sprintf("Received unknown task to run %s (ID: %d)", task.Name, task.TaskId)
+			runnerCtx.Log.Warn(m)
+			sentry.CaptureMessage(m)
+		}
+	}); err != nil {
+		m := fmt.Sprintf("Error trying to schedule task %s (ID: %d): %s", task.Name, task.TaskId, err.Error())
+		runnerCtx.Log.Warn(m)
 		sentry.CaptureMessage(m)
+		time.AfterFunc(15*time.Second, func() {
+			beginTask(task)
+		})
 	}
 }
