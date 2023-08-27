@@ -93,6 +93,7 @@ path/server, for example, then you can simply update the path in the config for 
 * Thumbnailing support for:
   * BMP images.
   * TIFF images.
+  * HEIC images.
 * New metrics:
   * HTTP response times.
   * Age of downloaded/accessed media.

@@ -8,13 +8,14 @@ import (
 	_ "github.com/strukturag/libheif/go/heif"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/m"
+	"github.com/turt2live/matrix-media-repo/util"
 )
 
 type heifGenerator struct {
 }
 
 func (d heifGenerator) supportedContentTypes() []string {
-	return []string{"image/heif"}
+	return []string{"image/heif", "image/heic"}
 }
 
 func (d heifGenerator) supportsAnimation() bool {
@@ -22,7 +23,7 @@ func (d heifGenerator) supportsAnimation() bool {
 }
 
 func (d heifGenerator) matches(img io.Reader, contentType string) bool {
-	return contentType == "image/heif"
+	return util.ArrayContains(d.supportedContentTypes(), contentType)
 }
 
 func (d heifGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx rcontext.RequestContext) (bool, int, int, error) {
