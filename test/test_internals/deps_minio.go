@@ -34,7 +34,7 @@ func MakeMinio(depNet *NetworkDep) (*MinioDep, error) {
 	consolePort, _ := nat.NewPort("tcp", "9090")
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
-			Image:        "quay.io/minio/minio:RELEASE.2023-08-09T23-30-22Z",
+			Image:        "quay.io/minio/minio:latest",
 			ExposedPorts: []string{"9000/tcp", "9090/tcp"},
 			Env: map[string]string{
 				"MINIO_ROOT_USER":     "admin",
