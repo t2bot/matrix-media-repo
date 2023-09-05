@@ -112,7 +112,7 @@ beforeParseDownload:
 			if contentType == "" {
 				disposition = "attachment"
 			} else {
-				if util.HasAnyPrefix(contentType, []string{"image/", "audio/", "video/", "text/plain"}) {
+				if util.CanInline(contentType) {
 					disposition = "inline"
 				} else {
 					disposition = "attachment"

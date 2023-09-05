@@ -16,3 +16,39 @@ func ExtensionForContentType(ct string) string {
 	}
 	return ".bin"
 }
+
+func CanInline(ct string) bool {
+	ct = FixContentType(ct)
+	return ArrayContains(InlineContentTypes, ct)
+}
+
+var InlineContentTypes = []string{
+	// Types are inherited from https://github.com/matrix-org/synapse/pull/15988
+
+	"text/css",
+	"text/plain",
+	"text/csv",
+	"application/json",
+	"application/ld+json",
+	"image/jpeg",
+	"image/gif",
+	"image/png",
+	"image/apng",
+	"image/webp",
+	"image/avif",
+	"video/mp4",
+	"video/webm",
+	"video/ogg",
+	"video/quicktime",
+	"audio/mp4",
+	"audio/webm",
+	"audio/aac",
+	"audio/mpeg",
+	"audio/ogg",
+	"audio/wave",
+	"audio/wav",
+	"audio/x-wav",
+	"audio/x-pn-wav",
+	"audio/flac",
+	"audio/x-flac",
+}
