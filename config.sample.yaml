@@ -608,3 +608,19 @@ sentry:
 tasks:
   # The number of workers to have available for tasks. Defaults to 5.
   numWorkers: 5
+
+# Options for collecting PGO-compatible CPU profiles and submitting them to a hosted pgo-fleet
+# server. See https://github.com/t2bot/pgo-fleet for collection/more detail.
+#
+# If you process more than 1Hz of requests or have more than a dozen media repos deployed, please
+# get in contact with `@travis:t2l.io` to submit profiles directly to MMR. Submitted profiles are
+# used to improve the build speed for everyone.
+pgo:
+  # Whether collection is enabled. Defaults to false.
+  enabled: false
+
+  # The pgo-fleet submit URL.
+  submitUrl: "https://mmr-pgo.t2host.io/v1/submit"
+
+  # The pgo-fleet submit key.
+  submitKey: "INSERT_VALUE_HERE"

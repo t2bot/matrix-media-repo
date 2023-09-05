@@ -18,6 +18,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/runtime"
 	"github.com/turt2live/matrix-media-repo/common/version"
 	"github.com/turt2live/matrix-media-repo/metrics"
+	"github.com/turt2live/matrix-media-repo/pgo_internal"
 	"github.com/turt2live/matrix-media-repo/tasks"
 )
 
@@ -85,6 +86,9 @@ func main() {
 	setupReloads()
 
 	logrus.Info("Starting media repository...")
+	if config.Get().PGO.Enabled {
+		pgo_internal.Enable(config.Get().PGO.SubmitUrl, config.Get().PGO.SubmitKey)
+	}
 	metrics.Init()
 	web := api.Init()
 

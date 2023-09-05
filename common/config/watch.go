@@ -116,6 +116,14 @@ func onFileChanged() {
 
 	logrus.Info("Restarting recurring tasks")
 	globals.RecurringTasksReloadChan <- true
+
+	pgoEnableChange := configNew.PGO.Enabled != configNow.PGO.Enabled
+	pgoUrlChange := configNew.PGO.SubmitUrl != configNow.PGO.SubmitUrl
+	pgoKeyChange := configNew.PGO.SubmitKey != configNow.PGO.SubmitKey
+	if pgoEnableChange || pgoUrlChange || pgoKeyChange {
+		logrus.Warn("PGO config changed - reloading")
+		globals.PGOReloadChan <- true
+	}
 }
 
 func hasWebFeatureChanged(configNew *MainRepoConfig, configNow *MainRepoConfig) bool {

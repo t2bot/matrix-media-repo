@@ -17,6 +17,7 @@ type MainRepoConfig struct {
 	Sentry            SentryConfig          `yaml:"sentry"`
 	Redis             RedisConfig           `yaml:"redis"`
 	Tasks             TasksConfig           `yaml:"tasks"`
+	PGO               PGOConfig             `yaml:"pgo"`
 }
 
 func NewDefaultMainConfig() MainRepoConfig {
@@ -137,6 +138,11 @@ func NewDefaultMainConfig() MainRepoConfig {
 		},
 		Tasks: TasksConfig{
 			NumWorkers: 5,
+		},
+		PGO: PGOConfig{
+			Enabled:   false,
+			SubmitUrl: "https://mmr-pgo.t2host.io/v1/submit",
+			SubmitKey: "",
 		},
 	}
 }

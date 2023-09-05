@@ -94,3 +94,9 @@ type RedisShardConfig struct {
 type TasksConfig struct {
 	NumWorkers int `yaml:"numWorkers"`
 }
+
+type PGOConfig struct {
+	Enabled   bool   `yaml:"enabled"`
+	SubmitUrl string `yaml:"submitUrl"`
+	SubmitKey string `yaml:"submitKey"`
+}

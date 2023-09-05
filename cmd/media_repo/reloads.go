@@ -4,11 +4,13 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api"
 	"github.com/turt2live/matrix-media-repo/api/_auth_cache"
+	"github.com/turt2live/matrix-media-repo/common/config"
 	"github.com/turt2live/matrix-media-repo/common/globals"
 	"github.com/turt2live/matrix-media-repo/common/runtime"
 	"github.com/turt2live/matrix-media-repo/database"
 	"github.com/turt2live/matrix-media-repo/errcache"
 	"github.com/turt2live/matrix-media-repo/metrics"
+	"github.com/turt2live/matrix-media-repo/pgo_internal"
 	"github.com/turt2live/matrix-media-repo/plugins"
 	"github.com/turt2live/matrix-media-repo/pool"
 	"github.com/turt2live/matrix-media-repo/redislib"
@@ -26,6 +28,7 @@ func setupReloads() {
 	reloadPluginsOnChan(globals.PluginReloadChan)
 	reloadPoolOnChan(globals.PoolReloadChan)
 	reloadErrorCachesOnChan(globals.ErrorCacheReloadChan)
+	reloadPGOOnChan(globals.PGOReloadChan)
 }
 
 func stopReloads() {
@@ -50,6 +53,8 @@ func stopReloads() {
 	globals.PoolReloadChan <- false
 	logrus.Debug("Stopping ErrorCacheReloadChan")
 	globals.ErrorCacheReloadChan <- false
+	logrus.Debug("Stopping PGOReloadChan")
+	globals.PGOReloadChan <- false
 }
 
 func reloadWebOnChan(reloadChan chan bool) {
@@ -191,6 +196,24 @@ func reloadErrorCachesOnChan(reloadChan chan bool) {
 			shouldReload := <-reloadChan
 			if shouldReload {
 				errcache.AdjustSize()
+			} else {
+				return // received stop
+			}
+		}
+	}()
+}
+
+func reloadPGOOnChan(reloadChan chan bool) {
+	go func() {
+		defer close(reloadChan)
+		for {
+			shouldReload := <-reloadChan
+			if shouldReload {
+				if config.Get().PGO.Enabled {
+					pgo_internal.Enable(config.Get().PGO.SubmitUrl, config.Get().PGO.SubmitKey)
+				} else {
+					pgo_internal.Disable()
+				}
 			} else {
 				return // received stop
 			}

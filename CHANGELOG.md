@@ -97,6 +97,7 @@ path/server, for example, then you can simply update the path in the config for 
 * New metrics:
   * HTTP response times.
   * Age of downloaded/accessed media.
+* Support for [PGO](https://go.dev/doc/pgo) builds has been enabled via [pgo-fleet](https://github.com/t2bot/pgo-fleet).
 
 ### Removed
 
