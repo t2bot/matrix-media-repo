@@ -19,7 +19,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/m"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/u"
-	"github.com/turt2live/matrix-media-repo/util/idec"
 	"github.com/turt2live/matrix-media-repo/util/readers"
 )
 
@@ -104,7 +103,7 @@ func (d mp3Generator) GenerateFromStream(audio beep.StreamSeekCloser, format bee
 	sq := int(math.Round(float64(height) * 0.66))
 	var artworkImg image.Image
 	if meta != nil && meta.Picture() != nil {
-		artwork, _ := idec.Decode(bytes.NewBuffer(meta.Picture().Data))
+		artwork, _, _ := image.Decode(bytes.NewBuffer(meta.Picture().Data))
 		if artwork != nil {
 			artworkImg, _ = u.MakeThumbnail(artwork, "crop", sq, sq)
 		}
@@ -128,7 +127,7 @@ func (d mp3Generator) GenerateFromStream(audio beep.StreamSeekCloser, format bee
 		f, _ := os.OpenFile(path.Join(config.Runtime.AssetsPath, "default-artwork.png"), os.O_RDONLY, 0640)
 		if f != nil {
 			defer f.Close()
-			tmp, _ := idec.Decode(f)
+			tmp, _, _ := image.Decode(f)
 			if tmp != nil {
 				artworkImg, _ = u.MakeThumbnail(tmp, "crop", ax, ay)
 			}

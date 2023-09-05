@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/disintegration/imaging"
 	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/api/_apimeta"
@@ -19,7 +20,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/thumbnailing"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/i"
 	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/idec"
 )
 
 type mediaInfoHashes struct {
@@ -115,7 +115,7 @@ func MediaInfo(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 	}
 
 	if strings.HasPrefix(response.ContentType, "image/") {
-		img, err := idec.Decode(stream)
+		img, err := imaging.Decode(stream)
 		if err == nil {
 			response.Width = img.Bounds().Max.X
 			response.Height = img.Bounds().Max.Y

@@ -10,7 +10,6 @@ import (
 
 	"github.com/disintegration/imaging"
 	"github.com/stretchr/testify/assert"
-	"github.com/turt2live/matrix-media-repo/util/idec"
 )
 
 var evenColor = color.RGBA{R: 255, G: 0, B: 0, A: 255}
@@ -46,7 +45,7 @@ func MakeTestImage(width int, height int) (string, io.Reader, error) {
 }
 
 func AssertIsTestImage(t *testing.T, i io.Reader) {
-	img, err := idec.Decode(i)
+	img, _, err := image.Decode(i)
 	assert.NoError(t, err, "Error decoding image")
 	width := img.Bounds().Max.X
 	height := img.Bounds().Max.Y

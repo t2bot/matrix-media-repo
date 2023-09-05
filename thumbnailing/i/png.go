@@ -6,10 +6,10 @@ import (
 	_ "image/png"
 	"io"
 
+	"github.com/disintegration/imaging"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/m"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/u"
-	"github.com/turt2live/matrix-media-repo/util/idec"
 )
 
 type pngGenerator struct {
@@ -28,7 +28,7 @@ func (d pngGenerator) matches(img io.Reader, contentType string) bool {
 }
 
 func (d pngGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx rcontext.RequestContext) (bool, int, int, error) {
-	i, err := idec.DecodeConfig(b)
+	i, _, err := image.DecodeConfig(b)
 	if err != nil {
 		return false, 0, 0, err
 	}
@@ -36,7 +36,7 @@ func (d pngGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx r
 }
 
 func (d pngGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
-	src, err := idec.Decode(b)
+	src, err := imaging.Decode(b)
 	if err != nil {
 		return nil, errors.New("png: error decoding thumbnail: " + err.Error())
 	}
