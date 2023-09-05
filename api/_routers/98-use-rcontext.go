@@ -15,11 +15,13 @@ import (
 	"strings"
 
 	"github.com/alioygur/is"
+	"github.com/gabriel-vasile/mimetype"
 	"github.com/getsentry/sentry-go"
 	"github.com/turt2live/matrix-media-repo/api/_responses"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/readers"
 )
 
 type GeneratorFn = func(r *http.Request, ctx rcontext.RequestContext) interface{}
@@ -94,8 +96,25 @@ beforeParseDownload:
 			goto beforeParseDownload // reprocess `res`
 		}
 
-		contentType = downloadRes.ContentType
+		contentType = "application/octet-stream"
 		expectedBytes = downloadRes.SizeBytes
+
+		// Don't rely on user-supplied values for content-type
+		br := readers.NewBufferReadsReader(downloadRes.Data)
+		if mimeType, err := mimetype.DetectReader(br); err != nil {
+			rctx.Log.Warn("Non-fatal error sniffing mime type of download: ", err)
+			sentry.CaptureException(err)
+		} else if mimeType != nil {
+			contentType = mimeType.String()
+		}
+		ogReader := downloadRes.Data
+		downloadRes.Data = readers.NewCancelCloser(io.NopCloser(br.GetRewoundReader()), func() {
+			_ = ogReader.Close()
+		})
+
+		if contentType != downloadRes.ContentType {
+			rctx.Log.Debugf("Expected '%s' content type but ended up with '%s'", downloadRes.ContentType, contentType)
+		}
 
 		if shouldCache {
 			headers.Set("Cache-Control", "private, max-age=259200") // 3 days
@@ -107,7 +126,7 @@ beforeParseDownload:
 
 		disposition := downloadRes.TargetDisposition
 		if disposition == "" {
-			disposition = "inline"
+			disposition = "attachment"
 		} else if disposition == "infer" {
 			if contentType == "" {
 				disposition = "attachment"
