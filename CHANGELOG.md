@@ -136,6 +136,7 @@ path/server, for example, then you can simply update the path in the config for 
   * Note: If you use plugins then memory usage will still be somewhat high due to temporary caching of uploads.
   * Note: This affects RSS primarily. VSZ and other memory metrics may be higher than expected due to how Go releases memory to the OS. This is fixed when there's memory pressure.
 * Fixed shutdown stall if the config was reloaded more than once while running.
+* Fixes [CVE-2023-41318](https://github.com/turt2live/matrix-media-repo/security/advisories/GHSA-5crw-6j7v-xc72).
 
 ## [1.2.13] - February 12, 2023
 
