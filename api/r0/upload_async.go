@@ -12,7 +12,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/api/_routers"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/database"
 	"github.com/turt2live/matrix-media-repo/pipelines/pipeline_upload"
 )
 
@@ -46,7 +45,7 @@ func UploadMediaAsync(r *http.Request, rctx rcontext.RequestContext, user _apime
 	}
 
 	// Actually upload
-	media, err := pipeline_upload.ExecutePut(rctx, server, mediaId, r.Body, contentType, filename, user.UserId)
+	_, err := pipeline_upload.ExecutePut(rctx, server, mediaId, r.Body, contentType, filename, user.UserId)
 	if err != nil {
 		if errors.Is(err, common.ErrQuotaExceeded) {
 			return _responses.QuotaExceeded()
@@ -74,14 +73,7 @@ func UploadMediaAsync(r *http.Request, rctx rcontext.RequestContext, user _apime
 		return _responses.InternalServerError("Unexpected Error")
 	}
 
-	blurhash, err := database.GetInstance().Blurhashes.Prepare(rctx).Get(media.Sha256Hash)
-	if err != nil {
-		rctx.Log.Warn("Unexpected error getting media's blurhash from DB: ", err)
-		sentry.CaptureException(err)
-	}
-
 	return &MediaUploadedResponse{
 		//ContentUri: util.MxcUri(media.Origin, media.MediaId), // This endpoint doesn't return a URI
-		Blurhash: blurhash,
 	}
 }

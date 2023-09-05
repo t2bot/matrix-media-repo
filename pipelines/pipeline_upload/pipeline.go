@@ -77,15 +77,11 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, r io.Re
 		return nil, common.ErrMediaQuarantined
 	}
 
-	// Step 5: Split the buffer to calculate a blurhash & populate cache later
-	bhR, bhW := io.Pipe()
+	// Step 5: Split the buffer to populate cache later
 	cacheR, cacheW := io.Pipe()
-	allWriters := io.MultiWriter(cacheW, bhW)
+	allWriters := io.MultiWriter(cacheW)
 	tee := io.TeeReader(reader, allWriters)
 
-	defer func(bhW *io.PipeWriter, err error) {
-		_ = bhW.CloseWithError(err)
-	}(bhW, errors.New("failed to finish write"))
 	defer func(cacheW *io.PipeWriter, err error) {
 		_ = cacheW.CloseWithError(err)
 	}(cacheW, errors.New("failed to finish write"))
@@ -149,9 +145,6 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, r io.Re
 		}
 	}
 
-	// Step 10: Asynchronously calculate blurhash
-	bhChan := upload.CalculateBlurhashAsync(ctx, bhR, sizeBytes, sha256hash)
-
 	// Step 11: Asynchronously upload to cache
 	cacheChan := upload.PopulateCacheAsync(ctx, cacheR, sizeBytes, sha256hash)
 
@@ -160,17 +153,12 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, r io.Re
 	if err != nil {
 		return nil, err
 	}
-	if err = bhW.Close(); err != nil {
-		ctx.Log.Warn("Failed to close writer for blurhash: ", err)
-		close(bhChan)
-	}
 	if err = cacheW.Close(); err != nil {
 		ctx.Log.Warn("Failed to close writer for cache layer: ", err)
 		close(cacheChan)
 	}
 
 	// Step 13: Wait for channels
-	<-bhChan
 	<-cacheChan
 
 	// Step 14: Everything finally looks good - return some stuff

@@ -69,8 +69,7 @@ func onFileChanged() {
 	bindPortChange := configNew.General.Port != configNow.General.Port
 	forwardAddressChange := configNew.General.TrustAnyForward != configNow.General.TrustAnyForward
 	forwardedHostChange := configNew.General.UseForwardedHost != configNow.General.UseForwardedHost
-	featureChanged := hasWebFeatureChanged(configNew, configNow)
-	if bindAddressChange || bindPortChange || forwardAddressChange || forwardedHostChange || featureChanged {
+	if bindAddressChange || bindPortChange || forwardAddressChange || forwardedHostChange {
 		logrus.Warn("Webserver configuration changed - remounting")
 		globals.WebReloadChan <- true
 	}
@@ -124,10 +123,6 @@ func onFileChanged() {
 		logrus.Warn("PGO config changed - reloading")
 		globals.PGOReloadChan <- true
 	}
-}
-
-func hasWebFeatureChanged(configNew *MainRepoConfig, configNow *MainRepoConfig) bool {
-	return configNew.Features.MSC2448Blurhash.Enabled != configNow.Features.MSC2448Blurhash.Enabled
 }
 
 func hasRedisShardConfigChanged(configNew *MainRepoConfig, configNow *MainRepoConfig) bool {

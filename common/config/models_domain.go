@@ -91,16 +91,6 @@ type TimeoutsConfig struct {
 }
 
 type FeatureConfig struct {
-	MSC2448Blurhash MSC2448Config `yaml:"MSC2448"`
-}
-
-type MSC2448Config struct {
-	Enabled        bool `yaml:"enabled"`
-	GenerateWidth  int  `yaml:"thumbWidth"`
-	GenerateHeight int  `yaml:"thumbHeight"`
-	XComponents    int  `yaml:"xComponents"`
-	YComponents    int  `yaml:"yComponents"`
-	Punch          int  `yaml:"punch"`
 }
 
 type AccessTokenConfig struct {

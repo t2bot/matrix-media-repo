@@ -14,7 +14,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/api/r0"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/database"
 	"github.com/turt2live/matrix-media-repo/datastores"
 	"github.com/turt2live/matrix-media-repo/pipelines/pipeline_download"
 	"github.com/turt2live/matrix-media-repo/pipelines/pipeline_upload"
@@ -97,14 +96,7 @@ func LocalCopy(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 		return _responses.InternalServerError("Unexpected Error")
 	}
 
-	blurhash, err := database.GetInstance().Blurhashes.Prepare(rctx).Get(record.Sha256Hash)
-	if err != nil {
-		rctx.Log.Warn("Unexpected error getting media's blurhash from DB: ", err)
-		sentry.CaptureException(err)
-	}
-
 	return &r0.MediaUploadedResponse{
 		ContentUri: util.MxcUri(record.Origin, record.MediaId),
-		Blurhash:   blurhash,
 	}
 }

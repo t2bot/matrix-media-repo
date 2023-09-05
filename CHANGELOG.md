@@ -103,6 +103,7 @@ path/server, for example, then you can simply update the path in the config for 
 
 * IPFS support has been removed due to maintenance burden.
 * Exports initiated through the admin API no longer support `?include_data=false`. Exports will always contain data.
+* Server-side blurhash calculation has been removed. Clients and bridges already calculate blurhashes locally where applicable. 
 
 ### Changed
 

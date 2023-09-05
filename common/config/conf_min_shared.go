@@ -44,16 +44,7 @@ func NewDefaultMinimumRepoConfig() MinimumRepoConfig {
 			ClientServer: 30,
 			Federation:   120,
 		},
-		Features: FeatureConfig{
-			MSC2448Blurhash: MSC2448Config{
-				Enabled:        false,
-				GenerateWidth:  64,
-				GenerateHeight: 64,
-				XComponents:    4,
-				YComponents:    3,
-				Punch:          1,
-			},
-		},
+		Features: FeatureConfig{},
 		AccessTokens: AccessTokenConfig{
 			MaxCacheTimeSeconds: 0,
 			UseAppservices:      false,

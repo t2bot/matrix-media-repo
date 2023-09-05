@@ -12,7 +12,6 @@ import (
 	"github.com/turt2live/matrix-media-repo/api/_responses"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/database"
 	"github.com/turt2live/matrix-media-repo/datastores"
 	"github.com/turt2live/matrix-media-repo/pipelines/pipeline_upload"
 	"github.com/turt2live/matrix-media-repo/util"
@@ -20,7 +19,6 @@ import (
 
 type MediaUploadedResponse struct {
 	ContentUri string `json:"content_uri,omitempty"`
-	Blurhash   string `json:"xyz.amorgan.blurhash,omitempty"`
 }
 
 func UploadMediaSync(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
@@ -51,15 +49,8 @@ func UploadMediaSync(r *http.Request, rctx rcontext.RequestContext, user _apimet
 		return _responses.InternalServerError("Unexpected Error")
 	}
 
-	blurhash, err := database.GetInstance().Blurhashes.Prepare(rctx).Get(media.Sha256Hash)
-	if err != nil {
-		rctx.Log.Warn("Unexpected error getting media's blurhash from DB: ", err)
-		sentry.CaptureException(err)
-	}
-
 	return &MediaUploadedResponse{
 		ContentUri: util.MxcUri(media.Origin, media.MediaId),
-		Blurhash:   blurhash,
 	}
 }
 

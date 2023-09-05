@@ -20,7 +20,6 @@ type Database struct {
 	UserStats       *userStatsTableStatements
 	ReservedMedia   *reservedMediaTableStatements
 	MetadataView    *metadataVirtualTableStatements
-	Blurhashes      *blurhashesTableStatements
 	HeldMedia       *heldMediaTableStatements
 	Thumbnails      *thumbnailsTableStatements
 	LastAccess      *lastAccessTableStatements
@@ -100,9 +99,6 @@ func openDatabase(connectionString string, maxConns int, maxIdleConns int) error
 	}
 	if d.MetadataView, err = prepareMetadataVirtualTables(d.conn); err != nil {
 		return errors.New("failed to create metadata virtual table accessor: " + err.Error())
-	}
-	if d.Blurhashes, err = prepareBlurhashesTables(d.conn); err != nil {
-		return errors.New("failed to create blurhashes table accessor: " + err.Error())
 	}
 	if d.HeldMedia, err = prepareHeldMediaTables(d.conn); err != nil {
 		return errors.New("failed to create held media table accessor: " + err.Error())
