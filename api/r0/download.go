@@ -28,15 +28,6 @@ func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 		return _responses.BadRequest("invalid server ID")
 	}
 
-	targetDisposition := r.URL.Query().Get("org.matrix.msc2702.asAttachment")
-	if targetDisposition == "true" {
-		targetDisposition = "attachment"
-	} else if targetDisposition == "false" {
-		targetDisposition = "inline"
-	} else {
-		targetDisposition = "infer"
-	}
-
 	downloadRemote := true
 	if allowRemote != "" {
 		parsedFlag, err := strconv.ParseBool(allowRemote)
@@ -98,6 +89,6 @@ func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 		Filename:          filename,
 		SizeBytes:         media.SizeBytes,
 		Data:              stream,
-		TargetDisposition: targetDisposition,
+		TargetDisposition: "infer",
 	}
 }
