@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"image"
 	"io"
 	"math"
 	"net/http"
@@ -20,6 +19,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/plugins/plugin_common"
 	"github.com/turt2live/matrix-media-repo/plugins/plugin_interfaces"
 	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/idec"
 )
 
 type AntispamOCR struct {
@@ -84,7 +84,7 @@ func (a *AntispamOCR) CheckForSpam(b64 string, filename string, contentType stri
 		return false, nil
 	}
 
-	img, _, err := image.Decode(bytes.NewBuffer(b))
+	img, err := idec.Decode(bytes.NewBuffer(b))
 	if err != nil {
 		return false, err
 	}

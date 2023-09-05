@@ -6,11 +6,11 @@ import (
 	_ "image/jpeg"
 	"io"
 
-	"github.com/disintegration/imaging"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/m"
 	"github.com/turt2live/matrix-media-repo/thumbnailing/u"
 	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/idec"
 	"github.com/turt2live/matrix-media-repo/util/readers"
 )
 
@@ -38,7 +38,7 @@ func (d jpgGenerator) GenerateThumbnail(b io.Reader, contentType string, width i
 	orientation := u.ExtractExifOrientation(br)
 	b = br.GetRewoundReader()
 
-	src, err := imaging.Decode(b)
+	src, err := idec.Decode(b)
 	if err != nil {
 		return nil, errors.New("jpg: error decoding thumbnail: " + err.Error())
 	}

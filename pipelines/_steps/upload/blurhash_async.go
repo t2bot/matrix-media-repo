@@ -8,6 +8,7 @@ import (
 	"github.com/disintegration/imaging"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/database"
+	"github.com/turt2live/matrix-media-repo/util/idec"
 	"github.com/turt2live/matrix-media-repo/util/readers"
 )
 
@@ -31,7 +32,7 @@ func CalculateBlurhashAsync(ctx rcontext.RequestContext, reader io.Reader, sizeB
 		// Same goes for pixel size
 		var c image.Config
 		br := readers.NewBufferReadsReader(reader)
-		c, _, err = image.DecodeConfig(br)
+		c, err = idec.DecodeConfig(br)
 		if err != nil {
 			return
 		}
@@ -41,7 +42,7 @@ func CalculateBlurhashAsync(ctx rcontext.RequestContext, reader io.Reader, sizeB
 		reader = br.GetRewoundReader()
 
 		var img image.Image
-		img, err = imaging.Decode(reader)
+		img, err = idec.Decode(reader)
 		if err != nil {
 			ctx.Log.Debug("Skipping blurhash on this upload due to error: ", err)
 			return
