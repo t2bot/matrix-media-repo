@@ -123,6 +123,7 @@ path/server, for example, then you can simply update the path in the config for 
     ```
 * Per-user upload quotas now do not allow users to exceed the maximum values, even by 1 byte. Previously, users could exceed the limits by a little bit.
 * Updated to Go 1.19, then Go 1.20 in the same release cycle.
+* New CGO dependencies are required. See [docs.t2bot.io](https://docs.t2bot.io/matrix-media-repo/installing/method/compilation.html) for details.
 * Logs are now less noisy by default.
 * Connected homeservers must support at least Matrix 1.1 on the Client-Server API.
 * The example Grafana dashboard has been updated.
