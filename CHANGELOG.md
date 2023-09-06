@@ -111,17 +111,6 @@ path/server, for example, then you can simply update the path in the config for 
 * If compiling `matrix-media-repo`, note that new external dependencies are required. See [the docs](https://docs.t2bot.io/matrix-media-repo/installing/method/compilation.html).
   * Docker images already contain these dependencies. 
 * Datastores no longer use the `enabled` flag set on them. Use `forKinds: []` instead to disable a datastore's usage.
-* Some admin endpoints for purging media, quarantining media, and background task information now require additional path components.
-    ```diff
-    -POST /_matrix/media/unstable/admin/purge/<server>/<media id>?access_token=your_access_token
-    +POST /_matrix/media/unstable/admin/purge/media/<server>/<media id>?access_token=your_access_token
-  
-    -POST /_matrix/media/unstable/admin/quarantine/<server>/<media id>?access_token=your_access_token
-    +POST /_matrix/media/unstable/admin/quarantine/media/<server>/<media id>?access_token=your_access_token
-  
-    -GET /_matrix/media/unstable/admin/tasks/<task ID>
-    +GET /_matrix/media/unstable/admin/task/<task ID>
-    ```
 * Per-user upload quotas now do not allow users to exceed the maximum values, even by 1 byte. Previously, users could exceed the limits by a little bit.
 * Updated to Go 1.19, then Go 1.20 in the same release cycle.
 * New CGO dependencies are required. See [docs.t2bot.io](https://docs.t2bot.io/matrix-media-repo/installing/method/compilation.html) for details.

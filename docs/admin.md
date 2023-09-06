@@ -46,7 +46,7 @@ This will delete all media that has previously been quarantined, local or remote
 
 #### Purge individual record
 
-URL: `POST /_matrix/media/unstable/admin/purge/media/<server>/<media id>?access_token=your_access_token`
+URL: `POST /_matrix/media/unstable/admin/purge/<server>/<media id>?access_token=your_access_token`
 
 **Note**: Prior to v1.3, this endpoint did not require the `/media` component, but does now.
 
@@ -90,7 +90,7 @@ This API is unique in that it can allow administrators of configured homeservers
 
 #### Quarantine a specific record
 
-URL: `POST /_matrix/media/unstable/admin/quarantine/media/<server>/<media id>?access_token=your_access_token`
+URL: `POST /_matrix/media/unstable/admin/quarantine/<server>/<media id>?access_token=your_access_token`
 
 **Note**: Prior to v1.3, this endpoint did not require the `/media` component, but does now.
 
@@ -367,7 +367,7 @@ The response is a list of all unfinished tasks:
 
 #### Getting information on a specific task
 
-URL: `GET /_matrix/media/unstable/admin/task/<task ID>`
+URL: `GET /_matrix/media/unstable/admin/tasks/<task ID>`
 
 **Note**: Prior to v1.3, this endpoint was "tasks" (plural). It is now singular.
 

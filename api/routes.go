@@ -62,21 +62,27 @@ func buildRoutes() http.Handler {
 
 	// All admin routes are unstable only
 	purgeRemoteRoute := makeRoute(_routers.RequireRepoAdmin(custom.PurgeRemoteMedia), "purge_remote_media", counter)
+	purgeBranch := branchedRoute([]branch{
+		{"remote", purgeRemoteRoute},
+		{"old", makeRoute(_routers.RequireRepoAdmin(custom.PurgeOldMedia), "purge_old_media", counter)},
+		{"quarantined", makeRoute(_routers.RequireAccessToken(custom.PurgeQuarantined), "purge_quarantined", counter)},
+		{"user/:userId", makeRoute(_routers.RequireAccessToken(custom.PurgeUserMedia), "purge_user_media", counter)},
+		{"room/:roomId", makeRoute(_routers.RequireAccessToken(custom.PurgeRoomMedia), "purge_room_media", counter)},
+		{"server/:serverName", makeRoute(_routers.RequireAccessToken(custom.PurgeDomainMedia), "purge_domain_media", counter)},
+		{":server/:mediaId", purgeOneRoute},
+	})
+	register([]string{"POST"}, PrefixMedia, "admin/purge/*branch", mxUnstable, router, purgeBranch)
 	register([]string{"POST"}, PrefixMedia, "admin/purge_remote", mxUnstable, router, purgeRemoteRoute)
-	register([]string{"POST"}, PrefixMedia, "admin/purge/remote", mxUnstable, router, purgeRemoteRoute)
 	register([]string{"POST"}, PrefixClient, "admin/purge_media_cache", mxUnstable, router, purgeRemoteRoute) // synapse compat
-	register([]string{"POST"}, PrefixMedia, "admin/purge/media/:server/:mediaId", mxUnstable, router, purgeOneRoute)
-	register([]string{"POST"}, PrefixMedia, "admin/purge/old", mxUnstable, router, makeRoute(_routers.RequireRepoAdmin(custom.PurgeOldMedia), "purge_old_media", counter))
-	register([]string{"POST"}, PrefixMedia, "admin/purge/quarantined", mxUnstable, router, makeRoute(_routers.RequireAccessToken(custom.PurgeQuarantined), "purge_quarantined", counter))
-	register([]string{"POST"}, PrefixMedia, "admin/purge/user/:userId", mxUnstable, router, makeRoute(_routers.RequireAccessToken(custom.PurgeUserMedia), "purge_user_media", counter))
-	register([]string{"POST"}, PrefixMedia, "admin/purge/room/:roomId", mxUnstable, router, makeRoute(_routers.RequireAccessToken(custom.PurgeRoomMedia), "purge_room_media", counter))
-	register([]string{"POST"}, PrefixMedia, "admin/purge/server/:serverName", mxUnstable, router, makeRoute(_routers.RequireAccessToken(custom.PurgeDomainMedia), "purge_domain_media", counter))
 	quarantineRoomRoute := makeRoute(_routers.RequireAccessToken(custom.QuarantineRoomMedia), "quarantine_room", counter)
-	register([]string{"POST"}, PrefixMedia, "admin/quarantine/room/:roomId", mxUnstable, router, quarantineRoomRoute)
+	quarantineBranch := branchedRoute([]branch{
+		{"room/:roomId", quarantineRoomRoute},
+		{"user/:userId", makeRoute(_routers.RequireAccessToken(custom.QuarantineUserMedia), "quarantine_user", counter)},
+		{"server/:serverName", makeRoute(_routers.RequireAccessToken(custom.QuarantineDomainMedia), "quarantine_domain", counter)},
+		{":server/:mediaId", makeRoute(_routers.RequireAccessToken(custom.QuarantineMedia), "quarantine_media", counter)},
+	})
+	register([]string{"POST"}, PrefixMedia, "admin/quarantine/*branch", mxUnstable, router, quarantineBranch)
 	register([]string{"POST"}, PrefixClient, "admin/quarantine_media/:roomId", mxUnstable, router, quarantineRoomRoute) // synapse compat
-	register([]string{"POST"}, PrefixMedia, "admin/quarantine/user/:userId", mxUnstable, router, makeRoute(_routers.RequireAccessToken(custom.QuarantineUserMedia), "quarantine_user", counter))
-	register([]string{"POST"}, PrefixMedia, "admin/quarantine/server/:serverName", mxUnstable, router, makeRoute(_routers.RequireAccessToken(custom.QuarantineDomainMedia), "quarantine_domain", counter))
-	register([]string{"POST"}, PrefixMedia, "admin/quarantine/media/:server/:mediaId", mxUnstable, router, makeRoute(_routers.RequireAccessToken(custom.QuarantineMedia), "quarantine_media", counter))
 	register([]string{"GET"}, PrefixMedia, "admin/datastores/:datastoreId/size_estimate", mxUnstable, router, makeRoute(_routers.RequireRepoAdmin(custom.GetDatastoreStorageEstimate), "get_storage_estimate", counter))
 	register([]string{"POST"}, PrefixMedia, "admin/datastores/:sourceDsId/transfer_to/:targetDsId", mxUnstable, router, makeRoute(_routers.RequireRepoAdmin(custom.MigrateBetweenDatastores), "datastore_transfer", counter))
 	register([]string{"GET"}, PrefixMedia, "admin/datastores", mxUnstable, router, makeRoute(_routers.RequireRepoAdmin(custom.GetDatastores), "list_datastores", counter))
@@ -85,9 +91,12 @@ func buildRoutes() http.Handler {
 	register([]string{"GET"}, PrefixMedia, "admin/usage/:serverName/users", mxUnstable, router, makeRoute(_routers.RequireRepoAdmin(custom.GetUserUsage), "user_usage", counter))
 	register([]string{"GET"}, PrefixMedia, "admin/usage/:serverName/users-stats", mxUnstable, router, synUserStatsRoute)
 	register([]string{"GET"}, PrefixMedia, "admin/usage/:serverName/uploads", mxUnstable, router, makeRoute(_routers.RequireRepoAdmin(custom.GetUploadsUsage), "uploads_usage", counter))
-	register([]string{"GET"}, PrefixMedia, "admin/task/:taskId", mxUnstable, router, makeRoute(_routers.RequireRepoAdmin(custom.GetTask), "get_background_task", counter))
-	register([]string{"GET"}, PrefixMedia, "admin/tasks/all", mxUnstable, router, makeRoute(_routers.RequireRepoAdmin(custom.ListAllTasks), "list_all_background_tasks", counter))
-	register([]string{"GET"}, PrefixMedia, "admin/tasks/unfinished", mxUnstable, router, makeRoute(_routers.RequireRepoAdmin(custom.ListUnfinishedTasks), "list_unfinished_background_tasks", counter))
+	tasksBranch := branchedRoute([]branch{
+		{"all", makeRoute(_routers.RequireRepoAdmin(custom.ListAllTasks), "list_all_background_tasks", counter)},
+		{"unfinished", makeRoute(_routers.RequireRepoAdmin(custom.ListUnfinishedTasks), "list_unfinished_background_tasks", counter)},
+		{":taskId", makeRoute(_routers.RequireRepoAdmin(custom.GetTask), "get_background_task", counter)},
+	})
+	register([]string{"GET"}, PrefixMedia, "admin/tasks/*branch", mxUnstable, router, tasksBranch)
 	register([]string{"POST"}, PrefixMedia, "admin/user/:userId/export", mxUnstable, router, makeRoute(_routers.RequireAccessToken(custom.ExportUserData), "export_user_data", counter))
 	register([]string{"POST"}, PrefixMedia, "admin/server/:serverName/export", mxUnstable, router, makeRoute(_routers.RequireAccessToken(custom.ExportServerData), "export_server_data", counter))
 	register([]string{"GET"}, PrefixMedia, "admin/export/:exportId/view", mxUnstable, router, makeRoute(_routers.OptionalAccessToken(custom.ViewExport), "view_export", counter))

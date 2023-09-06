@@ -1,6 +1,7 @@
 package _routers
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"regexp"
@@ -26,4 +27,23 @@ func GetParam(name string, r *http.Request) string {
 		return ""
 	}
 	return p.ByName(name)
+}
+
+func ForceSetParam(name string, val string, r *http.Request) *http.Request {
+	params := httprouter.ParamsFromContext(r.Context())
+	wasSet := false
+	for _, p := range params {
+		if p.Key == name {
+			p.Value = val
+			wasSet = true
+			break
+		}
+	}
+	if !wasSet {
+		params = append(params, httprouter.Param{
+			Key:   name,
+			Value: val,
+		})
+	}
+	return r.WithContext(context.WithValue(r.Context(), httprouter.ParamsKey, params))
 }
