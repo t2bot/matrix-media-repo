@@ -36,7 +36,7 @@ func Generate(ctx rcontext.RequestContext, mediaRecord *database.DbMedia, width 
 			"origin":   mediaRecord.Origin,
 		})
 
-		mediaStream, err := download.OpenStream(ctx, mediaRecord.Locatable, -1, -1)
+		mediaStream, err := download.OpenStream(ctx, mediaRecord.Locatable)
 		if err != nil {
 			ch <- generateResult{err: err}
 			return

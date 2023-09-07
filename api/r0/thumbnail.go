@@ -109,8 +109,6 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 	thumbnail, stream, err := pipeline_thumbnail.Execute(rctx, server, mediaId, pipeline_thumbnail.ThumbnailOpts{
 		DownloadOpts: pipeline_download.DownloadOpts{
 			FetchRemoteIfNeeded: downloadRemote,
-			StartByte:           -1,
-			EndByte:             -1,
 			BlockForReadUntil:   blockFor,
 			RecordOnly:          false, // overridden
 		},

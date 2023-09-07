@@ -63,7 +63,7 @@ func StoreMedia(ctx rcontext.RequestContext, hash string, content io.Reader, siz
 	return nil
 }
 
-func TryGetMedia(ctx rcontext.RequestContext, hash string, startByte int64, endByte int64) (io.Reader, error) {
+func TryGetMedia(ctx rcontext.RequestContext, hash string) (io.Reader, error) {
 	makeConnection()
 	if ring == nil {
 		return nil, nil
@@ -73,17 +73,10 @@ func TryGetMedia(ctx rcontext.RequestContext, hash string, startByte int64, endB
 	defer cancel()
 
 	var result *redis.StringCmd
-	if startByte >= 0 && endByte >= 1 {
-		ctx.Log.Debugf("Getting range from cache for %s (bytes %d-%d)", hash, startByte, endByte)
-		if startByte < endByte {
-			result = ring.GetRange(timeoutCtx, hash, startByte, endByte)
-		} else {
-			return nil, errors.New("invalid range - start must be before end")
-		}
-	} else {
-		ctx.Log.Debugf("Getting whole cached object for %s", hash)
-		result = ring.Get(timeoutCtx, hash)
-	}
+
+	// TODO(TR-1): @@ Return seekable stream
+	ctx.Log.Debugf("Getting whole cached object for %s", hash)
+	result = ring.Get(timeoutCtx, hash)
 
 	s, err := result.Bytes()
 	if err != nil {

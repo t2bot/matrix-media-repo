@@ -40,10 +40,6 @@ func (o ThumbnailOpts) ImpliedDownloadOpts() pipeline_download.DownloadOpts {
 		FetchRemoteIfNeeded: o.FetchRemoteIfNeeded,
 		BlockForReadUntil:   o.BlockForReadUntil,
 		RecordOnly:          true,
-
-		// We remove the range parameters to ensure we get a useful download stream
-		StartByte: -1,
-		EndByte:   -1,
 	}
 }
 
@@ -83,7 +79,7 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Th
 				if dr != nil {
 					dr.Close()
 				}
-				return quarantine.ReturnAppropriateThing(ctx, false, opts.RecordOnly, opts.Width, opts.Height, opts.StartByte, opts.EndByte)
+				return quarantine.ReturnAppropriateThing(ctx, false, opts.RecordOnly, opts.Width, opts.Height)
 			}
 			return nil, err
 		}
@@ -104,14 +100,14 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Th
 			if opts.RecordOnly {
 				return nil, nil
 			}
-			return download.OpenStream(ctx, record.Locatable, opts.StartByte, opts.EndByte)
+			return download.OpenStream(ctx, record.Locatable)
 		}
 
 		// Step 6: Generate the thumbnail and return that
 		record, r, err := thumbnails.Generate(ctx, mediaRecord, opts.Width, opts.Height, opts.Method, opts.Animated)
 		if err != nil {
 			if !opts.RecordOnly && errors.Is(err, common.ErrMediaDimensionsTooSmall) {
-				d, err := download.OpenStream(ctx, mediaRecord.Locatable, opts.StartByte, opts.EndByte)
+				d, err := download.OpenStream(ctx, mediaRecord.Locatable)
 				if err != nil {
 					return nil, err
 				} else {
@@ -126,8 +122,8 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Th
 			return nil, nil
 		}
 
-		// Step 7: Create a limited stream
-		return download.CreateLimitedStream(ctx, r, opts.StartByte, opts.EndByte)
+		// Step 7: Return stream
+		return r, nil
 	})
 	if errors.Is(err, common.ErrMediaQuarantined) || errors.Is(err, common.ErrMediaDimensionsTooSmall) {
 		if r != nil {

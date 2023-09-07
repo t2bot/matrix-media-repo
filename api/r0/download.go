@@ -56,8 +56,6 @@ func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 
 	media, stream, err := pipeline_download.Execute(rctx, server, mediaId, pipeline_download.DownloadOpts{
 		FetchRemoteIfNeeded: downloadRemote,
-		StartByte:           -1,
-		EndByte:             -1,
 		BlockForReadUntil:   blockFor,
 	})
 	if err != nil {

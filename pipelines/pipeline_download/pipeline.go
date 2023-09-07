@@ -24,14 +24,12 @@ var recordSf = sfcache.NewSingleflightCache[*database.DbMedia]()
 
 type DownloadOpts struct {
 	FetchRemoteIfNeeded bool
-	StartByte           int64
-	EndByte             int64
 	BlockForReadUntil   time.Duration
 	RecordOnly          bool
 }
 
 func (o DownloadOpts) String() string {
-	return fmt.Sprintf("f=%t,s=%d,e=%d,b=%s", o.FetchRemoteIfNeeded, o.StartByte, o.EndByte, o.BlockForReadUntil.String())
+	return fmt.Sprintf("f=%t,b=%s,r=%t", o.FetchRemoteIfNeeded, o.BlockForReadUntil.String(), o.RecordOnly)
 }
 
 func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts DownloadOpts) (*database.DbMedia, io.ReadCloser, error) {
@@ -63,13 +61,13 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 		// Step 3: Do we already have the media? Serve it if yes.
 		if record != nil {
 			if record.Quarantined {
-				return quarantine.ReturnAppropriateThing(ctx, true, opts.RecordOnly, 512, 512, opts.StartByte, opts.EndByte)
+				return quarantine.ReturnAppropriateThing(ctx, true, opts.RecordOnly, 512, 512)
 			}
 			meta.FlagAccess(ctx, record.Sha256Hash, record.CreationTs)
 			if opts.RecordOnly {
 				return nil, nil
 			}
-			return download.OpenStream(ctx, record.Locatable, opts.StartByte, opts.EndByte)
+			return download.OpenStream(ctx, record.Locatable)
 		}
 
 		// Step 4: Media record unknown - download it (if possible)
@@ -82,7 +80,7 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 		}
 		recordSf.OverwriteCacheKey(sfKey, record)
 		if record.Quarantined {
-			return quarantine.ReturnAppropriateThing(ctx, true, opts.RecordOnly, 512, 512, opts.StartByte, opts.EndByte)
+			return quarantine.ReturnAppropriateThing(ctx, true, opts.RecordOnly, 512, 512)
 		}
 		meta.FlagAccess(ctx, record.Sha256Hash, record.CreationTs)
 		if opts.RecordOnly {
@@ -90,12 +88,7 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 			return nil, nil
 		}
 
-		// Step 5: Limit the stream if needed
-		r, err = download.CreateLimitedStream(ctx, r, opts.StartByte, opts.EndByte)
-		if err != nil {
-			return nil, err
-		}
-
+		// Step 5: Return the stream
 		return r, nil
 	})
 	if errors.Is(err, common.ErrMediaQuarantined) {

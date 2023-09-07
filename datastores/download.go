@@ -33,5 +33,6 @@ func Download(ctx rcontext.RequestContext, ds config.DatastoreConfig, dsFileName
 		return nil, errors.New("unknown datastore type - contact developer")
 	}
 
+	// TODO(TR-1): @@ Return seekable stream
 	return rsc, err
 }

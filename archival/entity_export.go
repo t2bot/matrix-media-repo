@@ -42,8 +42,6 @@ func ExportEntityData(ctx rcontext.RequestContext, exportId string, entityId str
 		ctx.Log.Debugf("Downloading %s", mxc)
 		_, s, err := pipeline_download.Execute(ctx, media.Origin, media.MediaId, pipeline_download.DownloadOpts{
 			FetchRemoteIfNeeded: false,
-			StartByte:           -1,
-			EndByte:             -1,
 			BlockForReadUntil:   1 * time.Minute,
 			RecordOnly:          false,
 		})
