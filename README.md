@@ -1,11 +1,5 @@
 # matrix-media-repo
 
-# 🚨🚨 DANGER: MAJOR REFACTORING IN PROGRESS 🚨🚨
-
-**This project is undergoing a major refactoring on the main branch.** This may lead to inconsistent database or storage
-state while the project is effectively rewritten in large part. *Use `:latest` and the main branch at your own risk.* No
-support is provided to people using `:latest` or `master`.
-
 matrix-media-repo is a highly customizable multi-domain media repository for Matrix. Intended for medium to large environments
 consisting of several homeservers, this media repo de-duplicates media (including remote media) while being fully compliant
 with the specification. 
