@@ -396,6 +396,8 @@ github.com/t2bot/go-singleflight-streams v0.0.6 h1:vpTidNqVWzyJ3s2lCWU3U4ISMBkvi
 github.com/t2bot/go-singleflight-streams v0.0.6/go.mod h1:pEIFm6l/utrXZBeP4tkIuMdYwBBN0TTw7feSEhozNzg=
 github.com/t2bot/go-typed-singleflight v0.0.3 h1:TAQyjhfa5BA63BwFTEVY1a4NF07ekX9JRgite5Cbq0A=
 github.com/t2bot/go-typed-singleflight v0.0.3/go.mod h1:0SOeDgjEtLYEy1InNhFBCgDx0UjKAqsLzk5MXek/JNw=
+github.com/t2bot/gotd-contrib v0.0.0-20230907202504-d21987ea2957 h1:NEgOW/OCE0zGIiSxE+lW2KSqqqH4E1mTT3VGmpIz2U4=
+github.com/t2bot/gotd-contrib v0.0.0-20230907202504-d21987ea2957/go.mod h1:0ECnMvPuNshidfqCiwZuWQppQ5BpDDllWzZsJW/z/p4=
 github.com/t2bot/pgo-fleet/embedded v1.0.1 h1:gRZFImsioKL/zFNIY1F8mlOc/bHBHFOj0o0SQ09g/BU=
 github.com/t2bot/pgo-fleet/embedded v1.0.1/go.mod h1:ShnCKRhA7Sy0tCzx3lUHTliE6fshiwJfqSbkLHe1rOU=
 github.com/tebeka/strftime v0.1.3 h1:5HQXOqWKYRFfNyBMNVc9z5+QzuBtIXy03psIhtdJYto=

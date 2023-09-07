@@ -55,6 +55,7 @@ require (
 	github.com/strukturag/libheif v1.16.2
 	github.com/t2bot/go-singleflight-streams v0.0.6
 	github.com/t2bot/go-typed-singleflight v0.0.3
+	github.com/t2bot/gotd-contrib v0.0.0-20230907202504-d21987ea2957
 	github.com/t2bot/pgo-fleet/embedded v1.0.1
 	github.com/testcontainers/testcontainers-go v0.23.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.23.0
