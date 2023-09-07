@@ -22,6 +22,10 @@ import (
 var streamSf = new(sfstreams.Group)
 var recordSf = sfcache.NewSingleflightCache[*database.DbMedia]()
 
+func init() {
+	streamSf.UseSeekers = true
+}
+
 type DownloadOpts struct {
 	FetchRemoteIfNeeded bool
 	BlockForReadUntil   time.Duration

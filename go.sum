@@ -132,8 +132,8 @@ github.com/go-redis/redis v6.15.9+incompatible h1:K0pv1D7EQUjfyoMql+r/jZqCLizCGK
 github.com/go-redis/redis v6.15.9+incompatible/go.mod h1:NAIEuMOZ/fxfXJIrKDQDz8wamY7mA7PouImQ2Jvg6kA=
 github.com/go-redis/redis/v7 v7.4.0 h1:7obg6wUoj05T0EpY0o8B59S9w5yeMWql7sw2kwNW1x4=
 github.com/go-redis/redis/v7 v7.4.0/go.mod h1:JDNMw23GTyLNC4GZu9njt15ctBQVn7xjRfnwdHj/Dcg=
-github.com/go-redis/redis/v8 v8.11.4 h1:kHoYkfZP6+pe04aFTnhDH6GDROa5yJdHJVNxV3F46Tg=
 github.com/go-redis/redis/v8 v8.11.4/go.mod h1:2Z2wHZXdQpCDXEGzqMockDpNyYvi2l4Pxt6RJr792+w=
+github.com/go-redis/redis/v8 v8.11.5 h1:AcZZR7igkdvfVmQTPnu9WE37LRrO/YrBH5zWyjDC0oI=
 github.com/go-redsync/redsync/v4 v4.8.2 h1:/b+jidlwOnSOl605hmNsd+ohfr/qB1EpLiKnCYkiw28=
 github.com/go-redsync/redsync/v4 v4.8.2/go.mod h1:83QPGYHk0Wt2LhFo3n9xCrUGPQrQvejVTVR08KX032g=
 github.com/go-sql-driver/mysql v1.5.0 h1:ozyZYNQW3x3HtqT1jira07DN2PArx2v7/mN66gGcHOs=
@@ -392,8 +392,8 @@ github.com/strukturag/libheif v1.16.2 h1:wCgk8RhYopsFsg73misRH7HLlKflrVBYyIcIcxd
 github.com/strukturag/libheif v1.16.2/go.mod h1:E/PNRlmVtrtj9j2AvBZlrO4dsBDu6KfwDZn7X1Ce8Ks=
 github.com/stvp/tempredis v0.0.0-20181119212430-b82af8480203 h1:QVqDTf3h2WHt08YuiTGPZLls0Wq99X9bWd0Q5ZSBesM=
 github.com/stvp/tempredis v0.0.0-20181119212430-b82af8480203/go.mod h1:oqN97ltKNihBbwlX8dLpwxCl3+HnXKV/R0e+sRLd9C8=
-github.com/t2bot/go-singleflight-streams v0.0.6 h1:vpTidNqVWzyJ3s2lCWU3U4ISMBkviRIOb7KrWv1e1SI=
-github.com/t2bot/go-singleflight-streams v0.0.6/go.mod h1:pEIFm6l/utrXZBeP4tkIuMdYwBBN0TTw7feSEhozNzg=
+github.com/t2bot/go-singleflight-streams v0.0.7 h1:IJriaUAF72b/ObD+tVEdzNB1M9VMx5w8ZoEb9LnXTsw=
+github.com/t2bot/go-singleflight-streams v0.0.7/go.mod h1:pEIFm6l/utrXZBeP4tkIuMdYwBBN0TTw7feSEhozNzg=
 github.com/t2bot/go-typed-singleflight v0.0.3 h1:TAQyjhfa5BA63BwFTEVY1a4NF07ekX9JRgite5Cbq0A=
 github.com/t2bot/go-typed-singleflight v0.0.3/go.mod h1:0SOeDgjEtLYEy1InNhFBCgDx0UjKAqsLzk5MXek/JNw=
 github.com/t2bot/gotd-contrib v0.0.0-20230907202504-d21987ea2957 h1:NEgOW/OCE0zGIiSxE+lW2KSqqqH4E1mTT3VGmpIz2U4=

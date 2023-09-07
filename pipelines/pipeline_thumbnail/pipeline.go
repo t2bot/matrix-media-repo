@@ -22,6 +22,10 @@ import (
 var streamSf = new(sfstreams.Group)
 var recordSf = sfcache.NewSingleflightCache[*database.DbThumbnail]()
 
+func init() {
+	streamSf.UseSeekers = true
+}
+
 // ThumbnailOpts are options for generating a thumbnail
 type ThumbnailOpts struct {
 	pipeline_download.DownloadOpts
