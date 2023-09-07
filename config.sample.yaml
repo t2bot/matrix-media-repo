@@ -605,7 +605,7 @@ pgo:
   enabled: false
 
   # The pgo-fleet submit URL.
-  submitUrl: "https://mmr-pgo.t2host.io/v1/submit"
+  submitUrl: "https://pgo-mmr.t2host.io/v1/submit"
 
   # The pgo-fleet submit key.
   submitKey: "INSERT_VALUE_HERE"
