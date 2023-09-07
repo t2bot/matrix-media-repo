@@ -63,7 +63,7 @@ func StoreMedia(ctx rcontext.RequestContext, hash string, content io.Reader, siz
 	return nil
 }
 
-func TryGetMedia(ctx rcontext.RequestContext, hash string) (io.Reader, error) {
+func TryGetMedia(ctx rcontext.RequestContext, hash string) (io.ReadSeeker, error) {
 	makeConnection()
 	if ring == nil {
 		return nil, nil

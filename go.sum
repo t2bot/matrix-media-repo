@@ -392,8 +392,8 @@ github.com/strukturag/libheif v1.16.2 h1:wCgk8RhYopsFsg73misRH7HLlKflrVBYyIcIcxd
 github.com/strukturag/libheif v1.16.2/go.mod h1:E/PNRlmVtrtj9j2AvBZlrO4dsBDu6KfwDZn7X1Ce8Ks=
 github.com/stvp/tempredis v0.0.0-20181119212430-b82af8480203 h1:QVqDTf3h2WHt08YuiTGPZLls0Wq99X9bWd0Q5ZSBesM=
 github.com/stvp/tempredis v0.0.0-20181119212430-b82af8480203/go.mod h1:oqN97ltKNihBbwlX8dLpwxCl3+HnXKV/R0e+sRLd9C8=
-github.com/t2bot/go-singleflight-streams v0.0.7 h1:IJriaUAF72b/ObD+tVEdzNB1M9VMx5w8ZoEb9LnXTsw=
-github.com/t2bot/go-singleflight-streams v0.0.7/go.mod h1:pEIFm6l/utrXZBeP4tkIuMdYwBBN0TTw7feSEhozNzg=
+github.com/t2bot/go-singleflight-streams v0.0.8 h1:Q6lunL6f8Zk0ZVlAuX7yXqulqHZyAvgjZvqEDlqVNkQ=
+github.com/t2bot/go-singleflight-streams v0.0.8/go.mod h1:pEIFm6l/utrXZBeP4tkIuMdYwBBN0TTw7feSEhozNzg=
 github.com/t2bot/go-typed-singleflight v0.0.3 h1:TAQyjhfa5BA63BwFTEVY1a4NF07ekX9JRgite5Cbq0A=
 github.com/t2bot/go-typed-singleflight v0.0.3/go.mod h1:0SOeDgjEtLYEy1InNhFBCgDx0UjKAqsLzk5MXek/JNw=
 github.com/t2bot/gotd-contrib v0.0.0-20230907202504-d21987ea2957 h1:NEgOW/OCE0zGIiSxE+lW2KSqqqH4E1mTT3VGmpIz2U4=
