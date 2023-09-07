@@ -74,7 +74,6 @@ func TryGetMedia(ctx rcontext.RequestContext, hash string) (io.Reader, error) {
 
 	var result *redis.StringCmd
 
-	// TODO(TR-1): @@ Return seekable stream
 	ctx.Log.Debugf("Getting whole cached object for %s", hash)
 	result = ring.Get(timeoutCtx, hash)
 
@@ -88,7 +87,7 @@ func TryGetMedia(ctx rcontext.RequestContext, hash string) (io.Reader, error) {
 	}
 
 	metrics.CacheHits.With(prometheus.Labels{"cache": "media"}).Inc()
-	return bytes.NewBuffer(s), nil
+	return bytes.NewReader(s), nil
 }
 
 func DeleteMedia(ctx rcontext.RequestContext, hash string) error {
