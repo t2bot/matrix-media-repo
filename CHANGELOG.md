@@ -7,7 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
-*Nothing yet.*
+### Fixed
+
+* Fixed media purge API not being able to delete thumbnails.
 
 ## [1.3.0] - September 8, 2023
 
