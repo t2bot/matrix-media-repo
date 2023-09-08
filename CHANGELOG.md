@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+*Nothing yet.*
+
+## [v1.3.0] - September 8, 2023
+
 ### Mandatory Configuration Change
 
 **Please see [docs.t2bot.io](https://docs.t2bot.io/matrix-media-repo/upgrading/130.html) for details.**
@@ -435,7 +439,8 @@ a large database (more than about 100k uploaded files), run the following steps 
 * Various other features that would be expected like maximum/minimum size controls, rate limiting, etc. Check out the
   sample config for a better idea of what else is possible.
 
-[unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.13...HEAD
+[unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.13...v1.3.0
 [1.2.13]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.12...v1.2.13
 [1.2.12]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.11...v1.2.12
 [1.2.11]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.10...v1.2.11
