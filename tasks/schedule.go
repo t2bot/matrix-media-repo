@@ -124,7 +124,7 @@ func scheduleUnfinished() {
 		return
 	}
 	for _, task := range tasks {
-		beginTask(task)
+		go beginTask(task)
 	}
 }
 

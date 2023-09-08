@@ -26,7 +26,7 @@ func executeEnable() {
 		if notiferCh != nil {
 			go func() {
 				for val := range notiferCh {
-					tryBeginTask(int(val), true)
+					go tryBeginTask(int(val), true)
 				}
 				notiferCh = nil
 			}()
