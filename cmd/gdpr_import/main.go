@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"os"
 	"path"
@@ -10,6 +9,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/archival/v2archive"
 	"github.com/turt2live/matrix-media-repo/common/assets"
 	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/turt2live/matrix-media-repo/common/import_cmdline"
 	"github.com/turt2live/matrix-media-repo/common/logging"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/common/runtime"
@@ -37,7 +37,7 @@ func main() {
 	assets.SetupMigrations(*migrationsPath)
 
 	if ids.GetMachineId() == 0 {
-		panic(errors.New("expected custom machine ID for import process (unsafe to import as Machine 0)"))
+		import_cmdline.AskMachineId()
 	}
 
 	var err error
