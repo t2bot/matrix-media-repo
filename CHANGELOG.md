@@ -11,6 +11,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 **Please see [docs.t2bot.io](https://docs.t2bot.io/matrix-media-repo/upgrading/130.html) for details.**
 
+### Security Fixes
+
+* Fix improper usage of `Content-Disposition: inline` and related `Content-Type` safety ([CVE-2023-41318](https://www.cve.org/CVERecord?id=CVE-2023-41318), [GHSA-5crw-6j7v-xc72](https://github.com/turt2live/matrix-media-repo/security/advisories/GHSA-5crw-6j7v-xc72)).
+
 ### Deprecations
 
 * The `GET /_matrix/media/unstable/local_copy/:server/:mediaId` (and `unstable/io.t2bot.media` variant) endpoint is deprecated and scheduled for removal. If you are using this endpoint, please comment on [this issue](https://github.com/turt2live/matrix-media-repo/issues/422) to explain your use case.
@@ -56,7 +60,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   * Note: If you use plugins then memory usage will still be somewhat high due to temporary caching of uploads.
   * Note: This affects RSS primarily. VSZ and other memory metrics may be higher than expected due to how Go releases memory to the OS. This is fixed when there's memory pressure.
 * Fixed shutdown stall if the config was reloaded more than once while running.
-* Fixes [CVE-2023-41318](https://github.com/turt2live/matrix-media-repo/security/advisories/GHSA-5crw-6j7v-xc72).
 
 ## [1.2.13] - February 12, 2023
 
