@@ -410,6 +410,7 @@ thumbnails:
     - "image/apng"
     - "image/gif"
     - "image/heif"
+    - "image/heic"
     - "image/webp"
     - "image/bmp"
     - "image/tiff"
