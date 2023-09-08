@@ -46,7 +46,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Updated to Go 1.19, then Go 1.20 in the same release cycle.
 * New CGO dependencies are required. See [docs.t2bot.io](https://docs.t2bot.io/matrix-media-repo/installing/method/compilation.html) for details.
 * Logs are now less noisy by default.
-* Connected homeservers must support at least Matrix 1.1 on the Client-Server API.
+* Connected homeservers must support at least Matrix 1.1 on the Client-Server API. Servers over federation are not affected.
 * The example Grafana dashboard has been updated.
 
 ### Fixed
