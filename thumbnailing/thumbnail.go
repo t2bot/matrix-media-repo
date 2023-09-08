@@ -26,6 +26,10 @@ func GenerateThumbnail(imgStream io.ReadCloser, contentType string, width int, h
 		ctx.Log.Debugf("Unsupported content type '%s'", contentType)
 		return nil, ErrUnsupported
 	}
+	if !util.ArrayContains(ctx.Config.Thumbnails.Types, contentType) {
+		ctx.Log.Debugf("Disabled content type '%s'", contentType)
+		return nil, ErrUnsupported
+	}
 
 	generator, reconstructed := i.GetGenerator(imgStream, contentType, animated)
 	if generator == nil {
