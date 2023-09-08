@@ -10,6 +10,7 @@
 /dev/conduit-db
 /dev/psql
 /vcpkg
+/libheif
 
 # Generated files
 assets.bin.go
