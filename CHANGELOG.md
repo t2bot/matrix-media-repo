@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 * Fixed media purge API not being able to delete thumbnails.
 * Fixed thumbnails being attempted for disabled media types.
+* Fixed SVG and other non-dimensional media failing to be usefully thumbnailed in some cases.
 
 ## [1.3.0] - September 8, 2023
 
