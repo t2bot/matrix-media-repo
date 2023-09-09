@@ -5,6 +5,7 @@ import (
 	"io"
 	"strconv"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/turt2live/matrix-media-repo/common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
@@ -82,6 +83,21 @@ func Generate(ctx rcontext.RequestContext, mediaRecord *database.DbMedia, width 
 		if existingRecord != nil {
 			ctx.Log.Debug("Found existing record for parameters - discarding generated thumbnail")
 			defer res.i.Reader.Close()
+
+			// Optimization: prevent future generator waste by inserting an `animated=true` record for static media,
+			// since we won't ever generate an animated version. This is safe because to get here the thumbnail needed
+			// to be requested as animated, but the generated one wasn't. This implies we are trying to animate a static
+			// image, which doesn't work.
+			if !res.i.Animated {
+				existingRecord.Animated = true
+				// we don't modify the creation time, so it expires at a sane point in history
+				err = db.Insert(existingRecord)
+				if err != nil {
+					ctx.Log.Warn("Non-fatal error while optimizing future thumbnail lookups: ", err)
+					sentry.CaptureException(err)
+				}
+			}
+
 			rsc, err := download.OpenStream(ctx, existingRecord.Locatable)
 			if err != nil {
 				return nil, nil, err
