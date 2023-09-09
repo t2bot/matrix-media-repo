@@ -7,7 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
-*Nothing yet.*
+### Fixed
+
+* Fixed thumbnail generation causing `thumbnails_index` errors in some circumstances.
 
 ## [1.3.1] - September 8, 2023
 
