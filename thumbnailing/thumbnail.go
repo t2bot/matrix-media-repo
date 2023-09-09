@@ -50,9 +50,8 @@ func GenerateThumbnail(imgStream io.ReadCloser, contentType string, width int, h
 		return nil, common.ErrMediaTooLarge
 	}
 
-	// TODO: Why does AdjustProperties even take `canAnimate` if it's always been hardcoded to `false`? (see git blame on this comment)
 	var shouldThumbnail bool
-	shouldThumbnail, width, height, _, method = u.AdjustProperties(w, h, width, height, animated, false, method)
+	shouldThumbnail, width, height, _, method = u.AdjustProperties(w, h, width, height, animated, method)
 	if !shouldThumbnail && dimensional {
 		return nil, common.ErrMediaDimensionsTooSmall
 	}
