@@ -25,7 +25,7 @@ func (c *SingleflightCache[T]) Do(key string, fn func() (T, error)) (T, error) {
 	}
 	var zero T
 	v, err, _ := c.sf.Do(key, fn)
-	if err != nil && v != zero {
+	if err == nil && v != zero {
 		c.cache.Store(key, v)
 	}
 	return v, err
