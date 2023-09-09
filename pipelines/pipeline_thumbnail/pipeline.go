@@ -77,12 +77,13 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Th
 	r, err, _ := streamSf.Do(sfKey, func() (io.ReadCloser, error) {
 		// Step 4: Get the associated media record (without stream)
 		mediaRecord, dr, err := pipeline_download.Execute(ctx, origin, mediaId, opts.ImpliedDownloadOpts())
+		if dr != nil {
+			// Shouldn't be returned, but just in case...
+			dr.Close()
+		}
 		if err != nil {
 			if errors.Is(err, common.ErrMediaQuarantined) {
 				recordSf.OverwriteCacheKey(sfKey, nil) // force record to be nil (not found)
-				if dr != nil {
-					dr.Close()
-				}
 				return quarantine.ReturnAppropriateThing(ctx, false, opts.RecordOnly, opts.Width, opts.Height)
 			}
 			return nil, err
