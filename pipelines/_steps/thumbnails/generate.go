@@ -70,6 +70,27 @@ func Generate(ctx rcontext.RequestContext, mediaRecord *database.DbMedia, width 
 
 	// At this point, res.i is our thumbnail
 
+	// Quickly check to see if we already have a database record for this thumbnail. We do this because predicting
+	// what the thumbnailer will generate is non-trivial, but it might generate a conflicting thumbnail (particularly
+	// when `defaultAnimated` is `true`.
+	db := database.GetInstance().Thumbnails.Prepare(ctx)
+	if res.i.Animated != animated { // this is the only thing that could have changed during generation
+		existingRecord, err := db.GetByParams(mediaRecord.Origin, mediaRecord.MediaId, width, height, method, res.i.Animated)
+		if err != nil {
+			return nil, nil, err
+		}
+		if existingRecord != nil {
+			ctx.Log.Debug("Found existing record for parameters - discarding generated thumbnail")
+			defer res.i.Reader.Close()
+			rsc, err := download.OpenStream(ctx, existingRecord.Locatable)
+			if err != nil {
+				return nil, nil, err
+			}
+			return existingRecord, rsc, nil
+		}
+	}
+
+	// We don't have an existing record. Store the stream and insert a record.
 	thumbMediaRecord, thumbStream, err := datastore_op.PutAndReturnStream(ctx, ctx.Request.Host, "", res.i.Reader, res.i.ContentType, "", datastores.ThumbnailsKind)
 	if err != nil {
 		return nil, nil, err
@@ -92,7 +113,7 @@ func Generate(ctx rcontext.RequestContext, mediaRecord *database.DbMedia, width 
 			Location:    thumbMediaRecord.Location,
 		},
 	}
-	err = database.GetInstance().Thumbnails.Prepare(ctx).Insert(newRecord)
+	err = db.Insert(newRecord)
 	if err != nil {
 		defer thumbStream.Close()
 		return nil, nil, err
