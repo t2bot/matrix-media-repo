@@ -34,6 +34,9 @@ func GetFederationInfo(r *http.Request, rctx rcontext.RequestContext, user _apim
 
 	versionUrl := url + "/_matrix/federation/v1/version"
 	versionResponse, err := matrix.FederatedGet(versionUrl, hostname, rctx)
+	if versionResponse != nil {
+		defer versionResponse.Body.Close()
+	}
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
