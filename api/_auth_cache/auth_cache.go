@@ -12,7 +12,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/matrix"
 )
 
-var tokenCache = cache.New(0*time.Second, 30*time.Second)
+var tokenCache = cache.New(cache.NoExpiration, 30*time.Second)
 var rwLock = &sync.RWMutex{}
 var regexCache = make(map[string]*regexp.Regexp)
 
