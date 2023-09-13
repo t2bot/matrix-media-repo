@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+*Nothing yet.*
+
+## [1.3.2] - September 13, 2023
+
 ### Fixed
 
 * Fixed thumbnail generation causing `thumbnails_index` errors in some circumstances.
@@ -449,7 +453,8 @@ a large database (more than about 100k uploaded files), run the following steps 
 * Various other features that would be expected like maximum/minimum size controls, rate limiting, etc. Check out the
   sample config for a better idea of what else is possible.
 
-[unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.3.1...HEAD
+[unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.3.2...HEAD
+[1.3.2]: https://github.com/turt2live/matrix-media-repo/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/turt2live/matrix-media-repo/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.13...v1.3.0
 [1.2.13]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.12...v1.2.13
