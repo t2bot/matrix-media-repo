@@ -556,11 +556,11 @@ plugins:
 # Sections of this config might disappear or be added over time. By default all
 # features are disabled in here and must be explicitly enabled to be used.
 featureSupport:
-  # MSC3916 enables linking media to events, allowing the associated media to be
-  # deleted when the event is (fully) deleted. MSC3916 support is always enabled
+  # MSC3911 enables linking media to events, allowing the associated media to be
+  # deleted when the event is (fully) deleted. MSC3911 support is always enabled
   # and requires changes to either the homeserver or how the homeserver is deployed
   # to work.
-  MSC3916:
+  MSC3911:
     # How long a "restricted" item of media can exist before it is automatically
     # purged from the server. Defaults to 10 minutes.
     maxRestrictedAgeMinutes: 10
