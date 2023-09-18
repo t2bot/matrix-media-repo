@@ -556,7 +556,18 @@ plugins:
 # Sections of this config might disappear or be added over time. By default all
 # features are disabled in here and must be explicitly enabled to be used.
 featureSupport:
-  # No unstable features are currently supported.
+  # MSC3916 enables linking media to events, allowing the associated media to be
+  # deleted when the event is (fully) deleted. MSC3916 support is always enabled
+  # and requires changes to either the homeserver or how the homeserver is deployed
+  # to work.
+  MSC3916:
+    # How long a "restricted" item of media can exist before it is automatically
+    # purged from the server. Defaults to 10 minutes.
+    maxRestrictedAgeMinutes: 10
+
+    # The maximum number of media items that can be attached to a single event.
+    # Defaults to 20.
+    maxAttachEvent: 20
 
 # Support for redis as a cache mechanism
 #
