@@ -17,7 +17,7 @@ func RequireRepoAdmin(generator GeneratorWithUserFn) GeneratorFn {
 				panic(errors.New("safety check failed: Repo admin access check received empty user ID"))
 			}
 
-			if !util.IsGlobalAdmin(user.UserId) || user.IsShared {
+			if !user.IsShared && !util.IsGlobalAdmin(user.UserId) {
 				return _responses.AuthFailed()
 			}
 
