@@ -347,6 +347,19 @@
         ]
     },
     {
+        "provider_name": "Balsamiq Cloud",
+        "provider_url": "https://balsamiq.cloud/",
+        "endpoints": [
+            {
+                "schemes": [
+                    "https://balsamiq.cloud/*"
+                ],
+                "url": "https://balsamiq.cloud/oembed",
+                "discovery": true
+            }
+        ]
+    },
+    {
         "provider_name": "Beams.fm",
         "provider_url": "http://beams.fm",
         "endpoints": [
@@ -994,6 +1007,23 @@
         ]
     },
     {
+        "provider_name": "EchoesHQ",
+        "provider_url": "https://echoeshq.com",
+        "endpoints": [
+            {
+                "schemes": [
+                    "http://app.echoeshq.com/embed/*"
+                ],
+                "url": "https://api.echoeshq.com/oembed",
+                "formats": [
+                    "json",
+                    "xml"
+                ],
+                "discovery": true
+            }
+        ]
+    },
+    {
         "provider_name": "eduMedia",
         "provider_url": "https://www.edumedia-sciences.com/",
         "endpoints": [
@@ -1344,22 +1374,6 @@
                 "formats": [
                     "json"
                 ]
-            }
-        ]
-    },
-    {
-        "provider_name": "Gfycat",
-        "provider_url": "https://gfycat.com/",
-        "endpoints": [
-            {
-                "schemes": [
-                    "http://gfycat.com/*",
-                    "http://www.gfycat.com/*",
-                    "https://gfycat.com/*",
-                    "https://www.gfycat.com/*"
-                ],
-                "url": "https://api.gfycat.com/v1/oembed",
-                "discovery": true
             }
         ]
     },
