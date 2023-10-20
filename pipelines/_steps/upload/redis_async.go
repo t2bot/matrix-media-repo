@@ -3,6 +3,7 @@ package upload
 import (
 	"io"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 	"github.com/turt2live/matrix-media-repo/redislib"
 )
@@ -18,6 +19,7 @@ func PopulateCacheAsync(ctx rcontext.RequestContext, reader io.Reader, size int6
 		err = redislib.StoreMedia(ctx, sha256hash, reader, size)
 		if err != nil {
 			ctx.Log.Debug("Not populating cache due to error: ", err)
+			sentry.CaptureException(err)
 			return
 		}
 	}()

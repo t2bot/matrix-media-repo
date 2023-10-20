@@ -39,19 +39,31 @@ func StoreMedia(ctx rcontext.RequestContext, hash string, content io.Reader, siz
 		return err
 	}
 
+	cleanup := func() {
+		if delErr := DeleteMedia(ctx, hash); delErr != nil {
+			ctx.Log.Warn("Error while attempting to clean up cache during another error: ", delErr)
+			sentry.CaptureException(delErr)
+		}
+	}
+
 	buf := make([]byte, appendBufferSize)
 	for {
 		read, err := content.Read(buf)
-		eof := errors.Is(err, io.EOF)
+		eof := false
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				eof = true
+			} else {
+				cleanup()
+				return err
+			}
+		}
 		if read > 0 {
 			if err = ring.ForEachShard(ctx.Context, func(ctx2 context.Context, client *redis.Client) error {
 				res := client.Append(ctx2, hash, string(buf[0:read]))
 				return res.Err()
 			}); err != nil {
-				if delErr := DeleteMedia(ctx, hash); delErr != nil {
-					ctx.Log.Warn("Error while attempting to clean up cache during another error: ", delErr)
-					sentry.CaptureException(delErr)
-				}
+				cleanup()
 				return err
 			}
 		}

@@ -7,7 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
-*Nothing yet.*
+### Fixed
+
+* Improved handling when encountering an error attempting to populate Redis during uploads.
 
 ## [1.3.2] - September 13, 2023
 
