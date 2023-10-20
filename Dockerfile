@@ -3,10 +3,24 @@
 FROM golang:1.20-alpine AS builder
 
 # Install build dependencies
-RUN apk add --no-cache git musl-dev dos2unix build-base libde265-dev libheif-dev
+RUN apk add --no-cache git musl-dev dos2unix build-base libde265-dev
 
 WORKDIR /opt
 COPY . /opt
+
+# Build libheif manually
+RUN apk add --no-cache build-base libtool cmake libjpeg-turbo-dev x265-dev ffmpeg-dev zlib-dev
+RUN git clone https://github.com/strukturag/libheif.git
+WORKDIR /opt/libheif
+RUN git checkout v1.17.1
+RUN mkdir build
+WORKDIR /opt/libheif/build
+RUN cmake --preset=release ..
+RUN make
+RUN make install
+WORKDIR /opt
+
+# Run remaining build steps
 RUN dos2unix ./build.sh ./docker/run.sh && chmod 744 ./build.sh
 RUN ./build.sh
 
