@@ -101,7 +101,7 @@ func MakeMinio(depNet *NetworkDep) (*MinioDep, error) {
 	// Use an intermediary container to set up the minio instance
 	_, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
-			Image:      "docker.io/alpine:3.18.3",
+			Image:      "docker.io/alpine:3.18.4",
 			Networks:   []string{depNet.NetId},
 			WaitingFor: wait.ForLog("This line marks WaitFor as done").WithStartupTimeout(120 * time.Second),
 			Mounts: []testcontainers.ContainerMount{
