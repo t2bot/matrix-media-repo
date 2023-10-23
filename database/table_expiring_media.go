@@ -23,6 +23,7 @@ const insertExpiringMedia = "INSERT INTO expiring_media (origin, media_id, user_
 const selectExpiringMediaByUserCount = "SELECT COUNT(*) FROM expiring_media WHERE user_id = $1 AND expires_ts >= $2;"
 const selectExpiringMediaById = "SELECT origin, media_id, user_id, expires_ts FROM expiring_media WHERE origin = $1 AND media_id = $2;"
 const deleteExpiringMediaById = "DELETE FROM expiring_media WHERE origin = $1 AND media_id = $2;"
+const updateExpiringMediaExpiration = "UPDATE expiring_media SET expires_ts = $3 WHERE origin = $1 AND media_id = $2;"
 
 // Dev note: there is an UPDATE query in the Upload test suite.
 
@@ -31,6 +32,7 @@ type expiringMediaTableStatements struct {
 	selectExpiringMediaByUserCount *sql.Stmt
 	selectExpiringMediaById        *sql.Stmt
 	deleteExpiringMediaById        *sql.Stmt
+	updateExpiringMediaExpiration  *sql.Stmt
 }
 
 type expiringMediaTableWithContext struct {
@@ -53,6 +55,9 @@ func prepareExpiringMediaTables(db *sql.DB) (*expiringMediaTableStatements, erro
 	}
 	if stmts.deleteExpiringMediaById, err = db.Prepare(deleteExpiringMediaById); err != nil {
 		return nil, errors.New("error preparing deleteExpiringMediaById: " + err.Error())
+	}
+	if stmts.updateExpiringMediaExpiration, err = db.Prepare(updateExpiringMediaExpiration); err != nil {
+		return nil, errors.New("error preparing updateExpiringMediaExpiration: " + err.Error())
 	}
 
 	return stmts, nil
@@ -94,5 +99,10 @@ func (s *expiringMediaTableWithContext) Get(origin string, mediaId string) (*DbE
 
 func (s *expiringMediaTableWithContext) Delete(origin string, mediaId string) error {
 	_, err := s.statements.deleteExpiringMediaById.ExecContext(s.ctx, origin, mediaId)
+	return err
+}
+
+func (s *expiringMediaTableWithContext) SetExpiry(origin string, mediaId string, expiresTs int64) error {
+	_, err := s.statements.updateExpiringMediaExpiration.ExecContext(s.ctx, origin, mediaId, expiresTs)
 	return err
 }

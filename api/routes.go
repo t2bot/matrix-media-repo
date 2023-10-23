@@ -56,6 +56,10 @@ func buildRoutes() http.Handler {
 	register([]string{"GET"}, PrefixFederation, "media/download/:server/:mediaId", msc3916, router, makeRoute(_routers.RequireServerAuth(unstable.FederationDownloadMedia), "download", counter))
 	register([]string{"GET"}, PrefixFederation, "media/thumbnail/:server/:mediaId", msc3916, router, makeRoute(_routers.RequireServerAuth(unstable.FederationThumbnailMedia), "thumbnail", counter))
 
+	// MSC3911 - Linking media to events
+	register([]string{"POST"}, PrefixClient, "media/upload", msc3911, router, makeRoute(_routers.RequireAccessToken(unstable.ClientUploadMediaSync), "upload", counter))
+	register([]string{"POST"}, PrefixClient, "media/create", msc3911, router, makeRoute(_routers.RequireAccessToken(unstable.ClientCreateMedia), "create", counter))
+
 	// Custom features
 	register([]string{"GET"}, PrefixMedia, "local_copy/:server/:mediaId", mxUnstable, router, makeRoute(_routers.RequireAccessToken(unstable.LocalCopy), "local_copy", counter))
 	register([]string{"GET"}, PrefixMedia, "info/:server/:mediaId", mxUnstable, router, makeRoute(_routers.RequireAccessToken(unstable.MediaInfo), "info", counter))
@@ -143,6 +147,7 @@ var (
 	mxUnstable           matrixVersions = []string{"unstable", "unstable/io.t2bot.media"}
 	msc4034              matrixVersions = []string{"unstable/org.matrix.msc4034"}
 	msc3916              matrixVersions = []string{"unstable/org.matrix.msc3916"}
+	msc3911              matrixVersions = []string{"unstable/org.matrix.msc3911"}
 	mxSpecV3Transition   matrixVersions = []string{"r0", "v1", "v3"}
 	mxSpecV3TransitionCS matrixVersions = []string{"r0", "v3"}
 	mxR0                 matrixVersions = []string{"r0"}
