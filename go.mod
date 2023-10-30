@@ -43,7 +43,7 @@ require (
 )
 
 require (
-	github.com/docker/docker v24.0.6+incompatible
+	github.com/docker/docker v24.0.7+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/go-redsync/redsync/v4 v4.10.0
 	github.com/julienschmidt/httprouter v1.3.0
