@@ -17,6 +17,9 @@ type ExifOrientation struct {
 func GetExifOrientation(img io.Reader) (*ExifOrientation, error) {
 	rawExif, err := exif.SearchAndExtractExifWithReader(img)
 	if err != nil {
+		if errors.Is(err, exif.ErrNoExif) {
+			return nil, nil
+		}
 		return nil, errors.New("exif: error reading possible exif data: " + err.Error())
 	}
 
