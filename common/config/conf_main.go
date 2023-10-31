@@ -44,8 +44,9 @@ func NewDefaultMainConfig() MainRepoConfig {
 		Admins:      []string{},
 		Downloads: MainDownloadsConfig{
 			DownloadsConfig: DownloadsConfig{
-				MaxSizeBytes:        104857600, // 100mb
-				FailureCacheMinutes: 15,
+				MaxSizeBytes:               104857600, // 100mb
+				FailureCacheMinutes:        15,
+				DefaultRangeChunkSizeBytes: 10485760, // 10mb
 			},
 			NumWorkers: 10,
 			ExpireDays: 0,

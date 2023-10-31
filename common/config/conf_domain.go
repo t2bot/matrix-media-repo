@@ -18,8 +18,9 @@ func NewDefaultDomainConfig() DomainRepoConfig {
 			AdminApiKind:    "matrix",
 		},
 		Downloads: DownloadsConfig{
-			MaxSizeBytes:        104857600, // 100mb
-			FailureCacheMinutes: 15,
+			MaxSizeBytes:               104857600, // 100mb
+			FailureCacheMinutes:        15,
+			DefaultRangeChunkSizeBytes: 10485760, // 10mb
 		},
 		UrlPreviews: UrlPreviewsConfig{
 			Enabled:          true,
