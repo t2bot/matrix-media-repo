@@ -10,6 +10,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Fixed
 
 * Improved handling when encountering an error attempting to populate Redis during uploads.
+* Fixed `Range` requests failing by default by internally setting a default chunk size of 10mb.
+* Stop logging "no exif data".
+* Fixed admin API requests not working when authenticating as the shared secret user.
 
 ### Changed
 
