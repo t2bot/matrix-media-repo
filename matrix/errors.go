@@ -2,32 +2,18 @@ package matrix
 
 import (
 	"errors"
-	"sync"
+	"fmt"
 
-	"github.com/rubyist/circuitbreaker"
 	"github.com/turt2live/matrix-media-repo/common"
-	"github.com/turt2live/matrix-media-repo/common/config"
 )
 
-var breakers = &sync.Map{}
+type errorResponse struct {
+	ErrorCode string `json:"errcode"`
+	Message   string `json:"error"`
+}
 
-func getBreakerAndConfig(serverName string) (*config.DomainRepoConfig, *circuit.Breaker) {
-	hs := config.GetDomain(serverName)
-
-	var cb *circuit.Breaker
-	cbRaw, hasCb := breakers.Load(hs.Name)
-	if !hasCb {
-		backoffAt := int64(hs.BackoffAt)
-		if backoffAt <= 0 {
-			backoffAt = 10 // default to 10 for those who don't have this set
-		}
-		cb = circuit.NewConsecutiveBreaker(backoffAt)
-		breakers.Store(hs.Name, cb)
-	} else {
-		cb = cbRaw.(*circuit.Breaker)
-	}
-
-	return hs, cb
+func (e errorResponse) Error() string {
+	return fmt.Sprintf("code=%s message=%s", e.ErrorCode, e.Message)
 }
 
 func filterError(err error) (error, error) {

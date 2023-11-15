@@ -17,7 +17,6 @@ func IsUserAdmin(ctx rcontext.RequestContext, serverName string, accessToken str
 	isAdmin := false
 	var replyError error
 	replyError = cb.CallContext(ctx, func() error {
-
 		response := &whoisResponse{}
 		path := fmt.Sprintf("/_matrix/client/v3/admin/whois/%s", url.PathEscape(fakeUser))
 		if hs.AdminApiKind == "synapse" {

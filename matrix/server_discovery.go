@@ -1,13 +1,10 @@
 package matrix
 
 import (
-	"context"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -15,15 +12,11 @@ import (
 
 	"github.com/alioygur/is"
 	"github.com/patrickmn/go-cache"
-	circuit "github.com/rubyist/circuitbreaker"
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/common/config"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
 )
 
 var apiUrlCacheInstance *cache.Cache
 var apiUrlSingletonLock = &sync.Once{}
-var federationBreakers = &sync.Map{}
 
 type cachedServer struct {
 	url      string
@@ -36,22 +29,6 @@ func setupCache() {
 			apiUrlCacheInstance = cache.New(1*time.Hour, 2*time.Hour)
 		})
 	}
-}
-
-func getFederationBreaker(hostname string) *circuit.Breaker {
-	var cb *circuit.Breaker
-	cbRaw, hasCb := federationBreakers.Load(hostname)
-	if !hasCb {
-		backoffAt := int64(config.Get().Federation.BackoffAt)
-		if backoffAt <= 0 {
-			backoffAt = 20 // default to 20 for those who don't have this set
-		}
-		cb = circuit.NewConsecutiveBreaker(backoffAt)
-		federationBreakers.Store(hostname, cb)
-	} else {
-		cb = cbRaw.(*circuit.Breaker)
-	}
-	return cb
 }
 
 func GetServerApiUrl(hostname string) (string, string, error) {
@@ -230,85 +207,4 @@ func GetServerApiUrl(hostname string) (string, string, error) {
 	apiUrlCacheInstance.Set(hostname, server, cache.DefaultExpiration)
 	logrus.Debug("Server API URL for " + hostname + " is " + url + " (fallback)")
 	return url, h, nil
-}
-
-func FederatedGet(url string, realHost string, ctx rcontext.RequestContext) (*http.Response, error) {
-	logrus.Debug("Doing federated GET to " + url + " with host " + realHost)
-
-	cb := getFederationBreaker(realHost)
-
-	var resp *http.Response
-	replyError := cb.CallContext(ctx, func() error {
-		req, err := http.NewRequest("GET", url, nil)
-		if err != nil {
-			return err
-		}
-
-		// Override the host to be compliant with the spec
-		req.Header.Set("Host", realHost)
-		req.Header.Set("User-Agent", "matrix-media-repo")
-		req.Host = realHost
-
-		var client *http.Client
-		if os.Getenv("MEDIA_REPO_UNSAFE_FEDERATION") != "true" {
-			// This is how we verify the certificate is valid for the host we expect.
-			// Previously using `req.URL.Host` we'd end up changing which server we were
-			// connecting to (ie: matrix.org instead of matrix.org.cdn.cloudflare.net),
-			// which obviously doesn't help us. We needed to do that though because the
-			// HTTP client doesn't verify against the req.Host certificate, but it does
-			// handle it off the req.URL.Host. So, we need to tell it which certificate
-			// to verify.
-
-			h, _, err := net.SplitHostPort(realHost)
-			if err == nil {
-				// Strip the port first, certs are port-insensitive
-				realHost = h
-			}
-			client = &http.Client{
-				Transport: &http.Transport{
-					TLSClientConfig: &tls.Config{
-						ServerName: realHost,
-					},
-				},
-				Timeout: time.Duration(ctx.Config.TimeoutSeconds.Federation) * time.Second,
-			}
-		} else {
-			ctx.Log.Warn("Ignoring any certificate errors while making request")
-			tr := &http.Transport{
-				DisableKeepAlives: true,
-				TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
-				// Based on https://github.com/matrix-org/gomatrixserverlib/blob/51152a681e69a832efcd934b60080b92bc98b286/client.go#L74-L90
-				DialTLSContext: func(ctx2 context.Context, network, addr string) (net.Conn, error) {
-					rawconn, err := net.Dial(network, addr)
-					if err != nil {
-						return nil, err
-					}
-					// Wrap a raw connection ourselves since tls.Dial defaults the SNI
-					conn := tls.Client(rawconn, &tls.Config{
-						ServerName:         "",
-						InsecureSkipVerify: true,
-					})
-					if err := conn.Handshake(); err != nil {
-						return nil, err
-					}
-					return conn, nil
-				},
-			}
-			client = &http.Client{
-				Transport: tr,
-				Timeout:   time.Duration(ctx.Config.TimeoutSeconds.UrlPreviews) * time.Second,
-			}
-		}
-
-		resp, err = client.Do(req)
-		if err != nil {
-			return err
-		}
-		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
-			return fmt.Errorf("response not ok: %d", resp.StatusCode)
-		}
-		return nil
-	}, 1*time.Minute)
-
-	return resp, replyError
 }

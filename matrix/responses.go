@@ -1,9 +1,5 @@
 package matrix
 
-import (
-	"fmt"
-)
-
 type emptyResponse struct {
 }
 
@@ -24,13 +20,4 @@ type MediaListResponse struct {
 
 type wellknownServerResponse struct {
 	ServerAddr string `json:"m.server"`
-}
-
-type errorResponse struct {
-	ErrorCode string `json:"errcode"`
-	Message   string `json:"error"`
-}
-
-func (e errorResponse) Error() string {
-	return fmt.Sprintf("code=%s message=%s", e.ErrorCode, e.Message)
 }
