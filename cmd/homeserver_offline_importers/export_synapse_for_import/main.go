@@ -1,12 +1,11 @@
 package main
 
 import (
-	"fmt"
+	"io"
 	"os"
 	"path"
 	"strings"
 
-	"github.com/turt2live/matrix-media-repo/archival"
 	"github.com/turt2live/matrix-media-repo/archival/v2archive"
 	"github.com/turt2live/matrix-media-repo/cmd/homeserver_offline_importers/_common"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
@@ -18,28 +17,13 @@ func main() {
 	cfg := _common.InitExportPsqlFlatFile("Synapse", "media_store_path")
 	ctx := rcontext.InitialNoConfig()
 
-	ctx.Log.Debug("Connecting to synapse database...")
-	synDb, err := synapse.OpenDatabase(cfg.ConnectionString)
+	ctx.Log.Debug("Connecting to homeserver database...")
+	hsDb, err := synapse.OpenDatabase(cfg.ConnectionString)
 	if err != nil {
 		panic(err)
 	}
 
-	ctx.Log.Info("Fetching all local media records from Synapse...")
-	records, err := synDb.GetAllMedia()
-	if err != nil {
-		panic(err)
-	}
-
-	ctx.Log.Info(fmt.Sprintf("Exporting %d media records", len(records)))
-
-	archiver, err := v2archive.NewWriter(ctx, "OOB", cfg.ServerName, cfg.PartSizeBytes, archival.PersistPartsToDirectory(cfg.ExportPath))
-	if err != nil {
-		ctx.Log.Fatal(err)
-	}
-
-	missing := make([]string, 0)
-
-	for _, r := range records {
+	_common.PsqlFlatFileArchive[synapse.LocalMedia](ctx, cfg, hsDb, func(r *synapse.LocalMedia) (v2archive.MediaInfo, io.ReadCloser, error) {
 		// For MediaID AABBCCDD :
 		// $importPath/local_content/AA/BB/CCDD
 		//
@@ -59,14 +43,15 @@ func main() {
 		f, err := os.Open(filePath)
 		if os.IsNotExist(err) && cfg.SkipMissing {
 			ctx.Log.Warn("File does not appear to exist, skipping: " + filePath)
-			missing = append(missing, filePath)
-			continue
+			return v2archive.MediaInfo{
+				FileName: filePath,
+			}, nil, err
 		}
 		if err != nil {
-			ctx.Log.Fatal(err)
+			return v2archive.MediaInfo{}, nil, err
 		}
 
-		_, err = archiver.AppendMedia(f, v2archive.MediaInfo{
+		return v2archive.MediaInfo{
 			Origin:      cfg.ServerName,
 			MediaId:     r.MediaId,
 			FileName:    r.UploadName,
@@ -74,25 +59,6 @@ func main() {
 			CreationTs:  r.CreatedTs,
 			S3Url:       "",
 			UserId:      r.UserId,
-		})
-		if err != nil {
-			ctx.Log.Fatal(err)
-		}
-	}
-
-	err = archiver.Finish()
-	if err != nil {
-		ctx.Log.Fatal(err)
-	}
-
-	ctx.Log.Info("Done export")
-
-	// Report missing files
-	if len(missing) > 0 {
-		for _, m := range missing {
-			ctx.Log.Warn("Was not able to find " + m)
-		}
-	}
-
-	ctx.Log.Info("Export completed")
+		}, f, nil
+	})
 }

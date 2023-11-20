@@ -5,11 +5,13 @@ import (
 	"errors"
 
 	_ "github.com/lib/pq" // postgres driver
+	"github.com/turt2live/matrix-media-repo/homeserver_interop"
 )
 
 const selectLocalMedia = "SELECT media_id, media_type, media_length, created_ts, upload_name, user_id, url_cache FROM local_media_repository;"
 
 type LocalMedia struct {
+	homeserver_interop.ImportDbMedia
 	MediaId     string
 	ContentType string
 	SizeBytes   int64
@@ -20,6 +22,7 @@ type LocalMedia struct {
 }
 
 type SynDatabase struct {
+	homeserver_interop.ImportDb[LocalMedia]
 	db         *sql.DB
 	statements statements
 }
