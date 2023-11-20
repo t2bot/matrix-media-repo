@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/turt2live/matrix-media-repo/common/assets"
 	"github.com/turt2live/matrix-media-repo/common/config"
@@ -25,9 +26,9 @@ type ImportOptsPsqlFlatFile struct {
 func InitExportPsqlFlatFile(softwareName string, softwareConfigDir string) *ImportOptsPsqlFlatFile {
 	postgresHost := flag.String("dbHost", "localhost", fmt.Sprintf("The hostname for your %s PostgreSQL database.", softwareName))
 	postgresPort := flag.Int("dbPort", 5432, fmt.Sprintf("The port for your %s PostgreSQL database.", softwareName))
-	postgresUsername := flag.String("dbUsername", "synapse", fmt.Sprintf("The username for your %s PostgreSQL database.", softwareName))
+	postgresUsername := flag.String("dbUsername", strings.ToLower(softwareName), fmt.Sprintf("The username for your %s PostgreSQL database.", softwareName))
 	postgresPassword := flag.String("dbPassword", "", fmt.Sprintf("The password for your %s PostgreSQL database. Can be omitted to be prompted when run.", softwareName))
-	postgresDatabase := flag.String("dbName", "synapse", fmt.Sprintf("The name of your %s database.", softwareName))
+	postgresDatabase := flag.String("dbName", strings.ToLower(softwareName), fmt.Sprintf("The name of your %s PostgreSQL database.", softwareName))
 	serverName := flag.String("serverName", "localhost", "The name of your homeserver (eg: matrix.org).")
 	templatesPath := flag.String("templates", config.DefaultTemplatesPath, "The absolute path for the MMR templates folder.")
 	exportPath := flag.String("destination", "./media-export", "The directory to export the files to (will be created if needed).")
