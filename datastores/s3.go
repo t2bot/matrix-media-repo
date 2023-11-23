@@ -91,7 +91,7 @@ func GetS3Url(ds config.DatastoreConfig, location string) (string, error) {
 	}
 
 	// HACK: Surely there's a better way...
-	return fmt.Sprintf("https://%s/%s/%s", s3c.client.EndpointURL(), s3c.bucket, location), nil
+	return fmt.Sprintf("%s/%s/%s", s3c.client.EndpointURL(), s3c.bucket, location), nil
 }
 
 func ParseS3Url(s3url string) (config.DatastoreConfig, string, error) {
