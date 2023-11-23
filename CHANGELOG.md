@@ -11,6 +11,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 * Dendrite homeservers can now have their media imported safely, and `adminApiKind` may be set to `dendrite`.
 
+### Fixed
+
+* Exports created with `s3_urls` now contain valid URLs.
+
 ## [1.3.3] - October 31, 2023
 
 ### Fixed
