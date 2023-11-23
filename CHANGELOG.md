@@ -7,7 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
-*Nothing yet.*
+### Added
+
+* Dendrite homeservers can now have their media imported safely, and `adminApiKind` may be set to `dendrite`.
 
 ## [1.3.3] - October 31, 2023
 
