@@ -1,4 +1,4 @@
-package synapse
+package dendrite
 
 import (
 	"database/sql"
@@ -8,31 +8,33 @@ import (
 	"github.com/turt2live/matrix-media-repo/homeserver_interop"
 )
 
-const selectLocalMedia = "SELECT media_id, media_type, media_length, created_ts, upload_name, user_id, url_cache FROM local_media_repository;"
+const selectLocalMedia = "SELECT media_id, media_origin, content_type, file_size_bytes, creation_ts, upload_name, base64hash, user_id FROM mediaapi_media_repository WHERE media_origin = $1;"
 
 type LocalMedia struct {
 	homeserver_interop.ImportDbMedia
-	MediaId     string
-	ContentType string
-	SizeBytes   int64
-	CreatedTs   int64
-	UploadName  string
-	UserId      string
-	UrlCache    string
+	MediaId       string
+	MediaOrigin   string
+	ContentType   string
+	FileSizeBytes int64
+	CreationTs    int64
+	UploadName    string
+	Base64Hash    string
+	UserId        string
 }
 
-type SynDatabase struct {
+type DenDatabase struct {
 	homeserver_interop.ImportDb[LocalMedia]
 	db         *sql.DB
 	statements statements
+	origin     string
 }
 
 type statements struct {
 	selectLocalMedia *sql.Stmt
 }
 
-func OpenDatabase(connectionString string) (*SynDatabase, error) {
-	var d SynDatabase
+func OpenDatabase(connectionString string, origin string) (*DenDatabase, error) {
+	d := DenDatabase{origin: origin}
 	var err error
 
 	if d.db, err = sql.Open("postgres", connectionString); err != nil {
@@ -46,8 +48,8 @@ func OpenDatabase(connectionString string) (*SynDatabase, error) {
 	return &d, nil
 }
 
-func (d *SynDatabase) GetAllMedia() ([]*LocalMedia, error) {
-	rows, err := d.statements.selectLocalMedia.Query()
+func (d *DenDatabase) GetAllMedia() ([]*LocalMedia, error) {
+	rows, err := d.statements.selectLocalMedia.Query(d.origin)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return []*LocalMedia{}, nil // no records
@@ -58,32 +60,35 @@ func (d *SynDatabase) GetAllMedia() ([]*LocalMedia, error) {
 	var results []*LocalMedia
 	for rows.Next() {
 		var mediaId sql.NullString
+		var mediaOrigin sql.NullString
 		var contentType sql.NullString
 		var sizeBytes sql.NullInt64
 		var createdTs sql.NullInt64
 		var uploadName sql.NullString
+		var b64hash sql.NullString
 		var userId sql.NullString
-		var urlCache sql.NullString
 		err = rows.Scan(
 			&mediaId,
+			&mediaOrigin,
 			&contentType,
 			&sizeBytes,
 			&createdTs,
 			&uploadName,
+			&b64hash,
 			&userId,
-			&urlCache,
 		)
 		if err != nil {
 			return nil, err
 		}
 		results = append(results, &LocalMedia{
-			MediaId:     mediaId.String,
-			ContentType: contentType.String,
-			SizeBytes:   sizeBytes.Int64,
-			CreatedTs:   createdTs.Int64,
-			UploadName:  uploadName.String,
-			UserId:      userId.String,
-			UrlCache:    urlCache.String,
+			MediaId:       mediaId.String,
+			MediaOrigin:   mediaOrigin.String,
+			ContentType:   contentType.String,
+			FileSizeBytes: sizeBytes.Int64,
+			CreationTs:    createdTs.Int64,
+			UploadName:    uploadName.String,
+			Base64Hash:    b64hash.String,
+			UserId:        userId.String,
 		})
 	}
 
