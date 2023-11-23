@@ -18,8 +18,9 @@ func IsUserAdmin(ctx rcontext.RequestContext, serverName string, accessToken str
 	var replyError error
 	replyError = cb.CallContext(ctx, func() error {
 		response := &whoisResponse{}
+		// the whois endpoint is part of the spec, meaning we can avoid per-homeserver support
 		path := fmt.Sprintf("/_matrix/client/v3/admin/whois/%s", url.PathEscape(fakeUser))
-		if hs.AdminApiKind == "synapse" {
+		if hs.AdminApiKind == "synapse" { // synapse is special, dendrite is not
 			path = fmt.Sprintf("/_synapse/admin/v1/whois/%s", url.PathEscape(fakeUser))
 		}
 		urlStr := util.MakeUrl(hs.ClientServerApi, path)
@@ -45,6 +46,9 @@ func ListMedia(ctx rcontext.RequestContext, serverName string, accessToken strin
 		path := ""
 		if hs.AdminApiKind == "synapse" {
 			path = fmt.Sprintf("/_synapse/admin/v1/room/%s/media", url.PathEscape(roomId))
+		}
+		if hs.AdminApiKind == "dendrite" {
+			return errors.New("this function is not supported when backed by Dendrite")
 		}
 		if path == "" {
 			return errors.New("unable to query media for homeserver: wrong or incompatible adminApiKind")
