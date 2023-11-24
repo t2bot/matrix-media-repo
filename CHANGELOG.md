@@ -11,6 +11,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 * Dendrite homeservers can now have their media imported safely, and `adminApiKind` may be set to `dendrite`.
 
+### Changed
+
+* Exports now use an internal timeout of 10 minutes instead of 1 minute when downloading files.
+
 ### Fixed
 
 * Exports created with `s3_urls` now contain valid URLs.

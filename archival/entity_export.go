@@ -42,7 +42,7 @@ func ExportEntityData(ctx rcontext.RequestContext, exportId string, entityId str
 		ctx.Log.Debugf("Downloading %s", mxc)
 		_, s, err := pipeline_download.Execute(ctx, media.Origin, media.MediaId, pipeline_download.DownloadOpts{
 			FetchRemoteIfNeeded: false,
-			BlockForReadUntil:   1 * time.Minute,
+			BlockForReadUntil:   10 * time.Minute,
 			RecordOnly:          false,
 		})
 		if errors.Is(err, common.ErrMediaQuarantined) {
