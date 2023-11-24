@@ -345,8 +345,8 @@ github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXl
 github.com/strukturag/libheif v1.17.3 h1:i1Xa3apcz0ZOqYL6750vMEx0X14aQr2C7ZlfdcQ7D+8=
 github.com/strukturag/libheif v1.17.3/go.mod h1:E/PNRlmVtrtj9j2AvBZlrO4dsBDu6KfwDZn7X1Ce8Ks=
 github.com/stvp/tempredis v0.0.0-20181119212430-b82af8480203 h1:QVqDTf3h2WHt08YuiTGPZLls0Wq99X9bWd0Q5ZSBesM=
-github.com/t2bot/go-singleflight-streams v0.0.8 h1:Q6lunL6f8Zk0ZVlAuX7yXqulqHZyAvgjZvqEDlqVNkQ=
-github.com/t2bot/go-singleflight-streams v0.0.8/go.mod h1:pEIFm6l/utrXZBeP4tkIuMdYwBBN0TTw7feSEhozNzg=
+github.com/t2bot/go-singleflight-streams v1.0.0 h1:pA/g2o2kv+kDF0pk66azo27vFM1Tqmgj+H1GjBPrHbg=
+github.com/t2bot/go-singleflight-streams v1.0.0/go.mod h1:pEIFm6l/utrXZBeP4tkIuMdYwBBN0TTw7feSEhozNzg=
 github.com/t2bot/go-typed-singleflight v0.0.3 h1:TAQyjhfa5BA63BwFTEVY1a4NF07ekX9JRgite5Cbq0A=
 github.com/t2bot/go-typed-singleflight v0.0.3/go.mod h1:0SOeDgjEtLYEy1InNhFBCgDx0UjKAqsLzk5MXek/JNw=
 github.com/t2bot/gotd-contrib v0.0.0-20230907202504-d21987ea2957 h1:NEgOW/OCE0zGIiSxE+lW2KSqqqH4E1mTT3VGmpIz2U4=

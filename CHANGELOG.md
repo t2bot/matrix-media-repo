@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Fixed
 
 * Exports created with `s3_urls` now contain valid URLs.
+* Exports no longer fail with "The requested range is not satisfiable".
 
 ## [1.3.3] - October 31, 2023
 
