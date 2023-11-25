@@ -14,6 +14,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * S3 datastores can now specify a `prefixLength` to improve S3 performance on some providers. See `config.sample.yaml` for details.
 * Add `multipartUploads` flag for running MMR against unsupported S3 providers. See `config.sample.yaml` for details. 
 * A new "leaky bucket" rate limit algorithm has been applied to downloads. See `rateLimit.buckets` in the config for details.
+* Add *unstable* support for [MSC3916: Authentication for media](https://github.com/matrix-org/matrix-spec-proposals/pull/3916).
+  * **Note**: MMR will *not* attempt to use authentication to download media over federation in this version. 
+    * ***Subject to change during development.*** 
 
 ### Changed
 
@@ -35,10 +38,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 
 * Dendrite homeservers can now have their media imported safely, and `adminApiKind` may be set to `dendrite`.
-* Exporting MMR's data to Synapse is now possible with `import_to_synapse`. To use it, first run `gdpr_export` or similar.
-* Errors encountered during a background task, such as an API-induced export, are exposed as `error_message` in the admin API.
-* MMR will follow redirects on federated downloads up to 5 hops.
-* S3-backed datastores can have download requests redirected to a public-facing CDN rather than being proxied through MMR. See `publicBaseUrl` under the S3 datastore config.
 
 ### Changed
 
