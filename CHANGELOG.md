@@ -10,6 +10,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 
 * New datastore option to ignore Redis cache when downloading media served by a `publicBaseUrl`. This can help ensure more requests get redirected to the CDN.
+* Add *unstable* support for [MSC3916: Authentication for media](https://github.com/matrix-org/matrix-spec-proposals/pull/3916).
+  * **Note**: MMR will *not* attempt to use authentication to download media over federation in this version. 
+    * ***Subject to change during development.*** 
 
 ### Fixed
 
@@ -21,10 +24,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 
 * Dendrite homeservers can now have their media imported safely, and `adminApiKind` may be set to `dendrite`.
-* Exporting MMR's data to Synapse is now possible with `import_to_synapse`. To use it, first run `gdpr_export` or similar.
-* Errors encountered during a background task, such as an API-induced export, are exposed as `error_message` in the admin API.
-* MMR will follow redirects on federated downloads up to 5 hops.
-* S3-backed datastores can have download requests redirected to a public-facing CDN rather than being proxied through MMR. See `publicBaseUrl` under the S3 datastore config.
 
 ### Changed
 
