@@ -40,3 +40,20 @@ datastores:
       ssl: false
 rateLimit:
   enabled: false # we've got tests which intentionally spam
+urlPreviews:
+  enabled: true
+  maxPageSizeBytes: 10485760
+  previewUnsafeCertificates: false
+  numWords: 50
+  maxLength: 200
+  numTitleWords: 30
+  maxTitleLength: 150
+  filePreviewTypes:
+    - "image/*"
+  numWorkers: 10
+  disallowedNetworks: []
+  allowedNetworks: ["0.0.0.0/0"]
+  expireAfterDays: 0
+  defaultLanguage: "en-US,en"
+  userAgent: "matrix-media-repo"
+  oEmbed: true
