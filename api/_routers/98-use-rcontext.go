@@ -205,6 +205,9 @@ beforeParseDownload:
 	}
 	if errRes, isError := res.(*_responses.ErrorResponse); isError && proposedStatusCode == http.StatusOK {
 		switch errRes.InternalCode {
+		case common.ErrCodeMissingToken:
+			proposedStatusCode = http.StatusUnauthorized
+			break
 		case common.ErrCodeUnknownToken:
 			proposedStatusCode = http.StatusUnauthorized
 			break
