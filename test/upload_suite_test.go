@@ -18,6 +18,10 @@ import (
 	"github.com/turt2live/matrix-media-repo/util"
 )
 
+func init() {
+	test_internals.MarkUsingCachedMmrBuild()
+}
+
 type UploadTestSuite struct {
 	suite.Suite
 	deps *test_internals.ContainerDeps

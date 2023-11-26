@@ -10,6 +10,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"text/template"
 
 	"github.com/docker/docker/api/types"
@@ -41,6 +42,12 @@ type mmrContainer struct {
 
 var mmrCachedImage string
 var mmrCachedContext *os.File
+var mmrCachedSuites atomic.Int32
+
+func MarkUsingCachedMmrBuild() {
+	mmrCachedSuites.Add(1)
+	log.Println("+1 cached build usage")
+}
 
 func reuseMmrBuild(ctx context.Context) (string, error) {
 	if mmrCachedImage != "" {
@@ -188,6 +195,12 @@ func (c *mmrContainer) Logs() (io.ReadCloser, error) {
 }
 
 func TeardownMmrCaches() {
+	mmrCachedSuites.Add(-1)
+	if mmrCachedSuites.Load() > 0 {
+		log.Println("Not cleaning up MMR cached images: image still in use")
+		return
+	}
+
 	if mmrCachedContext != nil {
 		_ = mmrCachedContext.Close() // ignore errors because testcontainers might have already closed it
 		if err := os.Remove(mmrCachedContext.Name()); err != nil && !os.IsNotExist(err) {
