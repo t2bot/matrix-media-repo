@@ -10,64 +10,41 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
+	"github.com/turt2live/matrix-media-repo/cmd/utilities/_common"
+	"github.com/turt2live/matrix-media-repo/homeserver_interop"
 	"github.com/turt2live/matrix-media-repo/homeserver_interop/any_server"
-	"github.com/turt2live/matrix-media-repo/homeserver_interop/dendrite"
-	"github.com/turt2live/matrix-media-repo/homeserver_interop/mmr"
-	"github.com/turt2live/matrix-media-repo/homeserver_interop/synapse"
 )
 
 func main() {
-	inputFile := flag.String("input", "", "When set to a file path, the signing key to convert to the output format. The key must have been generated in a format supported by -format.")
+	inputFile := flag.String("input", "", "When set to a file path, the signing key to convert to the output format. The key must have been generated in a format supported by -format. If the format supports multiple keys, only the first will be converted.")
 	outputFormat := flag.String("format", "mmr", "The output format for the key. May be 'mmr', 'synapse', or 'dendrite'.")
 	outputFile := flag.String("output", "./signing.key", "The output file for the key.")
 	flag.Parse()
 
-	var keyVersion string
-	var priv ed25519.PrivateKey
+	var key *homeserver_interop.SigningKey
 	var err error
 
 	if *inputFile != "" {
-		priv, keyVersion, err = decodeKey(*inputFile)
+		key, err = decodeKey(*inputFile)
 	} else {
-		keyVersion = makeKeyVersion()
+		keyVersion := makeKeyVersion()
+
+		var priv ed25519.PrivateKey
 		_, priv, err = ed25519.GenerateKey(nil)
 		priv = priv[len(priv)-32:]
+
+		key = &homeserver_interop.SigningKey{
+			PrivateKey: priv,
+			KeyVersion: keyVersion,
+		}
 	}
 	if err != nil {
 		logrus.Fatal(err)
 	}
 
-	logrus.Infof("Key ID will be 'ed25519:%s'", keyVersion)
+	logrus.Infof("Key ID will be 'ed25519:%s'", key.KeyVersion)
 
-	var b []byte
-	switch *outputFormat {
-	case "synapse":
-		b, err = synapse.EncodeSigningKey(keyVersion, priv)
-	case "dendrite":
-		b, err = dendrite.EncodeSigningKey(keyVersion, priv)
-	case "mmr":
-		b, err = mmr.EncodeSigningKey(keyVersion, priv)
-	default:
-		logrus.Fatalf("Unknown output format '%s'. Try '%s -help' for information.", *outputFormat, flag.Arg(0))
-	}
-	if err != nil {
-		logrus.Fatal(err)
-	}
-
-	f, err := os.Create(*outputFile)
-	if err != nil {
-		logrus.Fatal(err)
-	}
-	defer func(f *os.File) {
-		_ = f.Close()
-	}(f)
-
-	_, err = f.Write(b)
-	if err != nil {
-		logrus.Fatal(err)
-	}
-
-	logrus.Infof("Done! Signing key written to '%s' in %s format", f.Name(), *outputFormat)
+	_common.EncodeSigningKeys([]*homeserver_interop.SigningKey{key}, *outputFormat, *outputFile)
 }
 
 func makeKeyVersion() string {
@@ -92,10 +69,10 @@ func makeKeyVersion() string {
 	return strings.Join(chars[:6], "")
 }
 
-func decodeKey(fileName string) (ed25519.PrivateKey, string, error) {
+func decodeKey(fileName string) (*homeserver_interop.SigningKey, error) {
 	f, err := os.Open(fileName)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 	defer f.Close()
 
