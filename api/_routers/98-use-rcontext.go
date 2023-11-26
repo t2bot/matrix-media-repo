@@ -88,20 +88,24 @@ func (c *RContextRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 beforeParseDownload:
 	log.Infof("Replying with result: %T %+v", res, res)
 	if downloadRes, isDownload := res.(*_responses.DownloadResponse); isDownload {
-		ranges, err := http_range.ParseRange(r.Header.Get("Range"), downloadRes.SizeBytes, rctx.Config.Downloads.DefaultRangeChunkSizeBytes)
-		if errors.Is(err, http_range.ErrInvalid) {
-			proposedStatusCode = http.StatusRequestedRangeNotSatisfiable
-			res = _responses.BadRequest("invalid range header")
-			goto beforeParseDownload // reprocess `res`
-		} else if errors.Is(err, http_range.ErrNoOverlap) {
-			proposedStatusCode = http.StatusRequestedRangeNotSatisfiable
-			res = _responses.BadRequest("out of range")
-			goto beforeParseDownload // reprocess `res`
-		}
-		if len(ranges) > 1 {
-			proposedStatusCode = http.StatusRequestedRangeNotSatisfiable
-			res = _responses.BadRequest("only 1 range is supported")
-			goto beforeParseDownload // reprocess `res`
+		var ranges []http_range.Range
+		var err error
+		if downloadRes.SizeBytes > 0 {
+			ranges, err = http_range.ParseRange(r.Header.Get("Range"), downloadRes.SizeBytes, rctx.Config.Downloads.DefaultRangeChunkSizeBytes)
+			if errors.Is(err, http_range.ErrInvalid) {
+				proposedStatusCode = http.StatusRequestedRangeNotSatisfiable
+				res = _responses.BadRequest("invalid range header")
+				goto beforeParseDownload // reprocess `res`
+			} else if errors.Is(err, http_range.ErrNoOverlap) {
+				proposedStatusCode = http.StatusRequestedRangeNotSatisfiable
+				res = _responses.BadRequest("out of range")
+				goto beforeParseDownload // reprocess `res`
+			}
+			if len(ranges) > 1 {
+				proposedStatusCode = http.StatusRequestedRangeNotSatisfiable
+				res = _responses.BadRequest("only 1 range is supported")
+				goto beforeParseDownload // reprocess `res`
+			}
 		}
 
 		contentType = "application/octet-stream"
