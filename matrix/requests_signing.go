@@ -20,7 +20,7 @@ type signingKey struct {
 	Key string `json:"key"`
 }
 
-type serverKeyResult struct {
+type ServerKeyResult struct {
 	ServerName    string                       `json:"server_name"`
 	ValidUntilTs  int64                        `json:"valid_until_ts"`
 	VerifyKeys    map[string]signingKey        `json:"verify_keys"`     // unpadded base64
@@ -83,7 +83,7 @@ func QuerySigningKeys(serverName string) (ServerSigningKeys, error) {
 		if err = decoder.Decode(&raw); err != nil {
 			return nil, err
 		}
-		keyInfo := new(serverKeyResult)
+		keyInfo := new(ServerKeyResult)
 		if err = raw.ApplyTo(keyInfo); err != nil {
 			return nil, err
 		}
@@ -100,46 +100,10 @@ func QuerySigningKeys(serverName string) (ServerSigningKeys, error) {
 			return nil, errors.New("returned server keys would expire too quickly")
 		}
 
-		// Convert to something useful
-		serverKeys := make(ServerSigningKeys)
-		for keyId, keyObj := range keyInfo.VerifyKeys {
-			b, err := util.DecodeUnpaddedBase64String(keyObj.Key)
-			if err != nil {
-				return nil, errors.Join(fmt.Errorf("bad base64 for key ID '%s' for '%s'", keyId, serverName), err)
-			}
-
-			serverKeys[keyId] = b
-		}
-
-		// Check signatures
-		if len(keyInfo.Signatures) == 0 || len(keyInfo.Signatures[serverName]) == 0 {
-			return nil, fmt.Errorf("missing signatures from '%s'", serverName)
-		}
-		delete(raw, "signatures")
-		canonical, err := util.EncodeCanonicalJson(raw)
+		// Convert keys to something useful, and check signatures
+		serverKeys, err := CheckSigningKeySignatures(serverName, keyInfo, raw)
 		if err != nil {
 			return nil, err
-		}
-		for domain, sig := range keyInfo.Signatures {
-			if domain != serverName {
-				return nil, fmt.Errorf("unexpected signature from '%s' (expected '%s')", domain, serverName)
-			}
-
-			for keyId, b64 := range sig {
-				signatureBytes, err := util.DecodeUnpaddedBase64String(b64)
-				if err != nil {
-					return nil, errors.Join(fmt.Errorf("bad base64 signature for key ID '%s' for '%s'", keyId, serverName), err)
-				}
-
-				key, ok := serverKeys[keyId]
-				if !ok {
-					return nil, fmt.Errorf("unknown key ID '%s' for signature from '%s'", keyId, serverName)
-				}
-
-				if !ed25519.Verify(key, canonical, signatureBytes) {
-					return nil, fmt.Errorf("invalid signature '%s' from key ID '%s' for '%s'", b64, keyId, serverName)
-				}
-			}
 		}
 
 		// Cache & return (unlock was deferred)
@@ -147,4 +111,55 @@ func QuerySigningKeys(serverName string) (ServerSigningKeys, error) {
 		return serverKeys, nil
 	})
 	return keys, err
+}
+
+func CheckSigningKeySignatures(serverName string, keyInfo *ServerKeyResult, raw database.AnonymousJson) (ServerSigningKeys, error) {
+	serverKeys := make(ServerSigningKeys)
+	for keyId, keyObj := range keyInfo.VerifyKeys {
+		b, err := util.DecodeUnpaddedBase64String(keyObj.Key)
+		if err != nil {
+			return nil, errors.Join(fmt.Errorf("bad base64 for key ID '%s' for '%s'", keyId, serverName), err)
+		}
+
+		serverKeys[keyId] = b
+	}
+
+	if len(keyInfo.Signatures) == 0 || len(keyInfo.Signatures[serverName]) == 0 {
+		return nil, fmt.Errorf("missing signatures from '%s'", serverName)
+	}
+	delete(raw, "signatures")
+	canonical, err := util.EncodeCanonicalJson(raw)
+	if err != nil {
+		return nil, err
+	}
+	for domain, sig := range keyInfo.Signatures {
+		if domain != serverName {
+			return nil, fmt.Errorf("unexpected signature from '%s' (expected '%s')", domain, serverName)
+		}
+
+		for keyId, b64 := range sig {
+			signatureBytes, err := util.DecodeUnpaddedBase64String(b64)
+			if err != nil {
+				return nil, errors.Join(fmt.Errorf("bad base64 signature for key ID '%s' for '%s'", keyId, serverName), err)
+			}
+
+			key, ok := serverKeys[keyId]
+			if !ok {
+				return nil, fmt.Errorf("unknown key ID '%s' for signature from '%s'", keyId, serverName)
+			}
+
+			if !ed25519.Verify(key, canonical, signatureBytes) {
+				return nil, fmt.Errorf("invalid signature '%s' from key ID '%s' for '%s'", b64, keyId, serverName)
+			}
+		}
+	}
+
+	// Ensure *all* keys have signed the response
+	for keyId, _ := range serverKeys {
+		if _, ok := keyInfo.Signatures[serverName][keyId]; !ok {
+			return nil, fmt.Errorf("missing signature from key '%s'", keyId)
+		}
+	}
+
+	return serverKeys, nil
 }
