@@ -222,6 +222,15 @@ func GetDomain(domain string) *DomainRepoConfig {
 	return domains[domain]
 }
 
+func AddDomainForTesting(domain string, config *DomainRepoConfig) {
+	Get() // Ensure the "main" config was loaded first
+	if config == nil {
+		c := NewDefaultDomainConfig()
+		config = &c
+	}
+	domains[domain] = config
+}
+
 func DomainConfigFrom(c MainRepoConfig) DomainRepoConfig {
 	// HACK: We should be better at this kind of inheritance
 	dc := NewDefaultDomainConfig()
