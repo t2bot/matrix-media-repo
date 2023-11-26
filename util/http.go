@@ -49,8 +49,7 @@ func GetLogSafeUrl(r *http.Request) string {
 	return copyUrl.String()
 }
 
-func GetXMatrixAuth(request *http.Request) ([]XMatrixAuth, error) {
-	headers := request.Header.Values("Authorization")
+func GetXMatrixAuth(headers []string) ([]XMatrixAuth, error) {
 	auths := make([]XMatrixAuth, 0)
 	for _, h := range headers {
 		if !strings.HasPrefix(h, "X-Matrix ") {
