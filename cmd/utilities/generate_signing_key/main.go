@@ -43,15 +43,15 @@ func main() {
 	switch *outputFormat {
 	case "synapse":
 		b, err = synapse.EncodeSigningKey(keyVersion, priv)
-		break
 	case "dendrite":
 		b, err = dendrite.EncodeSigningKey(keyVersion, priv)
-		break
 	case "mmr":
 		b, err = mmr.EncodeSigningKey(keyVersion, priv)
-		break
 	default:
 		logrus.Fatalf("Unknown output format '%s'. Try '%s -help' for information.", *outputFormat, flag.Arg(0))
+	}
+	if err != nil {
+		logrus.Fatal(err)
 	}
 
 	f, err := os.Create(*outputFile)
