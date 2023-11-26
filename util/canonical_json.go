@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 )
 
-func EncodeCanonicalJson(obj map[string]interface{}) ([]byte, error) {
+func EncodeCanonicalJson(obj any) ([]byte, error) {
 	b, err := json.Marshal(obj)
 	if err != nil {
 		return nil, err

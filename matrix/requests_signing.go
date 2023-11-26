@@ -30,18 +30,18 @@ type serverKeyResult struct {
 
 type ServerSigningKeys map[string]ed25519.PublicKey
 
-var signingKeySf = new(typedsf.Group[*ServerSigningKeys])
+var signingKeySf = new(typedsf.Group[ServerSigningKeys])
 var signingKeyCache = cache.New(cache.NoExpiration, 30*time.Second)
 var signingKeyRWLock = new(sync.RWMutex)
 
-func querySigningKeyCache(serverName string) *ServerSigningKeys {
+func querySigningKeyCache(serverName string) ServerSigningKeys {
 	if val, ok := signingKeyCache.Get(serverName); ok {
-		return val.(*ServerSigningKeys)
+		return val.(ServerSigningKeys)
 	}
 	return nil
 }
 
-func QuerySigningKeys(serverName string) (*ServerSigningKeys, error) {
+func QuerySigningKeys(serverName string) (ServerSigningKeys, error) {
 	signingKeyRWLock.RLock()
 	keys := querySigningKeyCache(serverName)
 	signingKeyRWLock.RUnlock()
@@ -49,7 +49,7 @@ func QuerySigningKeys(serverName string) (*ServerSigningKeys, error) {
 		return keys, nil
 	}
 
-	keys, err, _ := signingKeySf.Do(serverName, func() (*ServerSigningKeys, error) {
+	keys, err, _ := signingKeySf.Do(serverName, func() (ServerSigningKeys, error) {
 		ctx := rcontext.Initial().LogWithFields(logrus.Fields{
 			"keysForServer": serverName,
 		})
@@ -144,7 +144,7 @@ func QuerySigningKeys(serverName string) (*ServerSigningKeys, error) {
 
 		// Cache & return (unlock was deferred)
 		signingKeyCache.Set(serverName, &serverKeys, cacheUntil)
-		return &serverKeys, nil
+		return serverKeys, nil
 	})
 	return keys, err
 }
