@@ -44,6 +44,8 @@ func DecodeAllSigningKeys(key io.Reader) ([]*homeserver_interop.SigningKey, erro
 		return nil, err
 	}
 
+	// See https://github.com/matrix-org/dendrite/blob/fd11e65a9d113839177f9f7a32af328a0292b195/setup/config/config.go#L446
+	// See https://github.com/matrix-org/dendrite/blob/fd11e65a9d113839177f9f7a32af328a0292b195/LICENSE
 	keys := make([]*homeserver_interop.SigningKey, 0)
 	var block *pem.Block
 	for {

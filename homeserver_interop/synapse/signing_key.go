@@ -38,6 +38,7 @@ func DecodeAllSigningKeys(key io.Reader) ([]*homeserver_interop.SigningKey, erro
 	}
 
 	// See https://github.com/matrix-org/python-signedjson/blob/067ae81616573e8ceb627cc046d91b5b489bcc96/signedjson/key.py#L137-L150
+	// See https://github.com/matrix-org/python-signedjson/blob/067ae81616573e8ceb627cc046d91b5b489bcc96/LICENSE
 	lines := strings.Split(string(b), "\n")
 	if len(lines) <= 0 {
 		return nil, fmt.Errorf("no signing keys found")
