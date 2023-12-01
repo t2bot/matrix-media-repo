@@ -59,6 +59,9 @@ database:
 Note that the postgresql image is *insecure* and not recommended for production use. It also does not follow best practices
 for database management - use at your own risk.
 
+**Note**: Running the Go tests requires Docker, and may pollute your cached images with tons of layers. It is suggested to
+clean these images up manually from time to time, or rely on an ephemeral build system instead.
+
 ## Importing media from synapse
 
 Media is imported by connecting to your synapse database and downloading all the content from the homeserver. This is so 

@@ -24,9 +24,6 @@ WORKDIR /opt
 RUN dos2unix ./build.sh ./docker/run.sh && chmod 744 ./build.sh
 RUN ./build.sh
 
-# the label is applied last so we don't pollute the image list with a weird amount of labelled images
-LABEL io.t2bot.mmr.cleanup="true"
-
 # ---- Stage 1 ----
 # Final runtime stage.
 FROM alpine
