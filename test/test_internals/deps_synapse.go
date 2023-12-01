@@ -47,7 +47,7 @@ func MakeSynapse(domainName string, depNet *NetworkDep) (*SynapseDep, error) {
 
 	// Start postgresql database
 	pgContainer, err := postgres.RunContainer(ctx,
-		testcontainers.WithImage("docker.io/library/postgres:14"),
+		testcontainers.WithImage("docker.io/library/postgres:15"),
 		postgres.WithDatabase("synapse"),
 		postgres.WithUsername("postgres"),
 		postgres.WithPassword("test1234"),
@@ -113,7 +113,7 @@ func MakeSynapse(domainName string, depNet *NetworkDep) (*SynapseDep, error) {
 	}
 	synContainer, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
-			Image:        "docker.io/matrixdotorg/synapse:v1.94.0",
+			Image:        "docker.io/matrixdotorg/synapse:v1.97.0",
 			ExposedPorts: []string{"8008/tcp"},
 			Mounts: []testcontainers.ContainerMount{
 				testcontainers.BindMount(f.Name(), "/data/homeserver.yaml"),
