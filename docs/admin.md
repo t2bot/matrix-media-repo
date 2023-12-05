@@ -464,7 +464,7 @@ Then one can call the following to download each part:
 
 After the export has been downloaded, it can be deleted. Note that this endpoint can be called by the user from the "view export" page.
 
-`DELETE /_matrix/media/unstable/admin/export/<export ID>`
+`DELETE /_matrix/media/unstable/admin/export/<export ID>/delete`
 
 The response is an empty JSON object if successful.
 
