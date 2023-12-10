@@ -1,6 +1,6 @@
 # ---- Stage 0 ----
 # Builds media repo binaries
-FROM golang:1.20-alpine AS builder
+FROM golang:1.20-alpine3.18 AS builder
 
 # Install build dependencies
 RUN apk add --no-cache git musl-dev dos2unix build-base libde265-dev
@@ -26,7 +26,7 @@ RUN ./build.sh
 
 # ---- Stage 1 ----
 # Final runtime stage.
-FROM alpine
+FROM alpine:3.18
 
 RUN mkdir /plugins
 RUN apk add --no-cache \
