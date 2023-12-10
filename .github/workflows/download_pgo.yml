@@ -11,9 +11,9 @@ jobs:
     env:
       PGO_MERGE: ${{ secrets.PGO_MERGE }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: "Download new pgo_media_repo.pprof"
         run: "curl -sv --fail -X POST -H \"Authorization: Bearer ${PGO_MERGE}\" https://pgo-mmr.t2host.io/v1/merge?and_combine=true > pgo_media_repo.pprof"
-      - uses: stefanzweifel/git-auto-commit-action@v4
+      - uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Update pgo_media_repo.pprof"
