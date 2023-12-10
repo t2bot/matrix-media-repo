@@ -249,8 +249,8 @@ github.com/mewkiz/pkg v0.0.0-20231012081350-95d6616c5403 h1:S+RRgX+Gr0wP7GMnoXci
 github.com/mewkiz/pkg v0.0.0-20231012081350-95d6616c5403/go.mod h1:15wLZDnu0ecuXH4HtKH2GMVTDmg1HBtG6apAFQWr480=
 github.com/minio/md5-simd v1.1.2 h1:Gdi1DZK69+ZVMoNHRXJyNcxrMA4dSxoYHZSQbirFg34=
 github.com/minio/md5-simd v1.1.2/go.mod h1:MzdKDxYpY2BT9XQFocsiZf/NKVtR7nkE4RoEpN+20RM=
-github.com/minio/minio-go/v7 v7.0.64 h1:Zdza8HwOzkld0ZG/og50w56fKi6AAyfqfifmasD9n2Q=
-github.com/minio/minio-go/v7 v7.0.64/go.mod h1:R4WVUR6ZTedlCcGwZRauLMIKjgyaWxhs4Mqi/OMPmEc=
+github.com/minio/minio-go/v7 v7.0.65 h1:sOlB8T3nQK+TApTpuN3k4WD5KasvZIE3vVFzyyCa0go=
+github.com/minio/minio-go/v7 v7.0.65/go.mod h1:R4WVUR6ZTedlCcGwZRauLMIKjgyaWxhs4Mqi/OMPmEc=
 github.com/minio/sha256-simd v1.0.1 h1:6kaan5IFmwTNynnKKpDHe6FWHohJOHhCPchzK49dzMM=
 github.com/minio/sha256-simd v1.0.1/go.mod h1:Pz6AKMiUdngCLpeTL/RJY1M9rUuPMYujV5xJjtbRSN8=
 github.com/mitchellh/go-testing-interface v1.14.1 h1:jrgshOhYAUVNMAJiKbEu7EqAwgJJ2JqpQmpLJOu07cU=

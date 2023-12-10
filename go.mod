@@ -46,7 +46,7 @@ require (
 	github.com/docker/go-connections v0.4.0
 	github.com/go-redsync/redsync/v4 v4.11.0
 	github.com/julienschmidt/httprouter v1.3.0
-	github.com/minio/minio-go/v7 v7.0.64
+	github.com/minio/minio-go/v7 v7.0.65
 	github.com/panjf2000/ants/v2 v2.9.0
 	github.com/redis/go-redis/v9 v9.3.0
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
