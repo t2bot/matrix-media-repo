@@ -55,7 +55,7 @@ services:
       - media_proxy
   media_element:
     container_name: "media_repo_element"
-    image: "vectorim/element-web:v1.11.50"
+    image: "vectorim/element-web:v1.11.51"
     restart: unless-stopped
     volumes:
       - ./element-config.json:/app/config.json
