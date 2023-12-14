@@ -71,8 +71,7 @@ import is complete.**
 **Note**: the database options provided on the command line are for the Synapse database. The media repo will use the 
 connection string in the media-repo.yaml config when trying to store the Synapse media.
 
-**Note**: the import script is not available to the Docker container. Binaries of the script are included with every
-release though if you want to avoid building it yourself.
+**Note**: the import script is available in the Docker container at `/usr/local/bin/import_synapse`
 
 1. Build the media repo (as stated above)
 2. Edit/setup `media-repo.yaml` per the install instructions above
