@@ -71,8 +71,7 @@ import is complete.**
 **Note**: the database options provided on the command line are for the Synapse database. The media repo will use the 
 connection string in the media-repo.yaml config when trying to store the Synapse media.
 
-**Note**: the import script is not available to the Docker container. Binaries of the script are included with every
-release though if you want to avoid building it yourself.
+**Note**: If you want to avoid building the import binaries yourself, you can find them included in every [release](https://github.com/turt2live/matrix-media-repo/releases) and in the Docker container image (in `/usr/local/bin/`)
 
 1. Build the media repo (as stated above)
 2. Edit/setup `media-repo.yaml` per the install instructions above
