@@ -1,0 +1,4 @@
+CREATE TABLE IF NOT EXISTS blurhashes (
+    sha256_hash TEXT PRIMARY KEY NOT NULL,
+    blurhash TEXT NOT NULL
+);
