@@ -22,7 +22,7 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.3
 	github.com/getsentry/sentry-go v0.25.0
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
-	github.com/hashicorp/go-hclog v1.6.1
+	github.com/hashicorp/go-hclog v1.6.2
 	github.com/hashicorp/go-plugin v1.6.0
 	github.com/k3a/html2text v1.2.1
 	github.com/kettek/apng v0.0.0-20220823221153-ff692776a607
@@ -46,7 +46,7 @@ require (
 	github.com/docker/go-connections v0.4.0
 	github.com/go-redsync/redsync/v4 v4.11.0
 	github.com/julienschmidt/httprouter v1.3.0
-	github.com/minio/minio-go/v7 v7.0.65
+	github.com/minio/minio-go/v7 v7.0.66
 	github.com/panjf2000/ants/v2 v2.9.0
 	github.com/redis/go-redis/v9 v9.3.0
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
@@ -88,7 +88,7 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/geo v0.0.0-20230421003525-6adc56603217 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
-	github.com/google/uuid v1.4.0 // indirect
+	github.com/google/uuid v1.5.0 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20190430165422-3e4dfb77656c // indirect
 	github.com/hajimehoshi/go-mp3 v0.3.4 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
@@ -128,12 +128,12 @@ require (
 	github.com/tklauser/go-sysconf v0.3.13 // indirect
 	github.com/tklauser/numcpus v0.7.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
-	golang.org/x/exp v0.0.0-20231206192017-f3f8817b8deb // indirect
+	golang.org/x/exp v0.0.0-20231214170342-aacd6d4b4611 // indirect
 	golang.org/x/mod v0.14.0 // indirect
 	golang.org/x/sys v0.15.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	golang.org/x/tools v0.16.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20231127180814-3a041ad873d4 // indirect
+	golang.org/x/tools v0.16.1 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20231212172506-995d672761c0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
@@ -157,7 +157,7 @@ require (
 	github.com/peterbourgon/g2s v0.0.0-20170223122336-d4e7ad98afea // indirect
 	github.com/tebeka/strftime v0.1.3 // indirect
 	golang.org/x/time v0.5.0 // indirect
-	google.golang.org/grpc v1.59.0 // indirect
+	google.golang.org/grpc v1.60.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1
 )
