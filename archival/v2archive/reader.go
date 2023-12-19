@@ -17,6 +17,7 @@ import (
 type ProcessOpts struct {
 	LockedEntityId    string
 	CheckUploadedOnly bool
+	ProcessFunction   func(record *ManifestRecord, f io.ReadCloser) error
 }
 
 type ArchiveReader struct {
@@ -190,7 +191,14 @@ func (r *ArchiveReader) importFileFromStream(fileName string, f io.ReadCloser, o
 		return nil // ignore file
 	}
 
-	db := database.GetInstance().Media.Prepare(r.ctx)
+	var dbVal *database.MediaTableWithContext
+	lazyDb := func() *database.MediaTableWithContext {
+		if dbVal != nil {
+			return dbVal
+		}
+		dbVal = database.GetInstance().Media.Prepare(r.ctx)
+		return dbVal
+	}
 	for _, mxc := range mxcs {
 		if r.uploaded[mxc] {
 			continue // ignore duplicate file
@@ -226,7 +234,16 @@ func (r *ArchiveReader) importFileFromStream(fileName string, f io.ReadCloser, o
 			}
 		}
 
-		record, err := db.GetById(metadata.Origin, metadata.MediaId)
+		if opts.ProcessFunction != nil {
+			err := opts.ProcessFunction(metadata, f)
+			if err != nil {
+				return err
+			}
+			r.uploaded[mxc] = true
+			continue // already processed - skip db
+		}
+
+		record, err := lazyDb().GetById(metadata.Origin, metadata.MediaId)
 		if err != nil {
 			return err
 		}

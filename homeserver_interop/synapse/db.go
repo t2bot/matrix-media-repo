@@ -9,6 +9,8 @@ import (
 )
 
 const selectLocalMedia = "SELECT media_id, media_type, media_length, created_ts, upload_name, user_id, url_cache FROM local_media_repository;"
+const selectHasLocalMedia = "SELECT media_id FROM local_media_repository WHERE media_id = $1;"
+const insertLocalMedia = "INSERT INTO local_media_repository (media_id, media_type, media_length, created_ts, upload_name, user_id) VALUES ($1, $2, $3, $4, $5, $6);"
 
 type LocalMedia struct {
 	homeserver_interop.ImportDbMedia
@@ -28,7 +30,9 @@ type SynDatabase struct {
 }
 
 type statements struct {
-	selectLocalMedia *sql.Stmt
+	selectLocalMedia    *sql.Stmt
+	selectHasLocalMedia *sql.Stmt
+	insertLocalMedia    *sql.Stmt
 }
 
 func OpenDatabase(connectionString string) (*SynDatabase, error) {
@@ -42,8 +46,29 @@ func OpenDatabase(connectionString string) (*SynDatabase, error) {
 	if d.statements.selectLocalMedia, err = d.db.Prepare(selectLocalMedia); err != nil {
 		return nil, err
 	}
+	if d.statements.selectHasLocalMedia, err = d.db.Prepare(selectHasLocalMedia); err != nil {
+		return nil, err
+	}
+	if d.statements.insertLocalMedia, err = d.db.Prepare(insertLocalMedia); err != nil {
+		return nil, err
+	}
 
 	return &d, nil
+}
+
+func (d *SynDatabase) InsertMedia(mediaId string, contentType string, sizeBytes int64, createdTs int64, uploadName string, userId string) error {
+	_, err := d.statements.insertLocalMedia.Exec(mediaId, contentType, sizeBytes, createdTs, uploadName, userId)
+	return err
+}
+
+func (d *SynDatabase) HasMedia(mediaId string) (bool, error) {
+	row := d.statements.selectHasLocalMedia.QueryRow(mediaId)
+
+	val := ""
+	if err := row.Scan(&val); err != nil {
+		return false, err
+	}
+	return val == mediaId, nil
 }
 
 func (d *SynDatabase) GetAllMedia() ([]*LocalMedia, error) {

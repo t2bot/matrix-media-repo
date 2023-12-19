@@ -73,7 +73,7 @@ type mediaTableStatements struct {
 	selectMediaByQuarantineAndOrigin *sql.Stmt
 }
 
-type mediaTableWithContext struct {
+type MediaTableWithContext struct {
 	statements *mediaTableStatements
 	ctx        rcontext.RequestContext
 }
@@ -146,14 +146,14 @@ func prepareMediaTables(db *sql.DB) (*mediaTableStatements, error) {
 	return stmts, nil
 }
 
-func (s *mediaTableStatements) Prepare(ctx rcontext.RequestContext) *mediaTableWithContext {
-	return &mediaTableWithContext{
+func (s *mediaTableStatements) Prepare(ctx rcontext.RequestContext) *MediaTableWithContext {
+	return &MediaTableWithContext{
 		statements: s,
 		ctx:        ctx,
 	}
 }
 
-func (s *mediaTableWithContext) GetDistinctDatastoreIds() ([]string, error) {
+func (s *MediaTableWithContext) GetDistinctDatastoreIds() ([]string, error) {
 	results := make([]string, 0)
 	rows, err := s.statements.selectDistinctMediaDatastoreIds.QueryContext(s.ctx)
 	if err != nil {
@@ -174,7 +174,7 @@ func (s *mediaTableWithContext) GetDistinctDatastoreIds() ([]string, error) {
 	return results, nil
 }
 
-func (s *mediaTableWithContext) IsHashQuarantined(sha256hash string) (bool, error) {
+func (s *MediaTableWithContext) IsHashQuarantined(sha256hash string) (bool, error) {
 	// TODO: https://github.com/turt2live/matrix-media-repo/issues/410
 	row := s.statements.selectMediaIsQuarantinedByHash.QueryRowContext(s.ctx, sha256hash)
 	val := false
@@ -186,7 +186,7 @@ func (s *mediaTableWithContext) IsHashQuarantined(sha256hash string) (bool, erro
 	return val, err
 }
 
-func (s *mediaTableWithContext) scanRows(rows *sql.Rows, err error) ([]*DbMedia, error) {
+func (s *MediaTableWithContext) scanRows(rows *sql.Rows, err error) ([]*DbMedia, error) {
 	results := make([]*DbMedia, 0)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -205,51 +205,51 @@ func (s *mediaTableWithContext) scanRows(rows *sql.Rows, err error) ([]*DbMedia,
 	return results, nil
 }
 
-func (s *mediaTableWithContext) GetByHash(sha256hash string) ([]*DbMedia, error) {
+func (s *MediaTableWithContext) GetByHash(sha256hash string) ([]*DbMedia, error) {
 	return s.scanRows(s.statements.selectMediaByHash.QueryContext(s.ctx, sha256hash))
 }
 
-func (s *mediaTableWithContext) GetByUserId(userId string) ([]*DbMedia, error) {
+func (s *MediaTableWithContext) GetByUserId(userId string) ([]*DbMedia, error) {
 	return s.scanRows(s.statements.selectMediaByUserId.QueryContext(s.ctx, userId))
 }
 
-func (s *mediaTableWithContext) GetOldByUserId(userId string, beforeTs int64) ([]*DbMedia, error) {
+func (s *MediaTableWithContext) GetOldByUserId(userId string, beforeTs int64) ([]*DbMedia, error) {
 	return s.scanRows(s.statements.selectOldMediaByUserId.QueryContext(s.ctx, userId, beforeTs))
 }
 
-func (s *mediaTableWithContext) GetByOrigin(origin string) ([]*DbMedia, error) {
+func (s *MediaTableWithContext) GetByOrigin(origin string) ([]*DbMedia, error) {
 	return s.scanRows(s.statements.selectMediaByOrigin.QueryContext(s.ctx, origin))
 }
 
-func (s *mediaTableWithContext) GetOldByOrigin(origin string, beforeTs int64) ([]*DbMedia, error) {
+func (s *MediaTableWithContext) GetOldByOrigin(origin string, beforeTs int64) ([]*DbMedia, error) {
 	return s.scanRows(s.statements.selectOldMediaByOrigin.QueryContext(s.ctx, origin, beforeTs))
 }
 
-func (s *mediaTableWithContext) GetByOriginUsers(origin string, userIds []string) ([]*DbMedia, error) {
+func (s *MediaTableWithContext) GetByOriginUsers(origin string, userIds []string) ([]*DbMedia, error) {
 	return s.scanRows(s.statements.selectMediaByOriginAndUserIds.QueryContext(s.ctx, origin, pq.Array(userIds)))
 }
 
-func (s *mediaTableWithContext) GetByIds(origin string, mediaIds []string) ([]*DbMedia, error) {
+func (s *MediaTableWithContext) GetByIds(origin string, mediaIds []string) ([]*DbMedia, error) {
 	return s.scanRows(s.statements.selectMediaByOriginAndIds.QueryContext(s.ctx, origin, pq.Array(mediaIds)))
 }
 
-func (s *mediaTableWithContext) GetOldExcluding(origins []string, beforeTs int64) ([]*DbMedia, error) {
+func (s *MediaTableWithContext) GetOldExcluding(origins []string, beforeTs int64) ([]*DbMedia, error) {
 	return s.scanRows(s.statements.selectOldMediaExcludingDomains.QueryContext(s.ctx, pq.Array(origins), beforeTs))
 }
 
-func (s *mediaTableWithContext) GetByLocation(datastoreId string, location string) ([]*DbMedia, error) {
+func (s *MediaTableWithContext) GetByLocation(datastoreId string, location string) ([]*DbMedia, error) {
 	return s.scanRows(s.statements.selectMediaByLocation.QueryContext(s.ctx, datastoreId, location))
 }
 
-func (s *mediaTableWithContext) GetByQuarantine() ([]*DbMedia, error) {
+func (s *MediaTableWithContext) GetByQuarantine() ([]*DbMedia, error) {
 	return s.scanRows(s.statements.selectMediaByQuarantine.QueryContext(s.ctx))
 }
 
-func (s *mediaTableWithContext) GetByOriginQuarantine(origin string) ([]*DbMedia, error) {
+func (s *MediaTableWithContext) GetByOriginQuarantine(origin string) ([]*DbMedia, error) {
 	return s.scanRows(s.statements.selectMediaByQuarantineAndOrigin.QueryContext(s.ctx, origin))
 }
 
-func (s *mediaTableWithContext) GetById(origin string, mediaId string) (*DbMedia, error) {
+func (s *MediaTableWithContext) GetById(origin string, mediaId string) (*DbMedia, error) {
 	row := s.statements.selectMediaById.QueryRowContext(s.ctx, origin, mediaId)
 	val := &DbMedia{Locatable: &Locatable{}}
 	err := row.Scan(&val.Origin, &val.MediaId, &val.UploadName, &val.ContentType, &val.UserId, &val.Sha256Hash, &val.SizeBytes, &val.CreationTs, &val.Quarantined, &val.DatastoreId, &val.Location)
@@ -260,7 +260,7 @@ func (s *mediaTableWithContext) GetById(origin string, mediaId string) (*DbMedia
 	return val, err
 }
 
-func (s *mediaTableWithContext) ByUserCount(userId string) (int64, error) {
+func (s *MediaTableWithContext) ByUserCount(userId string) (int64, error) {
 	row := s.statements.selectMediaByUserCount.QueryRowContext(s.ctx, userId)
 	val := int64(0)
 	err := row.Scan(&val)
@@ -271,7 +271,7 @@ func (s *mediaTableWithContext) ByUserCount(userId string) (int64, error) {
 	return val, err
 }
 
-func (s *mediaTableWithContext) IdExists(origin string, mediaId string) (bool, error) {
+func (s *MediaTableWithContext) IdExists(origin string, mediaId string) (bool, error) {
 	row := s.statements.selectMediaExists.QueryRowContext(s.ctx, origin, mediaId)
 	val := false
 	err := row.Scan(&val)
@@ -282,7 +282,7 @@ func (s *mediaTableWithContext) IdExists(origin string, mediaId string) (bool, e
 	return val, err
 }
 
-func (s *mediaTableWithContext) LocationExists(datastoreId string, location string) (bool, error) {
+func (s *MediaTableWithContext) LocationExists(datastoreId string, location string) (bool, error) {
 	row := s.statements.selectMediaByLocationExists.QueryRowContext(s.ctx, datastoreId, location)
 	val := false
 	err := row.Scan(&val)
@@ -293,17 +293,17 @@ func (s *mediaTableWithContext) LocationExists(datastoreId string, location stri
 	return val, err
 }
 
-func (s *mediaTableWithContext) Insert(record *DbMedia) error {
+func (s *MediaTableWithContext) Insert(record *DbMedia) error {
 	_, err := s.statements.insertMedia.ExecContext(s.ctx, record.Origin, record.MediaId, record.UploadName, record.ContentType, record.UserId, record.Sha256Hash, record.SizeBytes, record.CreationTs, record.Quarantined, record.DatastoreId, record.Location)
 	return err
 }
 
-func (s *mediaTableWithContext) Delete(origin string, mediaId string) error {
+func (s *MediaTableWithContext) Delete(origin string, mediaId string) error {
 	_, err := s.statements.deleteMedia.ExecContext(s.ctx, origin, mediaId)
 	return err
 }
 
-func (s *mediaTableWithContext) UpdateLocation(sourceDsId string, sourceLocation string, targetDsId string, targetLocation string) error {
+func (s *MediaTableWithContext) UpdateLocation(sourceDsId string, sourceLocation string, targetDsId string, targetLocation string) error {
 	_, err := s.statements.updateMediaLocation.ExecContext(s.ctx, sourceDsId, sourceLocation, targetDsId, targetLocation)
 	return err
 }
