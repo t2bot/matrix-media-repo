@@ -241,15 +241,17 @@ func (r *ArchiveReader) importFileFromStream(fileName string, f io.ReadCloser, o
 
 		serverName := r.manifest.EntityId
 		userId := metadata.Uploader
-		if userId[0] != '@' {
-			userId = ""
-		} else {
-			_, s, err := util.SplitUserId(userId)
-			if err != nil {
-				r.ctx.Log.Warnf("Invalid user ID: %s (media %s)", userId, mxc)
-				serverName = ""
+		if userId != "" {
+			if userId[0] != '@' {
+				userId = ""
 			} else {
-				serverName = s
+				_, s, err := util.SplitUserId(userId)
+				if err != nil {
+					r.ctx.Log.Warnf("Invalid user ID: %s (media %s)", userId, mxc)
+					serverName = ""
+				} else {
+					serverName = s
+				}
 			}
 		}
 		kind := datastores.LocalMediaKind
