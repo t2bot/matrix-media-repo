@@ -299,6 +299,7 @@ due to some deployments being affected unexpectedly.
 
 * Added a new tool, `export_synapse_for_import`, which can be used to do an offline import from Synapse.
   * After running this tool, use the `gdpr_import` tool to bring the export into the media repo.
+* Exporting MMR's data to Synapse is now possible with `import_to_synapse`. To use it, first run `gdpr_export` or similar.
 * Added thumbnailing support for some audio waveforms (MP3, WAV, OGG, and FLAC).
 * Added audio metadata (duration, etc) to the unstable `/info` endpoint. Aligns with [MSC2380](https://github.com/matrix-org/matrix-doc/pull/2380).
 * Added simple thumbnailing for MP4 videos.
