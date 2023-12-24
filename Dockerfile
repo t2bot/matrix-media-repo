@@ -43,6 +43,7 @@ COPY --from=builder \
  /opt/bin/import_dendrite \
  /opt/bin/export_synapse_for_import \
  /opt/bin/export_dendrite_for_import \
+ /opt/bin/import_to_synapse \
  /opt/bin/gdpr_export \
  /opt/bin/gdpr_import \
  /opt/bin/s3_consistency_check \
