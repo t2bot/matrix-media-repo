@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 * Exports created with `s3_urls` now contain valid URLs.
 * Exports no longer fail with "The requested range is not satisfiable".
+* Exports no longer fail with "index out of range \[0] with length 0".
 * Requests requiring authentication, but lack a provided access token, will return HTTP 401 instead of HTTP 500 now.
 * Downloads when using a self-hosted MinIO instance are no longer slower than expected.
 
