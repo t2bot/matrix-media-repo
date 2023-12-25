@@ -55,7 +55,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Mandatory Configuration Change
 
-**Please see [docs.t2bot.io](https://docs.t2bot.io/matrix-media-repo/upgrading/130.html) for details.**
+**Please see [docs.t2bot.io](https://docs.t2bot.io/matrix-media-repo/v1.3.3/upgrading/130.html) for details.**
 
 ### Security Fixes
 
@@ -89,12 +89,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Changed
 
 * **Mandatory configuration change**: You must add datastore IDs to your datastore configuration, as matrix-media-repo will no longer manage datastores for you.
-* If compiling `matrix-media-repo`, note that new external dependencies are required. See [the docs](https://docs.t2bot.io/matrix-media-repo/installing/method/compilation.html).
+* If compiling `matrix-media-repo`, note that new external dependencies are required. See [the docs](https://docs.t2bot.io/matrix-media-repo/v1.3.3/installing/method/compilation.html).
   * Docker images already contain these dependencies. 
 * Datastores no longer use the `enabled` flag set on them. Use `forKinds: []` instead to disable a datastore's usage.
 * Per-user upload quotas now do not allow users to exceed the maximum values, even by 1 byte. Previously, users could exceed the limits by a little bit.
 * Updated to Go 1.19, then Go 1.20 in the same release cycle.
-* New CGO dependencies are required. See [docs.t2bot.io](https://docs.t2bot.io/matrix-media-repo/installing/method/compilation.html) for details.
+* New CGO dependencies are required. See [docs.t2bot.io](https://docs.t2bot.io/matrix-media-repo/v1.3.3/installing/method/compilation.html) for details.
 * Logs are now less noisy by default.
 * Connected homeservers must support at least Matrix 1.1 on the Client-Server API. Servers over federation are not affected.
 * The example Grafana dashboard has been updated.

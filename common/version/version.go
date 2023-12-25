@@ -10,6 +10,9 @@ import (
 var GitCommit string
 var Version string
 
+// DocsVersion The version number used by docs.t2bot.io links throughout the application runtime
+const DocsVersion = "v1.3.3"
+
 func SetDefaults() {
 	build, infoOk := debug.ReadBuildInfo()
 
