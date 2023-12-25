@@ -55,7 +55,7 @@ func LoadDatastores() {
 	for id, found := range dsMap {
 		if !found {
 			logrus.Errorf("No configured datastore for ID %s found - please check your configuration and restart.", id)
-			logrus.Error("See https://docs.t2bot.io/matrix-media-repo/upgrading/130.html for details")
+			logrus.Errorf("See https://docs.t2bot.io/matrix-media-repo/%s/upgrading/130 for details", version.DocsVersion)
 			fatal = true
 		}
 	}
