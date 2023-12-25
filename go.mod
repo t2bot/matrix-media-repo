@@ -56,8 +56,8 @@ require (
 	github.com/t2bot/go-typed-singleflight v0.0.3
 	github.com/t2bot/gotd-contrib v0.0.0-20230907202504-d21987ea2957
 	github.com/t2bot/pgo-fleet/embedded v1.0.1
-	github.com/testcontainers/testcontainers-go v0.27.0
-	github.com/testcontainers/testcontainers-go/modules/postgres v0.27.0
+	github.com/testcontainers/testcontainers-go v0.26.0
+	github.com/testcontainers/testcontainers-go/modules/postgres v0.26.0
 	golang.org/x/sync v0.5.0
 	golang.org/x/term v0.15.0
 )
