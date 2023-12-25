@@ -10,7 +10,7 @@ the Matrix homeserver stack is assumed.
 
 ## Documentation and support
 
-Matrix room: [#mediarepo:t2bot.io](https://matrix.to/#/#mediarepo:t2bot.io)
+Matrix room: [#media-repo:t2bot.io](https://matrix.to/#/#media-repo:t2bot.io)
 
 Documentation: [docs.t2bot.io](https://docs.t2bot.io/matrix-media-repo/)
 
