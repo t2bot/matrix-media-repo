@@ -12,7 +12,7 @@ COPY . /opt
 RUN apk add --no-cache build-base libtool cmake libjpeg-turbo-dev x265-dev ffmpeg-dev zlib-dev
 RUN git clone https://github.com/strukturag/libheif.git
 WORKDIR /opt/libheif
-RUN git checkout v1.17.5
+RUN git checkout v1.17.6
 RUN mkdir build
 WORKDIR /opt/libheif/build
 RUN cmake --preset=release ..
