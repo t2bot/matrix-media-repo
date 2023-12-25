@@ -95,8 +95,8 @@ func makeMmrInstances(ctx context.Context, count int, depNet *NetworkDep, tmplAr
 					KeepImage:      true,
 				},
 				ExposedPorts: []string{"8000/tcp"},
-				Mounts: []testcontainers.ContainerMount{
-					testcontainers.BindMount(intTmpName, "/data/media-repo.yaml"),
+				Files: []testcontainers.ContainerFile{
+					{ContainerFilePath: "/data/media-repo.yaml", HostFilePath: intTmpName},
 				},
 				Env: map[string]string{
 					"MACHINE_ID": strconv.Itoa(i),

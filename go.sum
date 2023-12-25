@@ -355,10 +355,10 @@ github.com/t2bot/pgo-fleet/embedded v1.0.1 h1:gRZFImsioKL/zFNIY1F8mlOc/bHBHFOj0o
 github.com/t2bot/pgo-fleet/embedded v1.0.1/go.mod h1:ShnCKRhA7Sy0tCzx3lUHTliE6fshiwJfqSbkLHe1rOU=
 github.com/tebeka/strftime v0.1.3 h1:5HQXOqWKYRFfNyBMNVc9z5+QzuBtIXy03psIhtdJYto=
 github.com/tebeka/strftime v0.1.3/go.mod h1:7wJm3dZlpr4l/oVK0t1HYIc4rMzQ2XJlOMIUJUJH6XQ=
-github.com/testcontainers/testcontainers-go v0.26.0 h1:uqcYdoOHBy1ca7gKODfBd9uTHVK3a7UL848z09MVZ0c=
-github.com/testcontainers/testcontainers-go v0.26.0/go.mod h1:ICriE9bLX5CLxL9OFQ2N+2N+f+803LNJ1utJb1+Inx0=
-github.com/testcontainers/testcontainers-go/modules/postgres v0.26.0 h1:I5UydATCgDjdOjhKy2ztjw3EhzKgug6xsVzmJ129+wQ=
-github.com/testcontainers/testcontainers-go/modules/postgres v0.26.0/go.mod h1:2p5a6shxPWQkSjErw6z5Sq/6DF1lMq7OnBX5R6EQrII=
+github.com/testcontainers/testcontainers-go v0.27.0 h1:IeIrJN4twonTDuMuBNQdKZ+K97yd7VrmNGu+lDpYcDk=
+github.com/testcontainers/testcontainers-go v0.27.0/go.mod h1:+HgYZcd17GshBUZv9b+jKFJ198heWPQq3KQIp2+N+7U=
+github.com/testcontainers/testcontainers-go/modules/postgres v0.27.0 h1:gbA/HYjBIwOwhE/t4p3kIprfI0qsxCk+YVW7P9XFOus=
+github.com/testcontainers/testcontainers-go/modules/postgres v0.27.0/go.mod h1:VFrFKUUgET2hNXStdtaC7uOIJWviFUrixhKeaVw/4F4=
 github.com/tklauser/go-sysconf v0.3.12/go.mod h1:Ho14jnntGE1fpdOqQEEaiKRpvIavV0hSfmBq8nJbHYI=
 github.com/tklauser/go-sysconf v0.3.13 h1:GBUpcahXSpR2xN01jhkNAbTLRk2Yzgggk8IM08lq3r4=
 github.com/tklauser/go-sysconf v0.3.13/go.mod h1:zwleP4Q4OehZHGn4CYZDipCgg9usW5IJePewFCGVEa0=
