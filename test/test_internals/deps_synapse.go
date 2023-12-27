@@ -115,10 +115,10 @@ func MakeSynapse(domainName string, depNet *NetworkDep) (*SynapseDep, error) {
 		ContainerRequest: testcontainers.ContainerRequest{
 			Image:        "docker.io/matrixdotorg/synapse:v1.98.0",
 			ExposedPorts: []string{"8008/tcp"},
-			Mounts: []testcontainers.ContainerMount{
-				testcontainers.BindMount(f.Name(), "/data/homeserver.yaml"),
-				testcontainers.BindMount(path.Join(cwd, ".", "test", "templates", "synapse.log.config"), "/data/log.config"),
-				testcontainers.BindMount(d, "/app"),
+			Files: []testcontainers.ContainerFile{
+				{ContainerFilePath: "/data/homeserver.yaml", HostFilePath: f.Name()},
+				{ContainerFilePath: "/data/log.config", HostFilePath: path.Join(cwd, ".", "test", "templates", "synapse.log.config")},
+				{ContainerFilePath: "/app", HostFilePath: d},
 			},
 			WaitingFor: wait.ForHTTP("/health").WithPort(p),
 			Networks:   []string{depNet.NetId},

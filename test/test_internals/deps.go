@@ -80,8 +80,8 @@ func MakeTestDeps() (*ContainerDeps, error) {
 		ContainerRequest: testcontainers.ContainerRequest{
 			Image:        "docker.io/library/redis:7",
 			ExposedPorts: []string{"6379/tcp"},
-			Mounts: []testcontainers.ContainerMount{
-				testcontainers.BindMount(path.Join(cwd, ".", "dev", "redis.conf"), "/usr/local/etc/redis/redis.conf"),
+			Files: []testcontainers.ContainerFile{
+				{ContainerFilePath: "/usr/local/etc/redis/redis.conf", HostFilePath: path.Join(cwd, ".", "dev", "redis.conf")},
 			},
 			Cmd:        []string{"redis-server", "/usr/local/etc/redis/redis.conf"},
 			Networks:   []string{depNet.NetId},
