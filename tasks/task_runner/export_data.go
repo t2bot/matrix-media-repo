@@ -1,6 +1,7 @@
 package task_runner
 
 import (
+	"errors"
 	"io"
 
 	"github.com/getsentry/sentry-go"
@@ -22,12 +23,14 @@ func ExportData(ctx rcontext.RequestContext, task *database.DbTask) {
 
 	params := ExportDataParams{}
 	if err := task.Params.ApplyTo(&params); err != nil {
+		markError(ctx, task, errors.Join(errors.New("error in decode"), err))
 		ctx.Log.Error("Error decoding params: ", err)
 		sentry.CaptureException(err)
 		return
 	}
 
 	if params.ExportId == "" {
+		markError(ctx, task, errors.New("missing export id"))
 		ctx.Log.Error("No export ID provided")
 		sentry.CaptureMessage("No export ID provided")
 		return
@@ -35,10 +38,12 @@ func ExportData(ctx rcontext.RequestContext, task *database.DbTask) {
 
 	exportDb := database.GetInstance().Exports.Prepare(ctx)
 	if existingEntity, err := exportDb.GetEntity(params.ExportId); err != nil {
+		markError(ctx, task, errors.Join(errors.New("error in validate"), err))
 		ctx.Log.Error("Error checking export ID: ", err)
 		sentry.CaptureException(err)
 		return
 	} else if existingEntity != "" {
+		markError(ctx, task, errors.New("export id already in use"))
 		ctx.Log.Error("Export ID already in use")
 		sentry.CaptureMessage("Export ID already in use")
 		return
@@ -46,6 +51,7 @@ func ExportData(ctx rcontext.RequestContext, task *database.DbTask) {
 
 	entityId := params.UserId
 	if entityId != "" && entityId[0] != '@' {
+		markError(ctx, task, errors.New("invalid user id"))
 		ctx.Log.Error("Invalid user ID")
 		sentry.CaptureMessage("Invalid user ID")
 		return
@@ -53,12 +59,14 @@ func ExportData(ctx rcontext.RequestContext, task *database.DbTask) {
 		entityId = params.ServerName
 	}
 	if entityId == "" {
+		markError(ctx, task, errors.New("no entity provided"))
 		ctx.Log.Error("No entity provided")
 		sentry.CaptureMessage("No entity provided")
 		return
 	}
 
 	if err := exportDb.Insert(params.ExportId, entityId); err != nil {
+		markError(ctx, task, errors.Join(errors.New("error in persist"), err))
 		ctx.Log.Error("Error persisting export ID: ", err)
 		sentry.CaptureException(err)
 		return
@@ -92,6 +100,7 @@ func ExportData(ctx rcontext.RequestContext, task *database.DbTask) {
 	}
 
 	if err := archival.ExportEntityData(ctx, params.ExportId, entityId, params.IncludeS3Urls, persistPart); err != nil {
+		markError(ctx, task, errors.Join(errors.New("error in archival"), err))
 		ctx.Log.Error("Error during export: ", err)
 		sentry.CaptureException(err)
 		return

@@ -322,7 +322,8 @@ The response is a list of all known tasks:
     },
     "start_ts": 1567460189913,
     "end_ts": 1567460190502,
-    "is_finished": true
+    "is_finished": true,
+    "error_message": ""
   },
   {
     "task_id": 2,
@@ -334,12 +335,15 @@ The response is a list of all known tasks:
     },
     "start_ts": 1567460189913,
     "end_ts": 0,
-    "is_finished": false
+    "is_finished": false,
+    "error_message": ""
   }
 ]
 ```
 
 **Note**: The `params` vary depending on the task.
+
+If `error_message` is present and not an empty string on the returned task, the task failed part way through.
 
 #### Listing unfinished tasks
 
@@ -358,12 +362,15 @@ The response is a list of all unfinished tasks:
     },
     "start_ts": 1567460189913,
     "end_ts": 0,
-    "is_finished": false
+    "is_finished": false,
+    "error_message": ""
   }
 ]
 ```
 
 **Note**: The `params` vary depending on the task.
+
+If `error_message` is present and not an empty string on the returned task, the task failed part way through.
 
 #### Getting information on a specific task
 
@@ -383,11 +390,14 @@ The response is the status of the task:
   },
   "start_ts": 1567460189913,
   "end_ts": 1567460190502,
-  "is_finished": true
+  "is_finished": true,
+  "error_message": ""
 }
 ```
 
 **Note**: The `params` vary depending on the task.
+
+If `error_message` is present and not an empty string on the returned task, the task failed part way through.
 
 ## Exporting/Importing data
 

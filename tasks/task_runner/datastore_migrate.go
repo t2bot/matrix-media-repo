@@ -1,6 +1,7 @@
 package task_runner
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/getsentry/sentry-go"
@@ -22,24 +23,28 @@ func DatastoreMigrate(ctx rcontext.RequestContext, task *database.DbTask) {
 
 	params := DatastoreMigrateParams{}
 	if err := task.Params.ApplyTo(&params); err != nil {
+		markError(ctx, task, errors.Join(errors.New("error in decode"), err))
 		ctx.Log.Error("Error decoding params: ", err)
 		sentry.CaptureException(err)
 		return
 	}
 
 	if params.SourceDsId == params.TargetDsId {
+		markError(ctx, task, errors.New("source and target are the same"))
 		ctx.Log.Error("Source and target datastore are the same")
 		return
 	}
 
 	sourceDs, ok := datastores.Get(ctx, params.SourceDsId)
 	if !ok {
+		markError(ctx, task, errors.New("missing source"))
 		ctx.Log.Error("Unable to locate source datastore ID")
 		return
 	}
 
 	targetDs, ok := datastores.Get(ctx, params.TargetDsId)
 	if !ok {
+		markError(ctx, task, errors.New("missing target"))
 		ctx.Log.Error("Unable to locate target datastore ID")
 		return
 	}
@@ -47,6 +52,7 @@ func DatastoreMigrate(ctx rcontext.RequestContext, task *database.DbTask) {
 	db := database.GetInstance().MetadataView.Prepare(ctx)
 
 	if records, err := db.GetMediaForDatastoreByLastAccess(params.SourceDsId, params.BeforeTs); err != nil {
+		markError(ctx, task, errors.Join(errors.New("error in locate"), err))
 		ctx.Log.Error("Error getting movable media: ", err)
 		sentry.CaptureException(err)
 		return
@@ -55,6 +61,7 @@ func DatastoreMigrate(ctx rcontext.RequestContext, task *database.DbTask) {
 	}
 
 	if records, err := db.GetThumbnailsForDatastoreByLastAccess(params.SourceDsId, params.BeforeTs); err != nil {
+		markError(ctx, task, errors.Join(errors.New("error in thumbnails"), err))
 		ctx.Log.Error("Error getting movable thumbnails: ", err)
 		sentry.CaptureException(err)
 		return

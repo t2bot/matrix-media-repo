@@ -15,3 +15,12 @@ func markDone(ctx rcontext.RequestContext, task *database.DbTask) {
 	}
 	ctx.Log.Infof("Task '%s' completed", task.Name)
 }
+
+func markError(ctx rcontext.RequestContext, task *database.DbTask, errVal error) {
+	taskDb := database.GetInstance().Tasks.Prepare(ctx)
+	if err := taskDb.SetError(task.TaskId, errVal.Error()); err != nil {
+		ctx.Log.Warn("Error updating task with error message: ", err)
+		sentry.CaptureException(err)
+	}
+	ctx.Log.Debugf("Task '%s' flagged with error", task.Name)
+}
