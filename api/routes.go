@@ -102,7 +102,7 @@ func buildRoutes() http.Handler {
 	register([]string{"GET"}, PrefixMedia, "admin/export/:exportId/view", mxUnstable, router, makeRoute(_routers.OptionalAccessToken(custom.ViewExport), "view_export", counter))
 	register([]string{"GET"}, PrefixMedia, "admin/export/:exportId/metadata", mxUnstable, router, makeRoute(_routers.OptionalAccessToken(custom.GetExportMetadata), "get_export_metadata", counter))
 	register([]string{"GET"}, PrefixMedia, "admin/export/:exportId/part/:partId", mxUnstable, router, makeRoute(_routers.OptionalAccessToken(custom.DownloadExportPart), "download_export_part", counter))
-	register([]string{"DELETE"}, PrefixMedia, "admin/export/:exportId/delete", mxUnstable, router, makeRoute(_routers.OptionalAccessToken(custom.DeleteExport), "delete_export", counter))
+	register([]string{"DELETE"}, PrefixMedia, "admin/export/:exportId", mxUnstable, router, makeRoute(_routers.OptionalAccessToken(custom.DeleteExport), "delete_export", counter))
 	register([]string{"POST"}, PrefixMedia, "admin/import", mxUnstable, router, makeRoute(_routers.RequireRepoAdmin(custom.StartImport), "start_import", counter))
 	register([]string{"POST"}, PrefixMedia, "admin/import/:importId/part", mxUnstable, router, makeRoute(_routers.RequireRepoAdmin(custom.AppendToImport), "append_to_import", counter))
 	register([]string{"POST"}, PrefixMedia, "admin/import/:importId/close", mxUnstable, router, makeRoute(_routers.RequireRepoAdmin(custom.StopImport), "stop_import", counter))

@@ -23,6 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Exports no longer fail with "index out of range \[0] with length 0".
 * Requests requiring authentication, but lack a provided access token, will return HTTP 401 instead of HTTP 500 now.
 * Downloads when using a self-hosted MinIO instance are no longer slower than expected.
+* The `DELETE /_matrix/media/unstable/admin/export/:exportId` endpoint has been reinstated as described.
 
 ## [1.3.3] - October 31, 2023
 
