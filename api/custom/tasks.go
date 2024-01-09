@@ -21,6 +21,7 @@ type TaskStatus struct {
 	StartTs    int64                   `json:"start_ts"`
 	EndTs      int64                   `json:"end_ts"`
 	IsFinished bool                    `json:"is_finished"`
+	Error      string                  `json:"error_message"`
 }
 
 func GetTask(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
@@ -54,6 +55,7 @@ func GetTask(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserIn
 		StartTs:    task.StartTs,
 		EndTs:      task.EndTs,
 		IsFinished: task.EndTs > 0,
+		Error:      task.Error,
 	}}
 }
 
@@ -76,6 +78,7 @@ func ListAllTasks(r *http.Request, rctx rcontext.RequestContext, user _apimeta.U
 			StartTs:    task.StartTs,
 			EndTs:      task.EndTs,
 			IsFinished: task.EndTs > 0,
+			Error:      task.Error,
 		})
 	}
 
@@ -101,6 +104,7 @@ func ListUnfinishedTasks(r *http.Request, rctx rcontext.RequestContext, user _ap
 			StartTs:    task.StartTs,
 			EndTs:      task.EndTs,
 			IsFinished: task.EndTs > 0,
+			Error:      task.Error,
 		})
 	}
 

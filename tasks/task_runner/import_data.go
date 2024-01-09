@@ -90,7 +90,10 @@ func (e *importEngine) appendFile(data io.ReadCloser) error {
 	return nil
 }
 
-func (e *importEngine) finish(chClose bool) error {
+func (e *importEngine) finish(chClose bool, err error) error {
+	if err != nil {
+		markError(e.ctx, e.task, err)
+	}
 	markDone(e.ctx, e.task)
 	importEngines.Delete(e.importId)
 	if chClose {
@@ -118,7 +121,7 @@ func (e *importEngine) workFn(ch chan *os.File) {
 			if err != nil {
 				e.ctx.Log.Error("Error during manifest search: ", err)
 				sentry.CaptureException(err)
-				_ = e.finish(false)
+				_ = e.finish(false, errors.Join(errors.New("error in search"), err))
 				return
 			}
 			if ok {
@@ -127,7 +130,7 @@ func (e *importEngine) workFn(ch chan *os.File) {
 					if err = e.archiver.ProcessFile(f2, v2archive.ProcessOpts{}); err != nil {
 						e.ctx.Log.Error("Error during file processing (branch-1): ", err)
 						sentry.CaptureException(err)
-						_ = e.finish(false)
+						_ = e.finish(false, errors.Join(errors.New("error in processing"), err))
 						return
 					}
 				}
@@ -137,14 +140,14 @@ func (e *importEngine) workFn(ch chan *os.File) {
 			if err := e.archiver.ProcessFile(f, v2archive.ProcessOpts{}); err != nil {
 				e.ctx.Log.Error("Error during file processing (branch-2): ", err)
 				sentry.CaptureException(err)
-				_ = e.finish(false)
+				_ = e.finish(false, errors.Join(errors.New("error in processing2"), err))
 				return
 			}
 		}
 
 		if e.archiver.HasManifest() && len(e.archiver.GetNotUploadedMxcUris()) == 0 {
 			e.ctx.Log.Debug("No more files waiting for import - closing engine")
-			_ = e.finish(false)
+			_ = e.finish(false, nil)
 			return
 		}
 	}
@@ -188,7 +191,7 @@ func FinishImport(ctx rcontext.RequestContext, importId string) error {
 	} else if engine, ok := val.(*importEngine); !ok {
 		return errors.New("logic error: non-engine stored")
 	} else if engine != nil {
-		return engine.finish(true)
+		return engine.finish(true, nil)
 	}
 	return errors.New("logic error: missed engine lookup")
 }
