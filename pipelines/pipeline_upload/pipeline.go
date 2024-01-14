@@ -29,7 +29,9 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, r io.Re
 	}
 
 	// Step 1: Limit the stream's length
-	r = upload.LimitStream(ctx, r)
+	if kind == datastores.LocalMediaKind {
+		r = upload.LimitStream(ctx, r)
+	}
 
 	// Step 2: Create a media ID (if needed)
 	mustUseMediaId := true

@@ -20,6 +20,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/pipelines/_steps/datastore_op"
 	"github.com/turt2live/matrix-media-repo/pool"
 	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/turt2live/matrix-media-repo/util/readers"
 )
 
 type downloadResult struct {
@@ -79,9 +80,14 @@ func TryDownload(ctx rcontext.RequestContext, origin string, mediaId string) (*d
 			}
 		}
 
-		if contentLength > 0 && ctx.Config.Downloads.MaxSizeBytes > 0 && contentLength > ctx.Config.Downloads.MaxSizeBytes {
+		if contentLength != 0 && ctx.Config.Downloads.MaxSizeBytes > 0 && contentLength > ctx.Config.Downloads.MaxSizeBytes {
 			errFn(common.ErrMediaTooLarge)
 			return
+		}
+
+		r := resp.Body
+		if ctx.Config.Downloads.MaxSizeBytes > 0 {
+			r = readers.LimitReaderWithOverrunError(resp.Body, ctx.Config.Downloads.MaxSizeBytes)
 		}
 
 		contentType := resp.Header.Get("Content-Type")
@@ -96,7 +102,7 @@ func TryDownload(ctx rcontext.RequestContext, origin string, mediaId string) (*d
 		}
 
 		ch <- downloadResult{
-			r:           resp.Body,
+			r:           r,
 			filename:    fileName,
 			contentType: contentType,
 			err:         nil,
