@@ -55,7 +55,7 @@ func TryDownload(ctx rcontext.RequestContext, origin string, mediaId string) (*d
 			return
 		}
 
-		downloadUrl := fmt.Sprintf("%s/_matrix/media/v3/download/%s/%s?allow_remote=false", baseUrl, url.PathEscape(origin), url.PathEscape(mediaId))
+		downloadUrl := fmt.Sprintf("%s/_matrix/media/v3/download/%s/%s?allow_remote=false&allow_redirect=true", baseUrl, url.PathEscape(origin), url.PathEscape(mediaId))
 		resp, err := matrix.FederatedGet(downloadUrl, realHost, ctx)
 		metrics.MediaDownloaded.With(prometheus.Labels{"origin": origin}).Inc()
 		if err != nil {

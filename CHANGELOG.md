@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Dendrite homeservers can now have their media imported safely, and `adminApiKind` may be set to `dendrite`.
 * Exporting MMR's data to Synapse is now possible with `import_to_synapse`. To use it, first run `gdpr_export` or similar.
 * Errors encountered during a background task, such as an API-induced export, are exposed as `error_message` in the admin API.
+* MMR will follow redirects on federated downloads up to 5 hops.
 
 ### Changed
 
