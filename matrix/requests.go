@@ -13,7 +13,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"github.com/turt2live/matrix-media-repo/common/rcontext"
 )
 
@@ -80,7 +79,7 @@ func doRequest(ctx rcontext.RequestContext, method string, urlStr string, body i
 }
 
 func FederatedGet(url string, realHost string, ctx rcontext.RequestContext) (*http.Response, error) {
-	logrus.Debug("Doing federated GET to " + url + " with host " + realHost)
+	ctx.Log.Debug("Doing federated GET to " + url + " with host " + realHost)
 
 	cb := getFederationBreaker(realHost)
 
@@ -117,7 +116,6 @@ func FederatedGet(url string, realHost string, ctx rcontext.RequestContext) (*ht
 						ServerName: realHost,
 					},
 				},
-				Timeout: time.Duration(ctx.Config.TimeoutSeconds.Federation) * time.Second,
 			}
 		} else {
 			ctx.Log.Warn("Ignoring any certificate errors while making request")
@@ -143,8 +141,17 @@ func FederatedGet(url string, realHost string, ctx rcontext.RequestContext) (*ht
 			}
 			client = &http.Client{
 				Transport: tr,
-				Timeout:   time.Duration(ctx.Config.TimeoutSeconds.UrlPreviews) * time.Second,
 			}
+		}
+
+		client.Timeout = time.Duration(ctx.Config.TimeoutSeconds.UrlPreviews) * time.Second
+		client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+			if len(via) > 5 { // arbitrary
+				return errors.New("too many redirects")
+			}
+			ctx.Log.Debugf("Redirected to %s", req.URL.String())
+			client.Transport = nil // Clear our TLS handler as we're out of the Matrix certificate verification steps
+			return nil
 		}
 
 		resp, err = client.Do(req)
