@@ -30,10 +30,11 @@ type DownloadOpts struct {
 	FetchRemoteIfNeeded bool
 	BlockForReadUntil   time.Duration
 	RecordOnly          bool
+	CanRedirect         bool
 }
 
 func (o DownloadOpts) String() string {
-	return fmt.Sprintf("f=%t,b=%s,r=%t", o.FetchRemoteIfNeeded, o.BlockForReadUntil.String(), o.RecordOnly)
+	return fmt.Sprintf("f=%t,b=%s,r=%t,d=%t", o.FetchRemoteIfNeeded, o.BlockForReadUntil.String(), o.RecordOnly, o.CanRedirect)
 }
 
 func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts DownloadOpts) (*database.DbMedia, io.ReadCloser, error) {
@@ -71,7 +72,11 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 			if opts.RecordOnly {
 				return nil, nil
 			}
-			return download.OpenStream(ctx, record.Locatable)
+			if opts.CanRedirect {
+				return download.OpenOrRedirect(ctx, record.Locatable)
+			} else {
+				return download.OpenStream(ctx, record.Locatable)
+			}
 		}
 
 		// Step 4: Media record unknown - download it (if possible)

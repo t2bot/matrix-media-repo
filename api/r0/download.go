@@ -9,6 +9,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/api/_apimeta"
 	"github.com/turt2live/matrix-media-repo/api/_responses"
 	"github.com/turt2live/matrix-media-repo/api/_routers"
+	"github.com/turt2live/matrix-media-repo/datastores"
 	"github.com/turt2live/matrix-media-repo/pipelines/pipeline_download"
 	"github.com/turt2live/matrix-media-repo/util"
 
@@ -22,6 +23,7 @@ func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 	mediaId := _routers.GetParam("mediaId", r)
 	filename := _routers.GetParam("filename", r)
 	allowRemote := r.URL.Query().Get("allow_remote")
+	allowRedirect := r.URL.Query().Get("allow_redirect")
 	timeoutMs := r.URL.Query().Get("timeout_ms")
 
 	if !_routers.ServerNameRegex.MatchString(server) {
@@ -37,16 +39,26 @@ func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 		downloadRemote = parsedFlag
 	}
 
+	canRedirect := false
+	if allowRedirect != "" {
+		parsedFlag, err := strconv.ParseBool(allowRedirect)
+		if err != nil {
+			return _responses.BadRequest("allow_redirect flag does not appear to be a boolean")
+		}
+		canRedirect = parsedFlag
+	}
+
 	blockFor, err := util.CalcBlockForDuration(timeoutMs)
 	if err != nil {
 		return _responses.BadRequest("timeout_ms does not appear to be an integer")
 	}
 
 	rctx = rctx.LogWithFields(logrus.Fields{
-		"mediaId":     mediaId,
-		"server":      server,
-		"filename":    filename,
-		"allowRemote": downloadRemote,
+		"mediaId":       mediaId,
+		"server":        server,
+		"filename":      filename,
+		"allowRemote":   downloadRemote,
+		"allowRedirect": canRedirect,
 	})
 
 	if !util.IsGlobalAdmin(user.UserId) && util.IsHostIgnored(server) {
@@ -57,8 +69,10 @@ func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 	media, stream, err := pipeline_download.Execute(rctx, server, mediaId, pipeline_download.DownloadOpts{
 		FetchRemoteIfNeeded: downloadRemote,
 		BlockForReadUntil:   blockFor,
+		CanRedirect:         canRedirect,
 	})
 	if err != nil {
+		var redirect datastores.RedirectError
 		if errors.Is(err, common.ErrMediaNotFound) {
 			return _responses.NotFoundError()
 		} else if errors.Is(err, common.ErrMediaTooLarge) {
@@ -72,6 +86,8 @@ func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 			}
 		} else if errors.Is(err, common.ErrMediaNotYetUploaded) {
 			return _responses.NotYetUploaded()
+		} else if errors.As(err, &redirect) {
+			return _responses.Redirect(redirect.RedirectUrl)
 		}
 		rctx.Log.Error("Unexpected error locating media: ", err)
 		sentry.CaptureException(err)

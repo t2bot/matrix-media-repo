@@ -59,6 +59,14 @@ func (c *RContextRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	headers := w.Header()
 
+	// Check for redirection early
+	if redirect, isRedirect := res.(*_responses.RedirectResponse); isRedirect {
+		log.Infof("Replying with result: %T <%s>", res, redirect.ToUrl)
+		headers.Set("Location", redirect.ToUrl)
+		r = writeStatusCode(w, r, http.StatusTemporaryRedirect)
+		return // we're done here
+	}
+
 	// Check for HTML response and reply accordingly
 	if htmlRes, isHtml := res.(*_responses.HtmlResponse); isHtml {
 		log.Infof("Replying with result: %T <%d chars of html>", res, len(htmlRes.HTML))

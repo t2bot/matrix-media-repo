@@ -2,6 +2,7 @@ package datastores
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path"
@@ -34,4 +35,22 @@ func Download(ctx rcontext.RequestContext, ds config.DatastoreConfig, dsFileName
 	}
 
 	return rsc, err
+}
+
+func DownloadOrRedirect(ctx rcontext.RequestContext, ds config.DatastoreConfig, dsFileName string) (io.ReadSeekCloser, error) {
+	if ds.Type != "s3" {
+		return Download(ctx, ds, dsFileName)
+	}
+
+	s3c, err := getS3(ds)
+	if err != nil {
+		return nil, err
+	}
+
+	if s3c.publicBaseUrl != "" {
+		metrics.S3Operations.With(prometheus.Labels{"operation": "RedirectGetObject"}).Inc()
+		return nil, redirect(fmt.Sprintf("%s%s", s3c.publicBaseUrl, dsFileName))
+	}
+
+	return Download(ctx, ds, dsFileName)
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/turt2live/matrix-media-repo/api/_responses"
 	"github.com/turt2live/matrix-media-repo/api/_routers"
 	"github.com/turt2live/matrix-media-repo/database"
+	"github.com/turt2live/matrix-media-repo/datastores"
 	"github.com/turt2live/matrix-media-repo/pipelines/pipeline_download"
 	"github.com/turt2live/matrix-media-repo/pipelines/pipeline_thumbnail"
 	"github.com/turt2live/matrix-media-repo/util"
@@ -23,6 +24,7 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 	server := _routers.GetParam("server", r)
 	mediaId := _routers.GetParam("mediaId", r)
 	allowRemote := r.URL.Query().Get("allow_remote")
+	allowRedirect := r.URL.Query().Get("allow_redirect")
 	timeoutMs := r.URL.Query().Get("timeout_ms")
 
 	if !_routers.ServerNameRegex.MatchString(server) {
@@ -38,15 +40,25 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 		downloadRemote = parsedFlag
 	}
 
+	canRedirect := false
+	if allowRedirect != "" {
+		parsedFlag, err := strconv.ParseBool(allowRedirect)
+		if err != nil {
+			return _responses.BadRequest("allow_redirect flag does not appear to be a boolean")
+		}
+		canRedirect = parsedFlag
+	}
+
 	blockFor, err := util.CalcBlockForDuration(timeoutMs)
 	if err != nil {
 		return _responses.BadRequest("timeout_ms does not appear to be an integer")
 	}
 
 	rctx = rctx.LogWithFields(logrus.Fields{
-		"mediaId":     mediaId,
-		"server":      server,
-		"allowRemote": downloadRemote,
+		"mediaId":       mediaId,
+		"server":        server,
+		"allowRemote":   downloadRemote,
+		"allowRedirect": canRedirect,
 	})
 
 	if !util.IsGlobalAdmin(user.UserId) && util.IsHostIgnored(server) {
@@ -111,6 +123,7 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 			FetchRemoteIfNeeded: downloadRemote,
 			BlockForReadUntil:   blockFor,
 			RecordOnly:          false, // overridden
+			CanRedirect:         canRedirect,
 		},
 		Width:    width,
 		Height:   height,
@@ -118,6 +131,7 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 		Animated: animated,
 	})
 	if err != nil {
+		var redirect datastores.RedirectError
 		if errors.Is(err, common.ErrMediaNotFound) {
 			return _responses.NotFoundError()
 		} else if errors.Is(err, common.ErrMediaTooLarge) {
@@ -152,6 +166,8 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 					TargetDisposition: "infer",
 				}
 			}
+		} else if errors.As(err, &redirect) {
+			return _responses.Redirect(redirect.RedirectUrl)
 		}
 		rctx.Log.Error("Unexpected error locating media: ", err)
 		sentry.CaptureException(err)

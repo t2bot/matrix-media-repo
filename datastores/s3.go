@@ -16,9 +16,10 @@ import (
 var s3clients = &sync.Map{}
 
 type s3 struct {
-	client       *minio.Client
-	storageClass string
-	bucket       string
+	client        *minio.Client
+	storageClass  string
+	bucket        string
+	publicBaseUrl string
 }
 
 func ResetS3Clients() {
@@ -37,6 +38,7 @@ func getS3(ds config.DatastoreConfig) (*s3, error) {
 	region := ds.Options["region"]
 	storageClass, hasStorageClass := ds.Options["storageClass"]
 	useSslStr, hasSsl := ds.Options["ssl"]
+	publicBaseUrl := ds.Options["publicBaseUrl"]
 
 	if !hasStorageClass {
 		storageClass = "STANDARD"
@@ -59,9 +61,10 @@ func getS3(ds config.DatastoreConfig) (*s3, error) {
 	}
 
 	s3c := &s3{
-		client:       client,
-		storageClass: storageClass,
-		bucket:       bucket,
+		client:        client,
+		storageClass:  storageClass,
+		bucket:        bucket,
+		publicBaseUrl: publicBaseUrl,
 	}
 	s3clients.Store(ds.Id, s3c)
 	return s3c, nil

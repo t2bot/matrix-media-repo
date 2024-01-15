@@ -199,6 +199,15 @@ datastores:
       # An optional storage class for tuning how the media is stored at s3.
       # See https://aws.amazon.com/s3/storage-classes/ for details; uncomment to use.
       #storageClass: STANDARD
+      # When set, if the requesting user/server supports being redirected, and MMR is capable
+      # of performing that redirection, they will be redirected to the given object location.
+      # The object ID used in S3 is assumed to be the file name, and will simply be appended.
+      # It is therefore important to include any trailing slashes or path information. For
+      # example, an object with ID "hello/world" will get converted to "https://mycdn.example.org/hello/world".
+      # Note that MMR may not redirect in all cases, even if the client/server requests the
+      # capability. MMR may still be responsible for bandwidth charges incurred from going to
+      # the bucket directly.
+      #publicBaseUrl: "https://mycdn.example.org/"
 
 # Options for controlling archives. Archives are exports of a particular user's content for
 # the purpose of GDPR or moving media to a different server.
