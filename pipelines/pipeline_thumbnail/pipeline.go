@@ -105,14 +105,23 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Th
 			if opts.RecordOnly {
 				return nil, nil
 			}
-			return download.OpenStream(ctx, record.Locatable)
+			if opts.CanRedirect {
+				return download.OpenOrRedirect(ctx, record.Locatable)
+			} else {
+				return download.OpenStream(ctx, record.Locatable)
+			}
 		}
 
 		// Step 6: Generate the thumbnail and return that
 		record, r, err := thumbnails.Generate(ctx, mediaRecord, opts.Width, opts.Height, opts.Method, opts.Animated)
 		if err != nil {
 			if !opts.RecordOnly && errors.Is(err, common.ErrMediaDimensionsTooSmall) {
-				d, err := download.OpenStream(ctx, mediaRecord.Locatable)
+				var d io.ReadSeekCloser
+				if opts.CanRedirect {
+					d, err = download.OpenOrRedirect(ctx, mediaRecord.Locatable)
+				} else {
+					d, err = download.OpenStream(ctx, mediaRecord.Locatable)
+				}
 				if err != nil {
 					return nil, err
 				} else {
