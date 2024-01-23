@@ -34,7 +34,7 @@ jobs:
         run: |
           set -ex
           platform=${{ runner.os }}
-          platform_os=${platform//\//-}
+          platform_os=${platform,,}
           mkdir -p $PWD/bin/dist
           GOBIN=$PWD/bin go install -v ./cmd/utilities/compile_assets
           $PWD/bin/compile_assets
