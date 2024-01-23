@@ -30,4 +30,28 @@ jobs:
           go-version: '1.20'
 
       - name: Dist
-        run: "echo ${{ runner.os }}"
+        if: runner.os == 'linux'
+        run: |
+          set -ex
+          platform=${{ matrix.os }}
+          platform_os=${platform//\//-}
+          mkdir $PWD/bin/dist
+          GOBIN=$PWD/bin go install -v ./cmd/utilities/compile_assets
+          $PWD/bin/compile_assets
+          pth="$platform_os-${{ matrix.arch }}"
+          GOOS=$platform_os GOARCH=${{ matrix.arch }} GOBIN=$PWD/bin go build -o $PWD/bin/$pth -a -ldflags "-X github.com/t2bot/matrix-media-repo/common/version.Version=$(git describe --tags)" -v ./cmd/...
+          GOOS=$platform_os GOARCH=${{ matrix.arch }} GOBIN=$PWD/bin go build -pgo=pgo_media_repo.pprof -o $PWD/bin/$pth -a -ldflags "-X github.com/t2bot/matrix-media-repo/common/version.Version=$(git describe --tags)" -v ./cmd/workers/media_repo
+          cd $PWD/bin/$pth
+          arch=${{ matrix.arch }}
+          if [ "$arch" == "amd64" ]; then
+            arch="x64"
+          fi
+          for file in * ; do mv -v $file ../dist/${file}-${platform_os}-${arch}; done;
+          cd ../../
+          rm -rv $PWD/bin/dist/compile_assets*
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}-${{ matrix.arch }}
+          path: ./bin/dist/*
