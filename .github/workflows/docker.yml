@@ -20,15 +20,20 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        include:
+        platform:
+          - linux/amd64
+          - linux/arm/v6
+          - linux/arm/v7
+          - linux/arm64
+        exclude:
           - os: ubuntu-latest
-            platform: linux/amd64
-          - os: macos-latest
             platform: linux/arm/v6
-          - os: macos-latest
+          - os: ubuntu-latest
             platform: linux/arm/v7
-          - os: macos-latest
+          - os: ubuntu-latest
             platform: linux/arm64
+          - os: macos-latest
+            platform: linux/amd64
 
     steps:
       - name: Prepare
