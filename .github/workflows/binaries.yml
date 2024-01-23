@@ -33,7 +33,7 @@ jobs:
         if: runner.os == 'linux'
         run: |
           set -ex
-          platform=${{ matrix.os }}
+          platform=${{ runner.os }}
           platform_os=${platform//\//-}
           mkdir -p $PWD/bin/dist
           GOBIN=$PWD/bin go install -v ./cmd/utilities/compile_assets
