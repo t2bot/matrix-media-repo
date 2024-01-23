@@ -25,7 +25,7 @@ homeservers:
     #...
 ```
 
-A full sample config can be found [here](https://github.com/turt2live/matrix-media-repo/blob/master/config.sample.yaml).
+A full sample config can be found [here](https://github.com/turt2live/matrix-media-repo/blob/main/config.sample.yaml).
 
 The homeserver name has to match the server_name configured while also match the HTTP Host Header. If they aren't the
 same, the media request gets rejected.
