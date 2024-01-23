@@ -5,11 +5,11 @@ import (
 	"os"
 	"path"
 
-	"github.com/turt2live/matrix-media-repo/archival/v2archive"
-	"github.com/turt2live/matrix-media-repo/cmd/homeserver_offline_importers/_common"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/homeserver_interop/dendrite"
-	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/t2bot/matrix-media-repo/archival/v2archive"
+	"github.com/t2bot/matrix-media-repo/cmd/homeserver_offline_importers/_common"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/homeserver_interop/dendrite"
+	"github.com/t2bot/matrix-media-repo/util"
 )
 
 func main() {

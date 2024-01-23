@@ -4,8 +4,8 @@ import (
 	"errors"
 	"io"
 
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/thumbnailing/m"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
 	"golang.org/x/image/tiff"
 )
 

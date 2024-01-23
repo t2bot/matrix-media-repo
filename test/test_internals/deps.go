@@ -9,11 +9,11 @@ import (
 	"path"
 	"time"
 
+	"github.com/t2bot/matrix-media-repo/common/assets"
+	"github.com/t2bot/matrix-media-repo/common/config"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
-	"github.com/turt2live/matrix-media-repo/common/assets"
-	"github.com/turt2live/matrix-media-repo/common/config"
 )
 
 type ContainerDeps struct {

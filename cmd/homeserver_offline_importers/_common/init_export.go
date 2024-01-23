@@ -7,10 +7,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/turt2live/matrix-media-repo/common/assets"
-	"github.com/turt2live/matrix-media-repo/common/config"
-	"github.com/turt2live/matrix-media-repo/common/logging"
-	"github.com/turt2live/matrix-media-repo/common/version"
+	"github.com/t2bot/matrix-media-repo/common/assets"
+	"github.com/t2bot/matrix-media-repo/common/config"
+	"github.com/t2bot/matrix-media-repo/common/logging"
+	"github.com/t2bot/matrix-media-repo/common/version"
 	"golang.org/x/term"
 )
 

@@ -17,11 +17,11 @@ import (
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/getsentry/sentry-go"
 	"github.com/t2bot/gotd-contrib/http_range"
-	"github.com/turt2live/matrix-media-repo/api/_responses"
-	"github.com/turt2live/matrix-media-repo/common"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/readers"
+	"github.com/t2bot/matrix-media-repo/api/_responses"
+	"github.com/t2bot/matrix-media-repo/common"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/util"
+	"github.com/t2bot/matrix-media-repo/util/readers"
 )
 
 type GeneratorFn = func(r *http.Request, ctx rcontext.RequestContext) interface{}

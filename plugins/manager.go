@@ -6,8 +6,8 @@ import (
 
 	"github.com/hashicorp/go-plugin"
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/common/config"
-	"github.com/turt2live/matrix-media-repo/plugins/plugin_interfaces"
+	"github.com/t2bot/matrix-media-repo/common/config"
+	"github.com/t2bot/matrix-media-repo/plugins/plugin_interfaces"
 )
 
 var pluginTypes = map[string]plugin.Plugin{

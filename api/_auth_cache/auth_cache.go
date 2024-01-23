@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/patrickmn/go-cache"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/matrix"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/matrix"
 )
 
 var tokenCache = cache.New(0*time.Second, 30*time.Second)

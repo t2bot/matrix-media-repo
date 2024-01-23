@@ -5,7 +5,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/turt2live/matrix-media-repo/archival/v2archive"
+	"github.com/t2bot/matrix-media-repo/archival/v2archive"
 )
 
 func PersistPartsToDirectory(exportPath string) v2archive.PartPersister {

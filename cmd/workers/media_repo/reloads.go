@@ -2,19 +2,19 @@ package main
 
 import (
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/api"
-	"github.com/turt2live/matrix-media-repo/api/_auth_cache"
-	"github.com/turt2live/matrix-media-repo/common/config"
-	"github.com/turt2live/matrix-media-repo/common/globals"
-	"github.com/turt2live/matrix-media-repo/common/runtime"
-	"github.com/turt2live/matrix-media-repo/database"
-	"github.com/turt2live/matrix-media-repo/errcache"
-	"github.com/turt2live/matrix-media-repo/metrics"
-	"github.com/turt2live/matrix-media-repo/pgo_internal"
-	"github.com/turt2live/matrix-media-repo/plugins"
-	"github.com/turt2live/matrix-media-repo/pool"
-	"github.com/turt2live/matrix-media-repo/redislib"
-	"github.com/turt2live/matrix-media-repo/tasks"
+	"github.com/t2bot/matrix-media-repo/api"
+	"github.com/t2bot/matrix-media-repo/api/_auth_cache"
+	"github.com/t2bot/matrix-media-repo/common/config"
+	"github.com/t2bot/matrix-media-repo/common/globals"
+	"github.com/t2bot/matrix-media-repo/common/runtime"
+	"github.com/t2bot/matrix-media-repo/database"
+	"github.com/t2bot/matrix-media-repo/errcache"
+	"github.com/t2bot/matrix-media-repo/metrics"
+	"github.com/t2bot/matrix-media-repo/pgo_internal"
+	"github.com/t2bot/matrix-media-repo/plugins"
+	"github.com/t2bot/matrix-media-repo/pool"
+	"github.com/t2bot/matrix-media-repo/redislib"
+	"github.com/t2bot/matrix-media-repo/tasks"
 )
 
 func setupReloads() {

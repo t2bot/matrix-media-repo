@@ -7,13 +7,13 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/api/_debug"
-	"github.com/turt2live/matrix-media-repo/api/_routers"
-	"github.com/turt2live/matrix-media-repo/api/custom"
-	"github.com/turt2live/matrix-media-repo/api/r0"
-	"github.com/turt2live/matrix-media-repo/api/unstable"
-	v1 "github.com/turt2live/matrix-media-repo/api/v1"
-	"github.com/turt2live/matrix-media-repo/homeserver_interop/synapse"
+	"github.com/t2bot/matrix-media-repo/api/_debug"
+	"github.com/t2bot/matrix-media-repo/api/_routers"
+	"github.com/t2bot/matrix-media-repo/api/custom"
+	"github.com/t2bot/matrix-media-repo/api/r0"
+	"github.com/t2bot/matrix-media-repo/api/unstable"
+	v1 "github.com/t2bot/matrix-media-repo/api/v1"
+	"github.com/t2bot/matrix-media-repo/homeserver_interop/synapse"
 )
 
 const PrefixMedia = "/_matrix/media"

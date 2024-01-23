@@ -8,9 +8,9 @@ import (
 	"io"
 	"strings"
 
-	"github.com/turt2live/matrix-media-repo/homeserver_interop"
-	"github.com/turt2live/matrix-media-repo/homeserver_interop/internal"
-	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/t2bot/matrix-media-repo/homeserver_interop"
+	"github.com/t2bot/matrix-media-repo/homeserver_interop/internal"
+	"github.com/t2bot/matrix-media-repo/util"
 )
 
 func EncodeSigningKey(key *homeserver_interop.SigningKey) ([]byte, error) {

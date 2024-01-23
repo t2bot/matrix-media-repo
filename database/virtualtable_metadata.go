@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
 )
 
 type VirtLastAccess struct {

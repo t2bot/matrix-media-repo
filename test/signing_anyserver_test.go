@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/turt2live/matrix-media-repo/homeserver_interop/any_server"
-	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/t2bot/matrix-media-repo/homeserver_interop/any_server"
+	"github.com/t2bot/matrix-media-repo/util"
 )
 
 func TestAnyServerDecodeDendrite(t *testing.T) {

@@ -1,7 +1,7 @@
 package tasks
 
 import (
-	"github.com/turt2live/matrix-media-repo/tasks/task_runner"
+	"github.com/t2bot/matrix-media-repo/tasks/task_runner"
 )
 
 func StartAll() {

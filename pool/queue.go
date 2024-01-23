@@ -6,7 +6,7 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/panjf2000/ants/v2"
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/common/logging"
+	"github.com/t2bot/matrix-media-repo/common/logging"
 )
 
 type Queue struct {

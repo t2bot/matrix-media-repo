@@ -4,10 +4,10 @@ import (
 	"errors"
 	"io"
 
-	"github.com/turt2live/matrix-media-repo/homeserver_interop"
-	"github.com/turt2live/matrix-media-repo/homeserver_interop/dendrite"
-	"github.com/turt2live/matrix-media-repo/homeserver_interop/mmr"
-	"github.com/turt2live/matrix-media-repo/homeserver_interop/synapse"
+	"github.com/t2bot/matrix-media-repo/homeserver_interop"
+	"github.com/t2bot/matrix-media-repo/homeserver_interop/dendrite"
+	"github.com/t2bot/matrix-media-repo/homeserver_interop/mmr"
+	"github.com/t2bot/matrix-media-repo/homeserver_interop/synapse"
 )
 
 func DecodeSigningKey(key io.ReadSeeker) (*homeserver_interop.SigningKey, error) {

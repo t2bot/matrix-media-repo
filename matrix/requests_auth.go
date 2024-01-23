@@ -3,7 +3,7 @@ package matrix
 import (
 	"errors"
 
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
 )
 
 var ErrInvalidToken = errors.New("missing or invalid access token")

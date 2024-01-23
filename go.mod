@@ -1,4 +1,4 @@
-module github.com/turt2live/matrix-media-repo
+module github.com/t2bot/matrix-media-repo
 
 go 1.20
 

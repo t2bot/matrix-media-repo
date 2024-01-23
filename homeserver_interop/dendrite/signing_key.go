@@ -8,8 +8,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/turt2live/matrix-media-repo/homeserver_interop"
-	"github.com/turt2live/matrix-media-repo/homeserver_interop/internal"
+	"github.com/t2bot/matrix-media-repo/homeserver_interop"
+	"github.com/t2bot/matrix-media-repo/homeserver_interop/internal"
 )
 
 const blockType = "MATRIX PRIVATE KEY"

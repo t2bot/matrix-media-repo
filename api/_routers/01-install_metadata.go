@@ -6,8 +6,8 @@ import (
 	"strconv"
 
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/common"
-	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/t2bot/matrix-media-repo/common"
+	"github.com/t2bot/matrix-media-repo/util"
 )
 
 type RequestCounter struct {

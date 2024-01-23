@@ -2,13 +2,13 @@ package r0
 
 import (
 	"github.com/getsentry/sentry-go"
-	"github.com/turt2live/matrix-media-repo/api/_apimeta"
-	"github.com/turt2live/matrix-media-repo/api/_responses"
+	"github.com/t2bot/matrix-media-repo/api/_apimeta"
+	"github.com/t2bot/matrix-media-repo/api/_responses"
 
 	"net/http"
 
-	"github.com/turt2live/matrix-media-repo/api/_auth_cache"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/api/_auth_cache"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
 )
 
 func Logout(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {

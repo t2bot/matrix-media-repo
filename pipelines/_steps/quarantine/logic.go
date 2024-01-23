@@ -3,8 +3,8 @@ package quarantine
 import (
 	"io"
 
-	"github.com/turt2live/matrix-media-repo/common"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/common"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
 )
 
 func ReturnAppropriateThing(ctx rcontext.RequestContext, isDownload bool, recordOnly bool, width int, height int) (io.ReadCloser, error) {

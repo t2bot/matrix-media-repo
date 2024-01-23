@@ -5,10 +5,10 @@ import (
 	"io"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/turt2live/matrix-media-repo/archival"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/database"
-	"github.com/turt2live/matrix-media-repo/datastores"
+	"github.com/t2bot/matrix-media-repo/archival"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/database"
+	"github.com/t2bot/matrix-media-repo/datastores"
 )
 
 type ExportDataParams struct {

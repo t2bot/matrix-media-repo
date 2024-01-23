@@ -3,10 +3,10 @@ package url_preview
 import (
 	"errors"
 
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/pool"
-	"github.com/turt2live/matrix-media-repo/url_previewing/m"
-	"github.com/turt2live/matrix-media-repo/url_previewing/p"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/pool"
+	"github.com/t2bot/matrix-media-repo/url_previewing/m"
+	"github.com/t2bot/matrix-media-repo/url_previewing/p"
 )
 
 type generateResult struct {

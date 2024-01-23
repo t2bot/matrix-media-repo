@@ -6,7 +6,7 @@ import (
 	"path"
 	"sync"
 
-	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/t2bot/matrix-media-repo/common/config"
 )
 
 type templates struct {

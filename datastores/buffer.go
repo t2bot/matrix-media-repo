@@ -9,8 +9,8 @@ import (
 	"os"
 
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/common/config"
-	"github.com/turt2live/matrix-media-repo/util/readers"
+	"github.com/t2bot/matrix-media-repo/common/config"
+	"github.com/t2bot/matrix-media-repo/util/readers"
 )
 
 func BufferTemp(datastore config.DatastoreConfig, contents io.ReadCloser) (string, int64, io.ReadCloser, error) {
@@ -32,7 +32,7 @@ func BufferTemp(datastore config.DatastoreConfig, contents io.ReadCloser) (strin
 		logrus.Warnf("Datastore %s does not have a valid temporary path configured. This will lead to increased memory usage.", datastore.Id)
 		target = &bytes.Buffer{}
 	} else {
-		err = os.Mkdir(fpath, os.ModeDir | 0700)
+		err = os.Mkdir(fpath, os.ModeDir|0700)
 		if err != nil && !os.IsExist(err) {
 			return "", 0, nil, errors.New("error creating temp path: " + err.Error())
 		}

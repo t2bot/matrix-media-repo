@@ -3,7 +3,7 @@ package readers
 import (
 	"io"
 
-	"github.com/turt2live/matrix-media-repo/common"
+	"github.com/t2bot/matrix-media-repo/common"
 )
 
 func LimitReaderWithOverrunError(r io.ReadCloser, n int64) io.ReadCloser {

@@ -4,10 +4,10 @@ import (
 	"errors"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/turt2live/matrix-media-repo/common"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/database"
-	"github.com/turt2live/matrix-media-repo/url_previewing/m"
+	"github.com/t2bot/matrix-media-repo/common"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/database"
+	"github.com/t2bot/matrix-media-repo/url_previewing/m"
 )
 
 func Process(ctx rcontext.RequestContext, previewUrl string, preview m.PreviewResult, err error, onHost string, userId string, languageHeader string, ts int64) (*database.DbUrlPreview, error) {

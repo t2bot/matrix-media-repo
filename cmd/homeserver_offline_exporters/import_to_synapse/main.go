@@ -9,13 +9,13 @@ import (
 	"sync"
 
 	"github.com/disintegration/imaging"
-	"github.com/turt2live/matrix-media-repo/archival/v2archive"
-	"github.com/turt2live/matrix-media-repo/cmd/homeserver_offline_exporters/_common"
-	"github.com/turt2live/matrix-media-repo/common/config"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/homeserver_interop/synapse"
-	"github.com/turt2live/matrix-media-repo/thumbnailing"
-	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/t2bot/matrix-media-repo/archival/v2archive"
+	"github.com/t2bot/matrix-media-repo/cmd/homeserver_offline_exporters/_common"
+	"github.com/t2bot/matrix-media-repo/common/config"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/homeserver_interop/synapse"
+	"github.com/t2bot/matrix-media-repo/thumbnailing"
+	"github.com/t2bot/matrix-media-repo/util"
 )
 
 type thumbnailSize struct {

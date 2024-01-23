@@ -6,10 +6,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/turt2live/matrix-media-repo/database"
-	"github.com/turt2live/matrix-media-repo/homeserver_interop/dendrite"
-	"github.com/turt2live/matrix-media-repo/homeserver_interop/mmr"
-	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/t2bot/matrix-media-repo/database"
+	"github.com/t2bot/matrix-media-repo/homeserver_interop/dendrite"
+	"github.com/t2bot/matrix-media-repo/homeserver_interop/mmr"
+	"github.com/t2bot/matrix-media-repo/util"
 )
 
 func TestDendriteSigningKeyRoundTrip(t *testing.T) {

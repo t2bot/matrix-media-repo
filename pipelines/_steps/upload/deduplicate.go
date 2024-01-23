@@ -1,8 +1,8 @@
 package upload
 
 import (
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/database"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/database"
 )
 
 func FindRecord(ctx rcontext.RequestContext, hash string, userId string, contentType string, fileName string) (*database.DbMedia, bool, error) {

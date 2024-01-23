@@ -5,10 +5,10 @@ import (
 	"io"
 	"os"
 
-	"github.com/turt2live/matrix-media-repo/archival"
-	"github.com/turt2live/matrix-media-repo/archival/v2archive"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/homeserver_interop"
+	"github.com/t2bot/matrix-media-repo/archival"
+	"github.com/t2bot/matrix-media-repo/archival/v2archive"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/homeserver_interop"
 )
 
 func PsqlFlatFileArchive[M homeserver_interop.ImportDbMedia](ctx rcontext.RequestContext, cfg *ImportOptsPsqlFlatFile, db homeserver_interop.ImportDb[M], processFn func(record *M) (v2archive.MediaInfo, io.ReadCloser, error)) {

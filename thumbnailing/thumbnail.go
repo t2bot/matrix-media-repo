@@ -5,13 +5,13 @@ import (
 	"io"
 	"reflect"
 
-	"github.com/turt2live/matrix-media-repo/common"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/thumbnailing/i"
-	"github.com/turt2live/matrix-media-repo/thumbnailing/m"
-	"github.com/turt2live/matrix-media-repo/thumbnailing/u"
-	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/readers"
+	"github.com/t2bot/matrix-media-repo/common"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/thumbnailing/i"
+	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
+	"github.com/t2bot/matrix-media-repo/thumbnailing/u"
+	"github.com/t2bot/matrix-media-repo/util"
+	"github.com/t2bot/matrix-media-repo/util/readers"
 )
 
 var ErrUnsupported = errors.New("unsupported thumbnail type")
@@ -39,7 +39,7 @@ func GenerateThumbnail(imgStream io.ReadCloser, contentType string, width int, h
 	ctx.Log.Debug("Using generator: ", reflect.TypeOf(generator).Name())
 
 	// Validate maximum megapixel values to avoid memory issues
-	// https://github.com/turt2live/matrix-media-repo/security/advisories/GHSA-j889-h476-hh9h
+	// https://github.com/t2bot/matrix-media-repo/security/advisories/GHSA-j889-h476-hh9h
 	buffered := readers.NewBufferReadsReader(reconstructed)
 	dimensional, w, h, err := generator.GetOriginDimensions(buffered, contentType, ctx)
 	if err != nil {

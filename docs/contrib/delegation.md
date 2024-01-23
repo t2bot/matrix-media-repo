@@ -25,7 +25,7 @@ homeservers:
     #...
 ```
 
-A full sample config can be found [here](https://github.com/turt2live/matrix-media-repo/blob/main/config.sample.yaml).
+A full sample config can be found [here](https://github.com/t2bot/matrix-media-repo/blob/main/config.sample.yaml).
 
 The homeserver name has to match the server_name configured while also match the HTTP Host Header. If they aren't the
 same, the media request gets rejected.
@@ -33,7 +33,7 @@ same, the media request gets rejected.
 In scenarios the Host Header cannot be manipulated easily like with [Traefik](https://docs.traefik.io/) as
 Kubernetes Ingress Controller, set `repo.useForwardedHost = true`. With this option the media-repo prefers the
 `X-Forwarded-Host` over the `Host` Header as Host. Keep in mind that this might be unsuitable for your environment 
-like in [#202](https://github.com/turt2live/matrix-media-repo/issues/202).
+like in [#202](https://github.com/t2bot/matrix-media-repo/issues/202).
 
 ## Configuring the reverse proxy
 

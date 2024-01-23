@@ -6,9 +6,9 @@ import (
 
 	"github.com/faiface/beep"
 	"github.com/faiface/beep/flac"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/thumbnailing/m"
-	"github.com/turt2live/matrix-media-repo/thumbnailing/u"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
+	"github.com/t2bot/matrix-media-repo/thumbnailing/u"
 )
 
 type flacGenerator struct {

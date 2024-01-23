@@ -17,9 +17,9 @@ import (
 	"github.com/disintegration/imaging"
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-plugin"
-	"github.com/turt2live/matrix-media-repo/plugins/plugin_common"
-	"github.com/turt2live/matrix-media-repo/plugins/plugin_interfaces"
-	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/t2bot/matrix-media-repo/plugins/plugin_common"
+	"github.com/t2bot/matrix-media-repo/plugins/plugin_interfaces"
+	"github.com/t2bot/matrix-media-repo/util"
 )
 
 type AntispamOCR struct {

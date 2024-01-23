@@ -31,7 +31,7 @@ repo:
 
   # If false, the media repo will not use the X-Forwarded-Host header commonly added by reverse proxies.
   # Typically this should remain as true, though in some circumstances it may need to be disabled.
-  # See https://github.com/turt2live/matrix-media-repo/issues/202 for more information.
+  # See https://github.com/t2bot/matrix-media-repo/issues/202 for more information.
   useForwardedHost: true
 
 # Options for dealing with federation
@@ -513,7 +513,7 @@ timeouts:
 
 # Prometheus metrics configuration
 # For an example Grafana dashboard, import the following JSON:
-# https://github.com/turt2live/matrix-media-repo/blob/main/docs/grafana.json
+# https://github.com/t2bot/matrix-media-repo/blob/main/docs/grafana.json
 metrics:
   # If true, the bindAddress and port below will serve GET /metrics for Prometheus to scrape.
   enabled: false

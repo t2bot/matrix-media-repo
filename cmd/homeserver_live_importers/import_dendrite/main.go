@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/turt2live/matrix-media-repo/cmd/homeserver_live_importers/_common"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/homeserver_interop/dendrite"
+	"github.com/t2bot/matrix-media-repo/cmd/homeserver_live_importers/_common"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/homeserver_interop/dendrite"
 )
 
 func main() {

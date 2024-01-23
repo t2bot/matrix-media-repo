@@ -8,9 +8,9 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	"github.com/kettek/apng"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/thumbnailing/m"
-	"github.com/turt2live/matrix-media-repo/thumbnailing/u"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
+	"github.com/t2bot/matrix-media-repo/thumbnailing/u"
 )
 
 type apngGenerator struct {

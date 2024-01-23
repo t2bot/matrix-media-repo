@@ -5,8 +5,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/redislib"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/redislib"
 )
 
 const maxLockAttemptTime = 30 * time.Second
