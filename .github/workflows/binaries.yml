@@ -52,7 +52,7 @@ jobs:
           if [ "$arch" == "amd64" ]; then
             arch="x64"
           fi
-          for file in * ; do mv -v $file ../dist/${file}-${platform_os}-${arch}; done;
+          for file in * ; do mv -v $file ../dist/${file}-${platform}-${arch}; done;
           cd ../../
           rm -rv $PWD/bin/dist/compile_assets*
 
