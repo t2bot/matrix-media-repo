@@ -219,12 +219,16 @@
                     "http://app-edu.assemblrworld.com/Creation/*",
                     "http://assemblr.world/*",
                     "http://editor.assemblrworld.com/*",
+                    "http://*.assemblrworld.com/creation/*",
+                    "http://*.assemblrworld.com/Creation/*",
                     "https://*.studio.assemblrworld.com/creation/*",
                     "https://studio.assemblrworld.com/creation/*",
                     "https://*.app-edu.assemblrworld.com/Creation/*",
                     "https://app-edu.assemblrworld.com/Creation/*",
                     "https://assemblr.world/*",
-                    "https://editor.assemblrworld.com/*"
+                    "https://editor.assemblrworld.com/*",
+                    "https://*.assemblrworld.com/creation/*",
+                    "https://*.assemblrworld.com/Creation/*"
                 ],
                 "url": "https://studio.assemblrworld.com/api/oembed",
                 "discovery": true
@@ -379,6 +383,22 @@
             {
                 "url": "https://www.beautiful.ai/api/oembed",
                 "discovery": true
+            }
+        ]
+    },
+    {
+        "provider_name": "Behance",
+        "provider_url": "https://www.behance.net",
+        "endpoints": [
+            {
+                "schemes": [
+                    "https://www.behance.net/gallery/*/*",
+                    "https://www.behance.net/*/services/*/*"
+                ],
+                "url": "https://www.behance.net/services/oembed",
+                "formats": [
+                    "json"
+                ]
             }
         ]
     },
@@ -1277,6 +1297,34 @@
         ]
     },
     {
+        "provider_name": "FlowHubOrg",
+        "provider_url": "https://flows.flowhub.org",
+        "endpoints": [
+            {
+                "url": "https://flowhub.org/o/embed",
+                "schemes": [
+                    "https://flowhub.org/f/*",
+                    "https://flowhub.org/s/*"
+                ],
+                "discovery": true
+            }
+        ]
+    },
+    {
+        "provider_name": "Fooday",
+        "provider_url": "https://fooday.app",
+        "endpoints": [
+            {
+                "schemes": [
+                    "https://fooday.app/*/reviews/*",
+                    "https://fooday.app/*/spots/*"
+                ],
+                "url": "https://fooday.app/oembed",
+                "discovery": true
+            }
+        ]
+    },
+    {
         "provider_name": "FOX SPORTS Australia",
         "provider_url": "http://www.foxsports.com.au",
         "endpoints": [
@@ -2107,7 +2155,9 @@
             {
                 "schemes": [
                     "https://lottiefiles.com/*",
-                    "https://*.lottiefiles.com/*"
+                    "https://*.lottiefiles.com/*",
+                    "https://*.lottie.host/*",
+                    "https://lottie.host/*"
                 ],
                 "url": "https://embed.lottiefiles.com/oembed",
                 "discovery": true,
@@ -2599,6 +2649,13 @@
                     "https://origits.com/v/*"
                 ],
                 "url": "https://origits.net/oembed",
+                "discovery": true
+            },
+            {
+                "schemes": [
+                    "https://origits.com/v/*"
+                ],
+                "url": "https://origits.com/oembed",
                 "discovery": true
             }
         ]
@@ -3487,6 +3544,37 @@
         ]
     },
     {
+        "provider_name": "Spyke",
+        "provider_url": "https://spyke.social",
+        "endpoints": [
+            {
+                "schemes": [
+                    "http://spyke.social/p/*",
+                    "http://spyke.social/u/*",
+                    "http://spyke.social/g/*",
+                    "http://spyke.social/c/*",
+                    "https://spyke.social/p/*",
+                    "https://spyke.social/u/*",
+                    "https://spyke.social/g/*",
+                    "https://spyke.social/c/*",
+                    "http://www.spyke.social/p/*",
+                    "http://www.spyke.social/u/*",
+                    "http://www.spyke.social/g/*",
+                    "http://www.spyke.social/c/*",
+                    "https://www.spyke.social/p/*",
+                    "https://www.spyke.social/u/*",
+                    "https://www.spyke.social/g/*",
+                    "https://www.spyke.social/c/*"
+                ],
+                "url": "https://api.spyke.social/embed/oembed",
+                "discovery": true,
+                "formats": [
+                    "json"
+                ]
+            }
+        ]
+    },
+    {
         "provider_name": "Stanford Digital Repository",
         "provider_url": "https://purl.stanford.edu/",
         "endpoints": [
@@ -4038,10 +4126,23 @@
                     "https://vimeo.com/channels/*/*",
                     "https://vimeo.com/groups/*/videos/*",
                     "https://vimeo.com/ondemand/*/*",
-                    "https://player.vimeo.com/video/*"
+                    "https://player.vimeo.com/video/*",
+                    "https://vimeo.com/event/*/*"
                 ],
                 "url": "https://vimeo.com/api/oembed.{format}",
                 "discovery": true
+            }
+        ]
+    },
+    {
+        "provider_name": "Viostream",
+        "provider_url": "https://www.viostream.com",
+        "endpoints": [
+            {
+                "schemes": [
+                    "https://share.viostream.com/*"
+                ],
+                "url": "https://play.viostream.com/oembed"
             }
         ]
     },
@@ -4259,6 +4360,20 @@
                 ],
                 "url": "http://public-api.wordpress.com/oembed/",
                 "discovery": true
+            }
+        ]
+    },
+    {
+        "provider_name": "X",
+        "provider_url": "http://www.x.com/",
+        "endpoints": [
+            {
+                "schemes": [
+                    "https://x.com/*",
+                    "https://x.com/*/status/*",
+                    "https://*.x.com/*/status/*"
+                ],
+                "url": "https://publish.x.com/oembed"
             }
         ]
     },
