@@ -3,9 +3,9 @@ package custom
 import (
 	"net/http"
 
-	"github.com/turt2live/matrix-media-repo/api/_apimeta"
-	"github.com/turt2live/matrix-media-repo/api/_responses"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/api/_apimeta"
+	"github.com/t2bot/matrix-media-repo/api/_responses"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
 )
 
 type HealthzResponse struct {

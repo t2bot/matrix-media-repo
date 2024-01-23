@@ -4,10 +4,10 @@ import (
 	"os"
 
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/homeserver_interop"
-	"github.com/turt2live/matrix-media-repo/homeserver_interop/dendrite"
-	"github.com/turt2live/matrix-media-repo/homeserver_interop/mmr"
-	"github.com/turt2live/matrix-media-repo/homeserver_interop/synapse"
+	"github.com/t2bot/matrix-media-repo/homeserver_interop"
+	"github.com/t2bot/matrix-media-repo/homeserver_interop/dendrite"
+	"github.com/t2bot/matrix-media-repo/homeserver_interop/mmr"
+	"github.com/t2bot/matrix-media-repo/homeserver_interop/synapse"
 )
 
 func EncodeSigningKeys(keys []*homeserver_interop.SigningKey, format string, file string) {

@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/rubyist/circuitbreaker"
-	"github.com/turt2live/matrix-media-repo/common/config"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/t2bot/matrix-media-repo/common/config"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/util"
 )
 
 var breakers = &sync.Map{}

@@ -8,7 +8,7 @@ import (
 	"github.com/dhowden/tag"
 	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/util/readers"
+	"github.com/t2bot/matrix-media-repo/util/readers"
 )
 
 func GetID3Tags(b io.Reader) (tag.Metadata, io.ReadSeekCloser, error) {

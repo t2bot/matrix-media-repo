@@ -11,12 +11,12 @@ import (
 
 	"github.com/panjf2000/ants/v2"
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/common/logging"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/database"
-	"github.com/turt2live/matrix-media-repo/datastores"
-	"github.com/turt2live/matrix-media-repo/homeserver_interop"
-	"github.com/turt2live/matrix-media-repo/pipelines/pipeline_upload"
+	"github.com/t2bot/matrix-media-repo/common/logging"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/database"
+	"github.com/t2bot/matrix-media-repo/datastores"
+	"github.com/t2bot/matrix-media-repo/homeserver_interop"
+	"github.com/t2bot/matrix-media-repo/pipelines/pipeline_upload"
 )
 
 type MediaMetadata struct {

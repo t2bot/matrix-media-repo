@@ -5,8 +5,8 @@ import (
 
 	"github.com/getsentry/sentry-go"
 
-	"github.com/turt2live/matrix-media-repo/common"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/common"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
 )
 
 func getSafeAddress(addr string, ctx rcontext.RequestContext) (net.IP, string, error) {

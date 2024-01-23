@@ -7,7 +7,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/common/globals"
+	"github.com/t2bot/matrix-media-repo/common/globals"
 )
 
 func Watch() *fsnotify.Watcher {

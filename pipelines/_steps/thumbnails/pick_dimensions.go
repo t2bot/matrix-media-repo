@@ -3,8 +3,8 @@ package thumbnails
 import (
 	"errors"
 
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/util"
 )
 
 func PickNewDimensions(ctx rcontext.RequestContext, desiredWidth int, desiredHeight int, desiredMethod string) (int, int, string, error) {

@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/turt2live/matrix-media-repo/archival/v2archive"
-	"github.com/turt2live/matrix-media-repo/common"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/database"
-	"github.com/turt2live/matrix-media-repo/util/readers"
+	"github.com/t2bot/matrix-media-repo/archival/v2archive"
+	"github.com/t2bot/matrix-media-repo/common"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/database"
+	"github.com/t2bot/matrix-media-repo/util/readers"
 )
 
 var importEngines = new(sync.Map)

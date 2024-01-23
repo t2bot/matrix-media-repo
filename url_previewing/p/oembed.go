@@ -8,16 +8,16 @@ import (
 	"sync"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/turt2live/matrix-media-repo/url_previewing/m"
-	"github.com/turt2live/matrix-media-repo/url_previewing/u"
+	"github.com/t2bot/matrix-media-repo/url_previewing/m"
+	"github.com/t2bot/matrix-media-repo/url_previewing/u"
 
 	"github.com/dyatlov/go-oembed/oembed"
 	"github.com/k3a/html2text"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/common/config"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/metrics"
+	"github.com/t2bot/matrix-media-repo/common/config"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/metrics"
 )
 
 var oembedInstance *oembed.Oembed

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/turt2live/matrix-media-repo/homeserver_interop"
+	"github.com/t2bot/matrix-media-repo/homeserver_interop"
 )
 
 func EncodeNewlineAppendFormattedSigningKeys(keys []*homeserver_interop.SigningKey, encodeFn func(*homeserver_interop.SigningKey) ([]byte, error)) ([]byte, error) {

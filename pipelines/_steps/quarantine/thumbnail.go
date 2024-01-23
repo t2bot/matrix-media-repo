@@ -9,7 +9,7 @@ import (
 	"github.com/disintegration/imaging"
 	"github.com/fogleman/gg"
 	"github.com/golang/freetype/truetype"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"golang.org/x/image/font/gofont/gosmallcaps"
 )
 

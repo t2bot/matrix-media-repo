@@ -3,7 +3,7 @@ package util
 import (
 	"strings"
 
-	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/t2bot/matrix-media-repo/common/config"
 )
 
 func IsServerOurs(server string) bool {

@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/turt2live/matrix-media-repo/metrics"
+	"github.com/t2bot/matrix-media-repo/metrics"
 )
 
 type MetricsResponseRouter struct {

@@ -9,8 +9,8 @@ import (
 	"github.com/getsentry/sentry-go"
 	_ "github.com/lib/pq" // postgres driver
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/common/config"
-	"github.com/turt2live/matrix-media-repo/common/logging"
+	"github.com/t2bot/matrix-media-repo/common/config"
+	"github.com/t2bot/matrix-media-repo/common/logging"
 )
 
 type Database struct {

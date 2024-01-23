@@ -7,12 +7,12 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/database"
-	"github.com/turt2live/matrix-media-repo/notifier"
-	"github.com/turt2live/matrix-media-repo/tasks/task_runner"
-	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/ids"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/database"
+	"github.com/t2bot/matrix-media-repo/notifier"
+	"github.com/t2bot/matrix-media-repo/tasks/task_runner"
+	"github.com/t2bot/matrix-media-repo/util"
+	"github.com/t2bot/matrix-media-repo/util/ids"
 )
 
 type TaskName string

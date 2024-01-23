@@ -6,17 +6,17 @@ import (
 	"strconv"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/turt2live/matrix-media-repo/api/_apimeta"
-	"github.com/turt2live/matrix-media-repo/api/_responses"
-	"github.com/turt2live/matrix-media-repo/api/_routers"
-	"github.com/turt2live/matrix-media-repo/database"
-	"github.com/turt2live/matrix-media-repo/tasks/task_runner"
+	"github.com/t2bot/matrix-media-repo/api/_apimeta"
+	"github.com/t2bot/matrix-media-repo/api/_responses"
+	"github.com/t2bot/matrix-media-repo/api/_routers"
+	"github.com/t2bot/matrix-media-repo/database"
+	"github.com/t2bot/matrix-media-repo/tasks/task_runner"
 
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/common"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/matrix"
-	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/t2bot/matrix-media-repo/common"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/matrix"
+	"github.com/t2bot/matrix-media-repo/util"
 )
 
 type MediaPurgedResponse struct {

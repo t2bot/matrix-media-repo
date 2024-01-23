@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/lib/pq"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
 )
 
 type Locatable struct {
@@ -175,7 +175,7 @@ func (s *MediaTableWithContext) GetDistinctDatastoreIds() ([]string, error) {
 }
 
 func (s *MediaTableWithContext) IsHashQuarantined(sha256hash string) (bool, error) {
-	// TODO: https://github.com/turt2live/matrix-media-repo/issues/410
+	// TODO: https://github.com/t2bot/matrix-media-repo/issues/410
 	row := s.statements.selectMediaIsQuarantinedByHash.QueryRowContext(s.ctx, sha256hash)
 	val := false
 	err := row.Scan(&val)

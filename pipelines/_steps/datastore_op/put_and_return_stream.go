@@ -5,11 +5,11 @@ import (
 	"io"
 	"sync"
 
-	"github.com/turt2live/matrix-media-repo/common/config"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/database"
-	"github.com/turt2live/matrix-media-repo/datastores"
-	"github.com/turt2live/matrix-media-repo/pipelines/pipeline_upload"
+	"github.com/t2bot/matrix-media-repo/common/config"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/database"
+	"github.com/t2bot/matrix-media-repo/datastores"
+	"github.com/t2bot/matrix-media-repo/pipelines/pipeline_upload"
 )
 
 type downloadResult struct {

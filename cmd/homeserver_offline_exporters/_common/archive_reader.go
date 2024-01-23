@@ -5,8 +5,8 @@ import (
 	"os"
 	"path"
 
-	"github.com/turt2live/matrix-media-repo/archival/v2archive"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/archival/v2archive"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
 )
 
 func ProcessArchiveDirectory(ctx rcontext.RequestContext, entityId string, directory string, processFn func(record *v2archive.ManifestRecord, f io.ReadCloser) error) error {

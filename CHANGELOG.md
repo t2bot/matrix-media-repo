@@ -64,11 +64,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Security Fixes
 
-* Fix improper usage of `Content-Disposition: inline` and related `Content-Type` safety ([CVE-2023-41318](https://www.cve.org/CVERecord?id=CVE-2023-41318), [GHSA-5crw-6j7v-xc72](https://github.com/turt2live/matrix-media-repo/security/advisories/GHSA-5crw-6j7v-xc72)).
+* Fix improper usage of `Content-Disposition: inline` and related `Content-Type` safety ([CVE-2023-41318](https://www.cve.org/CVERecord?id=CVE-2023-41318), [GHSA-5crw-6j7v-xc72](https://github.com/t2bot/matrix-media-repo/security/advisories/GHSA-5crw-6j7v-xc72)).
 
 ### Deprecations
 
-* The `GET /_matrix/media/unstable/local_copy/:server/:mediaId` (and `unstable/io.t2bot.media` variant) endpoint is deprecated and scheduled for removal. If you are using this endpoint, please comment on [this issue](https://github.com/turt2live/matrix-media-repo/issues/422) to explain your use case.
+* The `GET /_matrix/media/unstable/local_copy/:server/:mediaId` (and `unstable/io.t2bot.media` variant) endpoint is deprecated and scheduled for removal. If you are using this endpoint, please comment on [this issue](https://github.com/t2bot/matrix-media-repo/issues/422) to explain your use case.
 
 ### Added
 
@@ -125,7 +125,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Changed
 
-* Swap out the HEIF library for better support towards [ARM64 Docker Images](https://github.com/turt2live/matrix-media-repo/issues/365).
+* Swap out the HEIF library for better support towards [ARM64 Docker Images](https://github.com/t2bot/matrix-media-repo/issues/365).
 * The development environment now uses Synapse as a homeserver. Test accounts will need recreating.
 * Updated to Go 1.18
 * Improved error message when thumbnailer cannot determine image dimensions.
@@ -224,7 +224,7 @@ caching that is now supported properly by this release, or disable caching if no
 
 ### Security advisories
 
-This release includes a fix for [CVE-2021-29453](https://github.com/turt2live/matrix-media-repo/security/advisories/GHSA-j889-h476-hh9h).
+This release includes a fix for [CVE-2021-29453](https://github.com/t2bot/matrix-media-repo/security/advisories/GHSA-j889-h476-hh9h).
 
 Server administrators are recommended to upgrade as soon as possible. This issue is considered to be exploited in the wild
 due to some deployments being affected unexpectedly.
@@ -326,7 +326,7 @@ due to some deployments being affected unexpectedly.
 release tracks how much a user has uploaded, which might take a while to initially calculate. If you have
 a large database (more than about 100k uploaded files), run the following steps before upgrading:
 
-1. The PostgreSQL script described [here](https://github.com/turt2live/matrix-media-repo/blob/a8951b0562debb9f8ae3b6e517bfc3a84d2e627a/migrations/17_add_user_stats_table_up.sql).
+1. The PostgreSQL script described [here](https://github.com/t2bot/matrix-media-repo/blob/a8951b0562debb9f8ae3b6e517bfc3a84d2e627a/migrations/17_add_user_stats_table_up.sql).
    This can be run while the server is running.
 2. If you have no intention of using stats or quotas, you're done (the stats table will be inaccurate). If
    you do plan on using either, run `INSERT INTO user_stats SELECT user_id, SUM(size_bytes) FROM media GROUP BY user_id;`
@@ -371,7 +371,7 @@ a large database (more than about 100k uploaded files), run the following steps 
 ### Added
 
 * Added options to cache access tokens for users. This prevents excessive calls to `/account/whoami` on your homeserver, particularly for appservices.
-* [Documentation](https://github.com/turt2live/matrix-media-repo/blob/master/docs/contrib/delegation.md) on how to set up delegation with the media repo and Traefik. Thanks @derEisele!
+* [Documentation](https://github.com/t2bot/matrix-media-repo/blob/master/docs/contrib/delegation.md) on how to set up delegation with the media repo and Traefik. Thanks @derEisele!
 
 ### Changed
 
@@ -486,31 +486,31 @@ a large database (more than about 100k uploaded files), run the following steps 
 * Various other features that would be expected like maximum/minimum size controls, rate limiting, etc. Check out the
   sample config for a better idea of what else is possible.
 
-[unreleased]: https://github.com/turt2live/matrix-media-repo/compare/v1.3.3...HEAD
-[1.3.3]: https://github.com/turt2live/matrix-media-repo/compare/v1.3.2...v1.3.3
-[1.3.2]: https://github.com/turt2live/matrix-media-repo/compare/v1.3.1...v1.3.2
-[1.3.1]: https://github.com/turt2live/matrix-media-repo/compare/v1.3.0...v1.3.1
-[1.3.0]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.13...v1.3.0
-[1.2.13]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.12...v1.2.13
-[1.2.12]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.11...v1.2.12
-[1.2.11]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.10...v1.2.11
-[1.2.10]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.9...v1.2.10
-[1.2.9]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.8...v1.2.9
-[1.2.8]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.7...v1.2.8
-[1.2.6]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.6...v1.2.7
-[1.2.6]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.5...v1.2.6
-[1.2.5]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.4...v1.2.5
-[1.2.4]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.3...v1.2.4
-[1.2.3]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.2...v1.2.3
-[1.2.2]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.1...v1.2.2
-[1.2.1]: https://github.com/turt2live/matrix-media-repo/compare/v1.2.0...v1.2.1
-[1.2.0]: https://github.com/turt2live/matrix-media-repo/compare/v1.1.3...v1.2.0
-[1.1.3]: https://github.com/turt2live/matrix-media-repo/compare/v1.1.2...v1.1.3
-[1.1.2]: https://github.com/turt2live/matrix-media-repo/compare/v1.1.1...v1.1.2
-[1.1.1]: https://github.com/turt2live/matrix-media-repo/compare/v1.1.0...v1.1.1
-[1.1.0]: https://github.com/turt2live/matrix-media-repo/compare/v1.0.2...v1.1.0
-[1.0.2]: https://github.com/turt2live/matrix-media-repo/compare/v1.0.1...v1.0.2
-[1.0.1]: https://github.com/turt2live/matrix-media-repo/compare/v1.0.0...v1.0.1
-[1.0.0]: https://github.com/turt2live/matrix-media-repo/compare/v1.0.0-rc.2...v1.0.0
-[1.0.0-rc.2]: https://github.com/turt2live/matrix-media-repo/compare/v1.0.0-rc.1...v1.0.0-rc.2
-[1.0.0-rc.1]: https://github.com/turt2live/matrix-media-repo/releases/tag/v1.0.0-rc.1
+[unreleased]: https://github.com/t2bot/matrix-media-repo/compare/v1.3.3...HEAD
+[1.3.3]: https://github.com/t2bot/matrix-media-repo/compare/v1.3.2...v1.3.3
+[1.3.2]: https://github.com/t2bot/matrix-media-repo/compare/v1.3.1...v1.3.2
+[1.3.1]: https://github.com/t2bot/matrix-media-repo/compare/v1.3.0...v1.3.1
+[1.3.0]: https://github.com/t2bot/matrix-media-repo/compare/v1.2.13...v1.3.0
+[1.2.13]: https://github.com/t2bot/matrix-media-repo/compare/v1.2.12...v1.2.13
+[1.2.12]: https://github.com/t2bot/matrix-media-repo/compare/v1.2.11...v1.2.12
+[1.2.11]: https://github.com/t2bot/matrix-media-repo/compare/v1.2.10...v1.2.11
+[1.2.10]: https://github.com/t2bot/matrix-media-repo/compare/v1.2.9...v1.2.10
+[1.2.9]: https://github.com/t2bot/matrix-media-repo/compare/v1.2.8...v1.2.9
+[1.2.8]: https://github.com/t2bot/matrix-media-repo/compare/v1.2.7...v1.2.8
+[1.2.6]: https://github.com/t2bot/matrix-media-repo/compare/v1.2.6...v1.2.7
+[1.2.6]: https://github.com/t2bot/matrix-media-repo/compare/v1.2.5...v1.2.6
+[1.2.5]: https://github.com/t2bot/matrix-media-repo/compare/v1.2.4...v1.2.5
+[1.2.4]: https://github.com/t2bot/matrix-media-repo/compare/v1.2.3...v1.2.4
+[1.2.3]: https://github.com/t2bot/matrix-media-repo/compare/v1.2.2...v1.2.3
+[1.2.2]: https://github.com/t2bot/matrix-media-repo/compare/v1.2.1...v1.2.2
+[1.2.1]: https://github.com/t2bot/matrix-media-repo/compare/v1.2.0...v1.2.1
+[1.2.0]: https://github.com/t2bot/matrix-media-repo/compare/v1.1.3...v1.2.0
+[1.1.3]: https://github.com/t2bot/matrix-media-repo/compare/v1.1.2...v1.1.3
+[1.1.2]: https://github.com/t2bot/matrix-media-repo/compare/v1.1.1...v1.1.2
+[1.1.1]: https://github.com/t2bot/matrix-media-repo/compare/v1.1.0...v1.1.1
+[1.1.0]: https://github.com/t2bot/matrix-media-repo/compare/v1.0.2...v1.1.0
+[1.0.2]: https://github.com/t2bot/matrix-media-repo/compare/v1.0.1...v1.0.2
+[1.0.1]: https://github.com/t2bot/matrix-media-repo/compare/v1.0.0...v1.0.1
+[1.0.0]: https://github.com/t2bot/matrix-media-repo/compare/v1.0.0-rc.2...v1.0.0
+[1.0.0-rc.2]: https://github.com/t2bot/matrix-media-repo/compare/v1.0.0-rc.1...v1.0.0-rc.2
+[1.0.0-rc.1]: https://github.com/t2bot/matrix-media-repo/releases/tag/v1.0.0-rc.1

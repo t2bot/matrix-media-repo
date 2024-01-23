@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
 )
 
 const insertExport = "INSERT INTO exports (export_id, entity) VALUES ($1, $2);"

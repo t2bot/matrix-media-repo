@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/turt2live/matrix-media-repo/api/_routers"
+	"github.com/t2bot/matrix-media-repo/api/_routers"
 )
 
 type branch struct {

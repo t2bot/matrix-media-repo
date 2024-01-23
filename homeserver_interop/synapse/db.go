@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	_ "github.com/lib/pq" // postgres driver
-	"github.com/turt2live/matrix-media-repo/homeserver_interop"
+	"github.com/t2bot/matrix-media-repo/homeserver_interop"
 )
 
 const selectLocalMedia = "SELECT media_id, media_type, media_length, created_ts, upload_name, user_id, url_cache FROM local_media_repository;"

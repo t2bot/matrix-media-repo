@@ -2,10 +2,10 @@ package meta
 
 import (
 	"github.com/getsentry/sentry-go"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/database"
-	"github.com/turt2live/matrix-media-repo/metrics"
-	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/database"
+	"github.com/t2bot/matrix-media-repo/metrics"
+	"github.com/t2bot/matrix-media-repo/util"
 )
 
 func FlagAccess(ctx rcontext.RequestContext, sha256hash string, uploadTime int64) {

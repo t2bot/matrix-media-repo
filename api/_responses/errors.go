@@ -1,6 +1,6 @@
 package _responses
 
-import "github.com/turt2live/matrix-media-repo/common"
+import "github.com/t2bot/matrix-media-repo/common"
 
 type ErrorResponse struct {
 	Code         string `json:"errcode"`

@@ -3,7 +3,7 @@ package errcache
 import (
 	"time"
 
-	"github.com/turt2live/matrix-media-repo/common/config"
+	"github.com/t2bot/matrix-media-repo/common/config"
 )
 
 var DownloadErrors *ErrCache

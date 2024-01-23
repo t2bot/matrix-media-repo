@@ -5,10 +5,10 @@ import (
 	"os"
 
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/cmd/utilities/_common"
-	"github.com/turt2live/matrix-media-repo/homeserver_interop"
-	"github.com/turt2live/matrix-media-repo/homeserver_interop/any_server"
-	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/t2bot/matrix-media-repo/cmd/utilities/_common"
+	"github.com/t2bot/matrix-media-repo/homeserver_interop"
+	"github.com/t2bot/matrix-media-repo/homeserver_interop/any_server"
+	"github.com/t2bot/matrix-media-repo/util"
 )
 
 func main() {

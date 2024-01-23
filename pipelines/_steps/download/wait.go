@@ -1,10 +1,10 @@
 package download
 
 import (
-	"github.com/turt2live/matrix-media-repo/common"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/database"
-	"github.com/turt2live/matrix-media-repo/notifier"
+	"github.com/t2bot/matrix-media-repo/common"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/database"
+	"github.com/t2bot/matrix-media-repo/notifier"
 )
 
 func WaitForAsyncMedia(ctx rcontext.RequestContext, origin string, mediaId string) (*database.DbMedia, error) {

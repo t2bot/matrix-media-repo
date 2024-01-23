@@ -4,12 +4,12 @@ import (
 	"errors"
 	"io"
 
-	"github.com/turt2live/matrix-media-repo/common/config"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/database"
-	"github.com/turt2live/matrix-media-repo/datastores"
-	"github.com/turt2live/matrix-media-repo/redislib"
-	"github.com/turt2live/matrix-media-repo/util/readers"
+	"github.com/t2bot/matrix-media-repo/common/config"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/database"
+	"github.com/t2bot/matrix-media-repo/datastores"
+	"github.com/t2bot/matrix-media-repo/redislib"
+	"github.com/t2bot/matrix-media-repo/util/readers"
 )
 
 func OpenStream(ctx rcontext.RequestContext, media *database.Locatable) (io.ReadSeekCloser, error) {

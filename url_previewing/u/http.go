@@ -12,11 +12,11 @@ import (
 	"time"
 
 	"github.com/ryanuber/go-glob"
-	"github.com/turt2live/matrix-media-repo/common"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/url_previewing/m"
-	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/readers"
+	"github.com/t2bot/matrix-media-repo/common"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/url_previewing/m"
+	"github.com/t2bot/matrix-media-repo/util"
+	"github.com/t2bot/matrix-media-repo/util/readers"
 )
 
 func doHttpGet(urlPayload *m.UrlPayload, languageHeader string, ctx rcontext.RequestContext) (*http.Response, error) {

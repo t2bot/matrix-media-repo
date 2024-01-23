@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/turt2live/matrix-media-repo/common/version"
-	"github.com/turt2live/matrix-media-repo/util/ids"
+	"github.com/t2bot/matrix-media-repo/common/version"
+	"github.com/t2bot/matrix-media-repo/util/ids"
 	"golang.org/x/term"
 )
 

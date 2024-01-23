@@ -5,17 +5,17 @@ import (
 	"io"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/turt2live/matrix-media-repo/common"
-	"github.com/turt2live/matrix-media-repo/common/config"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/database"
-	"github.com/turt2live/matrix-media-repo/datastores"
-	"github.com/turt2live/matrix-media-repo/notifier"
-	"github.com/turt2live/matrix-media-repo/pipelines/_steps/meta"
-	"github.com/turt2live/matrix-media-repo/pipelines/_steps/quota"
-	"github.com/turt2live/matrix-media-repo/pipelines/_steps/upload"
-	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/readers"
+	"github.com/t2bot/matrix-media-repo/common"
+	"github.com/t2bot/matrix-media-repo/common/config"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/database"
+	"github.com/t2bot/matrix-media-repo/datastores"
+	"github.com/t2bot/matrix-media-repo/notifier"
+	"github.com/t2bot/matrix-media-repo/pipelines/_steps/meta"
+	"github.com/t2bot/matrix-media-repo/pipelines/_steps/quota"
+	"github.com/t2bot/matrix-media-repo/pipelines/_steps/upload"
+	"github.com/t2bot/matrix-media-repo/util"
+	"github.com/t2bot/matrix-media-repo/util/readers"
 )
 
 // Execute Media upload. If mediaId is an empty string, one will be generated.

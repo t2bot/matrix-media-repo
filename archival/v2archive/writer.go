@@ -15,10 +15,10 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/sirupsen/logrus"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/templating"
-	"github.com/turt2live/matrix-media-repo/util"
-	"github.com/turt2live/matrix-media-repo/util/readers"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/templating"
+	"github.com/t2bot/matrix-media-repo/util"
+	"github.com/t2bot/matrix-media-repo/util/readers"
 )
 
 type MediaInfo struct {

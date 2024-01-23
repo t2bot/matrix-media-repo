@@ -7,16 +7,16 @@ import (
 	"strings"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/turt2live/matrix-media-repo/url_previewing/m"
-	"github.com/turt2live/matrix-media-repo/url_previewing/u"
+	"github.com/t2bot/matrix-media-repo/url_previewing/m"
+	"github.com/t2bot/matrix-media-repo/url_previewing/u"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/dyatlov/go-opengraph/opengraph"
 	ogimage "github.com/dyatlov/go-opengraph/opengraph/types/image"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/turt2live/matrix-media-repo/common"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/metrics"
+	"github.com/t2bot/matrix-media-repo/common"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/metrics"
 )
 
 var ogSupportedTypes = []string{"text/*"}

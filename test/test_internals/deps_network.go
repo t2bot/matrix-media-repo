@@ -4,8 +4,8 @@ import (
 	"context"
 	"log"
 
+	"github.com/t2bot/matrix-media-repo/util/ids"
 	"github.com/testcontainers/testcontainers-go"
-	"github.com/turt2live/matrix-media-repo/util/ids"
 )
 
 type NetworkDep struct {

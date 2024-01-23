@@ -3,7 +3,7 @@ package test
 import (
 	"testing"
 
-	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/t2bot/matrix-media-repo/util"
 )
 
 func TestEncodeCanonicalJson_CaseA(t *testing.T) {
