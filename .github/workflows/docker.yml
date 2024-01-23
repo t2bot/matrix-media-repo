@@ -22,13 +22,13 @@ jobs:
         os: [ubuntu-latest, macos-latest]
         include:
           - os: ubuntu-latest
-            platform:
-              - linux/amd64
+            platform: linux/amd64
           - os: macos-latest
-            platform:
-              - linux/arm/v6
-              - linux/arm/v7
-              - linux/arm64
+            platform: linux/arm/v6
+          - os: macos-latest
+            platform: linux/arm/v7
+          - os: macos-latest
+            platform: linux/arm64
 
     steps:
       - name: Prepare
