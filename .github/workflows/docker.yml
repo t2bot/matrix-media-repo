@@ -2,7 +2,7 @@ name: Create and publish a Docker image
 
 on:
   push:
-    branches: ['master', 'travis/armdocker']
+    branches: ['main', 'travis/armdocker']
   release:
     types: ['published']
 
