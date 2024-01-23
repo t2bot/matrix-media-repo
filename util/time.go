@@ -21,10 +21,6 @@ func CalcBlockForDuration(timeoutMs string) (time.Duration, error) {
 			return 0, err
 		}
 		if parsed > 0 {
-			// Limit to 60 seconds
-			if parsed > 60000 {
-				parsed = 60000
-			}
 			blockFor = time.Duration(parsed) * time.Millisecond
 		}
 	}
