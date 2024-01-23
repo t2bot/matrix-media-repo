@@ -3,8 +3,7 @@ name: Build release binaries
 on:
   push:
     branches: ['travis/release-bin']
-  release:
-    types: ['published']
+    tags: ["*"]
 
 jobs:
   build:
