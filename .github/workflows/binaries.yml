@@ -35,7 +35,7 @@ jobs:
           set -ex
           platform=${{ matrix.os }}
           platform_os=${platform//\//-}
-          mkdir $PWD/bin/dist
+          mkdir -p $PWD/bin/dist
           GOBIN=$PWD/bin go install -v ./cmd/utilities/compile_assets
           $PWD/bin/compile_assets
           pth="$platform_os-${{ matrix.arch }}"
