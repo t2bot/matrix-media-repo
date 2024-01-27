@@ -28,6 +28,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Downloads when using a self-hosted MinIO instance are no longer slower than expected.
 * The `DELETE /_matrix/media/unstable/admin/export/:exportId` endpoint has been reinstated as described.
 * If a server's `downloads.maxSize` is greater than the `uploads.maxSize`, remote media is no longer cut off at `uploads.maxSize`. The media will instead be downloaded at `downloads.maxSize` and error if greater.
+* `Content-Type` on `/download` and `/thumbnail` is now brought in line with [MSC2701](https://github.com/matrix-org/matrix-spec-proposals/pull/2701).
 
 ## [1.3.3] - October 31, 2023
 
