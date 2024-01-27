@@ -50,7 +50,7 @@ jobs:
         shell: bash
         run: |
           set -ex
-          export PATH=$PATH:$PWD/vcpkg/installed/x64-windows/lib/pkgconfig:$PWD/vcpkg/installed/x86-windows/lib/pkgconfig
+          export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:$PWD/vcpkg/installed/x64-windows/lib/pkgconfig:$PWD/vcpkg/installed/x86-windows/lib/pkgconfig
           platform=${{ runner.os }}
           platform=${platform,,}
           mkdir -p $PWD/bin/dist
