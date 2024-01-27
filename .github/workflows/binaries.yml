@@ -37,6 +37,7 @@ jobs:
       - name: Install libheif (windows)
         if: runner.os == 'windows'
         run: |
+          choco install pkgconfiglite
           git clone https://github.com/Microsoft/vcpkg.git
           cd vcpkg
           .\bootstrap-vcpkg.bat
