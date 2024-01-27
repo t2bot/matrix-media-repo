@@ -37,13 +37,13 @@ jobs:
       - name: Install libheif (windows)
         if: runner.os == 'windows'
         run: |
-          [Environment]::SetEnvironmentVariable("PATH", "$env:Path;$(Get-Location)\\vcpkg\\installed\\x64-windows\\lib\\pkgconfig", "Machine")
           git clone https://github.com/Microsoft/vcpkg.git
           cd vcpkg
           .\bootstrap-vcpkg.bat
           .\vcpkg integrate install
           .\vcpkg install libde265:x64-windows libheif:x64-windows
           cd ..
+          [Environment]::SetEnvironmentVariable("PATH", "$env:Path;$(Get-Location)\\vcpkg\\installed\\x64-windows\\lib\\pkgconfig", "Machine")
 
       - name: Install WSL
         if: runner.os == 'windows'
