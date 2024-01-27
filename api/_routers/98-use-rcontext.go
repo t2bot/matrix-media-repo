@@ -14,7 +14,6 @@ import (
 	"strings"
 
 	"github.com/alioygur/is"
-	"github.com/gabriel-vasile/mimetype"
 	"github.com/getsentry/sentry-go"
 	"github.com/t2bot/gotd-contrib/http_range"
 	"github.com/t2bot/matrix-media-repo/api/_responses"
@@ -112,38 +111,11 @@ beforeParseDownload:
 			goto beforeParseDownload // reprocess `res`
 		}
 
-		contentType = "application/octet-stream"
+		contentType = downloadRes.ContentType
 		expectedBytes = downloadRes.SizeBytes
 
-		// Don't rely on user-supplied values for content-type
-		var rsc io.ReadSeekCloser
-		var mimeType *mimetype.MIME
-		if t, ok := downloadRes.Data.(io.ReadSeekCloser); ok {
-			rsc = t
-			mimeType, err = mimetype.DetectReader(rsc)
-			if _, err2 := rsc.Seek(0, io.SeekStart); err2 != nil {
-				rctx.Log.Error("Error seeking after detecting mimetype: ", err2)
-				sentry.CaptureException(err2)
-				res = _responses.InternalServerError("Unexpected Error")
-				goto beforeParseDownload // reprocess `res`
-			}
-		} else {
-			br := readers.NewBufferReadsReader(downloadRes.Data)
-			mimeType, err = mimetype.DetectReader(br)
-			ogReader := downloadRes.Data
-			downloadRes.Data = readers.NewCancelCloser(io.NopCloser(br.GetRewoundReader()), func() {
-				_ = ogReader.Close()
-			})
-		}
-		if err != nil {
-			rctx.Log.Warn("Non-fatal error sniffing mime type of download: ", err)
-			sentry.CaptureException(err)
-		} else if mimeType != nil {
-			contentType = mimeType.String()
-		}
-
-		if contentType != downloadRes.ContentType {
-			rctx.Log.Debugf("Expected '%s' content type but ended up with '%s'", downloadRes.ContentType, contentType)
+		if contentType == "" {
+			contentType = "application/octet-stream"
 		}
 
 		if shouldCache {
@@ -158,14 +130,10 @@ beforeParseDownload:
 		if disposition == "" {
 			disposition = "attachment"
 		} else if disposition == "infer" {
-			if contentType == "" {
-				disposition = "attachment"
+			if util.CanInline(contentType) {
+				disposition = "inline"
 			} else {
-				if util.CanInline(contentType) {
-					disposition = "inline"
-				} else {
-					disposition = "attachment"
-				}
+				disposition = "attachment"
 			}
 		}
 		fname := downloadRes.Filename
