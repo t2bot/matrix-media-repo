@@ -50,7 +50,7 @@ jobs:
         shell: bash
         run: |
           set -ex
-          export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:$PWD/vcpkg/installed/x64-windows/lib/pkgconfig:$PWD/vcpkg/installed/x86-windows/lib/pkgconfig
+          pkgconfig=$PKG_CONFIG_PATH:$PWD/vcpkg/installed/x64-windows/lib/pkgconfig:$PWD/vcpkg/installed/x86-windows/lib/pkgconfig
           platform=${{ runner.os }}
           platform=${platform,,}
           mkdir -p $PWD/bin/dist
@@ -58,8 +58,8 @@ jobs:
           $PWD/bin/compile_assets
           pth="$platform-${{ matrix.arch }}"
           mkdir -p $PWD/bin/$pth
-          GOOS=$platform GOARCH=${{ matrix.arch }} GOBIN=$PWD/bin go build -o $PWD/bin/$pth -a -ldflags "-X github.com/t2bot/matrix-media-repo/common/version.Version=$(git describe --tags)" -v ./cmd/...
-          GOOS=$platform GOARCH=${{ matrix.arch }} GOBIN=$PWD/bin go build -pgo=pgo_media_repo.pprof -o $PWD/bin/$pth -a -ldflags "-X github.com/t2bot/matrix-media-repo/common/version.Version=$(git describe --tags)" -v ./cmd/workers/media_repo
+          PKG_CONFIG_PATH=$pkgconfig GOOS=$platform GOARCH=${{ matrix.arch }} GOBIN=$PWD/bin go build -o $PWD/bin/$pth -a -ldflags "-X github.com/t2bot/matrix-media-repo/common/version.Version=$(git describe --tags)" -v ./cmd/...
+          PKG_CONFIG_PATH=$pkgconfig GOOS=$platform GOARCH=${{ matrix.arch }} GOBIN=$PWD/bin go build -pgo=pgo_media_repo.pprof -o $PWD/bin/$pth -a -ldflags "-X github.com/t2bot/matrix-media-repo/common/version.Version=$(git describe --tags)" -v ./cmd/workers/media_repo
           cd $PWD/bin/$pth
           arch=${{ matrix.arch }}
           if [ "$arch" == "amd64" ]; then
