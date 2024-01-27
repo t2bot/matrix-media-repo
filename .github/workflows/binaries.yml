@@ -43,7 +43,7 @@ jobs:
           .\vcpkg integrate install
           .\vcpkg install libde265:x64-windows libheif:x64-windows
           cd ..
-          SET PATH=%PATH%;%CD%\\installed\\x64-windows\\lib\\pkgconfig
+          [Environment]::SetEnvironmentVariable("PATH", "$env:Path;$(Get-Location)\\vcpkg\\installed\\x64-windows\\lib\\pkgconfig", "Machine")
 
       - name: Install WSL
         if: runner.os == 'windows'
