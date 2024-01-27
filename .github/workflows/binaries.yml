@@ -34,33 +34,15 @@ jobs:
         if: runner.os == 'linux'
         run: "chmod +x ./.github/workflows/build-libheif.sh && ./.github/workflows/build-libheif.sh"
 
-      - name: Debug libheif (windows)
+      - name: Install libheif (windows)
         if: runner.os == 'windows'
-        shell: bash
         run: |
-          set -ex
-          apt-get install -y git cmake make pkg-config libx265-dev libde265-dev libjpeg-dev libtool
-          git clone https://github.com/strukturag/libheif.git
-          cd libheif
-          git checkout v1.17.6
-          mkdir build
-          cd build
-          cmake --preset=release ..
-          make
-          make install
-          ldconfig
+          git clone https://github.com/Microsoft/vcpkg.git
+          cd vcpkg
+          .\bootstrap-vcpkg.bat
+          .\vcpkg integrate install
+          .\vcpkg install libde265:x64-windows libheif:x64-windows
           cd ..
-
-#      - name: Install libheif (windows)
-#        if: runner.os == 'windows'
-#        shell: bash
-#        run: |
-#          git clone https://github.com/Microsoft/vcpkg.git
-#          cd vcpkg
-#          .\bootstrap-vcpkg.bat
-#          .\vcpkg integrate install
-#          .\vcpkg install libde265:x64-windows libheif:x64-windows
-#          cd ..
 
       - name: Dist
         shell: bash
