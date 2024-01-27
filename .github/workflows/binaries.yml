@@ -41,10 +41,9 @@ jobs:
           cd vcpkg
           .\bootstrap-vcpkg.bat
           .\vcpkg integrate install
-          .\vcpkg install libde265:x64-windows libde265:x86-windows
-          .\vcpkg install libheif:x64-windows libheif:x86-windows
+          .\vcpkg install libde265:x64-windows libheif:x64-windows
           cd ..
-          SET PATH=%PATH%;%CD%/installed/x64-windows/lib/pkgconfig;%CD%/installed/x86-windows/lib/pkgconfig
+          SET PATH=%PATH%;%CD%\\installed\\x64-windows\\lib\\pkgconfig
 
       - name: Install WSL
         if: runner.os == 'windows'
