@@ -44,10 +44,6 @@ jobs:
           .\vcpkg install libde265:x64-windows libheif:x64-windows
           cd ..
 
-      - name: Install WSL
-        if: runner.os == 'windows'
-        run: "wsl --install"
-
       - name: Dist
         shell: bash
         run: |
