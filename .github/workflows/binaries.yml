@@ -42,15 +42,15 @@ jobs:
           cd vcpkg
           .\bootstrap-vcpkg.bat
           .\vcpkg integrate install
-          .\vcpkg install libde265:x64-windows libde265:x86-windows
-          .\vcpkg install libheif:x64-windows libheif:x86-windows
+          .\vcpkg install libde265:x64-windows
+          .\vcpkg install libheif:x64-windows
           cd ..
 
       - name: Dist
         shell: bash
         run: |
           set -ex
-          pkgconfig=$PKG_CONFIG_PATH:$PWD/vcpkg/installed/x64-windows/lib/pkgconfig:$PWD/vcpkg/installed/x86-windows/lib/pkgconfig
+          pkgconfig=$PWD/vcpkg/installed/x64-windows/lib/pkgconfig
           platform=${{ runner.os }}
           platform=${platform,,}
           mkdir -p $PWD/bin/dist
