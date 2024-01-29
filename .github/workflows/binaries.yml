@@ -65,10 +65,10 @@ jobs:
           if [ "$arch" == "amd64" ]; then
             arch="x64"
           fi
-          if [ "${{ matrix.arch }}" == "windows" ]; then
+          if [ "$platform" == "windows" ]; then
             for file in * ; do mv -v $file ../dist/${file%.*}-win-${arch}.exe; done;
           else
-            for file in * ; do mv -v $file ../dist/${file}-${os}-${arch}; done;
+            for file in * ; do mv -v $file ../dist/${file}-${platform}-${arch}; done;
           fi
           cd ../../
           rm -rv $PWD/bin/dist/compile_assets*
