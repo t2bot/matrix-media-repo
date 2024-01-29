@@ -1,0 +1,80 @@
+name: Build release binaries
+
+on:
+  push:
+    #branches: ['travis/release-bin']
+    tags: ["*"]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+        arch:
+          - amd64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.20'
+
+      - name: Install libheif (linux)
+        if: runner.os == 'linux'
+        run: "chmod +x ./.github/workflows/build-libheif.sh && ./.github/workflows/build-libheif.sh"
+
+      - name: Install libheif (windows)
+        if: runner.os == 'windows'
+        run: |
+          choco install pkgconfiglite
+          git clone https://github.com/Microsoft/vcpkg.git
+          cd vcpkg
+          .\bootstrap-vcpkg.bat
+          .\vcpkg integrate install
+          .\vcpkg install libde265:x64-windows
+          .\vcpkg install libheif:x64-windows
+          cd ..
+
+      - name: Dist
+        shell: bash
+        run: |
+          set -ex
+          pkgconfig=$PWD/vcpkg/installed/x64-windows/lib/pkgconfig
+          platform=${{ runner.os }}
+          platform=${platform,,}
+          mkdir -p $PWD/bin/dist
+          GOBIN=$PWD/bin go install -v ./cmd/utilities/compile_assets
+          $PWD/bin/compile_assets
+          pth="$platform-${{ matrix.arch }}"
+          mkdir -p $PWD/bin/$pth
+          PKG_CONFIG_PATH=$pkgconfig GOOS=$platform GOARCH=${{ matrix.arch }} GOBIN=$PWD/bin go build -o $PWD/bin/$pth -a -ldflags "-X github.com/t2bot/matrix-media-repo/common/version.Version=$(git describe --tags)" -v ./cmd/...
+          PKG_CONFIG_PATH=$pkgconfig GOOS=$platform GOARCH=${{ matrix.arch }} GOBIN=$PWD/bin go build -pgo=pgo_media_repo.pprof -o $PWD/bin/$pth -a -ldflags "-X github.com/t2bot/matrix-media-repo/common/version.Version=$(git describe --tags)" -v ./cmd/workers/media_repo
+          cd $PWD/bin/$pth
+          arch=${{ matrix.arch }}
+          if [ "$arch" == "amd64" ]; then
+            arch="x64"
+          fi
+          if [ "$platform" == "windows" ]; then
+            for file in * ; do mv -v $file ../dist/${file%.*}-win-${arch}.exe; done;
+          else
+            for file in * ; do mv -v $file ../dist/${file}-${platform}-${arch}; done;
+          fi
+          cd ../../
+          rm -rv $PWD/bin/dist/compile_assets*
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}-${{ matrix.arch }}
+          path: ./bin/dist/*
