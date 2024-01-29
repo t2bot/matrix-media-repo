@@ -2,7 +2,7 @@ name: Build release binaries
 
 on:
   push:
-    branches: ['travis/release-bin']
+    #branches: ['travis/release-bin']
     tags: ["*"]
 
 jobs:
