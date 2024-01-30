@@ -8,7 +8,7 @@ import (
 
 func main() {
 	cfg := _common.InitImportPsqlMatrixDownload("Dendrite")
-	ctx := rcontext.InitialNoConfig()
+	ctx := rcontext.Initial()
 
 	ctx.Log.Debug("Connecting to homeserver database...")
 	hsDb, err := dendrite.OpenDatabase(cfg.ConnectionString, cfg.ServerName)

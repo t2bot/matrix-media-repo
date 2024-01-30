@@ -8,7 +8,7 @@ import (
 
 func main() {
 	cfg := _common.InitImportPsqlMatrixDownload("Synapse")
-	ctx := rcontext.InitialNoConfig()
+	ctx := rcontext.Initial()
 
 	ctx.Log.Debug("Connecting to homeserver database...")
 	hsDb, err := synapse.OpenDatabase(cfg.ConnectionString)
