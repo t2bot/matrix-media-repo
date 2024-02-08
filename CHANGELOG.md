@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Changed
 
 * Exports now use an internal timeout of 10 minutes instead of 1 minute when downloading files. This may still result in errors if downloading from S3 takes too long.
+* MMR now requires Go 1.21 for compilation.
 
 ### Fixed
 
