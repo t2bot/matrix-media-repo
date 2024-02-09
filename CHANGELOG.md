@@ -19,6 +19,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 * Exports now use an internal timeout of 10 minutes instead of 1 minute when downloading files. This may still result in errors if downloading from S3 takes too long.
 * MMR now requires Go 1.21 for compilation.
+* ARM-supported Docker images are now available through [GHCR](https://github.com/t2bot/matrix-media-repo/pkgs/container/matrix-media-repo).
+  * The Docker Hub (docker.io) builds are deprecated and will not receive updates starting with v1.4.0
+  * Docker Hub images are not guaranteed to have ARM compatibility.
+* The `latest` Docker tag on both Docker Hub and GHCR now points to the latest release instead of the unstable development build.
 
 ### Fixed
 
