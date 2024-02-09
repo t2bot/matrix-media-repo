@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+*Nothing yet.*
+
+## [v1.3.4] - February 9, 2024
+
 ### Added
 
 * Dendrite homeservers can now have their media imported safely, and `adminApiKind` may be set to `dendrite`.
@@ -492,7 +496,8 @@ a large database (more than about 100k uploaded files), run the following steps 
 * Various other features that would be expected like maximum/minimum size controls, rate limiting, etc. Check out the
   sample config for a better idea of what else is possible.
 
-[unreleased]: https://github.com/t2bot/matrix-media-repo/compare/v1.3.3...HEAD
+[unreleased]: https://github.com/t2bot/matrix-media-repo/compare/v1.3.4...HEAD
+[1.3.4]: https://github.com/t2bot/matrix-media-repo/compare/v1.3.3...v1.3.4
 [1.3.3]: https://github.com/t2bot/matrix-media-repo/compare/v1.3.2...v1.3.3
 [1.3.2]: https://github.com/t2bot/matrix-media-repo/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/t2bot/matrix-media-repo/compare/v1.3.0...v1.3.1
