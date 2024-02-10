@@ -48,6 +48,12 @@ func DownloadOrRedirect(ctx rcontext.RequestContext, ds config.DatastoreConfig, 
 	}
 
 	if s3c.publicBaseUrl != "" {
+		if s3c.fastlyApi != nil {
+			err = s3c.fastlyApi.SetDictionaryItem("test", "hello world")
+			if err != nil {
+				ctx.Log.Warn("Error updating Fastly API:", err)
+			}
+		}
 		metrics.S3Operations.With(prometheus.Labels{"operation": "RedirectGetObject"}).Inc()
 		return nil, redirect(fmt.Sprintf("%s%s", s3c.publicBaseUrl, dsFileName))
 	}

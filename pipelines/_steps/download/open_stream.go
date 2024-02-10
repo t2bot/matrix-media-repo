@@ -8,7 +8,6 @@ import (
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/database"
 	"github.com/t2bot/matrix-media-repo/datastores"
-	"github.com/t2bot/matrix-media-repo/redislib"
 	"github.com/t2bot/matrix-media-repo/util/readers"
 )
 
@@ -39,11 +38,11 @@ func OpenOrRedirect(ctx rcontext.RequestContext, media *database.Locatable) (io.
 }
 
 func doOpenStream(ctx rcontext.RequestContext, media *database.Locatable) (io.ReadSeekCloser, config.DatastoreConfig, error) {
-	reader, err := redislib.TryGetMedia(ctx, media.Sha256Hash)
-	if err != nil || reader != nil {
-		ctx.Log.Debugf("Got %s from cache", media.Sha256Hash)
-		return readers.NopSeekCloser(reader), config.DatastoreConfig{}, err
-	}
+	//reader, err := redislib.TryGetMedia(ctx, media.Sha256Hash)
+	//if err != nil || reader != nil {
+	//	ctx.Log.Debugf("Got %s from cache", media.Sha256Hash)
+	//	return readers.NopSeekCloser(reader), config.DatastoreConfig{}, err
+	//}
 
 	ds, ok := datastores.Get(ctx, media.DatastoreId)
 	if !ok {

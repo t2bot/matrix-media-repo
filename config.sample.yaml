@@ -208,6 +208,10 @@ datastores:
       # capability. MMR may still be responsible for bandwidth charges incurred from going to
       # the bucket directly.
       #publicBaseUrl: "https://mycdn.example.org/"
+      cdn: "fastly"
+      fastlyApiToken: "FASTLY_API_TOKEN"
+      fastlyServiceId: "some_string"
+      fastlyDictionaryName: "mmr_encrypt_keys"
 
 # Options for controlling archives. Archives are exports of a particular user's content for
 # the purpose of GDPR or moving media to a different server.
