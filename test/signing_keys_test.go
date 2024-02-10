@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/turt2live/matrix-media-repo/database"
-	"github.com/turt2live/matrix-media-repo/matrix"
-	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/t2bot/matrix-media-repo/database"
+	"github.com/t2bot/matrix-media-repo/matrix"
+	"github.com/t2bot/matrix-media-repo/util"
 )
 
 func TestFailInjectedKeys(t *testing.T) {

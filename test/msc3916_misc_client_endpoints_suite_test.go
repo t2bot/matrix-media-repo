@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"github.com/turt2live/matrix-media-repo/test/test_internals"
+	"github.com/t2bot/matrix-media-repo/test/test_internals"
 )
 
 type MSC3916MiscClientEndpointsSuite struct {
