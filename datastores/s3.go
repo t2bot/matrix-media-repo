@@ -9,6 +9,7 @@ import (
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
+	"github.com/t2bot/matrix-media-repo/cdn"
 	"github.com/t2bot/matrix-media-repo/common/config"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 )
@@ -20,6 +21,7 @@ type s3 struct {
 	storageClass  string
 	bucket        string
 	publicBaseUrl string
+	fastlyApi     *cdn.FastlyCdn
 }
 
 func ResetS3Clients() {
@@ -39,6 +41,11 @@ func getS3(ds config.DatastoreConfig) (*s3, error) {
 	storageClass, hasStorageClass := ds.Options["storageClass"]
 	useSslStr, hasSsl := ds.Options["ssl"]
 	publicBaseUrl := ds.Options["publicBaseUrl"]
+	cdnType := ds.Options["cdn"]
+
+	fastlyApiToken := ds.Options["fastlyApiToken"]
+	fastlyDictionaryName := ds.Options["fastlyDictionaryName"]
+	fastlyServiceId := ds.Options["fastlyServiceId"]
 
 	if !hasStorageClass {
 		storageClass = "STANDARD"
@@ -66,6 +73,11 @@ func getS3(ds config.DatastoreConfig) (*s3, error) {
 		bucket:        bucket,
 		publicBaseUrl: publicBaseUrl,
 	}
+
+	if cdnType == "fastly" {
+		s3c.fastlyApi = cdn.NewFastlyCdn(fastlyApiToken, fastlyServiceId, fastlyDictionaryName)
+	}
+
 	s3clients.Store(ds.Id, s3c)
 	return s3c, nil
 }
