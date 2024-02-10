@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/turt2live/matrix-media-repo/database"
-	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/t2bot/matrix-media-repo/database"
+	"github.com/t2bot/matrix-media-repo/util"
 )
 
 var ErrNoXMatrixAuth = errors.New("no X-Matrix auth headers")

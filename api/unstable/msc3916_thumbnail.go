@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"net/http"
 
-	"github.com/turt2live/matrix-media-repo/api/_apimeta"
-	"github.com/turt2live/matrix-media-repo/api/_responses"
-	"github.com/turt2live/matrix-media-repo/api/r0"
-	"github.com/turt2live/matrix-media-repo/common/rcontext"
-	"github.com/turt2live/matrix-media-repo/util/readers"
+	"github.com/t2bot/matrix-media-repo/api/_apimeta"
+	"github.com/t2bot/matrix-media-repo/api/_responses"
+	"github.com/t2bot/matrix-media-repo/api/r0"
+	"github.com/t2bot/matrix-media-repo/common/rcontext"
+	"github.com/t2bot/matrix-media-repo/util/readers"
 )
 
 func FederationThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, server _apimeta.ServerInfo) interface{} {

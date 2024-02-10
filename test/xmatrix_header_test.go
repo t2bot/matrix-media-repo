@@ -4,10 +4,10 @@ import (
 	"crypto/ed25519"
 	"testing"
 
-	"github.com/turt2live/matrix-media-repo/common/config"
-	"github.com/turt2live/matrix-media-repo/database"
-	"github.com/turt2live/matrix-media-repo/matrix"
-	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/t2bot/matrix-media-repo/common/config"
+	"github.com/t2bot/matrix-media-repo/database"
+	"github.com/t2bot/matrix-media-repo/matrix"
+	"github.com/t2bot/matrix-media-repo/util"
 )
 
 func TestXMatrixAuthHeader(t *testing.T) {

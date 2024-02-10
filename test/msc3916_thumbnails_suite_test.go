@@ -9,8 +9,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"github.com/turt2live/matrix-media-repo/test/test_internals"
-	"github.com/turt2live/matrix-media-repo/util"
+	"github.com/t2bot/matrix-media-repo/test/test_internals"
+	"github.com/t2bot/matrix-media-repo/util"
 )
 
 type MSC3916ThumbnailsSuite struct {
