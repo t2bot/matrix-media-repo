@@ -35,6 +35,12 @@ func NewRContextRouter(generatorFn GeneratorFn, next http.Handler) *RContextRout
 }
 
 func (c *RContextRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	defer func() {
+		if c.next != nil {
+			c.next.ServeHTTP(w, r)
+		}
+	}()
+
 	log := GetLogger(r)
 	rctx := rcontext.RequestContext{
 		Context: r.Context(),
@@ -251,10 +257,6 @@ beforeParseDownload:
 	}
 	if expectedBytes > 0 && written != expectedBytes {
 		panic(errors.New(fmt.Sprintf("mismatch transfer size: %d expected, %d sent", expectedBytes, written)))
-	}
-
-	if c.next != nil {
-		c.next.ServeHTTP(w, r)
 	}
 }
 
