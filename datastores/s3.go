@@ -16,10 +16,11 @@ import (
 var s3clients = &sync.Map{}
 
 type s3 struct {
-	client        *minio.Client
-	storageClass  string
-	bucket        string
-	publicBaseUrl string
+	client             *minio.Client
+	storageClass       string
+	bucket             string
+	publicBaseUrl      string
+	redirectWhenCached bool
 }
 
 func ResetS3Clients() {
@@ -39,6 +40,7 @@ func getS3(ds config.DatastoreConfig) (*s3, error) {
 	storageClass, hasStorageClass := ds.Options["storageClass"]
 	useSslStr, hasSsl := ds.Options["ssl"]
 	publicBaseUrl := ds.Options["publicBaseUrl"]
+	redirectWhenCachedStr, hasRedirectWhenCached := ds.Options["redirectWhenCached"]
 
 	if !hasStorageClass {
 		storageClass = "STANDARD"
@@ -47,6 +49,11 @@ func getS3(ds config.DatastoreConfig) (*s3, error) {
 	useSsl := true
 	if hasSsl && useSslStr != "" {
 		useSsl, _ = strconv.ParseBool(useSslStr)
+	}
+
+	redirectWhenCached := false
+	if hasRedirectWhenCached && redirectWhenCachedStr != "" {
+		redirectWhenCached, _ = strconv.ParseBool(redirectWhenCachedStr)
 	}
 
 	var err error
@@ -61,10 +68,11 @@ func getS3(ds config.DatastoreConfig) (*s3, error) {
 	}
 
 	s3c := &s3{
-		client:        client,
-		storageClass:  storageClass,
-		bucket:        bucket,
-		publicBaseUrl: publicBaseUrl,
+		client:             client,
+		storageClass:       storageClass,
+		bucket:             bucket,
+		publicBaseUrl:      publicBaseUrl,
+		redirectWhenCached: redirectWhenCached,
 	}
 	s3clients.Store(ds.Id, s3c)
 	return s3c, nil

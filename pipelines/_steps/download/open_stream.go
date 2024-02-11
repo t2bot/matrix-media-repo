@@ -13,7 +13,7 @@ import (
 )
 
 func OpenStream(ctx rcontext.RequestContext, media *database.Locatable) (io.ReadSeekCloser, error) {
-	reader, ds, err := doOpenStream(ctx, media)
+	reader, ds, err := doOpenStream(ctx, media, false)
 	if err != nil {
 		return nil, err
 	}
@@ -26,7 +26,7 @@ func OpenStream(ctx rcontext.RequestContext, media *database.Locatable) (io.Read
 }
 
 func OpenOrRedirect(ctx rcontext.RequestContext, media *database.Locatable) (io.ReadSeekCloser, error) {
-	reader, ds, err := doOpenStream(ctx, media)
+	reader, ds, err := doOpenStream(ctx, media, true)
 	if err != nil {
 		return nil, err
 	}
@@ -38,16 +38,26 @@ func OpenOrRedirect(ctx rcontext.RequestContext, media *database.Locatable) (io.
 	return datastores.DownloadOrRedirect(ctx, ds, media.Location)
 }
 
-func doOpenStream(ctx rcontext.RequestContext, media *database.Locatable) (io.ReadSeekCloser, config.DatastoreConfig, error) {
-	reader, err := redislib.TryGetMedia(ctx, media.Sha256Hash)
-	if err != nil || reader != nil {
-		ctx.Log.Debugf("Got %s from cache", media.Sha256Hash)
-		return readers.NopSeekCloser(reader), config.DatastoreConfig{}, err
-	}
-
+func doOpenStream(ctx rcontext.RequestContext, media *database.Locatable, canRedirect bool) (io.ReadSeekCloser, config.DatastoreConfig, error) {
 	ds, ok := datastores.Get(ctx, media.DatastoreId)
 	if !ok {
 		return nil, ds, errors.New("unable to locate datastore for media")
+	}
+
+	redirectWhenCached, err := datastores.WouldRedirectWhenCached(ctx, ds)
+	if err != nil {
+		ctx.Log.Warn("Unable to determine if cache would be ignored: ", err)
+		redirectWhenCached = false
+	}
+
+	if !redirectWhenCached || !canRedirect {
+		reader, err := redislib.TryGetMedia(ctx, media.Sha256Hash)
+		if err != nil || reader != nil {
+			ctx.Log.Debugf("Got %s from cache", media.Sha256Hash)
+			return readers.NopSeekCloser(reader), config.DatastoreConfig{}, err
+		}
+	} else {
+		ctx.Log.Debugf("Ignoring cache for %s", media.Sha256Hash)
 	}
 
 	return nil, ds, nil
