@@ -54,3 +54,16 @@ func DownloadOrRedirect(ctx rcontext.RequestContext, ds config.DatastoreConfig, 
 
 	return Download(ctx, ds, dsFileName)
 }
+
+func WouldRedirectWhenCached(ctx rcontext.RequestContext, ds config.DatastoreConfig) (bool, error) {
+	if ds.Type != "s3" {
+		return false, nil
+	}
+
+	s3c, err := getS3(ds)
+	if err != nil {
+		return false, err
+	}
+
+	return s3c.redirectWhenCached && s3c.publicBaseUrl != "", nil
+}

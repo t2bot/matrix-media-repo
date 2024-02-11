@@ -208,6 +208,10 @@ datastores:
       # capability. MMR may still be responsible for bandwidth charges incurred from going to
       # the bucket directly.
       #publicBaseUrl: "https://mycdn.example.org/"
+      # Set to `true` to bypass any local cache when `publicBaseUrl` is set. Has no effect
+      # when `publicBaseUrl` is unset. Defaults to false (cached media will be served by MMR
+      # before redirection if present).
+      #redirectWhenCached: true
 
 # Options for controlling archives. Archives are exports of a particular user's content for
 # the purpose of GDPR or moving media to a different server.

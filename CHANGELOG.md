@@ -7,7 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
-*Nothing yet.*
+### Added
+
+* New datastore option to ignore Redis cache when downloading media served by a `publicBaseUrl`. This can help ensure more requests get redirected to the CDN.
 
 ## [1.3.4] - February 9, 2024
 
