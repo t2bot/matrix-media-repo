@@ -45,15 +45,18 @@ func GenerateThumbnail(imgStream io.ReadCloser, contentType string, width int, h
 	if err != nil {
 		return nil, errors.New("error getting dimensions: " + err.Error())
 	}
-	if dimensional && (w*h) >= ctx.Config.Thumbnails.MaxPixels {
-		ctx.Log.Debug("Image too large: too many pixels")
-		return nil, common.ErrMediaTooLarge
-	}
+	if dimensional {
+		if (w * h) >= ctx.Config.Thumbnails.MaxPixels {
+			ctx.Log.Debug("Image too large: too many pixels")
+			return nil, common.ErrMediaTooLarge
+		}
 
-	var shouldThumbnail bool
-	shouldThumbnail, width, height, _, method = u.AdjustProperties(w, h, width, height, animated, method)
-	if !shouldThumbnail && dimensional {
-		return nil, common.ErrMediaDimensionsTooSmall
+		// While we're here, check to ensure we're not about to produce a thumbnail which is larger than the source material
+		shouldThumbnail := true
+		shouldThumbnail, width, height, method = u.AdjustProperties(w, h, width, height, animated, method)
+		if !shouldThumbnail {
+			return nil, common.ErrMediaDimensionsTooSmall
+		}
 	}
 
 	return generator.GenerateThumbnail(buffered.GetRewoundReader(), contentType, width, height, method, animated, ctx)
