@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Fixed
 
 * Metrics for redirected and HTML requests are tracked.
+* Fixed more issues relating to non-dimensional media being thumbnailed (`invalid image size: 0x0` errors).
 
 ## [1.3.4] - February 9, 2024
 
