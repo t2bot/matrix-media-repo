@@ -4,6 +4,7 @@ import (
 	"crypto/ed25519"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/t2bot/matrix-media-repo/common/config"
 	"github.com/t2bot/matrix-media-repo/database"
 	"github.com/t2bot/matrix-media-repo/matrix"
@@ -31,7 +32,5 @@ func TestXMatrixAuthHeader(t *testing.T) {
 	keys := make(matrix.ServerSigningKeys)
 	keys["ed25519:0"] = pub
 	err = matrix.ValidateXMatrixAuthHeader("GET", "/_matrix/media/v3/download/example.org/abc", &database.AnonymousJson{}, auths, keys)
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 }
