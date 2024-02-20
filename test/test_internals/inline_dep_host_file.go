@@ -1,7 +1,9 @@
 package test_internals
 
 import (
+	"context"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path"
@@ -20,6 +22,11 @@ type HostedFile struct {
 
 func ServeFile(fileName string, deps *ContainerDeps, contents string) (*HostedFile, error) {
 	tmp, err := os.MkdirTemp(os.TempDir(), "mmr-nginx")
+	if err != nil {
+		return nil, err
+	}
+
+	err = os.Chmod(tmp, 0755)
 	if err != nil {
 		return nil, err
 	}
@@ -79,4 +86,8 @@ func (f *HostedFile) Teardown() {
 	if err := os.RemoveAll(f.tempDirectoryPath); err != nil {
 		log.Fatalf("Error cleaning up temporarily hosted file: %s", err.Error())
 	}
+}
+
+func (f *HostedFile) Logs() (io.ReadCloser, error) {
+	return f.nginx.Logs(context.Background())
 }
