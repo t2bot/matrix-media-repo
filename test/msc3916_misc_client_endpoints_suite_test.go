@@ -33,6 +33,10 @@ func (s *MSC3916MiscClientEndpointsSuite) SetupSuite() {
 
 func (s *MSC3916MiscClientEndpointsSuite) TearDownSuite() {
 	if s.htmlPage != nil {
+		if s.T().Failed() {
+			staticLogs, err := s.htmlPage.Logs()
+			s.deps.DumpDebugLogs(staticLogs, err, -1, s.htmlPage.PublicUrl)
+		}
 		s.htmlPage.Teardown()
 	}
 	if s.deps != nil {
