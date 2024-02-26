@@ -16,16 +16,16 @@ type ExifOrientation struct {
 
 func GetExifOrientation(img io.Reader) (*ExifOrientation, error) {
 	rawExif, err := exif.SearchAndExtractExifWithReader(img)
-	if err != nil {
-		if errors.Is(err, exif.ErrNoExif) {
-			return nil, nil
-		}
-		return nil, errors.New("exif: error reading possible exif data: " + err.Error())
+	switch {
+	case errors.Is(err, exif.ErrNoExif):
+		return nil, nil
+	case err != nil:
+		return nil, fmt.Errorf("exif: error reading possible exif data: %w", err)
 	}
 
 	tags, _, err := exif.GetFlatExifData(rawExif, nil)
 	if err != nil {
-		return nil, errors.New("exif: error parsing exif data: " + err.Error())
+		return nil, fmt.Errorf("exif: error parsing exif data: %w", err)
 	}
 
 	var tag exif.ExifTag

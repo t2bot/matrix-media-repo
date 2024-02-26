@@ -2,6 +2,7 @@ package u
 
 import (
 	"errors"
+	"fmt"
 	"math"
 
 	"github.com/faiface/beep"
@@ -16,7 +17,7 @@ func FastSampleAudio(stream beep.StreamSeekCloser, numSamples int) ([][2]float64
 		if stream.Position() != pos {
 			err := stream.Seek(pos)
 			if err != nil {
-				return nil, errors.New("fast-sample: could not seek: " + err.Error())
+				return nil, fmt.Errorf("fast-sample: could not seek: %w", err)
 			}
 		}
 

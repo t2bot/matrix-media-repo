@@ -2,7 +2,7 @@ package database
 
 import (
 	"database/sql"
-	"errors"
+	"fmt"
 
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/util"
@@ -35,13 +35,13 @@ type heldMediaTableWithContext struct {
 
 func prepareHeldMediaTables(db *sql.DB) (*heldMediaTableStatements, error) {
 	var err error
-	var stmts = &heldMediaTableStatements{}
+	stmts := &heldMediaTableStatements{}
 
 	if stmts.insertHeldMedia, err = db.Prepare(insertHeldMedia); err != nil {
-		return nil, errors.New("error preparing insertHeldMedia: " + err.Error())
+		return nil, fmt.Errorf("error preparing insertHeldMedia: %w", err)
 	}
 	if stmts.deleteHeldMedia, err = db.Prepare(deleteHeldMedia); err != nil {
-		return nil, errors.New("error preparing deleteHeldMedia: " + err.Error())
+		return nil, fmt.Errorf("error preparing deleteHeldMedia: %w", err)
 	}
 
 	return stmts, nil

@@ -1,7 +1,7 @@
 package u
 
 import (
-	"errors"
+	"fmt"
 	"io"
 	"os"
 
@@ -18,8 +18,8 @@ func GetID3Tags(b io.Reader) (tag.Metadata, io.ReadSeekCloser, error) {
 	tryCleanup := func() {
 		if f != nil {
 			if err = os.Remove(f.Name()); err != nil && !os.IsNotExist(err) {
-				logrus.Warnf("Error deleting temp file '%s': %s", f.Name(), err.Error())
-				sentry.CaptureException(errors.New("id3: error deleting temp file: " + err.Error()))
+				logrus.Warnf("Error deleting temp file '%s': %v", f.Name(), err)
+				sentry.CaptureException(fmt.Errorf("id3: error deleting temp file: %v", err))
 			}
 		}
 	}

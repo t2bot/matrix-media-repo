@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/util"
@@ -42,16 +43,16 @@ type urlPreviewsTableWithContext struct {
 
 func prepareUrlPreviewsTables(db *sql.DB) (*urlPreviewsTableStatements, error) {
 	var err error
-	var stmts = &urlPreviewsTableStatements{}
+	stmts := &urlPreviewsTableStatements{}
 
 	if stmts.selectUrlPreview, err = db.Prepare(selectUrlPreview); err != nil {
-		return nil, errors.New("error preparing selectUrlPreview: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectUrlPreview: %w", err)
 	}
 	if stmts.insertUrlPreview, err = db.Prepare(insertUrlPreview); err != nil {
-		return nil, errors.New("error preparing insertUrlPreview: " + err.Error())
+		return nil, fmt.Errorf("error preparing insertUrlPreview: %w", err)
 	}
 	if stmts.deleteOldUrlPreviews, err = db.Prepare(deleteOldUrlPreviews); err != nil {
-		return nil, errors.New("error preparing deleteOldUrlPreviews: " + err.Error())
+		return nil, fmt.Errorf("error preparing deleteOldUrlPreviews: %w", err)
 	}
 
 	return stmts, nil

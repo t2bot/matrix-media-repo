@@ -26,7 +26,7 @@ func ExtractExifOrientation(r io.Reader) *ExifOrientation {
 	orientation, err := GetExifOrientation(r)
 	if err != nil {
 		// assume no orientation if there was an error reading the exif header
-		logrus.Warn("Non-fatal error reading exif headers:", err.Error())
+		logrus.Warnf("Non-fatal error reading exif headers: %v", err)
 		sentry.CaptureException(err)
 		orientation = nil
 	}

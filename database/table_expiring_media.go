@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/util"
@@ -40,19 +41,19 @@ type expiringMediaTableWithContext struct {
 
 func prepareExpiringMediaTables(db *sql.DB) (*expiringMediaTableStatements, error) {
 	var err error
-	var stmts = &expiringMediaTableStatements{}
+	stmts := &expiringMediaTableStatements{}
 
 	if stmts.insertExpiringMedia, err = db.Prepare(insertExpiringMedia); err != nil {
-		return nil, errors.New("error preparing insertExpiringMedia: " + err.Error())
+		return nil, fmt.Errorf("error preparing insertExpiringMedia: %w", err)
 	}
 	if stmts.selectExpiringMediaByUserCount, err = db.Prepare(selectExpiringMediaByUserCount); err != nil {
-		return nil, errors.New("error preparing selectExpiringMediaByUserCount: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectExpiringMediaByUserCount: %w", err)
 	}
 	if stmts.selectExpiringMediaById, err = db.Prepare(selectExpiringMediaById); err != nil {
-		return nil, errors.New("error preparing selectExpiringMediaById: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectExpiringMediaById: %w", err)
 	}
 	if stmts.deleteExpiringMediaById, err = db.Prepare(deleteExpiringMediaById); err != nil {
-		return nil, errors.New("error preparing deleteExpiringMediaById: " + err.Error())
+		return nil, fmt.Errorf("error preparing deleteExpiringMediaById: %w", err)
 	}
 
 	return stmts, nil

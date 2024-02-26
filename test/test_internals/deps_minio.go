@@ -125,6 +125,6 @@ func MakeMinio(depNet *NetworkDep) (*MinioDep, error) {
 
 func (c *MinioDep) Teardown() {
 	if err := c.container.Terminate(c.ctx); err != nil {
-		log.Fatalf("Error shutting down minio: %s", err.Error())
+		log.Fatalf("Error shutting down minio: %v", err)
 	}
 }

@@ -1,7 +1,7 @@
 package i
 
 import (
-	"errors"
+	"fmt"
 	"image"
 	"io"
 	"slices"
@@ -11,8 +11,7 @@ import (
 	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
 )
 
-type heifGenerator struct {
-}
+type heifGenerator struct{}
 
 func (d heifGenerator) supportedContentTypes() []string {
 	return []string{"image/heif", "image/heic"}
@@ -37,7 +36,7 @@ func (d heifGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx 
 func (d heifGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
 	src, _, err := image.Decode(b)
 	if err != nil {
-		return nil, errors.New("heif: error decoding thumbnail: " + err.Error())
+		return nil, fmt.Errorf("heif: error decoding thumbnail: %w", err)
 	}
 
 	return pngGenerator{}.GenerateThumbnailOf(src, width, height, method, ctx)

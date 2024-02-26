@@ -1,7 +1,7 @@
 package i
 
 import (
-	"errors"
+	"fmt"
 	"io"
 
 	"github.com/faiface/beep"
@@ -12,8 +12,7 @@ import (
 	"github.com/t2bot/matrix-media-repo/util/readers"
 )
 
-type oggGenerator struct {
-}
+type oggGenerator struct{}
 
 func (d oggGenerator) supportedContentTypes() []string {
 	return []string{"audio/ogg"}
@@ -30,7 +29,7 @@ func (d oggGenerator) matches(img io.Reader, contentType string) bool {
 func (d oggGenerator) decode(b io.Reader) (beep.StreamSeekCloser, beep.Format, error) {
 	audio, format, err := vorbis.Decode(readers.MakeCloser(b))
 	if err != nil {
-		return audio, format, errors.New("ogg: error decoding audio: " + err.Error())
+		return audio, format, fmt.Errorf("ogg: error decoding audio: %w", err)
 	}
 	return audio, format, nil
 }
@@ -42,7 +41,7 @@ func (d oggGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx r
 func (d oggGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
 	tags, rc, err := u.GetID3Tags(b)
 	if err != nil {
-		return nil, errors.New("ogg: error getting tags: " + err.Error())
+		return nil, fmt.Errorf("ogg: error getting tags: %v", err)
 	}
 	//goland:noinspection GoUnhandledErrorResult
 	defer rc.Close()

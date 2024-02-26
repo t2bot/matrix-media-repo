@@ -45,17 +45,17 @@ func PreviewUrl(r *http.Request, rctx rcontext.RequestContext, user _apimeta.Use
 		ts, err = strconv.ParseInt(tsStr, 10, 64)
 		if err != nil {
 			rctx.Log.Error("Error parsing ts: ", err)
-			return _responses.BadRequest(err.Error())
+			return _responses.BadRequest(err)
 		}
 	}
 
 	// Validate the URL
 	if urlStr == "" {
-		return _responses.BadRequest("No url provided")
+		return _responses.BadRequest(errors.New("No url provided"))
 	}
 	//goland:noinspection HttpUrlsUsage
 	if strings.Index(urlStr, "http://") != 0 && strings.Index(urlStr, "https://") != 0 {
-		return _responses.BadRequest("Scheme not accepted")
+		return _responses.BadRequest(errors.New("Scheme not accepted"))
 	}
 
 	languageHeader := rctx.Config.UrlPreviews.DefaultLanguage
@@ -79,12 +79,12 @@ func PreviewUrl(r *http.Request, rctx rcontext.RequestContext, user _apimeta.Use
 	if err != nil {
 		if errors.Is(err, common.ErrMediaNotFound) || errors.Is(err, common.ErrHostNotFound) {
 			return _responses.NotFoundError()
-		} else if errors.Is(err, common.ErrInvalidHost) || errors.Is(err, common.ErrHostNotAllowed) {
-			return _responses.BadRequest(err.Error())
-		} else {
-			sentry.CaptureException(err)
-			return _responses.InternalServerError("Unexpected Error")
 		}
+		if errors.Is(err, common.ErrInvalidHost) || errors.Is(err, common.ErrHostNotAllowed) {
+			return _responses.BadRequest(err)
+		}
+		sentry.CaptureException(err)
+		return _responses.InternalServerError(errors.New("Unexpected Error"))
 	}
 
 	return &MatrixOpenGraph{

@@ -2,6 +2,7 @@ package custom
 
 import (
 	"bytes"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -39,7 +40,7 @@ type ExportMetadata struct {
 
 func ExportUserData(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
 	if !rctx.Config.Archiving.Enabled {
-		return _responses.BadRequest("archiving is not enabled")
+		return _responses.BadRequest(errors.New("archiving is not enabled"))
 	}
 
 	isAdmin := util.IsGlobalAdmin(user.UserId) || user.IsShared
@@ -52,7 +53,7 @@ func ExportUserData(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 	userId := _routers.GetParam("userId", r)
 
 	if !isAdmin && user.UserId != userId {
-		return _responses.BadRequest("cannot export data for another user")
+		return _responses.BadRequest(errors.New("cannot export data for another user"))
 	}
 
 	rctx = rctx.LogWithFields(logrus.Fields{
@@ -63,7 +64,7 @@ func ExportUserData(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("fatal error starting export")
+		return _responses.InternalServerError(errors.New("fatal error starting export"))
 	}
 
 	return &_responses.DoNotCacheResponse{Payload: &ExportStarted{
@@ -74,7 +75,7 @@ func ExportUserData(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 
 func ExportServerData(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
 	if !rctx.Config.Archiving.Enabled {
-		return _responses.BadRequest("archiving is not enabled")
+		return _responses.BadRequest(errors.New("archiving is not enabled"))
 	}
 
 	isAdmin := util.IsGlobalAdmin(user.UserId) || user.IsShared
@@ -91,7 +92,7 @@ func ExportServerData(r *http.Request, rctx rcontext.RequestContext, user _apime
 
 		// We won't be able to check unless we know about the homeserver though
 		if !util.IsServerOurs(serverName) {
-			return _responses.BadRequest("cannot export data for another server")
+			return _responses.BadRequest(errors.New("cannot export data for another server"))
 		}
 
 		isLocalAdmin, err := matrix.IsUserAdmin(rctx, serverName, user.AccessToken, r.RemoteAddr)
@@ -100,7 +101,7 @@ func ExportServerData(r *http.Request, rctx rcontext.RequestContext, user _apime
 			isLocalAdmin = false
 		}
 		if !isLocalAdmin {
-			return _responses.BadRequest("cannot export data for another server")
+			return _responses.BadRequest(errors.New("cannot export data for another server"))
 		}
 	}
 
@@ -112,7 +113,7 @@ func ExportServerData(r *http.Request, rctx rcontext.RequestContext, user _apime
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("fatal error starting export")
+		return _responses.InternalServerError(errors.New("fatal error starting export"))
 	}
 
 	return &_responses.DoNotCacheResponse{Payload: &ExportStarted{
@@ -123,13 +124,13 @@ func ExportServerData(r *http.Request, rctx rcontext.RequestContext, user _apime
 
 func ViewExport(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
 	if !rctx.Config.Archiving.Enabled {
-		return _responses.BadRequest("archiving is not enabled")
+		return _responses.BadRequest(errors.New("archiving is not enabled"))
 	}
 
 	exportId := _routers.GetParam("exportId", r)
 
 	if !_routers.ServerNameRegex.MatchString(exportId) {
-		_responses.BadRequest("invalid export ID")
+		_responses.BadRequest(errors.New("invalid export ID"))
 	}
 
 	rctx = rctx.LogWithFields(logrus.Fields{
@@ -143,7 +144,7 @@ func ViewExport(r *http.Request, rctx rcontext.RequestContext, user _apimeta.Use
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("failed to get entity for export ID")
+		return _responses.InternalServerError(errors.New("failed to get entity for export ID"))
 	}
 	if entityId == "" {
 		return _responses.NotFoundError()
@@ -153,14 +154,14 @@ func ViewExport(r *http.Request, rctx rcontext.RequestContext, user _apimeta.Use
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("failed to get export parts")
+		return _responses.InternalServerError(errors.New("failed to get export parts"))
 	}
 
 	template, err := templating.GetTemplate("view_export")
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("failed to get template")
+		return _responses.InternalServerError(errors.New("failed to get template"))
 	}
 
 	model := &templating.ViewExportModel{
@@ -183,7 +184,7 @@ func ViewExport(r *http.Request, rctx rcontext.RequestContext, user _apimeta.Use
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("failed to render template")
+		return _responses.InternalServerError(errors.New("failed to render template"))
 	}
 
 	return &_responses.HtmlResponse{HTML: html.String()}
@@ -191,13 +192,13 @@ func ViewExport(r *http.Request, rctx rcontext.RequestContext, user _apimeta.Use
 
 func GetExportMetadata(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
 	if !rctx.Config.Archiving.Enabled {
-		return _responses.BadRequest("archiving is not enabled")
+		return _responses.BadRequest(errors.New("archiving is not enabled"))
 	}
 
 	exportId := _routers.GetParam("exportId", r)
 
 	if !_routers.ServerNameRegex.MatchString(exportId) {
-		_responses.BadRequest("invalid export ID")
+		_responses.BadRequest(errors.New("invalid export ID"))
 	}
 
 	rctx = rctx.LogWithFields(logrus.Fields{
@@ -211,14 +212,14 @@ func GetExportMetadata(r *http.Request, rctx rcontext.RequestContext, user _apim
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("failed to get entity for export ID")
+		return _responses.InternalServerError(errors.New("failed to get entity for export ID"))
 	}
 
 	parts, err := partsDb.GetForExport(exportId)
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("failed to get export parts")
+		return _responses.InternalServerError(errors.New("failed to get export parts"))
 	}
 
 	metadata := &ExportMetadata{
@@ -238,20 +239,20 @@ func GetExportMetadata(r *http.Request, rctx rcontext.RequestContext, user _apim
 
 func DownloadExportPart(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
 	if !rctx.Config.Archiving.Enabled {
-		return _responses.BadRequest("archiving is not enabled")
+		return _responses.BadRequest(errors.New("archiving is not enabled"))
 	}
 
 	exportId := _routers.GetParam("exportId", r)
 	pid := _routers.GetParam("partId", r)
 
 	if !_routers.ServerNameRegex.MatchString(exportId) {
-		_responses.BadRequest("invalid export ID")
+		_responses.BadRequest(errors.New("invalid export ID"))
 	}
 
 	partId, err := strconv.Atoi(pid)
 	if err != nil {
 		rctx.Log.Error(err)
-		return _responses.BadRequest("invalid part index")
+		return _responses.BadRequest(errors.New("invalid part index"))
 	}
 
 	rctx = rctx.LogWithFields(logrus.Fields{
@@ -264,7 +265,7 @@ func DownloadExportPart(r *http.Request, rctx rcontext.RequestContext, user _api
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("failed to get part")
+		return _responses.InternalServerError(errors.New("failed to get part"))
 	}
 
 	if part == nil {
@@ -274,13 +275,13 @@ func DownloadExportPart(r *http.Request, rctx rcontext.RequestContext, user _api
 	dsConf, ok := datastores.Get(rctx, part.DatastoreId)
 	if !ok {
 		sentry.CaptureMessage("failed to locate datastore")
-		return _responses.InternalServerError("failed to locate datastore")
+		return _responses.InternalServerError(errors.New("failed to locate datastore"))
 	}
 	s, err := datastores.Download(rctx, dsConf, part.Location)
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("failed to start download")
+		return _responses.InternalServerError(errors.New("failed to start download"))
 	}
 
 	return &_responses.DownloadResponse{
@@ -294,13 +295,13 @@ func DownloadExportPart(r *http.Request, rctx rcontext.RequestContext, user _api
 
 func DeleteExport(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
 	if !rctx.Config.Archiving.Enabled {
-		return _responses.BadRequest("archiving is not enabled")
+		return _responses.BadRequest(errors.New("archiving is not enabled"))
 	}
 
 	exportId := _routers.GetParam("exportId", r)
 
 	if !_routers.ServerNameRegex.MatchString(exportId) {
-		_responses.BadRequest("invalid export ID")
+		_responses.BadRequest(errors.New("invalid export ID"))
 	}
 
 	rctx = rctx.LogWithFields(logrus.Fields{
@@ -315,7 +316,7 @@ func DeleteExport(r *http.Request, rctx rcontext.RequestContext, user _apimeta.U
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("failed to get export parts")
+		return _responses.InternalServerError(errors.New("failed to get export parts"))
 	}
 
 	for _, part := range parts {
@@ -324,7 +325,7 @@ func DeleteExport(r *http.Request, rctx rcontext.RequestContext, user _apimeta.U
 		if err != nil {
 			rctx.Log.Error(err)
 			sentry.CaptureException(err)
-			return _responses.InternalServerError("failed to delete export part")
+			return _responses.InternalServerError(errors.New("failed to delete export part"))
 		}
 	}
 
@@ -333,13 +334,13 @@ func DeleteExport(r *http.Request, rctx rcontext.RequestContext, user _apimeta.U
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("failed to delete export parts")
+		return _responses.InternalServerError(errors.New("failed to delete export parts"))
 	}
 	err = exportDb.Delete(exportId)
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("failed to delete export record")
+		return _responses.InternalServerError(errors.New("failed to delete export record"))
 	}
 
 	return _responses.EmptyResponse{}

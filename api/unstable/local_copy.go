@@ -28,14 +28,14 @@ func LocalCopy(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 	rctx.Log.Warn("This endpoint is deprecated. See https://github.com/t2bot/matrix-media-repo/issues/422")
 
 	if !_routers.ServerNameRegex.MatchString(server) {
-		return _responses.BadRequest("invalid server ID")
+		return _responses.BadRequest(errors.New("invalid server ID"))
 	}
 
 	downloadRemote := true
 	if allowRemote != "" {
 		parsedFlag, err := strconv.ParseBool(allowRemote)
 		if err != nil {
-			return _responses.InternalServerError("allow_remote flag does not appear to be a boolean")
+			return _responses.InternalServerError(errors.New("allow_remote flag does not appear to be a boolean"))
 		}
 		downloadRemote = parsedFlag
 	}
@@ -52,7 +52,7 @@ func LocalCopy(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 	}
 
 	if r.Host == server {
-		return _responses.BadRequest("Attempted to clone media to the same origin")
+		return _responses.BadRequest(errors.New("Attempted to clone media to the same origin"))
 	}
 
 	// TODO: There's a lot of room for improvement here. Instead of re-uploading media, we should just update the DB.
@@ -80,7 +80,7 @@ func LocalCopy(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 		}
 		rctx.Log.Error("Unexpected error locating media: ", err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("Unexpected Error")
+		return _responses.InternalServerError(errors.New("Unexpected Error"))
 	}
 
 	record, err = pipeline_upload.Execute(rctx, server, mediaId, stream, record.ContentType, record.UploadName, user.UserId, datastores.LocalMediaKind)
@@ -91,7 +91,7 @@ func LocalCopy(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 		}
 		rctx.Log.Error("Unexpected error uploading media: ", err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("Unexpected Error")
+		return _responses.InternalServerError(errors.New("Unexpected Error"))
 	}
 
 	return &r0.MediaUploadedResponse{

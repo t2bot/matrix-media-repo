@@ -167,15 +167,15 @@ func (c *ContainerDeps) Teardown() {
 		hs.Teardown()
 	}
 	if err := c.redisContainer.Terminate(c.ctx); err != nil {
-		log.Fatalf("Error shutting down redis container: %s", err.Error())
+		log.Fatalf("Error shutting down redis container: %v", err)
 	}
 	if err := c.pgContainer.Terminate(c.ctx); err != nil {
-		log.Fatalf("Error shutting down mmr-postgres container: %s", err.Error())
+		log.Fatalf("Error shutting down mmr-postgres container: %v", err)
 	}
 	c.minioDep.Teardown()
 	c.depNet.Teardown()
 	if err := os.Remove(c.mmrExtConfigPath); err != nil && !os.IsNotExist(err) {
-		log.Fatalf("Error cleaning up MMR-External config file '%s': %s", c.mmrExtConfigPath, err.Error())
+		log.Fatalf("Error cleaning up MMR-External config file '%s': %v", c.mmrExtConfigPath, err)
 	}
 }
 

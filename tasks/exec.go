@@ -82,7 +82,7 @@ func beginTask(task *database.DbTask) {
 			sentry.CaptureMessage(m)
 		}
 	}); err != nil {
-		m := fmt.Sprintf("Error trying to schedule task %s (ID: %d): %s", task.Name, task.TaskId, err.Error())
+		m := fmt.Sprintf("Error trying to schedule task %s (ID: %d): %v", task.Name, task.TaskId, err)
 		runnerCtx.Log.Warn(m)
 		sentry.CaptureMessage(m)
 		time.AfterFunc(15*time.Second, func() {

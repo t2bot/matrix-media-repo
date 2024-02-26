@@ -1,7 +1,7 @@
 package i
 
 import (
-	"errors"
+	"fmt"
 	"io"
 
 	"github.com/faiface/beep"
@@ -11,8 +11,7 @@ import (
 	"github.com/t2bot/matrix-media-repo/thumbnailing/u"
 )
 
-type flacGenerator struct {
-}
+type flacGenerator struct{}
 
 func (d flacGenerator) supportedContentTypes() []string {
 	return []string{"audio/flac"}
@@ -29,7 +28,7 @@ func (d flacGenerator) matches(img io.Reader, contentType string) bool {
 func (d flacGenerator) decode(b io.Reader) (beep.StreamSeekCloser, beep.Format, error) {
 	audio, format, err := flac.Decode(b)
 	if err != nil {
-		return audio, format, errors.New("flac: error decoding audio: " + err.Error())
+		return audio, format, fmt.Errorf("flac: error decoding audio: %w", err)
 	}
 	return audio, format, nil
 }
@@ -41,7 +40,7 @@ func (d flacGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx 
 func (d flacGenerator) GenerateThumbnail(r io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
 	tags, rc, err := u.GetID3Tags(r)
 	if err != nil {
-		return nil, errors.New("flac: error getting tags: " + err.Error())
+		return nil, fmt.Errorf("flac: error getting tags: %w", err)
 	}
 	//goland:noinspection GoUnhandledErrorResult
 	defer rc.Close()

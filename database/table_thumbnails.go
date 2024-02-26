@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 )
@@ -52,31 +53,31 @@ type thumbnailsTableWithContext struct {
 
 func prepareThumbnailsTables(db *sql.DB) (*thumbnailsTableStatements, error) {
 	var err error
-	var stmts = &thumbnailsTableStatements{}
+	stmts := &thumbnailsTableStatements{}
 
 	if stmts.selectThumbnailByParams, err = db.Prepare(selectThumbnailByParams); err != nil {
-		return nil, errors.New("error preparing selectThumbnailByParams: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectThumbnailByParams: %w", err)
 	}
 	if stmts.insertThumbnail, err = db.Prepare(insertThumbnail); err != nil {
-		return nil, errors.New("error preparing insertThumbnail: " + err.Error())
+		return nil, fmt.Errorf("error preparing insertThumbnail: %w", err)
 	}
 	if stmts.selectThumbnailByLocationExists, err = db.Prepare(selectThumbnailByLocationExists); err != nil {
-		return nil, errors.New("error preparing selectThumbnailByLocationExists: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectThumbnailByLocationExists: %w", err)
 	}
 	if stmts.selectThumbnailsForMedia, err = db.Prepare(selectThumbnailsForMedia); err != nil {
-		return nil, errors.New("error preparing selectThumbnailsForMedia: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectThumbnailsForMedia: %w", err)
 	}
 	if stmts.selectOldThumbnails, err = db.Prepare(selectOldThumbnails); err != nil {
-		return nil, errors.New("error preparing selectOldThumbnails: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectOldThumbnails: %w", err)
 	}
 	if stmts.deleteThumbnail, err = db.Prepare(deleteThumbnail); err != nil {
-		return nil, errors.New("error preparing deleteThumbnail: " + err.Error())
+		return nil, fmt.Errorf("error preparing deleteThumbnail: %w", err)
 	}
 	if stmts.updateThumbnailLocation, err = db.Prepare(updateThumbnailLocation); err != nil {
-		return nil, errors.New("error preparing updateThumbnailLocation: " + err.Error())
+		return nil, fmt.Errorf("error preparing updateThumbnailLocation: %w", err)
 	}
 	if stmts.selectThumbnailsByLocation, err = db.Prepare(selectThumbnailsByLocation); err != nil {
-		return nil, errors.New("error preparing selectThumbnailsByLocation: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectThumbnailsByLocation: %w", err)
 	}
 
 	return stmts, nil

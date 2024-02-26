@@ -2,7 +2,7 @@ package i
 
 import (
 	"bytes"
-	"errors"
+	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
@@ -40,7 +40,7 @@ func (d mp3Generator) matches(img io.Reader, contentType string) bool {
 func (d mp3Generator) decode(b io.Reader) (beep.StreamSeekCloser, beep.Format, error) {
 	audio, format, err := mp3.Decode(readers.MakeCloser(b))
 	if err != nil {
-		return audio, format, errors.New("mp3: error decoding audio: " + err.Error())
+		return audio, format, fmt.Errorf("mp3: error decoding audio: %w", err)
 	}
 	return audio, format, nil
 }
@@ -52,7 +52,7 @@ func (d mp3Generator) GetOriginDimensions(b io.Reader, contentType string, ctx r
 func (d mp3Generator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
 	tags, rc, err := u.GetID3Tags(b)
 	if err != nil {
-		return nil, errors.New("mp3: error getting tags: " + err.Error())
+		return nil, fmt.Errorf("mp3: error getting tags: %w", err)
 	}
 	//goland:noinspection GoUnhandledErrorResult
 	defer rc.Close()
@@ -124,7 +124,7 @@ func (d mp3Generator) GenerateFromStream(audio beep.StreamSeekCloser, format bee
 	r := image.Rect(dx, dy, ddx, ddy)
 
 	if artworkImg == nil {
-		f, _ := os.OpenFile(path.Join(config.Runtime.AssetsPath, "default-artwork.png"), os.O_RDONLY, 0640)
+		f, _ := os.OpenFile(path.Join(config.Runtime.AssetsPath, "default-artwork.png"), os.O_RDONLY, 0o640)
 		if f != nil {
 			defer f.Close()
 			tmp, _, _ := image.Decode(f)
@@ -149,7 +149,7 @@ func (d mp3Generator) GenerateFromStream(audio beep.StreamSeekCloser, format bee
 	waveformX := padding + r.Max.X
 	info, err := d.GetDataFromStream(audio, format, (int)(math.Max((float64)(width-waveformX-padding), 1)))
 	if err != nil {
-		return nil, errors.New("beep-visual: error sampling audio: " + err.Error())
+		return nil, fmt.Errorf("beep-visual: error sampling audio: %w", err)
 	}
 
 	// Average out all the samples
@@ -200,7 +200,7 @@ func (d mp3Generator) GenerateFromStream(audio beep.StreamSeekCloser, format bee
 	go func(pw *io.PipeWriter, p image.Image) {
 		err = u.Encode(ctx, pw, p)
 		if err != nil {
-			_ = pw.CloseWithError(errors.New("beep-visual: error encoding thumbnail: " + err.Error()))
+			_ = pw.CloseWithError(fmt.Errorf("beep-visual: error encoding thumbnail: %w", err))
 		} else {
 			_ = pw.Close()
 		}

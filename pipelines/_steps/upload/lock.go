@@ -3,6 +3,7 @@ package upload
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
@@ -22,7 +23,7 @@ func LockForUpload(ctx rcontext.RequestContext, hash string) (func() error, erro
 			}
 			if err := mutex.LockContext(ctx.Context); err != nil {
 				if time.Now().After(attemptDoneAt) {
-					return nil, errors.New("failed to acquire upload lock: " + err.Error())
+					return nil, fmt.Errorf("failed to acquire upload lock: %w", err)
 				} else {
 					ctx.Log.Warn("failed to acquire upload lock: ", err)
 				}

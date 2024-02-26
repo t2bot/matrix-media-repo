@@ -2,6 +2,7 @@ package thumbnailing
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"reflect"
 	"slices"
@@ -43,7 +44,7 @@ func GenerateThumbnail(imgStream io.ReadCloser, contentType string, width int, h
 	buffered := readers.NewBufferReadsReader(reconstructed)
 	dimensional, w, h, err := generator.GetOriginDimensions(buffered, contentType, ctx)
 	if err != nil {
-		return nil, errors.New("error getting dimensions: " + err.Error())
+		return nil, fmt.Errorf("error getting dimensions: %w", err)
 	}
 	if dimensional {
 		if (w * h) >= ctx.Config.Thumbnails.MaxPixels {

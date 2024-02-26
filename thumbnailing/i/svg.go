@@ -1,7 +1,7 @@
 package i
 
 import (
-	"errors"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -33,7 +33,7 @@ func (d svgGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx r
 func (d svgGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
 	dir, err := os.MkdirTemp(os.TempDir(), "mmr-svg")
 	if err != nil {
-		return nil, errors.New("svg: error creating temporary directory: " + err.Error())
+		return nil, fmt.Errorf("svg: error creating temporary directory: %w", err)
 	}
 
 	tempFile1 := path.Join(dir, "i.svg")
@@ -43,22 +43,22 @@ func (d svgGenerator) GenerateThumbnail(b io.Reader, contentType string, width i
 	defer os.Remove(tempFile2)
 	defer os.Remove(dir)
 
-	f, err := os.OpenFile(tempFile1, os.O_RDWR|os.O_CREATE, 0640)
+	f, err := os.OpenFile(tempFile1, os.O_RDWR|os.O_CREATE, 0o640)
 	if err != nil {
-		return nil, errors.New("svg: error creating temp svg file: " + err.Error())
+		return nil, fmt.Errorf("svg: error creating temp svg file: %w", err)
 	}
 	if _, err = io.Copy(f, b); err != nil {
-		return nil, errors.New("svg: error writing temp svg file: " + err.Error())
+		return nil, fmt.Errorf("svg: error writing temp svg file: %w", err)
 	}
 
 	err = exec.Command("convert", tempFile1, tempFile2).Run()
 	if err != nil {
-		return nil, errors.New("svg: error converting svg file: " + err.Error())
+		return nil, fmt.Errorf("svg: error converting svg file: %w", err)
 	}
 
-	f, err = os.OpenFile(tempFile2, os.O_RDONLY, 0640)
+	f, err = os.OpenFile(tempFile2, os.O_RDONLY, 0o640)
 	if err != nil {
-		return nil, errors.New("svg: error reading temp png file: " + err.Error())
+		return nil, fmt.Errorf("svg: error reading temp png file: %w", err)
 	}
 	defer f.Close()
 

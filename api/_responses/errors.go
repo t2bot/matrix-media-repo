@@ -1,6 +1,10 @@
 package _responses
 
-import "github.com/t2bot/matrix-media-repo/common"
+import (
+	"fmt"
+
+	"github.com/t2bot/matrix-media-repo/common"
+)
 
 type ErrorResponse struct {
 	Code         string `json:"errcode"`
@@ -8,12 +12,12 @@ type ErrorResponse struct {
 	InternalCode string `json:"mr_errcode"`
 }
 
-func InternalServerError(message string) *ErrorResponse {
-	return &ErrorResponse{common.ErrCodeUnknown, message, common.ErrCodeUnknown}
+func InternalServerError(err error) *ErrorResponse {
+	return &ErrorResponse{common.ErrCodeUnknown, fmt.Sprint(err), common.ErrCodeUnknown}
 }
 
-func BadGatewayError(message string) *ErrorResponse {
-	return &ErrorResponse{common.ErrCodeUnknown, message, common.ErrCodeUnknown}
+func BadGatewayError(err error) *ErrorResponse {
+	return &ErrorResponse{common.ErrCodeUnknown, fmt.Sprint(err), common.ErrCodeUnknown}
 }
 
 func MethodNotAllowed() *ErrorResponse {
@@ -48,8 +52,8 @@ func GuestAuthFailed() *ErrorResponse {
 	return &ErrorResponse{common.ErrCodeNoGuests, "Guests cannot use this endpoint", common.ErrCodeNoGuests}
 }
 
-func BadRequest(message string) *ErrorResponse {
-	return &ErrorResponse{common.ErrCodeUnknown, message, common.ErrCodeBadRequest}
+func BadRequest(err error) *ErrorResponse {
+	return &ErrorResponse{common.ErrCodeUnknown, fmt.Sprint(err), common.ErrCodeBadRequest}
 }
 
 func QuotaExceeded() *ErrorResponse {

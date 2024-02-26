@@ -39,7 +39,7 @@ func OptionalAccessToken(generator GeneratorWithUserFn) GeneratorFn {
 			if !errors.Is(err, matrix.ErrInvalidToken) {
 				sentry.CaptureException(err)
 				ctx.Log.Error("Error verifying token: ", err)
-				return _responses.InternalServerError("unexpected error validating access token")
+				return _responses.InternalServerError(errors.New("unexpected error validating access token"))
 			}
 
 			ctx.Log.Warn("Failed to verify token (non-fatal): ", err)

@@ -2,6 +2,7 @@ package custom
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/getsentry/sentry-go"
@@ -18,7 +19,7 @@ func GetFederationInfo(r *http.Request, rctx rcontext.RequestContext, user _apim
 	serverName := _routers.GetParam("serverName", r)
 
 	if !_routers.ServerNameRegex.MatchString(serverName) {
-		return _responses.BadRequest("invalid server name")
+		return _responses.BadRequest(errors.New("invalid server name"))
 	}
 
 	rctx = rctx.LogWithFields(logrus.Fields{
@@ -29,7 +30,7 @@ func GetFederationInfo(r *http.Request, rctx rcontext.RequestContext, user _apim
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError(err.Error())
+		return _responses.InternalServerError(err)
 	}
 
 	versionUrl := url + "/_matrix/federation/v1/version"
@@ -37,7 +38,7 @@ func GetFederationInfo(r *http.Request, rctx rcontext.RequestContext, user _apim
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError(err.Error())
+		return _responses.InternalServerError(err)
 	}
 
 	decoder := json.NewDecoder(versionResponse.Body)
@@ -46,7 +47,7 @@ func GetFederationInfo(r *http.Request, rctx rcontext.RequestContext, user _apim
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError(err.Error())
+		return _responses.InternalServerError(err)
 	}
 
 	resp := make(map[string]interface{})

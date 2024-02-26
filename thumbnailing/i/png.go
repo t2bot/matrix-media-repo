@@ -1,7 +1,7 @@
 package i
 
 import (
-	"errors"
+	"fmt"
 	"image"
 	_ "image/png"
 	"io"
@@ -38,7 +38,7 @@ func (d pngGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx r
 func (d pngGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
 	src, err := imaging.Decode(b)
 	if err != nil {
-		return nil, errors.New("png: error decoding thumbnail: " + err.Error())
+		return nil, fmt.Errorf("png: error decoding thumbnail: %w", err)
 	}
 
 	return d.GenerateThumbnailOf(src, width, height, method, ctx)
@@ -54,7 +54,7 @@ func (d pngGenerator) GenerateThumbnailOf(src image.Image, width int, height int
 	go func(pw *io.PipeWriter, p image.Image) {
 		err = u.Encode(ctx, pw, p)
 		if err != nil {
-			_ = pw.CloseWithError(errors.New("png: error encoding thumbnail: " + err.Error()))
+			_ = pw.CloseWithError(fmt.Errorf("png: error encoding thumbnail: %w", err))
 		} else {
 			_ = pw.Close()
 		}

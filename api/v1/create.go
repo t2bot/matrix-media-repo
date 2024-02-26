@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/getsentry/sentry-go"
@@ -21,7 +22,7 @@ func CreateMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.Us
 	if err != nil {
 		rctx.Log.Error("Unexpected error creating media ID:", err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("unexpected error")
+		return _responses.InternalServerError(errors.New("unexpected error"))
 	}
 
 	return &MediaCreatedResponse{

@@ -1,7 +1,7 @@
 package i
 
 import (
-	"errors"
+	"fmt"
 	"io"
 	"slices"
 
@@ -35,7 +35,7 @@ func (d bmpGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx r
 func (d bmpGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
 	src, err := bmp.Decode(b)
 	if err != nil {
-		return nil, errors.New("bmp: error decoding thumbnail: " + err.Error())
+		return nil, fmt.Errorf("bmp: error decoding thumbnail: %w", err)
 	}
 
 	return pngGenerator{}.GenerateThumbnailOf(src, width, height, method, ctx)

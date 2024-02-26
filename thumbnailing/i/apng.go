@@ -1,7 +1,7 @@
 package i
 
 import (
-	"errors"
+	"fmt"
 	"image"
 	"image/draw"
 	"io"
@@ -43,7 +43,7 @@ func (d apngGenerator) GenerateThumbnail(b io.Reader, contentType string, width 
 
 	p, err := apng.DecodeAll(b)
 	if err != nil {
-		return nil, errors.New("apng: error decoding image: " + err.Error())
+		return nil, fmt.Errorf("apng: error decoding image: %w", err)
 	}
 
 	// prepare a blank frame to use as swap space
@@ -72,7 +72,7 @@ func (d apngGenerator) GenerateThumbnail(b io.Reader, contentType string, width 
 		// Do the thumbnailing on the copied frame
 		frameThumb, err := u.MakeThumbnail(frameImg, method, width, height)
 		if err != nil {
-			return nil, errors.New("apng: error generating thumbnail frame: " + err.Error())
+			return nil, fmt.Errorf("apng: error generating thumbnail frame: %w", err)
 		}
 		if frameThumb == nil {
 			tmpImg := image.NewRGBA(frameImg.Bounds())
@@ -94,7 +94,7 @@ func (d apngGenerator) GenerateThumbnail(b io.Reader, contentType string, width 
 	go func(pw *io.PipeWriter, p apng.APNG) {
 		err = apng.Encode(pw, p)
 		if err != nil {
-			_ = pw.CloseWithError(errors.New("apng: error encoding final thumbnail: " + err.Error()))
+			_ = pw.CloseWithError(fmt.Errorf("apng: error encoding final thumbnail: %w", err))
 		} else {
 			_ = pw.Close()
 		}

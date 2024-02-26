@@ -2,6 +2,7 @@ package r0
 
 import (
 	"crypto/md5"
+	"fmt"
 	"image/color"
 	"io"
 	"net/http"
@@ -32,14 +33,14 @@ func Identicon(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 	if widthStr != "" {
 		width, err = strconv.Atoi(widthStr)
 		if err != nil {
-			return _responses.InternalServerError("Error parsing width: " + err.Error())
+			return _responses.InternalServerError(fmt.Errorf("Error parsing width: %w", err))
 		}
 		height = width
 	}
 	if heightStr != "" {
 		height, err = strconv.Atoi(heightStr)
 		if err != nil {
-			return _responses.InternalServerError("Error parsing height: " + err.Error())
+			return _responses.InternalServerError(fmt.Errorf("Error parsing height: %w", err))
 		}
 	}
 

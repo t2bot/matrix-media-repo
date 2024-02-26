@@ -1,7 +1,7 @@
 package i
 
 import (
-	"errors"
+	"fmt"
 	"image"
 	"image/draw"
 	"image/gif"
@@ -35,7 +35,7 @@ func (d gifGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx r
 func (d gifGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
 	g, err := gif.DecodeAll(b)
 	if err != nil {
-		return nil, errors.New("gif: error decoding image: " + err.Error())
+		return nil, fmt.Errorf("gif: error decoding image: %w", err)
 	}
 
 	// Prepare a blank frame to use as swap space
@@ -58,7 +58,7 @@ func (d gifGenerator) GenerateThumbnail(b io.Reader, contentType string, width i
 		// Do the thumbnailing on the copied frame
 		frameThumb, err := u.MakeThumbnail(frameImg, method, width, height)
 		if err != nil {
-			return nil, errors.New("gif: error generating thumbnail frame: " + err.Error())
+			return nil, fmt.Errorf("gif: error generating thumbnail frame: %w", err)
 		}
 		if frameThumb == nil {
 			tmpImg := image.NewRGBA(frameImg.Bounds())
@@ -80,7 +80,7 @@ func (d gifGenerator) GenerateThumbnail(b io.Reader, contentType string, width i
 			go func(pw *io.PipeWriter, p *image.Paletted) {
 				err = u.Encode(ctx, pw, p)
 				if err != nil {
-					_ = pw.CloseWithError(errors.New("gif: error encoding still frame thumbnail: " + err.Error()))
+					_ = pw.CloseWithError(fmt.Errorf("gif: error encoding still frame thumbnail: %w", err))
 				} else {
 					_ = pw.Close()
 				}
@@ -114,7 +114,7 @@ func (d gifGenerator) GenerateThumbnail(b io.Reader, contentType string, width i
 	go func(pw *io.PipeWriter, g *gif.GIF) {
 		err = gif.EncodeAll(pw, g)
 		if err != nil {
-			_ = pw.CloseWithError(errors.New("gif: error encoding final thumbnail: " + err.Error()))
+			_ = pw.CloseWithError(fmt.Errorf("gif: error encoding final thumbnail: %w", err))
 		} else {
 			_ = pw.Close()
 		}

@@ -45,7 +45,7 @@ func RequireAccessToken(generator GeneratorWithUserFn) GeneratorFn {
 			if err != nil && !errors.Is(err, matrix.ErrInvalidToken) {
 				sentry.CaptureException(err)
 				ctx.Log.Error("Error verifying token: ", err)
-				return _responses.InternalServerError("unexpected error validating access token")
+				return _responses.InternalServerError(errors.New("unexpected error validating access token"))
 			}
 			return _responses.AuthFailed()
 		}

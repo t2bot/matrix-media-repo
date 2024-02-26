@@ -1,7 +1,7 @@
 package i
 
 import (
-	"errors"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -33,7 +33,7 @@ func (d mp4Generator) GetOriginDimensions(b io.Reader, contentType string, ctx r
 func (d mp4Generator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
 	dir, err := os.MkdirTemp(os.TempDir(), "mmr-mp4")
 	if err != nil {
-		return nil, errors.New("mp4: error creating temporary directory: " + err.Error())
+		return nil, fmt.Errorf("mp4: error creating temporary directory: %w", err)
 	}
 
 	tempFile1 := path.Join(dir, "i.mp4")
@@ -45,20 +45,20 @@ func (d mp4Generator) GenerateThumbnail(b io.Reader, contentType string, width i
 
 	f, err := os.OpenFile(tempFile1, os.O_RDWR|os.O_CREATE, 0o640)
 	if err != nil {
-		return nil, errors.New("mp4: error creating temp video file: " + err.Error())
+		return nil, fmt.Errorf("mp4: error creating temp video file: %w", err)
 	}
 	if _, err = io.Copy(f, b); err != nil {
-		return nil, errors.New("mp4: error writing temp video file: " + err.Error())
+		return nil, fmt.Errorf("mp4: error writing temp video file: %w", err)
 	}
 
 	err = exec.Command("ffmpeg", "-i", tempFile1, "-vf", "select=eq(n\\,0)", tempFile2).Run()
 	if err != nil {
-		return nil, errors.New("mp4: error converting video file: " + err.Error())
+		return nil, fmt.Errorf("mp4: error converting video file: %w", err)
 	}
 
 	f, err = os.OpenFile(tempFile2, os.O_RDONLY, 0o640)
 	if err != nil {
-		return nil, errors.New("mp4: error reading temp png file: " + err.Error())
+		return nil, fmt.Errorf("mp4: error reading temp png file: %w", err)
 	}
 	defer f.Close()
 

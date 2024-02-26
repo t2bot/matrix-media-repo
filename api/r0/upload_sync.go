@@ -46,7 +46,7 @@ func UploadMediaSync(r *http.Request, rctx rcontext.RequestContext, user _apimet
 		}
 		rctx.Log.Error("Unexpected error uploading media: ", err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("Unexpected Error")
+		return _responses.InternalServerError(errors.New("Unexpected Error"))
 	}
 
 	return &MediaUploadedResponse{

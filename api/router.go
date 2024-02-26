@@ -29,25 +29,25 @@ func buildPrimaryRouter() *httprouter.Router {
 func methodNotAllowedFn(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusMethodNotAllowed)
-	if b, err := json.Marshal(_responses.MethodNotAllowed()); err != nil {
-		panic(errors.New("error preparing MethodNotAllowed: " + err.Error()))
-	} else {
-		if _, err = w.Write(b); err != nil {
-			panic(errors.New("error sending MethodNotAllowed: " + err.Error()))
-		}
+	reponse, err := json.Marshal(_responses.MethodNotAllowed())
+	if err != nil {
+		sentry.CaptureException(fmt.Errorf("error preparing MethodNotAllowed: %w", err))
+		logrus.Errorf("error preparing MethodNotAllowed: %v", err)
+		return
 	}
+	w.Write(reponse)
 }
 
 func notFoundFn(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNotFound)
-	if b, err := json.Marshal(_responses.NotFoundError()); err != nil {
-		panic(errors.New("error preparing NotFound: " + err.Error()))
-	} else {
-		if _, err = w.Write(b); err != nil {
-			panic(errors.New("error sending NotFound: " + err.Error()))
-		}
+	reponse, err := json.Marshal(_responses.NotFoundError())
+	if err != nil {
+		sentry.CaptureException(fmt.Errorf("error preparing NotFound: %w", err))
+		logrus.Errorf("error preparing NotFound: %v", err)
+		return
 	}
+	w.Write(reponse)
 }
 
 func finishCorsFn(w http.ResponseWriter, r *http.Request) {
@@ -66,11 +66,12 @@ func panicFn(w http.ResponseWriter, r *http.Request, i interface{}) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusInternalServerError)
-	if b, err := json.Marshal(_responses.InternalServerError("unexpected error")); err != nil {
-		panic(errors.New("error preparing InternalServerError: " + err.Error()))
-	} else {
-		if _, err = w.Write(b); err != nil {
-			panic(errors.New("error sending InternalServerError: " + err.Error()))
-		}
+
+	reponse, err := json.Marshal(_responses.InternalServerError(errors.New("unexpected error")))
+	if err != nil {
+		sentry.CaptureException(fmt.Errorf("error preparing InternalServerError: %w", err))
+		logrus.Errorf("error preparing InternalServerError: %v", err)
+		return
 	}
+	w.Write(reponse)
 }

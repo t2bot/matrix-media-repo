@@ -1,7 +1,7 @@
 package i
 
 import (
-	"errors"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -33,7 +33,7 @@ func (d jpegxlGenerator) GetOriginDimensions(b io.Reader, contentType string, ct
 func (d jpegxlGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
 	dir, err := os.MkdirTemp(os.TempDir(), "mmr-jpegxl")
 	if err != nil {
-		return nil, errors.New("jpegxl: error creating temporary directory: " + err.Error())
+		return nil, fmt.Errorf("jpegxl: error creating temporary directory: %w", err)
 	}
 
 	tempFile1 := path.Join(dir, "i.jpegxl")
@@ -43,22 +43,22 @@ func (d jpegxlGenerator) GenerateThumbnail(b io.Reader, contentType string, widt
 	defer os.Remove(tempFile2)
 	defer os.Remove(dir)
 
-	f, err := os.OpenFile(tempFile1, os.O_RDWR|os.O_CREATE, 0640)
+	f, err := os.OpenFile(tempFile1, os.O_RDWR|os.O_CREATE, 0o640)
 	if err != nil {
-		return nil, errors.New("jpegxl: error creating temp jpegxl file: " + err.Error())
+		return nil, fmt.Errorf("jpegxl: error creating temp jpegxl file: %w", err)
 	}
 	if _, err = io.Copy(f, b); err != nil {
-		return nil, errors.New("jpegxl: error writing temp jpegxl file: " + err.Error())
+		return nil, fmt.Errorf("jpegxl: error writing temp jpegxl file: %w", err)
 	}
 
 	err = exec.Command("convert", tempFile1, tempFile2).Run()
 	if err != nil {
-		return nil, errors.New("jpegxl: error converting jpegxl file: " + err.Error())
+		return nil, fmt.Errorf("jpegxl: error converting jpegxl file: %w", err)
 	}
 
-	f, err = os.OpenFile(tempFile2, os.O_RDONLY, 0640)
+	f, err = os.OpenFile(tempFile2, os.O_RDONLY, 0o640)
 	if err != nil {
-		return nil, errors.New("jpegxl: error reading temp png file: " + err.Error())
+		return nil, fmt.Errorf("jpegxl: error reading temp png file: %w", err)
 	}
 	defer f.Close()
 

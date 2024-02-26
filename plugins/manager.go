@@ -21,7 +21,7 @@ func ReloadPlugins() {
 		logrus.Info("Loading plugin: ", pl.Executable)
 		mmr, err := newPlugin(pl.Executable, pl.Config)
 		if err != nil {
-			logrus.Errorf("failed to load plugin %s: %s", pl.Executable, err.Error())
+			logrus.Errorf("failed to load plugin %s: %v", pl.Executable, err)
 			continue
 		}
 
@@ -46,7 +46,7 @@ func CheckForSpam(r io.Reader, filename string, contentType string, userId strin
 	for _, pl := range existingPlugins {
 		as, err := pl.Antispam()
 		if err != nil {
-			logrus.Warnf("error loading antispam plugin: %s", err.Error())
+			logrus.Warnf("error loading antispam plugin: %v", err)
 			continue
 		}
 

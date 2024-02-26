@@ -88,7 +88,7 @@ func (c *RContextRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		r = writeStatusCode(w, r, http.StatusOK)
 		if _, err := w.Write([]byte(htmlRes.HTML)); err != nil {
-			panic(errors.New("error sending HtmlResponse: " + err.Error()))
+			panic(fmt.Errorf("error sending HtmlResponse: %w", err))
 		}
 		return // don't continue
 	}
@@ -104,16 +104,16 @@ beforeParseDownload:
 		ranges, err := http_range.ParseRange(r.Header.Get("Range"), downloadRes.SizeBytes, rctx.Config.Downloads.DefaultRangeChunkSizeBytes)
 		if errors.Is(err, http_range.ErrInvalid) {
 			proposedStatusCode = http.StatusRequestedRangeNotSatisfiable
-			res = _responses.BadRequest("invalid range header")
+			res = _responses.BadRequest(errors.New("invalid range header"))
 			goto beforeParseDownload // reprocess `res`
 		} else if errors.Is(err, http_range.ErrNoOverlap) {
 			proposedStatusCode = http.StatusRequestedRangeNotSatisfiable
-			res = _responses.BadRequest("out of range")
+			res = _responses.BadRequest(errors.New("out of range"))
 			goto beforeParseDownload // reprocess `res`
 		}
 		if len(ranges) > 1 {
 			proposedStatusCode = http.StatusRequestedRangeNotSatisfiable
-			res = _responses.BadRequest("only 1 range is supported")
+			res = _responses.BadRequest(errors.New("only 1 range is supported"))
 			goto beforeParseDownload // reprocess `res`
 		}
 

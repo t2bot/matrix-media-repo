@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 )
@@ -39,13 +40,13 @@ type mediaAttributesTableWithContext struct {
 
 func prepareMediaAttributesTables(db *sql.DB) (*mediaAttributesTableStatements, error) {
 	var err error
-	var stmts = &mediaAttributesTableStatements{}
+	stmts := &mediaAttributesTableStatements{}
 
 	if stmts.selectMediaAttributes, err = db.Prepare(selectMediaAttributes); err != nil {
-		return nil, errors.New("error preparing selectMediaAttributes: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectMediaAttributes: %w", err)
 	}
 	if stmts.upsertMediaPurpose, err = db.Prepare(upsertMediaPurpose); err != nil {
-		return nil, errors.New("error preparing upsertMediaPurpose: " + err.Error())
+		return nil, fmt.Errorf("error preparing upsertMediaPurpose: %w", err)
 	}
 
 	return stmts, nil

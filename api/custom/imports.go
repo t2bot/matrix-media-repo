@@ -23,24 +23,24 @@ type ImportStarted struct {
 
 func StartImport(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
 	if !rctx.Config.Archiving.Enabled {
-		return _responses.BadRequest("archiving is not enabled")
+		return _responses.BadRequest(errors.New("archiving is not enabled"))
 	}
 	if ids.GetMachineId() != tasks.ExecutingMachineId {
-		return _responses.BadRequest("archival import can only be done on the background tasks worker")
+		return _responses.BadRequest(errors.New("archival import can only be done on the background tasks worker"))
 	}
 
 	task, importId, err := tasks.RunImport(rctx)
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("fatal error starting import")
+		return _responses.InternalServerError(errors.New("fatal error starting import"))
 	}
 
 	err = task_runner.AppendImportFile(rctx, importId, r.Body)
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("error appending first file to import")
+		return _responses.InternalServerError(errors.New("error appending first file to import"))
 	}
 
 	return &_responses.DoNotCacheResponse{Payload: &ImportStarted{
@@ -51,16 +51,16 @@ func StartImport(r *http.Request, rctx rcontext.RequestContext, user _apimeta.Us
 
 func AppendToImport(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
 	if !rctx.Config.Archiving.Enabled {
-		return _responses.BadRequest("archiving is not enabled")
+		return _responses.BadRequest(errors.New("archiving is not enabled"))
 	}
 	if ids.GetMachineId() != tasks.ExecutingMachineId {
-		return _responses.BadRequest("archival import can only be done on the background tasks worker")
+		return _responses.BadRequest(errors.New("archival import can only be done on the background tasks worker"))
 	}
 
 	importId := _routers.GetParam("importId", r)
 
 	if !_routers.ServerNameRegex.MatchString(importId) {
-		return _responses.BadRequest("invalid import ID")
+		return _responses.BadRequest(errors.New("invalid import ID"))
 	}
 
 	err := task_runner.AppendImportFile(rctx, importId, r.Body)
@@ -70,7 +70,7 @@ func AppendToImport(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 		}
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("error appending to import")
+		return _responses.InternalServerError(errors.New("error appending to import"))
 	}
 
 	return &_responses.DoNotCacheResponse{Payload: &_responses.EmptyResponse{}}
@@ -78,16 +78,16 @@ func AppendToImport(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 
 func StopImport(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
 	if !rctx.Config.Archiving.Enabled {
-		return _responses.BadRequest("archiving is not enabled")
+		return _responses.BadRequest(errors.New("archiving is not enabled"))
 	}
 	if ids.GetMachineId() != tasks.ExecutingMachineId {
-		return _responses.BadRequest("archival import can only be done on the background tasks worker")
+		return _responses.BadRequest(errors.New("archival import can only be done on the background tasks worker"))
 	}
 
 	importId := _routers.GetParam("importId", r)
 
 	if !_routers.ServerNameRegex.MatchString(importId) {
-		return _responses.BadRequest("invalid import ID")
+		return _responses.BadRequest(errors.New("invalid import ID"))
 	}
 
 	err := task_runner.FinishImport(rctx, importId)
@@ -97,7 +97,7 @@ func StopImport(r *http.Request, rctx rcontext.RequestContext, user _apimeta.Use
 		}
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("error stopping import")
+		return _responses.InternalServerError(errors.New("error stopping import"))
 	}
 
 	return &_responses.DoNotCacheResponse{Payload: &_responses.EmptyResponse{}}

@@ -1,7 +1,7 @@
 package i
 
 import (
-	"errors"
+	"fmt"
 	"image"
 	_ "image/jpeg"
 	"io"
@@ -39,12 +39,12 @@ func (d jpgGenerator) GenerateThumbnail(b io.Reader, contentType string, width i
 
 	src, err := imaging.Decode(b)
 	if err != nil {
-		return nil, errors.New("jpg: error decoding thumbnail: " + err.Error())
+		return nil, fmt.Errorf("jpg: error decoding thumbnail: %w", err)
 	}
 
 	thumb, err := u.MakeThumbnail(src, method, width, height)
 	if err != nil {
-		return nil, errors.New("jpg: error making thumbnail: " + err.Error())
+		return nil, fmt.Errorf("jpg: error making thumbnail: %w", err)
 	}
 
 	thumb = u.ApplyOrientation(thumb, orientation)
@@ -53,7 +53,7 @@ func (d jpgGenerator) GenerateThumbnail(b io.Reader, contentType string, width i
 	go func(pw *io.PipeWriter, p image.Image) {
 		err = u.Encode(ctx, pw, p, u.JpegSource)
 		if err != nil {
-			_ = pw.CloseWithError(errors.New("jpg: error encoding thumbnail: " + err.Error()))
+			_ = pw.CloseWithError(fmt.Errorf("jpg: error encoding thumbnail: %w", err))
 		} else {
 			_ = pw.Close()
 		}

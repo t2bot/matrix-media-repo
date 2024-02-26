@@ -28,14 +28,14 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 	timeoutMs := r.URL.Query().Get("timeout_ms")
 
 	if !_routers.ServerNameRegex.MatchString(server) {
-		return _responses.BadRequest("invalid server ID")
+		return _responses.BadRequest(errors.New("invalid server ID"))
 	}
 
 	downloadRemote := true
 	if allowRemote != "" {
 		parsedFlag, err := strconv.ParseBool(allowRemote)
 		if err != nil {
-			return _responses.BadRequest("allow_remote flag does not appear to be a boolean")
+			return _responses.BadRequest(errors.New("allow_remote flag does not appear to be a boolean"))
 		}
 		downloadRemote = parsedFlag
 	}
@@ -44,14 +44,14 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 	if allowRedirect != "" {
 		parsedFlag, err := strconv.ParseBool(allowRedirect)
 		if err != nil {
-			return _responses.BadRequest("allow_redirect flag does not appear to be a boolean")
+			return _responses.BadRequest(errors.New("allow_redirect flag does not appear to be a boolean"))
 		}
 		canRedirect = parsedFlag
 	}
 
 	blockFor, err := util.CalcBlockForDuration(timeoutMs)
 	if err != nil {
-		return _responses.BadRequest("timeout_ms does not appear to be an integer")
+		return _responses.BadRequest(errors.New("timeout_ms does not appear to be an integer"))
 	}
 
 	rctx = rctx.LogWithFields(logrus.Fields{
@@ -75,7 +75,7 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 	}
 
 	if widthStr == "" || heightStr == "" {
-		return _responses.BadRequest("Width and height are required")
+		return _responses.BadRequest(errors.New("Width and height are required"))
 	}
 
 	width := 0
@@ -85,21 +85,21 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 	if widthStr != "" {
 		parsedWidth, err := strconv.Atoi(widthStr)
 		if err != nil {
-			return _responses.BadRequest("Width does not appear to be an integer")
+			return _responses.BadRequest(errors.New("Width does not appear to be an integer"))
 		}
 		width = parsedWidth
 	}
 	if heightStr != "" {
 		parsedHeight, err := strconv.Atoi(heightStr)
 		if err != nil {
-			return _responses.BadRequest("Height does not appear to be an integer")
+			return _responses.BadRequest(errors.New("Height does not appear to be an integer"))
 		}
 		height = parsedHeight
 	}
 	if animatedStr != "" {
 		parsedFlag, err := strconv.ParseBool(animatedStr)
 		if err != nil {
-			return _responses.BadRequest("Animated flag does not appear to be a boolean")
+			return _responses.BadRequest(errors.New("Animated flag does not appear to be a boolean"))
 		}
 		animated = parsedFlag
 	}
@@ -115,7 +115,7 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 	})
 
 	if width <= 0 || height <= 0 {
-		return _responses.BadRequest("Width and height must be greater than zero")
+		return _responses.BadRequest(errors.New("Width and height must be greater than zero"))
 	}
 
 	thumbnail, stream, err := pipeline_thumbnail.Execute(rctx, server, mediaId, pipeline_thumbnail.ThumbnailOpts{
@@ -156,7 +156,7 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 			if err != nil {
 				rctx.Log.Error("Unexpected error locating media record: ", err)
 				sentry.CaptureException(err)
-				return _responses.InternalServerError("Unexpected Error")
+				return _responses.InternalServerError(errors.New("Unexpected Error"))
 			} else {
 				return &_responses.DownloadResponse{
 					ContentType:       record.ContentType,
@@ -171,7 +171,7 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 		}
 		rctx.Log.Error("Unexpected error locating media: ", err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("Unexpected Error")
+		return _responses.InternalServerError(errors.New("Unexpected Error"))
 	}
 
 	return &_responses.DownloadResponse{

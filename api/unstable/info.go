@@ -54,14 +54,14 @@ func MediaInfo(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 	allowRemote := r.URL.Query().Get("allow_remote")
 
 	if !_routers.ServerNameRegex.MatchString(server) {
-		return _responses.BadRequest("invalid server ID")
+		return _responses.BadRequest(errors.New("invalid server ID"))
 	}
 
 	downloadRemote := true
 	if allowRemote != "" {
 		parsedFlag, err := strconv.ParseBool(allowRemote)
 		if err != nil {
-			return _responses.InternalServerError("allow_remote flag does not appear to be a boolean")
+			return _responses.InternalServerError(errors.New("allow_remote flag does not appear to be a boolean"))
 		}
 		downloadRemote = parsedFlag
 	}
@@ -100,7 +100,7 @@ func MediaInfo(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 		}
 		rctx.Log.Error("Unexpected error locating media: ", err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("Unexpected Error")
+		return _responses.InternalServerError(errors.New("Unexpected Error"))
 	}
 
 	response := &MediaInfoResponse{
@@ -137,7 +137,7 @@ func MediaInfo(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 	if err != nil {
 		rctx.Log.Error("Unexpected error locating media thumbnails: ", err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("Unexpected Error")
+		return _responses.InternalServerError(errors.New("Unexpected Error"))
 	}
 
 	if len(thumbs) > 0 {

@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 )
@@ -35,19 +36,19 @@ type exportPartsTableWithContext struct {
 
 func prepareExportPartsTables(db *sql.DB) (*exportPartsTableStatements, error) {
 	var err error
-	var stmts = &exportPartsTableStatements{}
+	stmts := &exportPartsTableStatements{}
 
 	if stmts.insertExportPart, err = db.Prepare(insertExportPart); err != nil {
-		return nil, errors.New("error preparing insertExportPart: " + err.Error())
+		return nil, fmt.Errorf("error preparing insertExportPart: %w", err)
 	}
 	if stmts.deleteExportPartsById, err = db.Prepare(deleteExportPartsById); err != nil {
-		return nil, errors.New("error preparing deleteExportPartsById: " + err.Error())
+		return nil, fmt.Errorf("error preparing deleteExportPartsById: %w", err)
 	}
 	if stmts.selectExportPartsById, err = db.Prepare(selectExportPartsById); err != nil {
-		return nil, errors.New("error preparing selectExportPartsById: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectExportPartsById: %w", err)
 	}
 	if stmts.selectExportPartById, err = db.Prepare(selectExportPartById); err != nil {
-		return nil, errors.New("error preparing selectExportPartById: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectExportPartById: %w", err)
 	}
 
 	return stmts, nil

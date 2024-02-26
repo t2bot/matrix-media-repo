@@ -70,10 +70,10 @@ func UploadMediaAsync(r *http.Request, rctx rcontext.RequestContext, user _apime
 		}
 		rctx.Log.Error("Unexpected error uploading media: ", err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("Unexpected Error")
+		return _responses.InternalServerError(errors.New("Unexpected Error"))
 	}
 
 	return &MediaUploadedResponse{
-		//ContentUri: util.MxcUri(media.Origin, media.MediaId), // This endpoint doesn't return a URI
+		// ContentUri: util.MxcUri(media.Origin, media.MediaId), // This endpoint doesn't return a URI
 	}
 }

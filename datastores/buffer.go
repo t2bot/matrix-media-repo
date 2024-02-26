@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 
@@ -21,7 +22,7 @@ func BufferTemp(datastore config.DatastoreConfig, contents io.ReadCloser) (strin
 	} else if datastore.Type == "file" {
 		fpath, err = os.MkdirTemp(os.TempDir(), "mmr")
 		if err != nil {
-			return "", 0, nil, errors.New("error generating temporary directory: " + err.Error())
+			return "", 0, nil, fmt.Errorf("error generating temporary directory: %w", err)
 		}
 	} else {
 		return "", 0, nil, errors.New("unknown datastore type - contact developer")
@@ -32,14 +33,14 @@ func BufferTemp(datastore config.DatastoreConfig, contents io.ReadCloser) (strin
 		logrus.Warnf("Datastore %s does not have a valid temporary path configured. This will lead to increased memory usage.", datastore.Id)
 		target = &bytes.Buffer{}
 	} else {
-		err = os.Mkdir(fpath, os.ModeDir|0700)
+		err = os.Mkdir(fpath, os.ModeDir|0o700)
 		if err != nil && !os.IsExist(err) {
-			return "", 0, nil, errors.New("error creating temp path: " + err.Error())
+			return "", 0, nil, fmt.Errorf("error creating temp path: %w", err)
 		}
 		var file *os.File
 		file, err = os.CreateTemp(fpath, "mmr")
 		if err != nil {
-			return "", 0, nil, errors.New("error generating temporary file: " + err.Error())
+			return "", 0, nil, fmt.Errorf("error generating temporary file: %w", err)
 		}
 		target = file
 	}
