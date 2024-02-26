@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -77,7 +78,7 @@ func (a *AntispamOCR) CheckForSpam(b64 string, filename string, contentType stri
 	if len(b) < a.minSize || len(b) > a.maxSize {
 		return false, nil
 	}
-	if !util.ArrayContains(a.contentTypes, contentType) {
+	if !slices.Contains(a.contentTypes, contentType) {
 		return false, nil
 	}
 	if !a.userIdRegex.MatchString(userId) {

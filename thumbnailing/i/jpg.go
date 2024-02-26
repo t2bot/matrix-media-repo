@@ -5,17 +5,16 @@ import (
 	"image"
 	_ "image/jpeg"
 	"io"
+	"slices"
 
 	"github.com/disintegration/imaging"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
 	"github.com/t2bot/matrix-media-repo/thumbnailing/u"
-	"github.com/t2bot/matrix-media-repo/util"
 	"github.com/t2bot/matrix-media-repo/util/readers"
 )
 
-type jpgGenerator struct {
-}
+type jpgGenerator struct{}
 
 func (d jpgGenerator) supportedContentTypes() []string {
 	return []string{"image/jpeg", "image/jpg"}
@@ -26,7 +25,7 @@ func (d jpgGenerator) supportsAnimation() bool {
 }
 
 func (d jpgGenerator) matches(img io.Reader, contentType string) bool {
-	return util.ArrayContains(d.supportedContentTypes(), contentType)
+	return slices.Contains(d.supportedContentTypes(), contentType)
 }
 
 func (d jpgGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx rcontext.RequestContext) (bool, int, int, error) {

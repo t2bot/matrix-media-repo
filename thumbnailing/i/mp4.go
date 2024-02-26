@@ -6,14 +6,13 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"slices"
 
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
-	"github.com/t2bot/matrix-media-repo/util"
 )
 
-type mp4Generator struct {
-}
+type mp4Generator struct{}
 
 func (d mp4Generator) supportedContentTypes() []string {
 	return []string{"video/mp4"}
@@ -24,7 +23,7 @@ func (d mp4Generator) supportsAnimation() bool {
 }
 
 func (d mp4Generator) matches(img io.Reader, contentType string) bool {
-	return util.ArrayContains(d.supportedContentTypes(), contentType)
+	return slices.Contains(d.supportedContentTypes(), contentType)
 }
 
 func (d mp4Generator) GetOriginDimensions(b io.Reader, contentType string, ctx rcontext.RequestContext) (bool, int, int, error) {
@@ -44,7 +43,7 @@ func (d mp4Generator) GenerateThumbnail(b io.Reader, contentType string, width i
 	defer os.Remove(tempFile2)
 	defer os.Remove(dir)
 
-	f, err := os.OpenFile(tempFile1, os.O_RDWR|os.O_CREATE, 0640)
+	f, err := os.OpenFile(tempFile1, os.O_RDWR|os.O_CREATE, 0o640)
 	if err != nil {
 		return nil, errors.New("mp4: error creating temp video file: " + err.Error())
 	}
@@ -57,7 +56,7 @@ func (d mp4Generator) GenerateThumbnail(b io.Reader, contentType string, width i
 		return nil, errors.New("mp4: error converting video file: " + err.Error())
 	}
 
-	f, err = os.OpenFile(tempFile2, os.O_RDONLY, 0640)
+	f, err = os.OpenFile(tempFile2, os.O_RDONLY, 0o640)
 	if err != nil {
 		return nil, errors.New("mp4: error reading temp png file: " + err.Error())
 	}

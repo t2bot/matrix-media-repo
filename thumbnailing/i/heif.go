@@ -4,11 +4,11 @@ import (
 	"errors"
 	"image"
 	"io"
+	"slices"
 
 	_ "github.com/strukturag/libheif/go/heif"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
-	"github.com/t2bot/matrix-media-repo/util"
 )
 
 type heifGenerator struct {
@@ -23,7 +23,7 @@ func (d heifGenerator) supportsAnimation() bool {
 }
 
 func (d heifGenerator) matches(img io.Reader, contentType string) bool {
-	return util.ArrayContains(d.supportedContentTypes(), contentType)
+	return slices.Contains(d.supportedContentTypes(), contentType)
 }
 
 func (d heifGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx rcontext.RequestContext) (bool, int, int, error) {

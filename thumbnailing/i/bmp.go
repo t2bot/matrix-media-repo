@@ -3,15 +3,14 @@ package i
 import (
 	"errors"
 	"io"
+	"slices"
 
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
-	"github.com/t2bot/matrix-media-repo/util"
 	"golang.org/x/image/bmp"
 )
 
-type bmpGenerator struct {
-}
+type bmpGenerator struct{}
 
 func (d bmpGenerator) supportedContentTypes() []string {
 	return []string{"image/bmp", "image/x-bmp"}
@@ -22,7 +21,7 @@ func (d bmpGenerator) supportsAnimation() bool {
 }
 
 func (d bmpGenerator) matches(img io.Reader, contentType string) bool {
-	return util.ArrayContains(d.supportedContentTypes(), contentType)
+	return slices.Contains(d.supportedContentTypes(), contentType)
 }
 
 func (d bmpGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx rcontext.RequestContext) (bool, int, int, error) {

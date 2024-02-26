@@ -4,20 +4,20 @@ import (
 	"errors"
 	"io"
 	"reflect"
+	"slices"
 
 	"github.com/t2bot/matrix-media-repo/common"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/thumbnailing/i"
 	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
 	"github.com/t2bot/matrix-media-repo/thumbnailing/u"
-	"github.com/t2bot/matrix-media-repo/util"
 	"github.com/t2bot/matrix-media-repo/util/readers"
 )
 
 var ErrUnsupported = errors.New("unsupported thumbnail type")
 
 func IsSupported(contentType string) bool {
-	return util.ArrayContains(i.GetSupportedContentTypes(), contentType)
+	return slices.Contains(i.GetSupportedContentTypes(), contentType)
 }
 
 func GenerateThumbnail(imgStream io.ReadCloser, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
@@ -26,7 +26,7 @@ func GenerateThumbnail(imgStream io.ReadCloser, contentType string, width int, h
 		ctx.Log.Debugf("Unsupported content type '%s'", contentType)
 		return nil, ErrUnsupported
 	}
-	if !util.ArrayContains(ctx.Config.Thumbnails.Types, contentType) {
+	if !slices.Contains(ctx.Config.Thumbnails.Types, contentType) {
 		ctx.Log.Debugf("Disabled content type '%s'", contentType)
 		return nil, ErrUnsupported
 	}

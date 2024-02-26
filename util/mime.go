@@ -2,6 +2,7 @@ package util
 
 import (
 	"mime"
+	"slices"
 	"strings"
 )
 
@@ -19,7 +20,7 @@ func ExtensionForContentType(ct string) string {
 
 func CanInline(ct string) bool {
 	ct = FixContentType(ct)
-	return ArrayContains(InlineContentTypes, ct)
+	return slices.Contains(InlineContentTypes, ct)
 }
 
 var InlineContentTypes = []string{
