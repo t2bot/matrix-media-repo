@@ -25,12 +25,6 @@ var reload = false
 func Init() *sync.WaitGroup {
 	address := net.JoinHostPort(config.Get().General.BindAddress, strconv.Itoa(config.Get().General.Port))
 
-	//defer func() {
-	//	if err := recover(); err != nil {
-	//		logrus.Fatal(err)
-	//	}
-	//}()
-
 	handler := buildRoutes()
 
 	if config.Get().RateLimit.Enabled {

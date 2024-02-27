@@ -225,7 +225,9 @@ beforeParseDownload:
 		contentType = "application/json"
 		b, err := json.Marshal(res)
 		if err != nil {
-			panic(err) // blow up this request
+			sentry.CaptureException(err)
+			log.Errorf("Failed to marshal response: %v", err)
+			return
 		}
 		stream = io.NopCloser(bytes.NewReader(b))
 		expectedBytes = int64(len(b))
@@ -253,10 +255,11 @@ beforeParseDownload:
 	defer stream.Close()
 	written, err := io.Copy(w, stream)
 	if err != nil {
-		panic(err) // blow up this request
+		log.Errorf("Failed to write response: %v", err)
 	}
 	if expectedBytes > 0 && written != expectedBytes {
-		panic(errors.New(fmt.Sprintf("mismatch transfer size: %d expected, %d sent", expectedBytes, written)))
+		sentry.CaptureException(fmt.Errorf("expected %d bytes, but only wrote %d bytes for %q", expectedBytes, written, r.URL.Path))
+		log.Warnf("Expected %d bytes, but only wrote %d bytes", expectedBytes, written)
 	}
 }
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net"
 	"net/http"
 	"strings"
@@ -61,13 +60,14 @@ func (h *HostRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}).Inc()
 		logger.Warnf("The server name provided ('%s') in the Host header is not configured, or the request was made directly to the media repo. Please specify a Host header and check your reverse proxy configuration. The request is being rejected.", r.Host)
 		w.WriteHeader(http.StatusBadGateway)
-		if b, err := json.Marshal(_responses.BadGatewayError(errors.New("Review server logs to continue"))); err != nil {
-			panic(fmt.Errorf("error preparing BadGatewayError: %v", err))
-		} else {
-			if _, err = w.Write(b); err != nil {
-				panic(fmt.Errorf("error sending BadGatewayError: %v", err))
-			}
+
+		var b []byte
+		if b, err = json.Marshal(_responses.BadGatewayError(errors.New("Review server logs to continue"))); err != nil {
+			logger.Errorf("Error preparing BadGateway: %v", err)
+			sentry.CaptureException(err)
+			return
 		}
+		w.Write(b)
 		return // don't call next handler
 	}
 

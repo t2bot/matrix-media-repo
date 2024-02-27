@@ -29,25 +29,25 @@ func buildPrimaryRouter() *httprouter.Router {
 func methodNotAllowedFn(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusMethodNotAllowed)
-	reponse, err := json.Marshal(_responses.MethodNotAllowed())
+	b, err := json.Marshal(_responses.MethodNotAllowed())
 	if err != nil {
-		sentry.CaptureException(fmt.Errorf("error preparing MethodNotAllowed: %w", err))
+		sentry.CaptureException(fmt.Errorf("error preparing MethodNotAllowed: %v", err))
 		logrus.Errorf("error preparing MethodNotAllowed: %v", err)
 		return
 	}
-	w.Write(reponse)
+	w.Write(b)
 }
 
 func notFoundFn(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNotFound)
-	reponse, err := json.Marshal(_responses.NotFoundError())
+	b, err := json.Marshal(_responses.NotFoundError())
 	if err != nil {
-		sentry.CaptureException(fmt.Errorf("error preparing NotFound: %w", err))
+		sentry.CaptureException(fmt.Errorf("error preparing NotFound: %v", err))
 		logrus.Errorf("error preparing NotFound: %v", err)
 		return
 	}
-	w.Write(reponse)
+	w.Write(b)
 }
 
 func finishCorsFn(w http.ResponseWriter, r *http.Request) {
@@ -67,11 +67,11 @@ func panicFn(w http.ResponseWriter, r *http.Request, i interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusInternalServerError)
 
-	reponse, err := json.Marshal(_responses.InternalServerError(errors.New("unexpected error")))
+	b, err := json.Marshal(_responses.InternalServerError(errors.New("unexpected error")))
 	if err != nil {
-		sentry.CaptureException(fmt.Errorf("error preparing InternalServerError: %w", err))
+		sentry.CaptureException(fmt.Errorf("error preparing InternalServerError: %v", err))
 		logrus.Errorf("error preparing InternalServerError: %v", err)
 		return
 	}
-	w.Write(reponse)
+	w.Write(b)
 }
