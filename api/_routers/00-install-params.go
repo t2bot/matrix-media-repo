@@ -12,11 +12,11 @@ var ServerNameRegex = regexp.MustCompile("[a-zA-Z0-9.:\\-_]+")
 
 // var NumericIdRegex = regexp.MustCompile("[0-9]+")
 func GetParam(name string, r *http.Request) string {
-	p := httprouter.ParamsFromContext(r.Context())
-	if p == nil {
+	parameter := httprouter.ParamsFromContext(r.Context())
+	if parameter == nil {
 		return ""
 	}
-	return p.ByName(name)
+	return parameter.ByName(name)
 }
 
 func ForceSetParam(name string, val string, r *http.Request) *http.Request {

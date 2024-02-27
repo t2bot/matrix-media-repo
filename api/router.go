@@ -2,12 +2,16 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/julienschmidt/httprouter"
+	"github.com/sirupsen/logrus"
 	"github.com/t2bot/matrix-media-repo/api/_responses"
 	"github.com/t2bot/matrix-media-repo/api/_routers"
+	"github.com/t2bot/matrix-media-repo/util"
 )
 
 func buildPrimaryRouter() *httprouter.Router {
@@ -25,25 +29,25 @@ func buildPrimaryRouter() *httprouter.Router {
 func methodNotAllowedFn(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusMethodNotAllowed)
-	b, err := json.Marshal(_responses.MethodNotAllowed())
+	reponse, err := json.Marshal(_responses.MethodNotAllowed())
 	if err != nil {
 		sentry.CaptureException(fmt.Errorf("error preparing MethodNotAllowed: %v", err))
 		logrus.Errorf("error preparing MethodNotAllowed: %v", err)
 		return
 	}
-	w.Write(b)
+	w.Write(reponse)
 }
 
 func notFoundFn(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNotFound)
-	b, err := json.Marshal(_responses.NotFoundError())
+	reponse, err := json.Marshal(_responses.NotFoundError())
 	if err != nil {
 		sentry.CaptureException(fmt.Errorf("error preparing NotFound: %v", err))
 		logrus.Errorf("error preparing NotFound: %v", err)
 		return
 	}
-	w.Write(b)
+	w.Write(reponse)
 }
 
 func finishCorsFn(w http.ResponseWriter, r *http.Request) {
@@ -63,11 +67,11 @@ func panicFn(w http.ResponseWriter, r *http.Request, i interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusInternalServerError)
 
-	b, err := json.Marshal(_responses.InternalServerError(errors.New("unexpected error")))
+	reponse, err := json.Marshal(_responses.InternalServerError(errors.New("unexpected error")))
 	if err != nil {
 		sentry.CaptureException(fmt.Errorf("error preparing InternalServerError: %v", err))
 		logrus.Errorf("error preparing InternalServerError: %v", err)
 		return
 	}
-	w.Write(b)
+	w.Write(reponse)
 }

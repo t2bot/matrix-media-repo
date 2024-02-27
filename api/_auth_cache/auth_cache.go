@@ -103,25 +103,25 @@ func GetUserId(ctx rcontext.RequestContext, accessToken string, appserviceUserId
 		return checkTokenWithHomeserver(ctx, accessToken, appserviceUserId, true)
 	}
 
-	for _, r := range ctx.Config.AccessTokens.Appservices {
-		if r.AppserviceToken != accessToken {
+	for _, appSrv := range ctx.Config.AccessTokens.Appservices {
+		if appSrv.AppserviceToken != accessToken {
 			continue
 		}
 
-		if r.SenderUserId != "" && (r.SenderUserId == appserviceUserId || appserviceUserId == "") {
-			ctx.Log.Debugf("Access token belongs to appservice (sender user ID): %s", r.Id)
-			cacheToken(ctx, accessToken, appserviceUserId, r.SenderUserId, nil)
-			return r.SenderUserId, nil
+		if appSrv.SenderUserId != "" && (appSrv.SenderUserId == appserviceUserId || appserviceUserId == "") {
+			ctx.Log.Debugf("Access token belongs to appservice (sender user ID): %s", appSrv.Id)
+			cacheToken(ctx, accessToken, appserviceUserId, appSrv.SenderUserId, nil)
+			return appSrv.SenderUserId, nil
 		}
 
-		for _, n := range r.UserNamespaces {
+		for _, n := range appSrv.UserNamespaces {
 			regex, ok := regexCache[n.Regex]
 			if !ok {
 				regex = regexp.MustCompile(n.Regex)
 				regexCache[n.Regex] = regex
 			}
 			if regex.MatchString(appserviceUserId) {
-				ctx.Log.Debugf("Access token belongs to appservice: %s", r.Id)
+				ctx.Log.Debugf("Access token belongs to appservice: %s", appSrv.Id)
 				cacheToken(ctx, accessToken, appserviceUserId, appserviceUserId, nil)
 				return appserviceUserId, nil
 			}
@@ -133,13 +133,13 @@ func GetUserId(ctx rcontext.RequestContext, accessToken string, appserviceUserId
 }
 
 func cacheToken(ctx rcontext.RequestContext, accessToken string, appserviceUserId string, userId string, err error) {
-	v := cachedToken{
+	token := cachedToken{
 		userId: userId,
 		err:    err,
 	}
 	t := time.Duration(ctx.Config.AccessTokens.MaxCacheTimeSeconds) * time.Second
 	rwLock.Lock()
-	tokenCache.Set(cacheKey(accessToken, appserviceUserId), v, t)
+	tokenCache.Set(cacheKey(accessToken, appserviceUserId), token, t)
 	rwLock.Unlock()
 }
 

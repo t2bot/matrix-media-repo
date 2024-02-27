@@ -18,9 +18,11 @@ import (
 	"github.com/t2bot/matrix-media-repo/common/config"
 )
 
-var srv *http.Server
-var waitGroup = &sync.WaitGroup{}
-var reload = false
+var (
+	srv       *http.Server
+	waitGroup = &sync.WaitGroup{}
+	reload    = false
+)
 
 func Init() *sync.WaitGroup {
 	address := net.JoinHostPort(config.Get().General.BindAddress, strconv.Itoa(config.Get().General.Port))
@@ -35,8 +37,8 @@ func Init() *sync.WaitGroup {
 		limiter.SetBurst(config.Get().RateLimit.BurstCount)
 		limiter.SetMax(config.Get().RateLimit.RequestsPerSecond)
 
-		b, _ := json.Marshal(_responses.RateLimitReached())
-		limiter.SetMessage(string(b))
+		reponse, _ := json.Marshal(_responses.RateLimitReached())
+		limiter.SetMessage(string(reponse))
 		limiter.SetMessageContentType("application/json")
 
 		handler = tollbooth.LimitHandler(limiter, handler)

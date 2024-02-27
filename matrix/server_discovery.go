@@ -49,11 +49,11 @@ func GetServerApiUrl(hostname string) (string, string, error) {
 	}
 
 	addrErr := &net.AddrError{}
-	h, p, err := net.SplitHostPort(hostname)
+	host, port, err := net.SplitHostPort(hostname)
 	defPort := false
 	switch {
 	case errors.As(err, &addrErr) && addrErr.Err == "missing port in address":
-		h, p, err = net.SplitHostPort(hostname + ":8448")
+		host, port, err = net.SplitHostPort(hostname + ":8448")
 		if err != nil {
 			return "", "", fmt.Errorf("failed to parse hostname: %w", err)
 		}
@@ -62,9 +62,9 @@ func GetServerApiUrl(hostname string) (string, string, error) {
 	}
 
 	// Step 1 of the discovery process: if the hostname is an IP, use that with explicit or default port
-	logrus.Debug("Testing if " + h + " is an IP address")
-	if is.IP(h) {
-		url := fmt.Sprintf("https://%s", net.JoinHostPort(h, p))
+	logrus.Debug("Testing if " + host + " is an IP address")
+	if is.IP(host) {
+		url := fmt.Sprintf("https://%s", net.JoinHostPort(host, port))
 		server := cachedServer{url, hostname}
 		apiUrlCacheInstance.Set(hostname, server, cache.DefaultExpiration)
 		logrus.Debug("Server API URL for " + hostname + " is " + url + " (IP address)")
@@ -74,17 +74,17 @@ func GetServerApiUrl(hostname string) (string, string, error) {
 	// Step 2: if the hostname is not an IP address, and an explicit port is given, use that
 	logrus.Debug("Testing if a default port was used. Using default = ", defPort)
 	if !defPort {
-		url := fmt.Sprintf("https://%s", net.JoinHostPort(h, p))
-		server := cachedServer{url, h}
+		url := fmt.Sprintf("https://%s", net.JoinHostPort(host, port))
+		server := cachedServer{url, host}
 		apiUrlCacheInstance.Set(hostname, server, cache.DefaultExpiration)
 		logrus.Debugf("Server API URL for %s is %s (explicit port)", hostname, url)
-		return url, h, nil
+		return url, host, nil
 	}
 
 	// Step 3: if the hostname is not an IP address and no explicit port is given, do .well-known
 	// Note that we have sprawling branches here because we need to fall through to step 4 if parsing fails
-	logrus.Debug("Doing .well-known lookup on " + h)
-	r, err := http.Get(fmt.Sprintf("https://%s/.well-known/matrix/server", h))
+	logrus.Debug("Doing .well-known lookup on " + host)
+	r, err := http.Get(fmt.Sprintf("https://%s/.well-known/matrix/server", host))
 	if r != nil {
 		defer r.Body.Close()
 	}
@@ -183,10 +183,10 @@ func GetServerApiUrl(hostname string) (string, string, error) {
 			realAddr = realAddr[0 : len(realAddr)-1]
 		}
 		url := fmt.Sprintf("https://%s", net.JoinHostPort(realAddr, strconv.Itoa(int(addrs[0].Port))))
-		server := cachedServer{url, h}
+		server := cachedServer{url, host}
 		apiUrlCacheInstance.Set(hostname, server, cache.DefaultExpiration)
 		logrus.Debugf("Server API URL for %s is %s (SRV)", hostname, url)
-		return url, h, nil
+		return url, host, nil
 	}
 
 	// Step 5: try resolving a hostname using DEPRECATED SRV records and use it
@@ -200,17 +200,17 @@ func GetServerApiUrl(hostname string) (string, string, error) {
 			realAddr = realAddr[0 : len(realAddr)-1]
 		}
 		url := fmt.Sprintf("https://%s", net.JoinHostPort(realAddr, strconv.Itoa(int(addrs[0].Port))))
-		server := cachedServer{url, h}
+		server := cachedServer{url, host}
 		apiUrlCacheInstance.Set(hostname, server, cache.DefaultExpiration)
 		logrus.Debugf("Server API URL for %s is %s (SRV-Deprecated)", hostname, url)
-		return url, h, nil
+		return url, host, nil
 	}
 
 	// Step 6: use the target host as-is
 	logrus.Debug("Using host as-is: ", hostname)
-	url := fmt.Sprintf("https://%s", net.JoinHostPort(h, p))
-	server := cachedServer{url, h}
+	url := fmt.Sprintf("https://%s", net.JoinHostPort(host, port))
+	server := cachedServer{url, host}
 	apiUrlCacheInstance.Set(hostname, server, cache.DefaultExpiration)
 	logrus.Debugf("Server API URL for %s is %s (fallback)", hostname, url)
-	return url, h, nil
+	return url, host, nil
 }

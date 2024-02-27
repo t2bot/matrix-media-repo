@@ -37,8 +37,8 @@ func NewInstallMetadataRouter(ignoreHost bool, actionName string, counter *Reque
 	}
 }
 
-func (i *InstallMetadataRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	requestId := i.counter.NextId()
+func (router *InstallMetadataRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	requestId := router.counter.NextId()
 	logger := logrus.WithFields(logrus.Fields{
 		"method":        r.Method,
 		"host":          r.Host,
@@ -54,44 +54,44 @@ func (i *InstallMetadataRouter) ServeHTTP(w http.ResponseWriter, r *http.Request
 	ctx := r.Context()
 	ctx = context.WithValue(ctx, common.ContextRequestStartTime, util.NowMillis())
 	ctx = context.WithValue(ctx, common.ContextRequestId, requestId)
-	ctx = context.WithValue(ctx, common.ContextAction, i.actionName)
-	ctx = context.WithValue(ctx, common.ContextIgnoreHost, i.ignoreHost)
+	ctx = context.WithValue(ctx, common.ContextAction, router.actionName)
+	ctx = context.WithValue(ctx, common.ContextIgnoreHost, router.ignoreHost)
 	ctx = context.WithValue(ctx, common.ContextLogger, logger)
 	r = r.WithContext(ctx)
 
-	if i.next != nil {
-		i.next.ServeHTTP(w, r)
+	if router.next != nil {
+		router.next.ServeHTTP(w, r)
 	}
 }
 
 func GetActionName(r *http.Request) string {
-	x, ok := r.Context().Value(common.ContextAction).(string)
+	action, ok := r.Context().Value(common.ContextAction).(string)
 	if !ok {
 		return "<UNKNOWN>"
 	}
-	return x
+	return action
 }
 
 func ShouldIgnoreHost(r *http.Request) bool {
-	x, ok := r.Context().Value(common.ContextIgnoreHost).(bool)
+	ignoreHost, ok := r.Context().Value(common.ContextIgnoreHost).(bool)
 	if !ok {
 		return false
 	}
-	return x
+	return ignoreHost
 }
 
 func GetLogger(r *http.Request) *logrus.Entry {
-	x, ok := r.Context().Value(common.ContextLogger).(*logrus.Entry)
+	log, ok := r.Context().Value(common.ContextLogger).(*logrus.Entry)
 	if !ok {
 		return nil
 	}
-	return x
+	return log
 }
 
 func GetRequestDuration(r *http.Request) float64 {
-	x, ok := r.Context().Value(common.ContextRequestStartTime).(int64)
+	duration, ok := r.Context().Value(common.ContextRequestStartTime).(int64)
 	if !ok {
 		return -1
 	}
-	return float64(util.NowMillis()-x) / 1000.0
+	return float64(util.NowMillis()-duration) / 1000.0
 }

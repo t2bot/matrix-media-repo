@@ -65,8 +65,8 @@ func (s *urlPreviewsTableStatements) Prepare(ctx rcontext.RequestContext) *urlPr
 	}
 }
 
-func (s *urlPreviewsTableWithContext) Get(url string, ts int64, languageHeader string) (*DbUrlPreview, error) {
-	row := s.statements.selectUrlPreview.QueryRowContext(s.ctx, url, ts, languageHeader)
+func (s *urlPreviewsTableWithContext) Get(url string, timestamp int64, languageHeader string) (*DbUrlPreview, error) {
+	row := s.statements.selectUrlPreview.QueryRowContext(s.ctx, url, timestamp, languageHeader)
 	val := &DbUrlPreview{}
 	err := row.Scan(&val.Url, &val.ErrorCode, &val.BucketTs, &val.SiteUrl, &val.SiteName, &val.ResourceType, &val.Description, &val.Title, &val.ImageMxc, &val.ImageType, &val.ImageSize, &val.ImageWidth, &val.ImageHeight, &val.LanguageHeader)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -75,8 +75,8 @@ func (s *urlPreviewsTableWithContext) Get(url string, ts int64, languageHeader s
 	return val, err
 }
 
-func (s *urlPreviewsTableWithContext) Insert(p *DbUrlPreview) error {
-	_, err := s.statements.insertUrlPreview.ExecContext(s.ctx, p.Url, p.ErrorCode, p.BucketTs, p.SiteUrl, p.SiteName, p.ResourceType, p.Description, p.Title, p.ImageMxc, p.ImageType, p.ImageSize, p.ImageWidth, p.ImageHeight, p.LanguageHeader)
+func (s *urlPreviewsTableWithContext) Insert(preview *DbUrlPreview) error {
+	_, err := s.statements.insertUrlPreview.ExecContext(s.ctx, preview.Url, preview.ErrorCode, preview.BucketTs, preview.SiteUrl, preview.SiteName, preview.ResourceType, preview.Description, preview.Title, preview.ImageMxc, preview.ImageType, preview.ImageSize, preview.ImageWidth, preview.ImageHeight, preview.LanguageHeader)
 	return err
 }
 
@@ -89,7 +89,7 @@ func (s *urlPreviewsTableWithContext) InsertError(url string, errorCode string) 
 	})
 }
 
-func (s *urlPreviewsTableWithContext) DeleteOlderThan(ts int64) error {
-	_, err := s.statements.deleteOldUrlPreviews.ExecContext(s.ctx, ts)
+func (s *urlPreviewsTableWithContext) DeleteOlderThan(timestamp int64) error {
+	_, err := s.statements.deleteOldUrlPreviews.ExecContext(s.ctx, timestamp)
 	return err
 }

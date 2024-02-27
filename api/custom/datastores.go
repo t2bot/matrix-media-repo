@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/t2bot/matrix-media-repo/api/_apimeta"
@@ -16,7 +17,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/util"
 )
 
 type DatastoreMigration struct {
@@ -26,17 +26,17 @@ type DatastoreMigration struct {
 
 func GetDatastores(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
 	response := make(map[string]interface{})
-	for _, ds := range config.UniqueDatastores() {
-		uri, err := datastores.GetUri(ds)
+	for _, store := range config.UniqueDatastores() {
+		uri, err := datastores.GetUri(store)
 		if err != nil {
 			sentry.CaptureException(err)
 			rctx.Log.Error("Error getting datastore URI: ", err)
 			return _responses.InternalServerError(errors.New("unexpected error getting datastore information"))
 		}
-		dsMap := make(map[string]interface{})
-		dsMap["type"] = ds.Type
-		dsMap["uri"] = uri
-		response[ds.Id] = dsMap
+		dataStoreMap := make(map[string]interface{})
+		dataStoreMap["type"] = store.Type
+		dataStoreMap["uri"] = uri
+		response[store.Id] = dataStoreMap
 	}
 
 	return &_responses.DoNotCacheResponse{Payload: response}
@@ -44,7 +44,7 @@ func GetDatastores(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 
 func MigrateBetweenDatastores(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
 	beforeTsStr := r.URL.Query().Get("before_ts")
-	beforeTs := util.NowMillis()
+	beforeTs := time.Now().UnixNano() / int64(time.Millisecond)
 	var err error
 	if beforeTsStr != "" {
 		beforeTs, err = strconv.ParseInt(beforeTsStr, 10, 64)
@@ -97,7 +97,7 @@ func MigrateBetweenDatastores(r *http.Request, rctx rcontext.RequestContext, use
 
 func GetDatastoreStorageEstimate(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
 	beforeTsStr := r.URL.Query().Get("before_ts")
-	beforeTs := util.NowMillis()
+	beforeTs := time.Now().UnixNano() / int64(time.Millisecond)
 	var err error
 	if beforeTsStr != "" {
 		beforeTs, err = strconv.ParseInt(beforeTsStr, 10, 64)
