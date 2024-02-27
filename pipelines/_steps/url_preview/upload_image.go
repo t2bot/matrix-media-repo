@@ -21,8 +21,7 @@ func UploadImage(ctx rcontext.RequestContext, image *m.PreviewImage, onHost stri
 	defer image.Data.Close()
 	pr, pw := io.Pipe()
 	tee := io.TeeReader(image.Data, pw)
-	mediaChan := make(chan *database.DbMedia)
-	defer close(mediaChan)
+	mediaChan := make(chan *database.DbMedia, 1)
 	go func() {
 		media, err := pipeline_upload.Execute(ctx, onHost, "", io.NopCloser(tee), image.ContentType, image.Filename, userId, datastores.LocalMediaKind)
 		if err != nil {
@@ -30,12 +29,8 @@ func UploadImage(ctx rcontext.RequestContext, image *m.PreviewImage, onHost stri
 		} else {
 			_ = pw.Close()
 		}
-		go func() {
-			defer func() {
-				recover() // consume write-to-closed-channel errors
-			}()
-			mediaChan <- media
-		}()
+		mediaChan <- media
+		close(mediaChan)
 	}()
 
 	w := 0
