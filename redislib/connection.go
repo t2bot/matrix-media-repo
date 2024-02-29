@@ -34,6 +34,8 @@ func makeConnection() {
 			client := redis.NewClient(&redis.Options{
 				DialTimeout: 10 * time.Second,
 				DB:          conf.DbNum,
+        Username:    conf.Username,
+        Password:    conf.Password,
 				Addr:        c.Address,
 			})
 			clients = append(clients, client)
@@ -43,6 +45,8 @@ func makeConnection() {
 			Addrs:       addresses,
 			DialTimeout: 10 * time.Second,
 			DB:          conf.DbNum,
+      Username:    conf.Username,
+      Password:    conf.Password,
 		})
 		rs = redsync.New(pools...)
 	})
