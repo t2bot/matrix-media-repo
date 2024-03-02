@@ -48,14 +48,17 @@ func (d mp3Generator) GetOriginDimensions(b io.Reader, contentType string, ctx r
 }
 
 func (d mp3Generator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*Thumbnail, error) {
-	tags, rc, err := u.GetID3Tags(b)
+	rd, err := newReadSeekerWrapper(b)
+	tags, err := u.GetID3Tags(rd)
+	if err != nil {
+		return nil, fmt.Errorf("error wrapping reader: %w", err)
+	}
+	tags, err = tag.ReadFrom(rd) // we don't care about errors in this process
 	if err != nil {
 		return nil, fmt.Errorf("mp3: error getting tags: %w", err)
 	}
-	//goland:noinspection GoUnhandledErrorResult
-	defer rc.Close()
 
-	audio, format, err := d.decode(rc)
+	audio, format, err := d.decode(rd)
 	if err != nil {
 		return nil, err
 	}
