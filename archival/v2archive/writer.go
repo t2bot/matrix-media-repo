@@ -150,7 +150,7 @@ func (w *ArchiveWriter) AppendMedia(file io.ReadCloser, info MediaInfo) (string,
 	}
 	internalName := fmt.Sprintf("%s__%s%s", info.Origin, info.MediaId, mime.Extension())
 
-	createTime := util.FromMillis(info.CreationTs)
+	createTime := time.UnixMilli(info.CreationTs)
 
 	size, sha256hash, err := w.putFile(br.GetRewoundReader(), internalName, createTime)
 	if err != nil {
@@ -210,7 +210,7 @@ func (w *ArchiveWriter) putFile(r io.Reader, name string, creationTime time.Time
 	hasher := sha256.New()
 	header := &tar.Header{
 		Name:    name,
-		Mode:    int64(0644),
+		Mode:    int64(0o644),
 		ModTime: creationTime,
 		Size:    i1,
 	}
@@ -242,7 +242,7 @@ func (w *ArchiveWriter) Finish() error {
 	manifest := &Manifest{
 		Version:   ManifestVersion,
 		EntityId:  w.entity,
-		CreatedTs: util.NowMillis(),
+		CreatedTs: time.Now().UnixMilli(),
 		Media:     w.mediaManifest,
 	}
 	pr, pw := io.Pipe()

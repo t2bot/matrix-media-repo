@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/t2bot/matrix-media-repo/api/_apimeta"
@@ -33,13 +34,14 @@ func PurgeRemoteMedia(r *http.Request, rctx rcontext.RequestContext, user _apime
 	if err != nil {
 		return _responses.BadRequest(fmt.Errorf("Error parsing before_ts: %w", err))
 	}
+	before := time.UnixMilli(beforeTs)
 
 	rctx = rctx.LogWithFields(logrus.Fields{
-		"beforeTs": beforeTs,
+		"beforeTs": before,
 	})
 
 	// We don't bother clearing the cache because it's still probably useful there
-	removed, err := task_runner.PurgeRemoteMediaBefore(rctx, beforeTs)
+	removed, err := task_runner.PurgeRemoteMediaBefore(rctx, before)
 	if err != nil {
 		rctx.Log.Error("Error purging remote media: ", err)
 		sentry.CaptureException(err)
@@ -119,13 +121,14 @@ func PurgeQuarantined(r *http.Request, rctx rcontext.RequestContext, user _apime
 
 func PurgeOldMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
 	var err error
-	beforeTs := util.NowMillis()
+	before := time.Now()
 	beforeTsStr := r.URL.Query().Get("before_ts")
 	if beforeTsStr != "" {
-		beforeTs, err = strconv.ParseInt(beforeTsStr, 10, 64)
+		beforeTS, err := strconv.ParseInt(beforeTsStr, 10, 64)
 		if err != nil {
 			return _responses.BadRequest(fmt.Errorf("Error parsing before_ts: %w", err))
 		}
+		before = time.UnixMilli(beforeTS)
 	}
 
 	includeLocal := false
@@ -138,7 +141,7 @@ func PurgeOldMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 	}
 
 	rctx = rctx.LogWithFields(logrus.Fields{
-		"before_ts":     beforeTs,
+		"before_ts":     before,
 		"include_local": includeLocal,
 	})
 
@@ -148,7 +151,7 @@ func PurgeOldMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 	}
 
 	mediaDb := database.GetInstance().Media.Prepare(rctx)
-	records, err := mediaDb.GetOldExcluding(domains, beforeTs)
+	records, err := mediaDb.GetOldExcluding(domains, before)
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
@@ -177,7 +180,7 @@ func PurgeUserMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 	}
 
 	var err error
-	beforeTs := util.NowMillis()
+	beforeTs := time.Now().UnixMilli()
 	beforeTsStr := r.URL.Query().Get("before_ts")
 	if beforeTsStr != "" {
 		beforeTs, err = strconv.ParseInt(beforeTsStr, 10, 64)
@@ -234,7 +237,7 @@ func PurgeRoomMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 	}
 
 	var err error
-	beforeTs := util.NowMillis()
+	beforeTs := time.Now().UnixMilli()
 	beforeTsStr := r.URL.Query().Get("before_ts")
 	if beforeTsStr != "" {
 		beforeTs, err = strconv.ParseInt(beforeTsStr, 10, 64)
@@ -307,7 +310,7 @@ func PurgeDomainMedia(r *http.Request, rctx rcontext.RequestContext, user _apime
 	}
 
 	var err error
-	beforeTs := util.NowMillis()
+	beforeTs := time.Now().UnixMilli()
 	beforeTsStr := r.URL.Query().Get("before_ts")
 	if beforeTsStr != "" {
 		beforeTs, err = strconv.ParseInt(beforeTsStr, 10, 64)

@@ -2,6 +2,7 @@ package task_runner
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/t2bot/matrix-media-repo/common/config"
@@ -18,9 +19,9 @@ func PurgeThumbnails(ctx rcontext.RequestContext) {
 		return
 	}
 
-	beforeTs := util.NowMillis() - int64(config.Get().UrlPreviews.ExpireDays*24*60*60*1000)
+	before := time.Now().AddDate(0, 0, -1*config.Get().UrlPreviews.ExpireDays)
 	thumbsDb := database.GetInstance().Thumbnails.Prepare(ctx)
-	old, err := thumbsDb.GetOlderThan(beforeTs)
+	old, err := thumbsDb.GetOlderThan(before)
 	if err != nil {
 		ctx.Log.Error("Error deleting thumbnails: ", err)
 		sentry.CaptureException(err)

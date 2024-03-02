@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/lib/pq"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
@@ -234,8 +235,8 @@ func (s *MediaTableWithContext) GetByIds(origin string, mediaIds []string) ([]*D
 	return s.scanRows(s.statements.selectMediaByOriginAndIds.QueryContext(s.ctx, origin, pq.Array(mediaIds)))
 }
 
-func (s *MediaTableWithContext) GetOldExcluding(origins []string, beforeTs int64) ([]*DbMedia, error) {
-	return s.scanRows(s.statements.selectOldMediaExcludingDomains.QueryContext(s.ctx, pq.Array(origins), beforeTs))
+func (s *MediaTableWithContext) GetOldExcluding(origins []string, beforeTs time.Time) ([]*DbMedia, error) {
+	return s.scanRows(s.statements.selectOldMediaExcludingDomains.QueryContext(s.ctx, pq.Array(origins), beforeTs.UnixMilli()))
 }
 
 func (s *MediaTableWithContext) GetByLocation(datastoreId string, location string) ([]*DbMedia, error) {

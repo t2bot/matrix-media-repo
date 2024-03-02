@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/util"
 )
 
 type DbUrlPreview struct {
@@ -84,12 +84,12 @@ func (s *urlPreviewsTableWithContext) InsertError(url string, errorCode string) 
 	_ = s.Insert(&DbUrlPreview{
 		Url:       url,
 		ErrorCode: errorCode,
-		BucketTs:  util.GetHourBucket(util.NowMillis()),
+		BucketTs:  time.Now().UnixMilli(),
 		// remainder of fields don't matter
 	})
 }
 
-func (s *urlPreviewsTableWithContext) DeleteOlderThan(timestamp int64) error {
-	_, err := s.statements.deleteOldUrlPreviews.ExecContext(s.ctx, timestamp)
+func (s *urlPreviewsTableWithContext) DeleteOlderThan(ts time.Time) error {
+	_, err := s.statements.deleteOldUrlPreviews.ExecContext(s.ctx, ts.UnixMilli())
 	return err
 }

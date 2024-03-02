@@ -11,7 +11,6 @@ import (
 	"github.com/t2bot/matrix-media-repo/notifier"
 	"github.com/t2bot/matrix-media-repo/pool"
 	"github.com/t2bot/matrix-media-repo/tasks/task_runner"
-	"github.com/t2bot/matrix-media-repo/util"
 	"github.com/t2bot/matrix-media-repo/util/ids"
 )
 
@@ -63,7 +62,7 @@ func beginTask(task *database.DbTask) {
 	}
 	runnerCtx := rcontext.Initial().LogWithFields(logrus.Fields{"task_id": task.TaskId})
 
-	oneHourAgo := util.NowMillis() - (60 * 60 * 1000)
+	oneHourAgo := time.Now().Add(-1 * time.Hour).UnixMilli()
 	if task.StartTs < oneHourAgo {
 		runnerCtx.Log.Warn("Not starting task because it is more than 1 hour old.")
 		return

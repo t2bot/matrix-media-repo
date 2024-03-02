@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 )
@@ -124,8 +125,8 @@ func (s *thumbnailsTableWithContext) GetForMedia(origin string, mediaId string) 
 	return s.scanRows(s.statements.selectThumbnailsForMedia.QueryContext(s.ctx, origin, mediaId))
 }
 
-func (s *thumbnailsTableWithContext) GetOlderThan(ts int64) ([]*DbThumbnail, error) {
-	return s.scanRows(s.statements.selectOldThumbnails.QueryContext(s.ctx, ts))
+func (s *thumbnailsTableWithContext) GetOlderThan(ts time.Time) ([]*DbThumbnail, error) {
+	return s.scanRows(s.statements.selectOldThumbnails.QueryContext(s.ctx, ts.UnixMilli()))
 }
 
 func (s *thumbnailsTableWithContext) GetByLocation(datastoreId string, location string) ([]*DbThumbnail, error) {

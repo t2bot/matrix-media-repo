@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/t2bot/matrix-media-repo/api/_apimeta"
@@ -13,7 +14,6 @@ import (
 
 	"github.com/t2bot/matrix-media-repo/common"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/util"
 )
 
 type MatrixOpenGraph struct {
@@ -39,7 +39,8 @@ func PreviewUrl(r *http.Request, rctx rcontext.RequestContext, user _apimeta.Use
 	// Parse the parameters
 	urlStr := params.Get("url")
 	tsStr := params.Get("ts")
-	ts := util.NowMillis()
+
+	var ts int64
 	var err error
 	if tsStr != "" {
 		ts, err = strconv.ParseInt(tsStr, 10, 64)
@@ -47,6 +48,9 @@ func PreviewUrl(r *http.Request, rctx rcontext.RequestContext, user _apimeta.Use
 			rctx.Log.Error("Error parsing ts: ", err)
 			return _responses.BadRequest(err)
 		}
+	}
+	if ts == 0 {
+		ts = time.Now().UnixMilli()
 	}
 
 	// Validate the URL

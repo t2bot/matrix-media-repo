@@ -3,9 +3,9 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/util"
 )
 
 type DbHeldMedia struct {
@@ -55,11 +55,11 @@ func (s *heldMediaTableStatements) Prepare(ctx rcontext.RequestContext) *heldMed
 }
 
 func (s *heldMediaTableWithContext) TryInsert(origin string, mediaId string, reason HeldReason) error {
-	_, err := s.statements.insertHeldMedia.ExecContext(s.ctx, origin, mediaId, reason, util.NowMillis())
+	_, err := s.statements.insertHeldMedia.ExecContext(s.ctx, origin, mediaId, reason, time.Now().UnixMilli())
 	return err
 }
 
-func (s *heldMediaTableWithContext) DeleteOlderThan(reason HeldReason, olderThanTs int64) error {
-	_, err := s.statements.deleteHeldMedia.ExecContext(s.ctx, reason, olderThanTs)
+func (s *heldMediaTableWithContext) DeleteOlderThan(reason HeldReason, olderThan time.Time) error {
+	_, err := s.statements.deleteHeldMedia.ExecContext(s.ctx, reason, olderThan.UnixMilli())
 	return err
 }

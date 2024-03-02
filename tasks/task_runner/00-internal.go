@@ -1,15 +1,16 @@
 package task_runner
 
 import (
+	"time"
+
 	"github.com/getsentry/sentry-go"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/database"
-	"github.com/t2bot/matrix-media-repo/util"
 )
 
 func markDone(ctx rcontext.RequestContext, task *database.DbTask) {
 	taskDb := database.GetInstance().Tasks.Prepare(ctx)
-	if err := taskDb.SetEndTime(task.TaskId, util.NowMillis()); err != nil {
+	if err := taskDb.SetEndTime(task.TaskId, time.Now().UnixMilli()); err != nil {
 		ctx.Log.Warn("Error updating task as complete: ", err)
 		sentry.CaptureException(err)
 	}

@@ -1,11 +1,12 @@
 package pipeline_create
 
 import (
+	"time"
+
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/database"
 	"github.com/t2bot/matrix-media-repo/pipelines/_steps/quota"
 	"github.com/t2bot/matrix-media-repo/pipelines/_steps/upload"
-	"github.com/t2bot/matrix-media-repo/util"
 )
 
 const DefaultExpirationTime = 0
@@ -24,10 +25,11 @@ func Execute(ctx rcontext.RequestContext, origin string, userId string, expirati
 
 	// Step 3: Insert record of expiration
 	if expirationTime == DefaultExpirationTime {
-		expirationTime = ctx.Config.Uploads.MaxAgeSeconds * 1000
+		expirationTime = ctx.Config.Uploads.MaxAgeSeconds
 	}
-	expiresTs := util.NowMillis() + expirationTime
-	if err = database.GetInstance().ExpiringMedia.Prepare(ctx).Insert(origin, mediaId, userId, expiresTs); err != nil {
+	expires := time.Now().Add(time.Duration(expirationTime) * time.Second)
+	expiresTS := expires.UnixMilli()
+	if err = database.GetInstance().ExpiringMedia.Prepare(ctx).Insert(origin, mediaId, userId, expiresTS); err != nil {
 		return nil, err
 	}
 
@@ -36,6 +38,6 @@ func Execute(ctx rcontext.RequestContext, origin string, userId string, expirati
 		Origin:    origin,
 		MediaId:   mediaId,
 		UserId:    userId,
-		ExpiresTs: expiresTs,
+		ExpiresTs: expiresTS,
 	}, nil
 }

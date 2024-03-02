@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/t2bot/matrix-media-repo/api/_apimeta"
@@ -49,9 +50,13 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 		canRedirect = parsedFlag
 	}
 
-	blockFor, err := util.CalcBlockForDuration(timeoutMs)
+	timeoutMS, err := strconv.ParseInt(timeoutMs, 10, 64)
 	if err != nil {
 		return _responses.BadRequest(errors.New("timeout_ms does not appear to be an integer"))
+	}
+	timeout := time.Duration(timeoutMS) * time.Millisecond
+	if timeout > time.Minute {
+		timeout = time.Minute
 	}
 
 	rctx = rctx.LogWithFields(logrus.Fields{
@@ -121,7 +126,7 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 	thumbnail, stream, err := pipeline_thumbnail.Execute(rctx, server, mediaId, pipeline_thumbnail.ThumbnailOpts{
 		DownloadOpts: pipeline_download.DownloadOpts{
 			FetchRemoteIfNeeded: downloadRemote,
-			BlockForReadUntil:   blockFor,
+			BlockForReadUntil:   timeout,
 			RecordOnly:          false, // overridden
 			CanRedirect:         canRedirect,
 		},

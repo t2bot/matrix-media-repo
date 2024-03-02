@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/util"
 )
 
 type DbExpiringMedia struct {
@@ -17,7 +17,8 @@ type DbExpiringMedia struct {
 }
 
 func (r *DbExpiringMedia) IsExpired() bool {
-	return r.ExpiresTs < util.NowMillis()
+	expiresTs := time.UnixMilli(r.ExpiresTs)
+	return expiresTs.Before(time.Now())
 }
 
 const insertExpiringMedia = "INSERT INTO expiring_media (origin, media_id, user_id, expires_ts) VALUES ($1, $2, $3, $4);"
@@ -72,7 +73,7 @@ func (s *expiringMediaTableWithContext) Insert(origin string, mediaId string, us
 }
 
 func (s *expiringMediaTableWithContext) ByUserCount(userId string) (int64, error) {
-	row := s.statements.selectExpiringMediaByUserCount.QueryRowContext(s.ctx, userId, util.NowMillis())
+	row := s.statements.selectExpiringMediaByUserCount.QueryRowContext(s.ctx, userId, time.Now().UnixMilli())
 	val := int64(0)
 	err := row.Scan(&val)
 	if errors.Is(err, sql.ErrNoRows) {

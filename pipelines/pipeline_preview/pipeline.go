@@ -4,13 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"time"
 
 	"github.com/t2bot/matrix-media-repo/common"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/database"
 	"github.com/t2bot/matrix-media-repo/pipelines/_steps/url_preview"
 	"github.com/t2bot/matrix-media-repo/url_previewing/m"
-	"github.com/t2bot/matrix-media-repo/util"
 	"golang.org/x/sync/singleflight"
 )
 
@@ -31,12 +31,13 @@ func Execute(ctx rcontext.RequestContext, onHost string, previewUrl string, user
 
 	// Step 2: Fix timestamp bucket. If we're within 60 seconds of a bucket, just assume we're okay, so we don't
 	// infinitely recurse into ourselves.
-	now := util.NowMillis()
-	atBucket := util.GetHourBucket(opts.Timestamp) // we should only be using this for the remainder of the function
-	nowBucket := util.GetHourBucket(now)
-	if (now-opts.Timestamp) > 60000 && atBucket != nowBucket {
+	requestTS := time.UnixMilli(opts.Timestamp)
+	atBucket := requestTS.UnixMilli()
+	nowBucket := time.Now().UnixMilli()
+
+	if time.Now().After(requestTS.Add(60*time.Second)) && atBucket != nowBucket {
 		return Execute(ctx, onHost, previewUrl, userId, PreviewOpts{
-			Timestamp:      now,
+			Timestamp:      time.Now().Unix() * 1000,
 			LanguageHeader: opts.LanguageHeader,
 		})
 	}

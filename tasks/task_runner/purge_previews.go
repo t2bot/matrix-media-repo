@@ -1,11 +1,12 @@
 package task_runner
 
 import (
+	"time"
+
 	"github.com/getsentry/sentry-go"
 	"github.com/t2bot/matrix-media-repo/common/config"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/database"
-	"github.com/t2bot/matrix-media-repo/util"
 )
 
 func PurgePreviews(ctx rcontext.RequestContext) {
@@ -15,11 +16,11 @@ func PurgePreviews(ctx rcontext.RequestContext) {
 		return
 	}
 
-	beforeTs := util.NowMillis() - int64(config.Get().UrlPreviews.ExpireDays*24*60*60*1000)
+	before := time.Now().AddDate(0, 0, -1*config.Get().UrlPreviews.ExpireDays)
 	db := database.GetInstance().UrlPreviews.Prepare(ctx)
 
 	// TODO: Fix https://github.com/t2bot/matrix-media-repo/issues/424 ("can't clean up preview media")
-	if err := db.DeleteOlderThan(beforeTs); err != nil {
+	if err := db.DeleteOlderThan(before); err != nil {
 		ctx.Log.Error("Error deleting previews: ", err)
 		sentry.CaptureException(err)
 	}

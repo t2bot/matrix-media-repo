@@ -44,7 +44,7 @@ func GetDatastores(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 
 func MigrateBetweenDatastores(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
 	beforeTsStr := r.URL.Query().Get("before_ts")
-	beforeTs := time.Now().UnixNano() / int64(time.Millisecond)
+	beforeTs := time.Now().UnixMilli()
 	var err error
 	if beforeTsStr != "" {
 		beforeTs, err = strconv.ParseInt(beforeTsStr, 10, 64)
@@ -97,7 +97,7 @@ func MigrateBetweenDatastores(r *http.Request, rctx rcontext.RequestContext, use
 
 func GetDatastoreStorageEstimate(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
 	beforeTsStr := r.URL.Query().Get("before_ts")
-	beforeTs := time.Now().UnixNano() / int64(time.Millisecond)
+	beforeTs := time.Now().UnixMilli()
 	var err error
 	if beforeTsStr != "" {
 		beforeTs, err = strconv.ParseInt(beforeTsStr, 10, 64)
