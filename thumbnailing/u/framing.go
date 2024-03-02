@@ -11,15 +11,14 @@ import (
 )
 
 func MakeThumbnail(src image.Image, method string, width int, height int) (image.Image, error) {
-	var result image.Image
-	if method == "scale" {
-		result = imaging.Fit(src, width, height, imaging.Linear)
-	} else if method == "crop" {
-		result = imaging.Fill(src, width, height, imaging.Center, imaging.Linear)
-	} else {
+	switch method {
+	case "scale":
+		return imaging.Fit(src, width, height, imaging.Linear), nil
+	case "crop":
+		return imaging.Fill(src, width, height, imaging.Center, imaging.Linear), nil
+	default:
 		return nil, errors.New("unrecognized method: " + method)
 	}
-	return result, nil
 }
 
 func ExtractExifOrientation(r io.Reader) *ExifOrientation {

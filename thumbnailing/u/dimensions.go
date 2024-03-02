@@ -9,11 +9,7 @@ func AdjustProperties(srcWidth int, srcHeight int, desiredWidth int, desiredHeig
 	}
 
 	if srcWidth <= desiredWidth && srcHeight <= desiredHeight {
-		if wantAnimated {
-			return true, srcWidth, srcHeight, method
-		} else {
-			return false, desiredWidth, desiredHeight, method
-		}
+		return wantAnimated, srcWidth, srcHeight, method
 	}
 	return true, desiredWidth, desiredHeight, method
 }
