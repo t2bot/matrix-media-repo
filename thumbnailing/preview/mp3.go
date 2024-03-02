@@ -1,4 +1,4 @@
-package i
+package preview
 
 import (
 	"bytes"
@@ -22,8 +22,7 @@ import (
 	"github.com/t2bot/matrix-media-repo/util/readers"
 )
 
-type mp3Generator struct {
-}
+type mp3Generator struct{}
 
 func (d mp3Generator) supportedContentTypes() []string {
 	return []string{"audio/mpeg"}

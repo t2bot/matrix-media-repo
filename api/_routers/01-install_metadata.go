@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/t2bot/matrix-media-repo/common"
@@ -52,7 +53,7 @@ func (router *InstallMetadataRouter) ServeHTTP(w http.ResponseWriter, r *http.Re
 	})
 
 	ctx := r.Context()
-	ctx = context.WithValue(ctx, common.ContextRequestStartTime, util.NowMillis())
+	ctx = context.WithValue(ctx, common.ContextRequestStartTime, time.Now())
 	ctx = context.WithValue(ctx, common.ContextRequestId, requestId)
 	ctx = context.WithValue(ctx, common.ContextAction, router.actionName)
 	ctx = context.WithValue(ctx, common.ContextIgnoreHost, router.ignoreHost)
@@ -89,9 +90,9 @@ func GetLogger(r *http.Request) *logrus.Entry {
 }
 
 func GetRequestDuration(r *http.Request) float64 {
-	duration, ok := r.Context().Value(common.ContextRequestStartTime).(int64)
+	duration, ok := r.Context().Value(common.ContextRequestStartTime).(time.Time)
 	if !ok {
 		return -1
 	}
-	return float64(util.NowMillis()-duration) / 1000.0
+	return float64(time.Since(duration).Milliseconds())
 }

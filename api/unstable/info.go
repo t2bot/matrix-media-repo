@@ -18,7 +18,7 @@ import (
 	"github.com/t2bot/matrix-media-repo/database"
 	"github.com/t2bot/matrix-media-repo/pipelines/pipeline_download"
 	"github.com/t2bot/matrix-media-repo/thumbnailing"
-	"github.com/t2bot/matrix-media-repo/thumbnailing/i"
+	"github.com/t2bot/matrix-media-repo/thumbnailing/preview"
 	"github.com/t2bot/matrix-media-repo/util"
 )
 
@@ -121,7 +121,7 @@ func MediaInfo(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 	} else if strings.HasPrefix(response.ContentType, "audio/") {
 		generator, reconstructed, err := thumbnailing.GetGenerator(stream, response.ContentType, false)
 		if err == nil {
-			if audiogenerator, ok := generator.(i.AudioGenerator); ok {
+			if audiogenerator, ok := generator.(preview.AudioGenerator); ok {
 				audioInfo, err := audiogenerator.GetAudioData(reconstructed, 768, rctx)
 				if err == nil {
 					response.KeySamples = audioInfo.KeySamples

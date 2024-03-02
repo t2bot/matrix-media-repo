@@ -1,4 +1,4 @@
-package i
+package preview
 
 import (
 	"fmt"
@@ -9,8 +9,7 @@ import (
 	"golang.org/x/image/tiff"
 )
 
-type tiffGenerator struct {
-}
+type tiffGenerator struct{}
 
 func (d tiffGenerator) supportedContentTypes() []string {
 	return []string{"image/tiff"}

@@ -1,4 +1,4 @@
-package i
+package preview
 
 import (
 	"fmt"
@@ -13,8 +13,7 @@ import (
 	"github.com/t2bot/matrix-media-repo/thumbnailing/u"
 )
 
-type gifGenerator struct {
-}
+type gifGenerator struct{}
 
 func (d gifGenerator) supportedContentTypes() []string {
 	return []string{"image/gif"}

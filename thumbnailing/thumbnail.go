@@ -9,8 +9,8 @@ import (
 
 	"github.com/t2bot/matrix-media-repo/common"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/thumbnailing/i"
 	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
+	"github.com/t2bot/matrix-media-repo/thumbnailing/preview"
 	"github.com/t2bot/matrix-media-repo/thumbnailing/u"
 	"github.com/t2bot/matrix-media-repo/util/readers"
 )
@@ -18,7 +18,7 @@ import (
 var ErrUnsupported = errors.New("unsupported thumbnail type")
 
 func IsSupported(contentType string) bool {
-	return slices.Contains(i.GetSupportedContentTypes(), contentType)
+	return slices.Contains(preview.GetSupportedContentTypes(), contentType)
 }
 
 func GenerateThumbnail(imgStream io.ReadCloser, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
@@ -32,7 +32,7 @@ func GenerateThumbnail(imgStream io.ReadCloser, contentType string, width int, h
 		return nil, ErrUnsupported
 	}
 
-	generator, reconstructed := i.GetGenerator(imgStream, contentType, animated)
+	generator, reconstructed := preview.GetGenerator(imgStream, contentType, animated)
 	if generator == nil {
 		ctx.Log.Debugf("Unsupported thumbnail type at generator for '%s'", contentType)
 		return nil, ErrUnsupported
@@ -63,8 +63,8 @@ func GenerateThumbnail(imgStream io.ReadCloser, contentType string, width int, h
 	return generator.GenerateThumbnail(buffered.GetRewoundReader(), contentType, width, height, method, animated, ctx)
 }
 
-func GetGenerator(imgStream io.Reader, contentType string, animated bool) (i.Generator, io.Reader, error) {
-	generator, reconstructed := i.GetGenerator(imgStream, contentType, animated)
+func GetGenerator(imgStream io.Reader, contentType string, animated bool) (preview.Generator, io.Reader, error) {
+	generator, reconstructed := preview.GetGenerator(imgStream, contentType, animated)
 	if generator == nil {
 		return nil, reconstructed, ErrUnsupported
 	}

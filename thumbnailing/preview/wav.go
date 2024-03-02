@@ -1,4 +1,4 @@
-package i
+package preview
 
 import (
 	"fmt"
@@ -11,8 +11,7 @@ import (
 	"github.com/t2bot/matrix-media-repo/thumbnailing/u"
 )
 
-type wavGenerator struct {
-}
+type wavGenerator struct{}
 
 func (d wavGenerator) supportedContentTypes() []string {
 	return []string{"audio/wav"}

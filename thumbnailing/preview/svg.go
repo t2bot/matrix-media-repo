@@ -1,4 +1,4 @@
-package i
+package preview
 
 import (
 	"fmt"
@@ -11,8 +11,7 @@ import (
 	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
 )
 
-type svgGenerator struct {
-}
+type svgGenerator struct{}
 
 func (d svgGenerator) supportedContentTypes() []string {
 	return []string{"image/svg+xml"}

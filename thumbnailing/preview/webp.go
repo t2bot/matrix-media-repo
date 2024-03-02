@@ -1,4 +1,4 @@
-package i
+package preview
 
 import (
 	"fmt"
@@ -9,8 +9,7 @@ import (
 	"golang.org/x/image/webp"
 )
 
-type webpGenerator struct {
-}
+type webpGenerator struct{}
 
 func (d webpGenerator) supportedContentTypes() []string {
 	return []string{"image/webp"}

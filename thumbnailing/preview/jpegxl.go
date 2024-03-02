@@ -1,4 +1,4 @@
-package i
+package preview
 
 import (
 	"fmt"
@@ -11,8 +11,7 @@ import (
 	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
 )
 
-type jpegxlGenerator struct {
-}
+type jpegxlGenerator struct{}
 
 func (d jpegxlGenerator) supportedContentTypes() []string {
 	return []string{"image/jxl"}
