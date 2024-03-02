@@ -8,7 +8,7 @@ import (
 
 	"github.com/disintegration/imaging"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/thumbnailing/u"
+	"github.com/t2bot/matrix-media-repo/thumbnailing/preview/metadata"
 )
 
 type pngGenerator struct{}
@@ -43,14 +43,14 @@ func (d pngGenerator) GenerateThumbnail(b io.Reader, contentType string, width i
 }
 
 func (d pngGenerator) GenerateThumbnailOf(src image.Image, width int, height int, method string, ctx rcontext.RequestContext) (*Thumbnail, error) {
-	thumb, err := u.MakeThumbnail(src, method, width, height)
+	thumb, err := metadata.MakeThumbnail(src, method, width, height)
 	if err != nil || thumb == nil {
 		return nil, err
 	}
 
 	pr, pw := io.Pipe()
 	go func(pw *io.PipeWriter, p image.Image) {
-		err = u.Encode(ctx, pw, p)
+		err = metadata.Encode(ctx, pw, p)
 		if err != nil {
 			_ = pw.CloseWithError(fmt.Errorf("png: error encoding thumbnail: %w", err))
 		} else {

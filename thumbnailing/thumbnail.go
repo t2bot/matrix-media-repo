@@ -10,7 +10,7 @@ import (
 	"github.com/t2bot/matrix-media-repo/common"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/thumbnailing/preview"
-	"github.com/t2bot/matrix-media-repo/thumbnailing/u"
+	"github.com/t2bot/matrix-media-repo/thumbnailing/preview/metadata"
 	"github.com/t2bot/matrix-media-repo/util/readers"
 )
 
@@ -53,7 +53,7 @@ func GenerateThumbnail(imgStream io.ReadCloser, contentType string, width int, h
 
 		// While we're here, check to ensure we're not about to produce a thumbnail which is larger than the source material
 		shouldThumbnail := true
-		shouldThumbnail, width, height, method = u.AdjustProperties(w, h, width, height, animated, method)
+		shouldThumbnail, width, height, method = metadata.AdjustProperties(w, h, width, height, animated, method)
 		if !shouldThumbnail {
 			return nil, common.ErrMediaDimensionsTooSmall
 		}

@@ -17,7 +17,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/t2bot/matrix-media-repo/common/config"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/thumbnailing/u"
+	"github.com/t2bot/matrix-media-repo/thumbnailing/preview/metadata"
 	"github.com/t2bot/matrix-media-repo/util/readers"
 )
 
@@ -49,11 +49,7 @@ func (d mp3Generator) GetOriginDimensions(b io.Reader, contentType string, ctx r
 
 func (d mp3Generator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*Thumbnail, error) {
 	rd, err := newReadSeekerWrapper(b)
-	tags, err := u.GetID3Tags(rd)
-	if err != nil {
-		return nil, fmt.Errorf("error wrapping reader: %w", err)
-	}
-	tags, err = tag.ReadFrom(rd) // we don't care about errors in this process
+	tags, err := tag.ReadFrom(rd) // we don't care about errors in this process
 	if err != nil {
 		return nil, fmt.Errorf("mp3: error getting tags: %w", err)
 	}
@@ -81,7 +77,7 @@ func (d mp3Generator) GetAudioData(b io.Reader, nKeys int, ctx rcontext.RequestC
 
 func (d mp3Generator) GetDataFromStream(audio beep.StreamSeekCloser, format beep.Format, nKeys int) (*AudioInfo, error) {
 	totalSamples := audio.Len()
-	downsampled, err := u.FastSampleAudio(audio, nKeys)
+	downsampled, err := metadata.FastSampleAudio(audio, nKeys)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +102,7 @@ func (d mp3Generator) GenerateFromStream(audio beep.StreamSeekCloser, format bee
 	if meta != nil && meta.Picture() != nil {
 		artwork, _, _ := image.Decode(bytes.NewBuffer(meta.Picture().Data))
 		if artwork != nil {
-			artworkImg, _ = u.MakeThumbnail(artwork, "crop", sq, sq)
+			artworkImg, _ = metadata.MakeThumbnail(artwork, "crop", sq, sq)
 		}
 	}
 
@@ -130,7 +126,7 @@ func (d mp3Generator) GenerateFromStream(audio beep.StreamSeekCloser, format bee
 			defer f.Close()
 			tmp, _, _ := image.Decode(f)
 			if tmp != nil {
-				artworkImg, _ = u.MakeThumbnail(tmp, "crop", ax, ay)
+				artworkImg, _ = metadata.MakeThumbnail(tmp, "crop", ax, ay)
 			}
 		}
 		if artworkImg == nil {
@@ -199,7 +195,7 @@ func (d mp3Generator) GenerateFromStream(audio beep.StreamSeekCloser, format bee
 	// Encode to a png
 	pr, pw := io.Pipe()
 	go func(pw *io.PipeWriter, p image.Image) {
-		err = u.Encode(ctx, pw, p)
+		err = metadata.Encode(ctx, pw, p)
 		if err != nil {
 			_ = pw.CloseWithError(fmt.Errorf("beep-visual: error encoding thumbnail: %w", err))
 		} else {

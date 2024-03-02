@@ -1,4 +1,4 @@
-package u
+package metadata
 
 func AdjustProperties(srcWidth int, srcHeight int, desiredWidth int, desiredHeight int, wantAnimated bool, method string) (bool, int, int, string) {
 	aspectRatio := float32(srcHeight) / float32(srcWidth)

@@ -9,7 +9,7 @@ import (
 
 	"github.com/disintegration/imaging"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/thumbnailing/u"
+	"github.com/t2bot/matrix-media-repo/thumbnailing/preview/metadata"
 	"github.com/t2bot/matrix-media-repo/util/readers"
 )
 
@@ -33,7 +33,7 @@ func (d jpgGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx r
 
 func (d jpgGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*Thumbnail, error) {
 	br := readers.NewBufferReadsReader(b)
-	orientation := u.ExtractExifOrientation(br)
+	orientation := metadata.ExtractExifOrientation(br)
 	b = br.GetRewoundReader()
 
 	src, err := imaging.Decode(b)
@@ -41,16 +41,16 @@ func (d jpgGenerator) GenerateThumbnail(b io.Reader, contentType string, width i
 		return nil, fmt.Errorf("jpg: error decoding thumbnail: %w", err)
 	}
 
-	thumb, err := u.MakeThumbnail(src, method, width, height)
+	thumb, err := metadata.MakeThumbnail(src, method, width, height)
 	if err != nil {
 		return nil, fmt.Errorf("jpg: error making thumbnail: %w", err)
 	}
 
-	thumb = u.ApplyOrientation(thumb, orientation)
+	thumb = metadata.ApplyOrientation(thumb, orientation)
 
 	pr, pw := io.Pipe()
 	go func(pw *io.PipeWriter, p image.Image) {
-		err = u.Encode(ctx, pw, p, u.JpegSource)
+		err = metadata.Encode(ctx, pw, p, metadata.JpegSource)
 		if err != nil {
 			_ = pw.CloseWithError(fmt.Errorf("jpg: error encoding thumbnail: %w", err))
 		} else {

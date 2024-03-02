@@ -9,7 +9,7 @@ import (
 	"math"
 
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/thumbnailing/u"
+	"github.com/t2bot/matrix-media-repo/thumbnailing/preview/metadata"
 )
 
 type gifGenerator struct{}
@@ -54,7 +54,7 @@ func (d gifGenerator) GenerateThumbnail(b io.Reader, contentType string, width i
 		draw.Draw(frameImg, frameImg.Bounds(), img, image.Point{X: 0, Y: 0}, draw.Over)
 
 		// Do the thumbnailing on the copied frame
-		frameThumb, err := u.MakeThumbnail(frameImg, method, width, height)
+		frameThumb, err := metadata.MakeThumbnail(frameImg, method, width, height)
 		if err != nil {
 			return nil, fmt.Errorf("gif: error generating thumbnail frame: %w", err)
 		}
@@ -76,7 +76,7 @@ func (d gifGenerator) GenerateThumbnail(b io.Reader, contentType string, width i
 			// The thumbnailer decided that it shouldn't thumbnail, so encode it ourselves
 			pr, pw := io.Pipe()
 			go func(pw *io.PipeWriter, p *image.Paletted) {
-				err = u.Encode(ctx, pw, p)
+				err = metadata.Encode(ctx, pw, p)
 				if err != nil {
 					_ = pw.CloseWithError(fmt.Errorf("gif: error encoding still frame thumbnail: %w", err))
 				} else {

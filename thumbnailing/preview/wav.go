@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/dhowden/tag"
 	"github.com/faiface/beep"
 	"github.com/faiface/beep/wav"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/thumbnailing/u"
 )
 
 type wavGenerator struct{}
@@ -37,14 +37,13 @@ func (d wavGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx r
 }
 
 func (d wavGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*Thumbnail, error) {
-	tags, rc, err := u.GetID3Tags(b)
+	rd, err := newReadSeekerWrapper(b)
+	tags, err := tag.ReadFrom(rd) // we don't care about errors in this process
 	if err != nil {
 		return nil, fmt.Errorf("wav: error getting tags: %w", err)
 	}
-	//goland:noinspection GoUnhandledErrorResult
-	defer rc.Close()
 
-	audio, format, err := d.decode(rc)
+	audio, format, err := d.decode(rd)
 	if err != nil {
 		return nil, err
 	}

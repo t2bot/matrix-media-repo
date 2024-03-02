@@ -9,7 +9,7 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/kettek/apng"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/thumbnailing/u"
+	"github.com/t2bot/matrix-media-repo/thumbnailing/preview/metadata"
 )
 
 type apngGenerator struct{}
@@ -68,7 +68,7 @@ func (d apngGenerator) GenerateThumbnail(b io.Reader, contentType string, width 
 		draw.Draw(frameImg, image.Rect(frame.XOffset, frame.YOffset, frameImg.Rect.Max.X, frameImg.Rect.Max.Y), img, image.Point{X: 0, Y: 0}, draw.Src)
 
 		// Do the thumbnailing on the copied frame
-		frameThumb, err := u.MakeThumbnail(frameImg, method, width, height)
+		frameThumb, err := metadata.MakeThumbnail(frameImg, method, width, height)
 		if err != nil {
 			return nil, fmt.Errorf("apng: error generating thumbnail frame: %w", err)
 		}

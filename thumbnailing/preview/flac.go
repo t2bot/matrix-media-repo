@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/dhowden/tag"
 	"github.com/faiface/beep"
 	"github.com/faiface/beep/flac"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/thumbnailing/u"
 )
 
 type flacGenerator struct{}
@@ -37,14 +37,16 @@ func (d flacGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx 
 }
 
 func (d flacGenerator) GenerateThumbnail(r io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*Thumbnail, error) {
-	tags, rc, err := u.GetID3Tags(r)
+	rd, err := newReadSeekerWrapper(r)
+	if err != nil {
+		return nil, fmt.Errorf("error wrapping reader: %w", err)
+	}
+	tags, err := tag.ReadFrom(rd)
 	if err != nil {
 		return nil, fmt.Errorf("flac: error getting tags: %w", err)
 	}
-	//goland:noinspection GoUnhandledErrorResult
-	defer rc.Close()
 
-	audio, format, err := d.decode(rc)
+	audio, format, err := d.decode(rd)
 	if err != nil {
 		return nil, err
 	}
