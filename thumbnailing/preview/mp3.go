@@ -17,7 +17,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/t2bot/matrix-media-repo/common/config"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
 	"github.com/t2bot/matrix-media-repo/thumbnailing/u"
 	"github.com/t2bot/matrix-media-repo/util/readers"
 )
@@ -48,7 +47,7 @@ func (d mp3Generator) GetOriginDimensions(b io.Reader, contentType string, ctx r
 	return false, 0, 0, nil
 }
 
-func (d mp3Generator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
+func (d mp3Generator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*Thumbnail, error) {
 	tags, rc, err := u.GetID3Tags(b)
 	if err != nil {
 		return nil, fmt.Errorf("mp3: error getting tags: %w", err)
@@ -66,7 +65,7 @@ func (d mp3Generator) GenerateThumbnail(b io.Reader, contentType string, width i
 	return d.GenerateFromStream(audio, format, tags, width, height, ctx)
 }
 
-func (d mp3Generator) GetAudioData(b io.Reader, nKeys int, ctx rcontext.RequestContext) (*m.AudioInfo, error) {
+func (d mp3Generator) GetAudioData(b io.Reader, nKeys int, ctx rcontext.RequestContext) (*AudioInfo, error) {
 	audio, format, err := d.decode(b)
 	if err != nil {
 		return nil, err
@@ -77,14 +76,14 @@ func (d mp3Generator) GetAudioData(b io.Reader, nKeys int, ctx rcontext.RequestC
 	return d.GetDataFromStream(audio, format, nKeys)
 }
 
-func (d mp3Generator) GetDataFromStream(audio beep.StreamSeekCloser, format beep.Format, nKeys int) (*m.AudioInfo, error) {
+func (d mp3Generator) GetDataFromStream(audio beep.StreamSeekCloser, format beep.Format, nKeys int) (*AudioInfo, error) {
 	totalSamples := audio.Len()
 	downsampled, err := u.FastSampleAudio(audio, nKeys)
 	if err != nil {
 		return nil, err
 	}
 
-	return &m.AudioInfo{
+	return &AudioInfo{
 		Duration:     format.SampleRate.D(totalSamples),
 		Channels:     format.NumChannels,
 		TotalSamples: totalSamples,
@@ -92,7 +91,7 @@ func (d mp3Generator) GetDataFromStream(audio beep.StreamSeekCloser, format beep
 	}, nil
 }
 
-func (d mp3Generator) GenerateFromStream(audio beep.StreamSeekCloser, format beep.Format, meta tag.Metadata, width int, height int, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
+func (d mp3Generator) GenerateFromStream(audio beep.StreamSeekCloser, format beep.Format, meta tag.Metadata, width int, height int, ctx rcontext.RequestContext) (*Thumbnail, error) {
 	bgColor := color.RGBA{A: 255, R: 41, G: 57, B: 92}
 	fgColor := color.RGBA{A: 255, R: 240, G: 240, B: 240}
 
@@ -205,7 +204,7 @@ func (d mp3Generator) GenerateFromStream(audio beep.StreamSeekCloser, format bee
 		}
 	}(pw, img)
 
-	return &m.Thumbnail{
+	return &Thumbnail{
 		Animated:    false,
 		ContentType: "image/png",
 		Reader:      pr,

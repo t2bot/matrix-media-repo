@@ -8,7 +8,6 @@ import (
 
 	"github.com/disintegration/imaging"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
 	"github.com/t2bot/matrix-media-repo/thumbnailing/u"
 )
 
@@ -34,7 +33,7 @@ func (d pngGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx r
 	return true, i.Width, i.Height, nil
 }
 
-func (d pngGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
+func (d pngGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*Thumbnail, error) {
 	src, err := imaging.Decode(b)
 	if err != nil {
 		return nil, fmt.Errorf("png: error decoding thumbnail: %w", err)
@@ -43,7 +42,7 @@ func (d pngGenerator) GenerateThumbnail(b io.Reader, contentType string, width i
 	return d.GenerateThumbnailOf(src, width, height, method, ctx)
 }
 
-func (d pngGenerator) GenerateThumbnailOf(src image.Image, width int, height int, method string, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
+func (d pngGenerator) GenerateThumbnailOf(src image.Image, width int, height int, method string, ctx rcontext.RequestContext) (*Thumbnail, error) {
 	thumb, err := u.MakeThumbnail(src, method, width, height)
 	if err != nil || thumb == nil {
 		return nil, err
@@ -59,7 +58,7 @@ func (d pngGenerator) GenerateThumbnailOf(src image.Image, width int, height int
 		}
 	}(pw, thumb)
 
-	return &m.Thumbnail{
+	return &Thumbnail{
 		Animated:    false,
 		ContentType: "image/png",
 		Reader:      pr,

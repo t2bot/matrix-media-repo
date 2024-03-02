@@ -9,7 +9,6 @@ import (
 	"slices"
 
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
 )
 
 type mp4Generator struct{}
@@ -30,7 +29,7 @@ func (d mp4Generator) GetOriginDimensions(b io.Reader, contentType string, ctx r
 	return false, 0, 0, nil
 }
 
-func (d mp4Generator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
+func (d mp4Generator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*Thumbnail, error) {
 	dir, err := os.MkdirTemp(os.TempDir(), "mmr-mp4")
 	if err != nil {
 		return nil, fmt.Errorf("mp4: error creating temporary directory: %w", err)

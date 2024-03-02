@@ -9,7 +9,6 @@ import (
 	"math"
 
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
 	"github.com/t2bot/matrix-media-repo/thumbnailing/u"
 )
 
@@ -31,7 +30,7 @@ func (d gifGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx r
 	return pngGenerator{}.GetOriginDimensions(b, contentType, ctx)
 }
 
-func (d gifGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
+func (d gifGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*Thumbnail, error) {
 	g, err := gif.DecodeAll(b)
 	if err != nil {
 		return nil, fmt.Errorf("gif: error decoding image: %w", err)
@@ -84,7 +83,7 @@ func (d gifGenerator) GenerateThumbnail(b io.Reader, contentType string, width i
 					_ = pw.Close()
 				}
 			}(pw, targetImg)
-			return &m.Thumbnail{
+			return &Thumbnail{
 				Animated:    false,
 				ContentType: "image/png",
 				Reader:      pr,
@@ -119,7 +118,7 @@ func (d gifGenerator) GenerateThumbnail(b io.Reader, contentType string, width i
 		}
 	}(pw, g)
 
-	return &m.Thumbnail{
+	return &Thumbnail{
 		ContentType: "image/gif",
 		Animated:    true,
 		Reader:      pr,

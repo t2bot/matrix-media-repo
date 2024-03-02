@@ -16,12 +16,12 @@ import (
 	"github.com/t2bot/matrix-media-repo/pipelines/_steps/download"
 	"github.com/t2bot/matrix-media-repo/pool"
 	"github.com/t2bot/matrix-media-repo/thumbnailing"
-	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
+	"github.com/t2bot/matrix-media-repo/thumbnailing/preview"
 	"github.com/t2bot/matrix-media-repo/util"
 )
 
 type generateResult struct {
-	i   *m.Thumbnail
+	i   *preview.Thumbnail
 	err error
 }
 

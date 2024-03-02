@@ -1,6 +1,7 @@
-package m
+package preview
 
 import (
+	"io"
 	"time"
 )
 
@@ -9,4 +10,10 @@ type AudioInfo struct {
 	Duration     time.Duration
 	TotalSamples int
 	Channels     int
+}
+
+type Thumbnail struct {
+	Animated    bool
+	ContentType string
+	Reader      io.ReadCloser
 }

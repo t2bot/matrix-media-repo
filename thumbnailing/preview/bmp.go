@@ -6,7 +6,6 @@ import (
 	"slices"
 
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
 	"golang.org/x/image/bmp"
 )
 
@@ -32,7 +31,7 @@ func (d bmpGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx r
 	return true, i.Width, i.Height, nil
 }
 
-func (d bmpGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
+func (d bmpGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*Thumbnail, error) {
 	src, err := bmp.Decode(b)
 	if err != nil {
 		return nil, fmt.Errorf("bmp: error decoding thumbnail: %w", err)

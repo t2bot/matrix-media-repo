@@ -7,7 +7,6 @@ import (
 	"github.com/faiface/beep"
 	"github.com/faiface/beep/vorbis"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
 	"github.com/t2bot/matrix-media-repo/thumbnailing/u"
 	"github.com/t2bot/matrix-media-repo/util/readers"
 )
@@ -38,7 +37,7 @@ func (d oggGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx r
 	return false, 0, 0, nil
 }
 
-func (d oggGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
+func (d oggGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*Thumbnail, error) {
 	tags, rc, err := u.GetID3Tags(b)
 	if err != nil {
 		return nil, fmt.Errorf("ogg: error getting tags: %v", err)
@@ -56,7 +55,7 @@ func (d oggGenerator) GenerateThumbnail(b io.Reader, contentType string, width i
 	return mp3Generator{}.GenerateFromStream(audio, format, tags, width, height, ctx)
 }
 
-func (d oggGenerator) GetAudioData(b io.Reader, nKeys int, ctx rcontext.RequestContext) (*m.AudioInfo, error) {
+func (d oggGenerator) GetAudioData(b io.Reader, nKeys int, ctx rcontext.RequestContext) (*AudioInfo, error) {
 	audio, format, err := d.decode(b)
 	if err != nil {
 		return nil, err

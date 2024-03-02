@@ -9,7 +9,6 @@ import (
 
 	"github.com/t2bot/matrix-media-repo/common"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
 	"github.com/t2bot/matrix-media-repo/thumbnailing/preview"
 	"github.com/t2bot/matrix-media-repo/thumbnailing/u"
 	"github.com/t2bot/matrix-media-repo/util/readers"
@@ -21,7 +20,7 @@ func IsSupported(contentType string) bool {
 	return slices.Contains(preview.GetSupportedContentTypes(), contentType)
 }
 
-func GenerateThumbnail(imgStream io.ReadCloser, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
+func GenerateThumbnail(imgStream io.ReadCloser, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*preview.Thumbnail, error) {
 	defer imgStream.Close()
 	if !IsSupported(contentType) {
 		ctx.Log.Debugf("Unsupported content type '%s'", contentType)

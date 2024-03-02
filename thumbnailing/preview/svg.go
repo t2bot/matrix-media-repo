@@ -8,7 +8,6 @@ import (
 	"path"
 
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
 )
 
 type svgGenerator struct{}
@@ -29,7 +28,7 @@ func (d svgGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx r
 	return false, 0, 0, nil
 }
 
-func (d svgGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
+func (d svgGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*Thumbnail, error) {
 	dir, err := os.MkdirTemp(os.TempDir(), "mmr-svg")
 	if err != nil {
 		return nil, fmt.Errorf("svg: error creating temporary directory: %w", err)

@@ -4,7 +4,6 @@ import (
 	"io"
 
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
 	"github.com/t2bot/matrix-media-repo/util/readers"
 )
 
@@ -12,13 +11,13 @@ type Generator interface {
 	supportedContentTypes() []string
 	supportsAnimation() bool
 	matches(img io.Reader, contentType string) bool
-	GenerateThumbnail(img io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error)
+	GenerateThumbnail(img io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*Thumbnail, error)
 	GetOriginDimensions(b io.Reader, contentType string, ctx rcontext.RequestContext) (bool, int, int, error)
 }
 
 type AudioGenerator interface {
 	Generator
-	GetAudioData(b io.Reader, nKeys int, ctx rcontext.RequestContext) (*m.AudioInfo, error)
+	GetAudioData(b io.Reader, nKeys int, ctx rcontext.RequestContext) (*AudioInfo, error)
 }
 
 var generators = make([]Generator, 0)

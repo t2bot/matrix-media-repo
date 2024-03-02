@@ -5,7 +5,6 @@ import (
 	"io"
 
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
 	"golang.org/x/image/webp"
 )
 
@@ -31,7 +30,7 @@ func (d webpGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx 
 	return true, i.Width, i.Height, nil
 }
 
-func (d webpGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
+func (d webpGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*Thumbnail, error) {
 	src, err := webp.Decode(b)
 	if err != nil {
 		return nil, fmt.Errorf("webp: error decoding thumbnail: %w", err)

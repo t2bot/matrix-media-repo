@@ -8,7 +8,6 @@ import (
 
 	_ "github.com/strukturag/libheif/go/heif"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
 )
 
 type heifGenerator struct{}
@@ -33,7 +32,7 @@ func (d heifGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx 
 	return true, cfg.Width, cfg.Height, nil
 }
 
-func (d heifGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
+func (d heifGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*Thumbnail, error) {
 	src, _, err := image.Decode(b)
 	if err != nil {
 		return nil, fmt.Errorf("heif: error decoding thumbnail: %w", err)

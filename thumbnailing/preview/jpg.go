@@ -9,7 +9,6 @@ import (
 
 	"github.com/disintegration/imaging"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
 	"github.com/t2bot/matrix-media-repo/thumbnailing/u"
 	"github.com/t2bot/matrix-media-repo/util/readers"
 )
@@ -32,7 +31,7 @@ func (d jpgGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx r
 	return pngGenerator{}.GetOriginDimensions(b, contentType, ctx)
 }
 
-func (d jpgGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
+func (d jpgGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*Thumbnail, error) {
 	br := readers.NewBufferReadsReader(b)
 	orientation := u.ExtractExifOrientation(br)
 	b = br.GetRewoundReader()
@@ -59,7 +58,7 @@ func (d jpgGenerator) GenerateThumbnail(b io.Reader, contentType string, width i
 		}
 	}(pw, thumb)
 
-	return &m.Thumbnail{
+	return &Thumbnail{
 		Animated:    false,
 		ContentType: "image/jpeg",
 		Reader:      pr,

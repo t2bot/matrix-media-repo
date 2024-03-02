@@ -8,7 +8,6 @@ import (
 	"path"
 
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
 )
 
 type jpegxlGenerator struct{}
@@ -29,7 +28,7 @@ func (d jpegxlGenerator) GetOriginDimensions(b io.Reader, contentType string, ct
 	return false, 0, 0, nil
 }
 
-func (d jpegxlGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
+func (d jpegxlGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*Thumbnail, error) {
 	dir, err := os.MkdirTemp(os.TempDir(), "mmr-jpegxl")
 	if err != nil {
 		return nil, fmt.Errorf("jpegxl: error creating temporary directory: %w", err)

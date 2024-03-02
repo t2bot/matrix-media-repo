@@ -9,7 +9,6 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/kettek/apng"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
 	"github.com/t2bot/matrix-media-repo/thumbnailing/u"
 )
 
@@ -35,7 +34,7 @@ func (d apngGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx 
 	return true, i.Width, i.Height, nil
 }
 
-func (d apngGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
+func (d apngGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*Thumbnail, error) {
 	if !animated {
 		return pngGenerator{}.GenerateThumbnail(b, "image/png", width, height, method, false, ctx)
 	}
@@ -99,7 +98,7 @@ func (d apngGenerator) GenerateThumbnail(b io.Reader, contentType string, width 
 		}
 	}(pw, p)
 
-	return &m.Thumbnail{
+	return &Thumbnail{
 		ContentType: "image/png",
 		Animated:    true,
 		Reader:      pr,

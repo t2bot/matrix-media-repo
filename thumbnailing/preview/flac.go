@@ -7,7 +7,6 @@ import (
 	"github.com/faiface/beep"
 	"github.com/faiface/beep/flac"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
 	"github.com/t2bot/matrix-media-repo/thumbnailing/u"
 )
 
@@ -37,7 +36,7 @@ func (d flacGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx 
 	return false, 0, 0, nil
 }
 
-func (d flacGenerator) GenerateThumbnail(r io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
+func (d flacGenerator) GenerateThumbnail(r io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*Thumbnail, error) {
 	tags, rc, err := u.GetID3Tags(r)
 	if err != nil {
 		return nil, fmt.Errorf("flac: error getting tags: %w", err)
@@ -55,7 +54,7 @@ func (d flacGenerator) GenerateThumbnail(r io.Reader, contentType string, width 
 	return mp3Generator{}.GenerateFromStream(audio, format, tags, width, height, ctx)
 }
 
-func (d flacGenerator) GetAudioData(b io.Reader, nKeys int, ctx rcontext.RequestContext) (*m.AudioInfo, error) {
+func (d flacGenerator) GetAudioData(b io.Reader, nKeys int, ctx rcontext.RequestContext) (*AudioInfo, error) {
 	audio, format, err := d.decode(b)
 	if err != nil {
 		return nil, err
