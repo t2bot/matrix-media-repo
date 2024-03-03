@@ -1,4 +1,4 @@
-package _common
+package internal
 
 import (
 	"fmt"

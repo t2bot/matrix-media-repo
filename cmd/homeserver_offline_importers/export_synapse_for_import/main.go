@@ -7,14 +7,14 @@ import (
 	"strings"
 
 	"github.com/t2bot/matrix-media-repo/archival/v2archive"
-	"github.com/t2bot/matrix-media-repo/cmd/homeserver_offline_importers/_common"
+	"github.com/t2bot/matrix-media-repo/cmd/homeserver_offline_importers/internal"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/homeserver_interop/synapse"
 	"github.com/t2bot/matrix-media-repo/util"
 )
 
 func main() {
-	cfg := _common.InitExportPsqlFlatFile("Synapse", "media_store_path")
+	cfg := internal.InitExportPsqlFlatFile("Synapse", "media_store_path")
 	ctx := rcontext.InitialNoConfig()
 
 	ctx.Log.Debug("Connecting to homeserver database...")
@@ -23,7 +23,7 @@ func main() {
 		panic(err)
 	}
 
-	_common.PsqlFlatFileArchive[synapse.LocalMedia](ctx, cfg, hsDb, func(r *synapse.LocalMedia) (v2archive.MediaInfo, io.ReadCloser, error) {
+	internal.PsqlFlatFileArchive[synapse.LocalMedia](ctx, cfg, hsDb, func(r *synapse.LocalMedia) (v2archive.MediaInfo, io.ReadCloser, error) {
 		// For MediaID AABBCCDD :
 		// $importPath/local_content/AA/BB/CCDD
 		//

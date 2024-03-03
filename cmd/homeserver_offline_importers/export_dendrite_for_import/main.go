@@ -6,14 +6,14 @@ import (
 	"path"
 
 	"github.com/t2bot/matrix-media-repo/archival/v2archive"
-	"github.com/t2bot/matrix-media-repo/cmd/homeserver_offline_importers/_common"
+	"github.com/t2bot/matrix-media-repo/cmd/homeserver_offline_importers/internal"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/homeserver_interop/dendrite"
 	"github.com/t2bot/matrix-media-repo/util"
 )
 
 func main() {
-	cfg := _common.InitExportPsqlFlatFile("Dendrite", "media_api.base_path")
+	cfg := internal.InitExportPsqlFlatFile("Dendrite", "media_api.base_path")
 	ctx := rcontext.InitialNoConfig()
 
 	ctx.Log.Debug("Connecting to homeserver database...")
@@ -22,7 +22,7 @@ func main() {
 		panic(err)
 	}
 
-	_common.PsqlFlatFileArchive[dendrite.LocalMedia](ctx, cfg, hsDb, func(r *dendrite.LocalMedia) (v2archive.MediaInfo, io.ReadCloser, error) {
+	internal.PsqlFlatFileArchive[dendrite.LocalMedia](ctx, cfg, hsDb, func(r *dendrite.LocalMedia) (v2archive.MediaInfo, io.ReadCloser, error) {
 		// For Base64Hash ABCCDD :
 		// $importPath/A/B/CCDD/file
 
