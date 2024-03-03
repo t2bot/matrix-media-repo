@@ -17,7 +17,7 @@ import (
 	"github.com/t2bot/matrix-media-repo/errcache"
 	"github.com/t2bot/matrix-media-repo/matrix"
 	"github.com/t2bot/matrix-media-repo/metrics"
-	"github.com/t2bot/matrix-media-repo/pipelines/_steps/datastore_op"
+	"github.com/t2bot/matrix-media-repo/pipelines/steps/datastore_op"
 	"github.com/t2bot/matrix-media-repo/pool"
 	"github.com/t2bot/matrix-media-repo/util"
 	"github.com/t2bot/matrix-media-repo/util/readers"

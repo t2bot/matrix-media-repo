@@ -6,7 +6,7 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/t2bot/matrix-media-repo/api/_apimeta"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/pipelines/_steps/quota"
+	"github.com/t2bot/matrix-media-repo/pipelines/steps/quota"
 )
 
 type PublicUsageResponse struct {

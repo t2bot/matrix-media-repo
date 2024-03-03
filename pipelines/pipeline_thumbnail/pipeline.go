@@ -11,10 +11,10 @@ import (
 	"github.com/t2bot/matrix-media-repo/common"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/database"
-	"github.com/t2bot/matrix-media-repo/pipelines/_steps/download"
-	"github.com/t2bot/matrix-media-repo/pipelines/_steps/quarantine"
-	"github.com/t2bot/matrix-media-repo/pipelines/_steps/thumbnails"
 	"github.com/t2bot/matrix-media-repo/pipelines/pipeline_download"
+	"github.com/t2bot/matrix-media-repo/pipelines/steps/download"
+	"github.com/t2bot/matrix-media-repo/pipelines/steps/quarantine"
+	"github.com/t2bot/matrix-media-repo/pipelines/steps/thumbnails"
 	"github.com/t2bot/matrix-media-repo/util/readers"
 	"github.com/t2bot/matrix-media-repo/util/sfcache"
 )

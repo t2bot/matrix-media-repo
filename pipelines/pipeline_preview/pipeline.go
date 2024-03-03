@@ -9,7 +9,7 @@ import (
 	"github.com/t2bot/matrix-media-repo/common"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/database"
-	"github.com/t2bot/matrix-media-repo/pipelines/_steps/url_preview"
+	"github.com/t2bot/matrix-media-repo/pipelines/steps/url_preview"
 	"github.com/t2bot/matrix-media-repo/url_previewing/m"
 	"golang.org/x/sync/singleflight"
 )

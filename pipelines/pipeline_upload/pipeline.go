@@ -12,9 +12,9 @@ import (
 	"github.com/t2bot/matrix-media-repo/database"
 	"github.com/t2bot/matrix-media-repo/datastores"
 	"github.com/t2bot/matrix-media-repo/notifier"
-	"github.com/t2bot/matrix-media-repo/pipelines/_steps/meta"
-	"github.com/t2bot/matrix-media-repo/pipelines/_steps/quota"
-	"github.com/t2bot/matrix-media-repo/pipelines/_steps/upload"
+	"github.com/t2bot/matrix-media-repo/pipelines/steps/meta"
+	"github.com/t2bot/matrix-media-repo/pipelines/steps/quota"
+	"github.com/t2bot/matrix-media-repo/pipelines/steps/upload"
 	"github.com/t2bot/matrix-media-repo/util/readers"
 )
 
