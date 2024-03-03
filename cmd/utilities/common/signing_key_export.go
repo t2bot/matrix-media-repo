@@ -1,4 +1,4 @@
-package _common
+package common
 
 import (
 	"os"

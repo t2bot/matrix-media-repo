@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/sirupsen/logrus"
-	"github.com/t2bot/matrix-media-repo/cmd/utilities/_common"
+	"github.com/t2bot/matrix-media-repo/cmd/utilities/common"
 	"github.com/t2bot/matrix-media-repo/homeserver_interop"
 	"github.com/t2bot/matrix-media-repo/homeserver_interop/any_server"
 	"github.com/t2bot/matrix-media-repo/util"
@@ -36,7 +36,7 @@ func main() {
 		}
 	}
 
-	_common.EncodeSigningKeys(keysArray, *outputFormat, *outputFile)
+	common.EncodeSigningKeys(keysArray, *outputFormat, *outputFile)
 }
 
 func decodeKeys(fileName string) ([]*homeserver_interop.SigningKey, error) {
