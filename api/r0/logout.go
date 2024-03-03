@@ -8,12 +8,12 @@ import (
 	"github.com/t2bot/matrix-media-repo/api/apimeta"
 	"github.com/t2bot/matrix-media-repo/api/responses"
 
-	"github.com/t2bot/matrix-media-repo/api/_auth_cache"
+	"github.com/t2bot/matrix-media-repo/api/auth_cache"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 )
 
 func Logout(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
-	err := _auth_cache.InvalidateToken(rctx, user.AccessToken, user.UserId)
+	err := auth_cache.InvalidateToken(rctx, user.AccessToken, user.UserId)
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
@@ -23,7 +23,7 @@ func Logout(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo
 }
 
 func LogoutAll(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
-	err := _auth_cache.InvalidateAllTokens(rctx, user.AccessToken, user.UserId)
+	err := auth_cache.InvalidateAllTokens(rctx, user.AccessToken, user.UserId)
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)

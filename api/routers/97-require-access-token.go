@@ -6,8 +6,8 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
-	"github.com/t2bot/matrix-media-repo/api/_auth_cache"
 	"github.com/t2bot/matrix-media-repo/api/apimeta"
+	"github.com/t2bot/matrix-media-repo/api/auth_cache"
 	"github.com/t2bot/matrix-media-repo/api/responses"
 	"github.com/t2bot/matrix-media-repo/common"
 	"github.com/t2bot/matrix-media-repo/common/config"
@@ -37,7 +37,7 @@ func RequireAccessToken(generator GeneratorWithUserFn) GeneratorFn {
 			})
 		}
 		appserviceUserId := util.GetAppserviceUserIdFromRequest(r)
-		userId, err := _auth_cache.GetUserId(ctx, accessToken, appserviceUserId)
+		userId, err := auth_cache.GetUserId(ctx, accessToken, appserviceUserId)
 		if err != nil || userId == "" {
 			if errors.Is(err, matrix.ErrGuestToken) {
 				return responses.GuestAuthFailed()

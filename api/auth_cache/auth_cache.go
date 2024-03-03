@@ -1,4 +1,4 @@
-package _auth_cache
+package auth_cache
 
 import (
 	"errors"
