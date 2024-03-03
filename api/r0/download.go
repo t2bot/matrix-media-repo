@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/t2bot/matrix-media-repo/api/_routers"
 	"github.com/t2bot/matrix-media-repo/api/apimeta"
 	"github.com/t2bot/matrix-media-repo/api/responses"
+	"github.com/t2bot/matrix-media-repo/api/routers"
 	"github.com/t2bot/matrix-media-repo/datastores"
 	"github.com/t2bot/matrix-media-repo/pipelines/pipeline_download"
 	"github.com/t2bot/matrix-media-repo/util"
@@ -20,14 +20,14 @@ import (
 )
 
 func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
-	server := _routers.GetParam("server", r)
-	mediaId := _routers.GetParam("mediaId", r)
-	filename := _routers.GetParam("filename", r)
+	server := routers.GetParam("server", r)
+	mediaId := routers.GetParam("mediaId", r)
+	filename := routers.GetParam("filename", r)
 	allowRemote := r.URL.Query().Get("allow_remote")
 	allowRedirect := r.URL.Query().Get("allow_redirect")
 	timeoutMs := r.URL.Query().Get("timeout_ms")
 
-	if !_routers.ServerNameRegex.MatchString(server) {
+	if !routers.ServerNameRegex.MatchString(server) {
 		return responses.BadRequest(errors.New("invalid server ID"))
 	}
 

@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/t2bot/matrix-media-repo/api/_routers"
+	"github.com/t2bot/matrix-media-repo/api/routers"
 )
 
 type branch struct {
@@ -26,7 +26,7 @@ func branchedRoute(branches []branch) http.Handler {
 		}
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		catchAll := _routers.GetParam("branch", r)
+		catchAll := routers.GetParam("branch", r)
 		if catchAll[0] == '/' {
 			catchAll = catchAll[1:]
 		}
@@ -38,7 +38,7 @@ func branchedRoute(branches []branch) http.Handler {
 				}
 				for i, segment := range branch.segments {
 					if segment[0] == ':' {
-						r = _routers.ForceSetParam(segment[1:], params[i], r)
+						r = routers.ForceSetParam(segment[1:], params[i], r)
 					}
 				}
 				branch.handler.ServeHTTP(w, r)

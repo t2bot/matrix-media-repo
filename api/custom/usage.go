@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/t2bot/matrix-media-repo/api/_routers"
 	"github.com/t2bot/matrix-media-repo/api/apimeta"
 	"github.com/t2bot/matrix-media-repo/api/responses"
+	"github.com/t2bot/matrix-media-repo/api/routers"
 	"github.com/t2bot/matrix-media-repo/database"
 	"github.com/t2bot/matrix-media-repo/homeserver_interop/synapse"
 
@@ -55,9 +55,9 @@ type MediaUsageEntry struct {
 }
 
 func GetDomainUsage(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
-	serverName := _routers.GetParam("serverName", r)
+	serverName := routers.GetParam("serverName", r)
 
-	if !_routers.ServerNameRegex.MatchString(serverName) {
+	if !routers.ServerNameRegex.MatchString(serverName) {
 		return responses.BadRequest(errors.New("invalid server name"))
 	}
 
@@ -102,10 +102,10 @@ func GetDomainUsage(r *http.Request, rctx rcontext.RequestContext, user apimeta.
 }
 
 func GetUserUsage(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
-	serverName := _routers.GetParam("serverName", r)
+	serverName := routers.GetParam("serverName", r)
 	userIds := r.URL.Query()["user_id"]
 
-	if !_routers.ServerNameRegex.MatchString(serverName) {
+	if !routers.ServerNameRegex.MatchString(serverName) {
 		return responses.BadRequest(errors.New("invalid server name"))
 	}
 
@@ -161,10 +161,10 @@ func GetUserUsage(r *http.Request, rctx rcontext.RequestContext, user apimeta.Us
 }
 
 func GetUploadsUsage(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
-	serverName := _routers.GetParam("serverName", r)
+	serverName := routers.GetParam("serverName", r)
 	mxcs := r.URL.Query()["mxc"]
 
-	if !_routers.ServerNameRegex.MatchString(serverName) {
+	if !routers.ServerNameRegex.MatchString(serverName) {
 		return responses.BadRequest(errors.New("invalid server name"))
 	}
 
@@ -228,12 +228,12 @@ func SynGetUsersMediaStats(r *http.Request, rctx rcontext.RequestContext, user a
 	qs := r.URL.Query()
 	var err error
 
-	serverName := _routers.GetParam("serverName", r)
+	serverName := routers.GetParam("serverName", r)
 	if serverName == "" && strings.HasPrefix(r.URL.Path, synapse.PrefixAdminApi) {
 		serverName = r.Host
 	}
 
-	if !_routers.ServerNameRegex.MatchString(serverName) {
+	if !routers.ServerNameRegex.MatchString(serverName) {
 		return responses.BadRequest(errors.New("invalid server name"))
 	}
 

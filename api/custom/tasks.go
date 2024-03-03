@@ -6,9 +6,9 @@ import (
 	"strconv"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/t2bot/matrix-media-repo/api/_routers"
 	"github.com/t2bot/matrix-media-repo/api/apimeta"
 	"github.com/t2bot/matrix-media-repo/api/responses"
+	"github.com/t2bot/matrix-media-repo/api/routers"
 	"github.com/t2bot/matrix-media-repo/database"
 
 	"github.com/sirupsen/logrus"
@@ -26,7 +26,7 @@ type TaskStatus struct {
 }
 
 func GetTask(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
-	taskIdStr := _routers.GetParam("taskId", r)
+	taskIdStr := routers.GetParam("taskId", r)
 	taskId, err := strconv.Atoi(taskIdStr)
 	if err != nil {
 		rctx.Log.Error(err)

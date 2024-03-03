@@ -6,9 +6,9 @@ import (
 	"net/http"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/t2bot/matrix-media-repo/api/_routers"
 	"github.com/t2bot/matrix-media-repo/api/apimeta"
 	"github.com/t2bot/matrix-media-repo/api/responses"
+	"github.com/t2bot/matrix-media-repo/api/routers"
 
 	"github.com/sirupsen/logrus"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
@@ -16,9 +16,9 @@ import (
 )
 
 func GetFederationInfo(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
-	serverName := _routers.GetParam("serverName", r)
+	serverName := routers.GetParam("serverName", r)
 
-	if !_routers.ServerNameRegex.MatchString(serverName) {
+	if !routers.ServerNameRegex.MatchString(serverName) {
 		return responses.BadRequest(errors.New("invalid server name"))
 	}
 

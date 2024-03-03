@@ -7,17 +7,17 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
-	"github.com/t2bot/matrix-media-repo/api/_routers"
 	"github.com/t2bot/matrix-media-repo/api/apimeta"
 	"github.com/t2bot/matrix-media-repo/api/responses"
+	"github.com/t2bot/matrix-media-repo/api/routers"
 	"github.com/t2bot/matrix-media-repo/common"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/pipelines/pipeline_upload"
 )
 
 func UploadMediaAsync(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
-	server := _routers.GetParam("server", r)
-	mediaId := _routers.GetParam("mediaId", r)
+	server := routers.GetParam("server", r)
+	mediaId := routers.GetParam("mediaId", r)
 	filename := filepath.Base(r.URL.Query().Get("filename"))
 
 	rctx = rctx.LogWithFields(logrus.Fields{

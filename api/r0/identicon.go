@@ -11,9 +11,9 @@ import (
 	"github.com/cupcake/sigil/gen"
 	"github.com/disintegration/imaging"
 	"github.com/sirupsen/logrus"
-	"github.com/t2bot/matrix-media-repo/api/_routers"
 	"github.com/t2bot/matrix-media-repo/api/apimeta"
 	"github.com/t2bot/matrix-media-repo/api/responses"
+	"github.com/t2bot/matrix-media-repo/api/routers"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 )
 
@@ -22,7 +22,7 @@ func Identicon(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserI
 		return responses.NotFoundError()
 	}
 
-	seed := _routers.GetParam("seed", r)
+	seed := routers.GetParam("seed", r)
 
 	var err error
 	width := 96

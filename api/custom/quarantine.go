@@ -5,9 +5,9 @@ import (
 	"net/http"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/t2bot/matrix-media-repo/api/_routers"
 	"github.com/t2bot/matrix-media-repo/api/apimeta"
 	"github.com/t2bot/matrix-media-repo/api/responses"
+	"github.com/t2bot/matrix-media-repo/api/routers"
 	"github.com/t2bot/matrix-media-repo/database"
 	"github.com/t2bot/matrix-media-repo/tasks/task_runner"
 
@@ -27,7 +27,7 @@ func QuarantineRoomMedia(r *http.Request, rctx rcontext.RequestContext, user api
 		return responses.AuthFailed()
 	}
 
-	roomId := _routers.GetParam("roomId", r)
+	roomId := routers.GetParam("roomId", r)
 
 	rctx = rctx.LogWithFields(logrus.Fields{
 		"roomId":     roomId,
@@ -58,7 +58,7 @@ func QuarantineUserMedia(r *http.Request, rctx rcontext.RequestContext, user api
 		return responses.AuthFailed()
 	}
 
-	userId := _routers.GetParam("userId", r)
+	userId := routers.GetParam("userId", r)
 
 	rctx = rctx.LogWithFields(logrus.Fields{
 		"userId":     userId,
@@ -95,9 +95,9 @@ func QuarantineDomainMedia(r *http.Request, rctx rcontext.RequestContext, user a
 		return responses.AuthFailed()
 	}
 
-	serverName := _routers.GetParam("serverName", r)
+	serverName := routers.GetParam("serverName", r)
 
-	if !_routers.ServerNameRegex.MatchString(serverName) {
+	if !routers.ServerNameRegex.MatchString(serverName) {
 		return responses.BadRequest(errors.New("invalid server name"))
 	}
 
@@ -129,10 +129,10 @@ func QuarantineMedia(r *http.Request, rctx rcontext.RequestContext, user apimeta
 		return responses.AuthFailed()
 	}
 
-	server := _routers.GetParam("server", r)
-	mediaId := _routers.GetParam("mediaId", r)
+	server := routers.GetParam("server", r)
+	mediaId := routers.GetParam("mediaId", r)
 
-	if !_routers.ServerNameRegex.MatchString(server) {
+	if !routers.ServerNameRegex.MatchString(server) {
 		return responses.BadRequest(errors.New("invalid server ID"))
 	}
 

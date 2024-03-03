@@ -9,8 +9,8 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/julienschmidt/httprouter"
 	"github.com/sirupsen/logrus"
-	"github.com/t2bot/matrix-media-repo/api/_routers"
 	"github.com/t2bot/matrix-media-repo/api/responses"
+	"github.com/t2bot/matrix-media-repo/api/routers"
 	"github.com/t2bot/matrix-media-repo/util"
 )
 
@@ -21,7 +21,7 @@ func buildPrimaryRouter() *httprouter.Router {
 	router.MethodNotAllowed = http.HandlerFunc(methodNotAllowedFn)
 	router.NotFound = http.HandlerFunc(notFoundFn)
 	router.HandleOPTIONS = true
-	router.GlobalOPTIONS = _routers.NewInstallHeadersRouter(http.HandlerFunc(finishCorsFn))
+	router.GlobalOPTIONS = routers.NewInstallHeadersRouter(http.HandlerFunc(finishCorsFn))
 	router.PanicHandler = panicFn
 	return router
 }

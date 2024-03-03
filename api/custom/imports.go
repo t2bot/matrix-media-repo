@@ -5,9 +5,9 @@ import (
 	"net/http"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/t2bot/matrix-media-repo/api/_routers"
 	"github.com/t2bot/matrix-media-repo/api/apimeta"
 	"github.com/t2bot/matrix-media-repo/api/responses"
+	"github.com/t2bot/matrix-media-repo/api/routers"
 	"github.com/t2bot/matrix-media-repo/common"
 	"github.com/t2bot/matrix-media-repo/tasks"
 	"github.com/t2bot/matrix-media-repo/tasks/task_runner"
@@ -57,9 +57,9 @@ func AppendToImport(r *http.Request, rctx rcontext.RequestContext, user apimeta.
 		return responses.BadRequest(errors.New("archival import can only be done on the background tasks worker"))
 	}
 
-	importId := _routers.GetParam("importId", r)
+	importId := routers.GetParam("importId", r)
 
-	if !_routers.ServerNameRegex.MatchString(importId) {
+	if !routers.ServerNameRegex.MatchString(importId) {
 		return responses.BadRequest(errors.New("invalid import ID"))
 	}
 
@@ -84,9 +84,9 @@ func StopImport(r *http.Request, rctx rcontext.RequestContext, user apimeta.User
 		return responses.BadRequest(errors.New("archival import can only be done on the background tasks worker"))
 	}
 
-	importId := _routers.GetParam("importId", r)
+	importId := routers.GetParam("importId", r)
 
-	if !_routers.ServerNameRegex.MatchString(importId) {
+	if !routers.ServerNameRegex.MatchString(importId) {
 		return responses.BadRequest(errors.New("invalid import ID"))
 	}
 

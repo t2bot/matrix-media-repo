@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/t2bot/matrix-media-repo/api/_routers"
 	"github.com/t2bot/matrix-media-repo/api/apimeta"
 	"github.com/t2bot/matrix-media-repo/api/responses"
+	"github.com/t2bot/matrix-media-repo/api/routers"
 	"github.com/t2bot/matrix-media-repo/common/config"
 	"github.com/t2bot/matrix-media-repo/datastores"
 	"github.com/t2bot/matrix-media-repo/tasks"
@@ -53,8 +53,8 @@ func MigrateBetweenDatastores(r *http.Request, rctx rcontext.RequestContext, use
 		}
 	}
 
-	sourceDsId := _routers.GetParam("sourceDsId", r)
-	targetDsId := _routers.GetParam("targetDsId", r)
+	sourceDsId := routers.GetParam("sourceDsId", r)
+	targetDsId := routers.GetParam("targetDsId", r)
 
 	rctx = rctx.LogWithFields(logrus.Fields{
 		"beforeTs":   beforeTs,
@@ -106,7 +106,7 @@ func GetDatastoreStorageEstimate(r *http.Request, rctx rcontext.RequestContext, 
 		}
 	}
 
-	datastoreId := _routers.GetParam("datastoreId", r)
+	datastoreId := routers.GetParam("datastoreId", r)
 
 	rctx = rctx.LogWithFields(logrus.Fields{
 		"beforeTs":    beforeTs,

@@ -7,9 +7,9 @@ import (
 	"strconv"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/t2bot/matrix-media-repo/api/_routers"
 	"github.com/t2bot/matrix-media-repo/api/apimeta"
 	"github.com/t2bot/matrix-media-repo/api/responses"
+	"github.com/t2bot/matrix-media-repo/api/routers"
 	"github.com/t2bot/matrix-media-repo/database"
 	"github.com/t2bot/matrix-media-repo/datastores"
 	"github.com/t2bot/matrix-media-repo/tasks"
@@ -50,7 +50,7 @@ func ExportUserData(r *http.Request, rctx rcontext.RequestContext, user apimeta.
 
 	s3urls := r.URL.Query().Get("s3_urls") != "false"
 
-	userId := _routers.GetParam("userId", r)
+	userId := routers.GetParam("userId", r)
 
 	if !isAdmin && user.UserId != userId {
 		return responses.BadRequest(errors.New("cannot export data for another user"))
@@ -85,7 +85,7 @@ func ExportServerData(r *http.Request, rctx rcontext.RequestContext, user apimet
 
 	s3urls := r.URL.Query().Get("s3_urls") != "false"
 
-	serverName := _routers.GetParam("serverName", r)
+	serverName := routers.GetParam("serverName", r)
 
 	if !isAdmin {
 		// They might be a local admin, so check that.
@@ -127,9 +127,9 @@ func ViewExport(r *http.Request, rctx rcontext.RequestContext, user apimeta.User
 		return responses.BadRequest(errors.New("archiving is not enabled"))
 	}
 
-	exportId := _routers.GetParam("exportId", r)
+	exportId := routers.GetParam("exportId", r)
 
-	if !_routers.ServerNameRegex.MatchString(exportId) {
+	if !routers.ServerNameRegex.MatchString(exportId) {
 		responses.BadRequest(errors.New("invalid export ID"))
 	}
 
@@ -195,9 +195,9 @@ func GetExportMetadata(r *http.Request, rctx rcontext.RequestContext, user apime
 		return responses.BadRequest(errors.New("archiving is not enabled"))
 	}
 
-	exportId := _routers.GetParam("exportId", r)
+	exportId := routers.GetParam("exportId", r)
 
-	if !_routers.ServerNameRegex.MatchString(exportId) {
+	if !routers.ServerNameRegex.MatchString(exportId) {
 		responses.BadRequest(errors.New("invalid export ID"))
 	}
 
@@ -242,10 +242,10 @@ func DownloadExportPart(r *http.Request, rctx rcontext.RequestContext, user apim
 		return responses.BadRequest(errors.New("archiving is not enabled"))
 	}
 
-	exportId := _routers.GetParam("exportId", r)
-	pid := _routers.GetParam("partId", r)
+	exportId := routers.GetParam("exportId", r)
+	pid := routers.GetParam("partId", r)
 
-	if !_routers.ServerNameRegex.MatchString(exportId) {
+	if !routers.ServerNameRegex.MatchString(exportId) {
 		responses.BadRequest(errors.New("invalid export ID"))
 	}
 
@@ -298,9 +298,9 @@ func DeleteExport(r *http.Request, rctx rcontext.RequestContext, user apimeta.Us
 		return responses.BadRequest(errors.New("archiving is not enabled"))
 	}
 
-	exportId := _routers.GetParam("exportId", r)
+	exportId := routers.GetParam("exportId", r)
 
-	if !_routers.ServerNameRegex.MatchString(exportId) {
+	if !routers.ServerNameRegex.MatchString(exportId) {
 		responses.BadRequest(errors.New("invalid export ID"))
 	}
 

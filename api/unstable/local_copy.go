@@ -8,10 +8,10 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
-	"github.com/t2bot/matrix-media-repo/api/_routers"
 	"github.com/t2bot/matrix-media-repo/api/apimeta"
 	"github.com/t2bot/matrix-media-repo/api/r0"
 	"github.com/t2bot/matrix-media-repo/api/responses"
+	"github.com/t2bot/matrix-media-repo/api/routers"
 	"github.com/t2bot/matrix-media-repo/common"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/datastores"
@@ -21,13 +21,13 @@ import (
 )
 
 func LocalCopy(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
-	server := _routers.GetParam("server", r)
-	mediaId := _routers.GetParam("mediaId", r)
+	server := routers.GetParam("server", r)
+	mediaId := routers.GetParam("mediaId", r)
 	allowRemote := r.URL.Query().Get("allow_remote")
 
 	rctx.Log.Warn("This endpoint is deprecated. See https://github.com/t2bot/matrix-media-repo/issues/422")
 
-	if !_routers.ServerNameRegex.MatchString(server) {
+	if !routers.ServerNameRegex.MatchString(server) {
 		return responses.BadRequest(errors.New("invalid server ID"))
 	}
 

@@ -7,9 +7,9 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
-	"github.com/t2bot/matrix-media-repo/api/_routers"
 	"github.com/t2bot/matrix-media-repo/api/apimeta"
 	"github.com/t2bot/matrix-media-repo/api/responses"
+	"github.com/t2bot/matrix-media-repo/api/routers"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/database"
 	"github.com/t2bot/matrix-media-repo/matrix"
@@ -34,10 +34,10 @@ func canChangeAttributes(rctx rcontext.RequestContext, r *http.Request, origin s
 }
 
 func GetAttributes(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
-	origin := _routers.GetParam("server", r)
-	mediaId := _routers.GetParam("mediaId", r)
+	origin := routers.GetParam("server", r)
+	mediaId := routers.GetParam("mediaId", r)
 
-	if !_routers.ServerNameRegex.MatchString(origin) {
+	if !routers.ServerNameRegex.MatchString(origin) {
 		return responses.BadRequest(errors.New("invalid origin"))
 	}
 
@@ -80,10 +80,10 @@ func GetAttributes(r *http.Request, rctx rcontext.RequestContext, user apimeta.U
 }
 
 func SetAttributes(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
-	origin := _routers.GetParam("server", r)
-	mediaId := _routers.GetParam("mediaId", r)
+	origin := routers.GetParam("server", r)
+	mediaId := routers.GetParam("mediaId", r)
 
-	if !_routers.ServerNameRegex.MatchString(origin) {
+	if !routers.ServerNameRegex.MatchString(origin) {
 		return responses.BadRequest(errors.New("invalid origin"))
 	}
 
