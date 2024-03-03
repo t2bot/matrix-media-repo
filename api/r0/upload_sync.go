@@ -8,8 +8,8 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
-	"github.com/t2bot/matrix-media-repo/api/_apimeta"
 	"github.com/t2bot/matrix-media-repo/api/_responses"
+	"github.com/t2bot/matrix-media-repo/api/apimeta"
 	"github.com/t2bot/matrix-media-repo/common"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/datastores"
@@ -21,7 +21,7 @@ type MediaUploadedResponse struct {
 	ContentUri string `json:"content_uri,omitempty"`
 }
 
-func UploadMediaSync(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func UploadMediaSync(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	filename := filepath.Base(r.URL.Query().Get("filename"))
 
 	rctx = rctx.LogWithFields(logrus.Fields{

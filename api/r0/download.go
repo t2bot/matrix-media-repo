@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/t2bot/matrix-media-repo/api/_apimeta"
 	"github.com/t2bot/matrix-media-repo/api/_responses"
 	"github.com/t2bot/matrix-media-repo/api/_routers"
+	"github.com/t2bot/matrix-media-repo/api/apimeta"
 	"github.com/t2bot/matrix-media-repo/datastores"
 	"github.com/t2bot/matrix-media-repo/pipelines/pipeline_download"
 	"github.com/t2bot/matrix-media-repo/util"
@@ -19,7 +19,7 @@ import (
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 )
 
-func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	server := _routers.GetParam("server", r)
 	mediaId := _routers.GetParam("mediaId", r)
 	filename := _routers.GetParam("filename", r)

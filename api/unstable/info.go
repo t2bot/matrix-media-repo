@@ -10,9 +10,9 @@ import (
 	"github.com/disintegration/imaging"
 	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
-	"github.com/t2bot/matrix-media-repo/api/_apimeta"
 	"github.com/t2bot/matrix-media-repo/api/_responses"
 	"github.com/t2bot/matrix-media-repo/api/_routers"
+	"github.com/t2bot/matrix-media-repo/api/apimeta"
 	"github.com/t2bot/matrix-media-repo/common"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/database"
@@ -48,7 +48,7 @@ type MediaInfoResponse struct {
 	NumChannels     int                   `json:"num_channels,omitempty"`
 }
 
-func MediaInfo(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func MediaInfo(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	server := _routers.GetParam("server", r)
 	mediaId := _routers.GetParam("mediaId", r)
 	allowRemote := r.URL.Query().Get("allow_remote")

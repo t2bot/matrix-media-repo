@@ -11,13 +11,13 @@ import (
 	"github.com/cupcake/sigil/gen"
 	"github.com/disintegration/imaging"
 	"github.com/sirupsen/logrus"
-	"github.com/t2bot/matrix-media-repo/api/_apimeta"
 	"github.com/t2bot/matrix-media-repo/api/_responses"
 	"github.com/t2bot/matrix-media-repo/api/_routers"
+	"github.com/t2bot/matrix-media-repo/api/apimeta"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 )
 
-func Identicon(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func Identicon(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	if !rctx.Config.Identicons.Enabled {
 		return _responses.NotFoundError()
 	}

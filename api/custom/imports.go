@@ -5,9 +5,9 @@ import (
 	"net/http"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/t2bot/matrix-media-repo/api/_apimeta"
 	"github.com/t2bot/matrix-media-repo/api/_responses"
 	"github.com/t2bot/matrix-media-repo/api/_routers"
+	"github.com/t2bot/matrix-media-repo/api/apimeta"
 	"github.com/t2bot/matrix-media-repo/common"
 	"github.com/t2bot/matrix-media-repo/tasks"
 	"github.com/t2bot/matrix-media-repo/tasks/task_runner"
@@ -21,7 +21,7 @@ type ImportStarted struct {
 	TaskID   int    `json:"task_id"`
 }
 
-func StartImport(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func StartImport(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	if !rctx.Config.Archiving.Enabled {
 		return _responses.BadRequest(errors.New("archiving is not enabled"))
 	}
@@ -49,7 +49,7 @@ func StartImport(r *http.Request, rctx rcontext.RequestContext, user _apimeta.Us
 	}}
 }
 
-func AppendToImport(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func AppendToImport(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	if !rctx.Config.Archiving.Enabled {
 		return _responses.BadRequest(errors.New("archiving is not enabled"))
 	}
@@ -76,7 +76,7 @@ func AppendToImport(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 	return &_responses.DoNotCacheResponse{Payload: &_responses.EmptyResponse{}}
 }
 
-func StopImport(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func StopImport(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	if !rctx.Config.Archiving.Enabled {
 		return _responses.BadRequest(errors.New("archiving is not enabled"))
 	}

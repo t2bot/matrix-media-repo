@@ -1,4 +1,4 @@
-package _apimeta
+package apimeta
 
 import (
 	"net/http"

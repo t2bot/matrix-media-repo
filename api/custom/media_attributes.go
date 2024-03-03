@@ -7,9 +7,9 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
-	"github.com/t2bot/matrix-media-repo/api/_apimeta"
 	"github.com/t2bot/matrix-media-repo/api/_responses"
 	"github.com/t2bot/matrix-media-repo/api/_routers"
+	"github.com/t2bot/matrix-media-repo/api/apimeta"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/database"
 	"github.com/t2bot/matrix-media-repo/matrix"
@@ -20,7 +20,7 @@ type Attributes struct {
 	Purpose database.Purpose `json:"purpose"`
 }
 
-func canChangeAttributes(rctx rcontext.RequestContext, r *http.Request, origin string, user _apimeta.UserInfo) bool {
+func canChangeAttributes(rctx rcontext.RequestContext, r *http.Request, origin string, user apimeta.UserInfo) bool {
 	isGlobalAdmin := util.IsGlobalAdmin(user.UserId) || user.IsShared
 	if isGlobalAdmin {
 		return true
@@ -33,7 +33,7 @@ func canChangeAttributes(rctx rcontext.RequestContext, r *http.Request, origin s
 	return isLocalAdmin
 }
 
-func GetAttributes(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func GetAttributes(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	origin := _routers.GetParam("server", r)
 	mediaId := _routers.GetParam("mediaId", r)
 
@@ -79,7 +79,7 @@ func GetAttributes(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 	return &_responses.DoNotCacheResponse{Payload: retAttrs}
 }
 
-func SetAttributes(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func SetAttributes(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	origin := _routers.GetParam("server", r)
 	mediaId := _routers.GetParam("mediaId", r)
 

@@ -5,14 +5,14 @@ import (
 	"net/http"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/t2bot/matrix-media-repo/api/_apimeta"
 	"github.com/t2bot/matrix-media-repo/api/_responses"
+	"github.com/t2bot/matrix-media-repo/api/apimeta"
 
 	"github.com/t2bot/matrix-media-repo/api/_auth_cache"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 )
 
-func Logout(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func Logout(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	err := _auth_cache.InvalidateToken(rctx, user.AccessToken, user.UserId)
 	if err != nil {
 		rctx.Log.Error(err)
@@ -22,7 +22,7 @@ func Logout(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInf
 	return _responses.EmptyResponse{}
 }
 
-func LogoutAll(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func LogoutAll(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	err := _auth_cache.InvalidateAllTokens(rctx, user.AccessToken, user.UserId)
 	if err != nil {
 		rctx.Log.Error(err)

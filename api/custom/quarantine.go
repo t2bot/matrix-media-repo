@@ -5,9 +5,9 @@ import (
 	"net/http"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/t2bot/matrix-media-repo/api/_apimeta"
 	"github.com/t2bot/matrix-media-repo/api/_responses"
 	"github.com/t2bot/matrix-media-repo/api/_routers"
+	"github.com/t2bot/matrix-media-repo/api/apimeta"
 	"github.com/t2bot/matrix-media-repo/database"
 	"github.com/t2bot/matrix-media-repo/tasks/task_runner"
 
@@ -21,7 +21,7 @@ type MediaQuarantinedResponse struct {
 	NumQuarantined int64 `json:"num_quarantined"`
 }
 
-func QuarantineRoomMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func QuarantineRoomMedia(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	canQuarantine, allowOtherHosts, isLocalAdmin := getQuarantineRequestInfo(r, rctx, user)
 	if !canQuarantine {
 		return _responses.AuthFailed()
@@ -52,7 +52,7 @@ func QuarantineRoomMedia(r *http.Request, rctx rcontext.RequestContext, user _ap
 	})
 }
 
-func QuarantineUserMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func QuarantineUserMedia(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	canQuarantine, allowOtherHosts, isLocalAdmin := getQuarantineRequestInfo(r, rctx, user)
 	if !canQuarantine {
 		return _responses.AuthFailed()
@@ -89,7 +89,7 @@ func QuarantineUserMedia(r *http.Request, rctx rcontext.RequestContext, user _ap
 	})
 }
 
-func QuarantineDomainMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func QuarantineDomainMedia(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	canQuarantine, allowOtherHosts, isLocalAdmin := getQuarantineRequestInfo(r, rctx, user)
 	if !canQuarantine {
 		return _responses.AuthFailed()
@@ -123,7 +123,7 @@ func QuarantineDomainMedia(r *http.Request, rctx rcontext.RequestContext, user _
 	})
 }
 
-func QuarantineMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func QuarantineMedia(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	canQuarantine, allowOtherHosts, isLocalAdmin := getQuarantineRequestInfo(r, rctx, user)
 	if !canQuarantine {
 		return _responses.AuthFailed()
@@ -170,7 +170,7 @@ func performQuarantineRequest(ctx rcontext.RequestContext, host string, allowOth
 	return &_responses.DoNotCacheResponse{Payload: &MediaQuarantinedResponse{NumQuarantined: total}}
 }
 
-func getQuarantineRequestInfo(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) (bool, bool, bool) {
+func getQuarantineRequestInfo(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) (bool, bool, bool) {
 	isGlobalAdmin := util.IsGlobalAdmin(user.UserId) || user.IsShared
 	canQuarantine := isGlobalAdmin
 	allowOtherHosts := isGlobalAdmin

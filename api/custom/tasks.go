@@ -6,9 +6,9 @@ import (
 	"strconv"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/t2bot/matrix-media-repo/api/_apimeta"
 	"github.com/t2bot/matrix-media-repo/api/_responses"
 	"github.com/t2bot/matrix-media-repo/api/_routers"
+	"github.com/t2bot/matrix-media-repo/api/apimeta"
 	"github.com/t2bot/matrix-media-repo/database"
 
 	"github.com/sirupsen/logrus"
@@ -25,7 +25,7 @@ type TaskStatus struct {
 	Error      string                  `json:"error_message"`
 }
 
-func GetTask(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func GetTask(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	taskIdStr := _routers.GetParam("taskId", r)
 	taskId, err := strconv.Atoi(taskIdStr)
 	if err != nil {
@@ -60,7 +60,7 @@ func GetTask(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserIn
 	}}
 }
 
-func ListAllTasks(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func ListAllTasks(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	db := database.GetInstance().Tasks.Prepare(rctx)
 
 	tasks, err := db.GetAll(true)
@@ -86,7 +86,7 @@ func ListAllTasks(r *http.Request, rctx rcontext.RequestContext, user _apimeta.U
 	return &_responses.DoNotCacheResponse{Payload: statusObjs}
 }
 
-func ListUnfinishedTasks(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func ListUnfinishedTasks(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	db := database.GetInstance().Tasks.Prepare(rctx)
 
 	tasks, err := db.GetAll(false)

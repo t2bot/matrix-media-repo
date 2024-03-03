@@ -7,9 +7,9 @@ import (
 	"strconv"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/t2bot/matrix-media-repo/api/_apimeta"
 	"github.com/t2bot/matrix-media-repo/api/_responses"
 	"github.com/t2bot/matrix-media-repo/api/_routers"
+	"github.com/t2bot/matrix-media-repo/api/apimeta"
 	"github.com/t2bot/matrix-media-repo/database"
 	"github.com/t2bot/matrix-media-repo/datastores"
 	"github.com/t2bot/matrix-media-repo/tasks"
@@ -38,7 +38,7 @@ type ExportMetadata struct {
 	Parts  []*ExportPartMetadata `json:"parts"`
 }
 
-func ExportUserData(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func ExportUserData(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	if !rctx.Config.Archiving.Enabled {
 		return _responses.BadRequest(errors.New("archiving is not enabled"))
 	}
@@ -73,7 +73,7 @@ func ExportUserData(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 	}}
 }
 
-func ExportServerData(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func ExportServerData(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	if !rctx.Config.Archiving.Enabled {
 		return _responses.BadRequest(errors.New("archiving is not enabled"))
 	}
@@ -122,7 +122,7 @@ func ExportServerData(r *http.Request, rctx rcontext.RequestContext, user _apime
 	}}
 }
 
-func ViewExport(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func ViewExport(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	if !rctx.Config.Archiving.Enabled {
 		return _responses.BadRequest(errors.New("archiving is not enabled"))
 	}
@@ -190,7 +190,7 @@ func ViewExport(r *http.Request, rctx rcontext.RequestContext, user _apimeta.Use
 	return &_responses.HtmlResponse{HTML: html.String()}
 }
 
-func GetExportMetadata(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func GetExportMetadata(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	if !rctx.Config.Archiving.Enabled {
 		return _responses.BadRequest(errors.New("archiving is not enabled"))
 	}
@@ -237,7 +237,7 @@ func GetExportMetadata(r *http.Request, rctx rcontext.RequestContext, user _apim
 	return &_responses.DoNotCacheResponse{Payload: metadata}
 }
 
-func DownloadExportPart(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func DownloadExportPart(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	if !rctx.Config.Archiving.Enabled {
 		return _responses.BadRequest(errors.New("archiving is not enabled"))
 	}
@@ -293,7 +293,7 @@ func DownloadExportPart(r *http.Request, rctx rcontext.RequestContext, user _api
 	}
 }
 
-func DeleteExport(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func DeleteExport(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	if !rctx.Config.Archiving.Enabled {
 		return _responses.BadRequest(errors.New("archiving is not enabled"))
 	}

@@ -6,9 +6,9 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
-	"github.com/t2bot/matrix-media-repo/api/_apimeta"
 	"github.com/t2bot/matrix-media-repo/api/_auth_cache"
 	"github.com/t2bot/matrix-media-repo/api/_responses"
+	"github.com/t2bot/matrix-media-repo/api/apimeta"
 	"github.com/t2bot/matrix-media-repo/common/config"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/matrix"
@@ -19,7 +19,7 @@ func OptionalAccessToken(generator GeneratorWithUserFn) GeneratorFn {
 	return func(r *http.Request, ctx rcontext.RequestContext) interface{} {
 		accessToken := util.GetAccessTokenFromRequest(r)
 		if accessToken == "" {
-			return generator(r, ctx, _apimeta.UserInfo{
+			return generator(r, ctx, apimeta.UserInfo{
 				UserId:      "",
 				AccessToken: "",
 				IsShared:    false,
@@ -27,7 +27,7 @@ func OptionalAccessToken(generator GeneratorWithUserFn) GeneratorFn {
 		}
 		if config.Get().SharedSecret.Enabled && accessToken == config.Get().SharedSecret.Token {
 			ctx = ctx.LogWithFields(logrus.Fields{"sharedSecretAuth": true})
-			return generator(r, ctx, _apimeta.UserInfo{
+			return generator(r, ctx, apimeta.UserInfo{
 				UserId:      "@sharedsecret",
 				AccessToken: accessToken,
 				IsShared:    true,
@@ -47,7 +47,7 @@ func OptionalAccessToken(generator GeneratorWithUserFn) GeneratorFn {
 		}
 
 		ctx = ctx.LogWithFields(logrus.Fields{"authUserId": userId})
-		return generator(r, ctx, _apimeta.UserInfo{
+		return generator(r, ctx, apimeta.UserInfo{
 			UserId:      userId,
 			AccessToken: accessToken,
 			IsShared:    false,

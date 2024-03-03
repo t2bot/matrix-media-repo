@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/t2bot/matrix-media-repo/api/_apimeta"
 	"github.com/t2bot/matrix-media-repo/api/_responses"
 	"github.com/t2bot/matrix-media-repo/api/_routers"
+	"github.com/t2bot/matrix-media-repo/api/apimeta"
 	"github.com/t2bot/matrix-media-repo/database"
 	"github.com/t2bot/matrix-media-repo/homeserver_interop/synapse"
 
@@ -54,7 +54,7 @@ type MediaUsageEntry struct {
 	CreatedTs         int64  `json:"created_ts"`
 }
 
-func GetDomainUsage(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func GetDomainUsage(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	serverName := _routers.GetParam("serverName", r)
 
 	if !_routers.ServerNameRegex.MatchString(serverName) {
@@ -101,7 +101,7 @@ func GetDomainUsage(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 	}
 }
 
-func GetUserUsage(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func GetUserUsage(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	serverName := _routers.GetParam("serverName", r)
 	userIds := r.URL.Query()["user_id"]
 
@@ -160,7 +160,7 @@ func GetUserUsage(r *http.Request, rctx rcontext.RequestContext, user _apimeta.U
 	return &_responses.DoNotCacheResponse{Payload: parsed}
 }
 
-func GetUploadsUsage(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func GetUploadsUsage(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	serverName := _routers.GetParam("serverName", r)
 	mxcs := r.URL.Query()["mxc"]
 
@@ -224,7 +224,7 @@ func GetUploadsUsage(r *http.Request, rctx rcontext.RequestContext, user _apimet
 
 // SynGetUsersMediaStats attempts to provide a loose equivalent to this Synapse admin endpoint:
 // https://matrix-org.github.io/synapse/v1.88/admin_api/statistics.html#users-media-usage-statistics
-func SynGetUsersMediaStats(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func SynGetUsersMediaStats(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	qs := r.URL.Query()
 	var err error
 
@@ -237,7 +237,7 @@ func SynGetUsersMediaStats(r *http.Request, rctx rcontext.RequestContext, user _
 		return _responses.BadRequest(errors.New("invalid server name"))
 	}
 
-	isGlobalAdmin, isLocalAdmin := _apimeta.GetRequestUserAdminStatus(r, rctx, user)
+	isGlobalAdmin, isLocalAdmin := apimeta.GetRequestUserAdminStatus(r, rctx, user)
 	if !isGlobalAdmin && (serverName != r.Host || !isLocalAdmin) {
 		return _responses.AuthFailed()
 	}

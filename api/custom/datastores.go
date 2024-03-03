@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/t2bot/matrix-media-repo/api/_apimeta"
 	"github.com/t2bot/matrix-media-repo/api/_responses"
 	"github.com/t2bot/matrix-media-repo/api/_routers"
+	"github.com/t2bot/matrix-media-repo/api/apimeta"
 	"github.com/t2bot/matrix-media-repo/common/config"
 	"github.com/t2bot/matrix-media-repo/datastores"
 	"github.com/t2bot/matrix-media-repo/tasks"
@@ -24,7 +24,7 @@ type DatastoreMigration struct {
 	TaskID int `json:"task_id"`
 }
 
-func GetDatastores(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func GetDatastores(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	response := make(map[string]interface{})
 	for _, store := range config.UniqueDatastores() {
 		uri, err := datastores.GetUri(store)
@@ -42,7 +42,7 @@ func GetDatastores(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 	return &_responses.DoNotCacheResponse{Payload: response}
 }
 
-func MigrateBetweenDatastores(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func MigrateBetweenDatastores(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	beforeTsStr := r.URL.Query().Get("before_ts")
 	beforeTs := time.Now().UnixMilli()
 	var err error
@@ -95,7 +95,7 @@ func MigrateBetweenDatastores(r *http.Request, rctx rcontext.RequestContext, use
 	return &_responses.DoNotCacheResponse{Payload: migration}
 }
 
-func GetDatastoreStorageEstimate(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func GetDatastoreStorageEstimate(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	beforeTsStr := r.URL.Query().Get("before_ts")
 	beforeTs := time.Now().UnixMilli()
 	var err error

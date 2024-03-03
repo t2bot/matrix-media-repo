@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/t2bot/matrix-media-repo/api/_apimeta"
 	"github.com/t2bot/matrix-media-repo/api/_responses"
+	"github.com/t2bot/matrix-media-repo/api/apimeta"
 	"github.com/t2bot/matrix-media-repo/pipelines/pipeline_preview"
 
 	"github.com/t2bot/matrix-media-repo/common"
@@ -29,7 +29,7 @@ type MatrixOpenGraph struct {
 	ImageHeight int    `json:"og:image:height,omitempty"`
 }
 
-func PreviewUrl(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func PreviewUrl(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	if !rctx.Config.UrlPreviews.Enabled {
 		return _responses.NotFoundError()
 	}

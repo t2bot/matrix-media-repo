@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/t2bot/matrix-media-repo/api/_apimeta"
+	"github.com/t2bot/matrix-media-repo/api/apimeta"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/pipelines/steps/quota"
 )
@@ -14,7 +14,7 @@ type PublicUsageResponse struct {
 	StorageFiles int64 `json:"org.matrix.msc4034.storage.files,omitempty"`
 }
 
-func PublicUsage(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func PublicUsage(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	storageUsed := int64(0)
 	current, err := quota.Current(rctx, user.UserId, quota.MaxBytes)
 	if err != nil {

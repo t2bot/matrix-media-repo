@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/t2bot/matrix-media-repo/api/_apimeta"
 	"github.com/t2bot/matrix-media-repo/api/_responses"
 	"github.com/t2bot/matrix-media-repo/api/_routers"
+	"github.com/t2bot/matrix-media-repo/api/apimeta"
 	"github.com/t2bot/matrix-media-repo/database"
 	"github.com/t2bot/matrix-media-repo/tasks/task_runner"
 
@@ -25,7 +25,7 @@ type MediaPurgedResponse struct {
 	NumRemoved int `json:"total_removed"`
 }
 
-func PurgeRemoteMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func PurgeRemoteMedia(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	beforeTsStr := r.URL.Query().Get("before_ts")
 	if beforeTsStr == "" {
 		return _responses.BadRequest(errors.New("Missing before_ts argument"))
@@ -51,7 +51,7 @@ func PurgeRemoteMedia(r *http.Request, rctx rcontext.RequestContext, user _apime
 	return &_responses.DoNotCacheResponse{Payload: &MediaPurgedResponse{NumRemoved: removed}}
 }
 
-func PurgeIndividualRecord(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func PurgeIndividualRecord(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	authCtx, _, _ := getPurgeAuthContext(rctx, r, user)
 
 	server := _routers.GetParam("server", r)
@@ -84,7 +84,7 @@ func PurgeIndividualRecord(r *http.Request, rctx rcontext.RequestContext, user _
 	return &_responses.DoNotCacheResponse{Payload: map[string]interface{}{"purged": true}}
 }
 
-func PurgeQuarantined(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func PurgeQuarantined(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	authCtx, isGlobalAdmin, isLocalAdmin := getPurgeAuthContext(rctx, r, user)
 
 	var affected []*database.DbMedia
@@ -119,7 +119,7 @@ func PurgeQuarantined(r *http.Request, rctx rcontext.RequestContext, user _apime
 	return &_responses.DoNotCacheResponse{Payload: map[string]interface{}{"purged": true, "affected": mxcs}}
 }
 
-func PurgeOldMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func PurgeOldMedia(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	var err error
 	before := time.Now()
 	beforeTsStr := r.URL.Query().Get("before_ts")
@@ -173,7 +173,7 @@ func PurgeOldMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 	return &_responses.DoNotCacheResponse{Payload: map[string]interface{}{"purged": true, "affected": mxcs}}
 }
 
-func PurgeUserMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func PurgeUserMedia(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	authCtx, isGlobalAdmin, isLocalAdmin := getPurgeAuthContext(rctx, r, user)
 	if !isGlobalAdmin && !isLocalAdmin {
 		return _responses.AuthFailed()
@@ -230,7 +230,7 @@ func PurgeUserMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 	return &_responses.DoNotCacheResponse{Payload: map[string]interface{}{"purged": true, "affected": mxcs}}
 }
 
-func PurgeRoomMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func PurgeRoomMedia(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	authCtx, isGlobalAdmin, isLocalAdmin := getPurgeAuthContext(rctx, r, user)
 	if !isGlobalAdmin && !isLocalAdmin {
 		return _responses.AuthFailed()
@@ -303,7 +303,7 @@ func PurgeRoomMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 	return &_responses.DoNotCacheResponse{Payload: map[string]interface{}{"purged": true, "affected": mxcs2}}
 }
 
-func PurgeDomainMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func PurgeDomainMedia(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	authCtx, isGlobalAdmin, isLocalAdmin := getPurgeAuthContext(rctx, r, user)
 	if !isGlobalAdmin && !isLocalAdmin {
 		return _responses.AuthFailed()
@@ -357,8 +357,8 @@ func PurgeDomainMedia(r *http.Request, rctx rcontext.RequestContext, user _apime
 	return &_responses.DoNotCacheResponse{Payload: map[string]interface{}{"purged": true, "affected": mxcs}}
 }
 
-func getPurgeAuthContext(ctx rcontext.RequestContext, r *http.Request, user _apimeta.UserInfo) (*task_runner.PurgeAuthContext, bool, bool) {
-	globalAdmin, localAdmin := _apimeta.GetRequestUserAdminStatus(r, ctx, user)
+func getPurgeAuthContext(ctx rcontext.RequestContext, r *http.Request, user apimeta.UserInfo) (*task_runner.PurgeAuthContext, bool, bool) {
+	globalAdmin, localAdmin := apimeta.GetRequestUserAdminStatus(r, ctx, user)
 	if globalAdmin {
 		return &task_runner.PurgeAuthContext{}, true, localAdmin
 	}
