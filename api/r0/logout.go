@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/t2bot/matrix-media-repo/api/_responses"
 	"github.com/t2bot/matrix-media-repo/api/apimeta"
+	"github.com/t2bot/matrix-media-repo/api/responses"
 
 	"github.com/t2bot/matrix-media-repo/api/_auth_cache"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
@@ -17,9 +17,9 @@ func Logout(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError(errors.New("unable to logout"))
+		return responses.InternalServerError(errors.New("unable to logout"))
 	}
-	return _responses.EmptyResponse{}
+	return responses.EmptyResponse{}
 }
 
 func LogoutAll(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
@@ -27,7 +27,7 @@ func LogoutAll(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserI
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError(errors.New("unable to logout"))
+		return responses.InternalServerError(errors.New("unable to logout"))
 	}
-	return _responses.EmptyResponse{}
+	return responses.EmptyResponse{}
 }

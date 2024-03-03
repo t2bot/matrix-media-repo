@@ -5,9 +5,9 @@ import (
 	"net/http"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/t2bot/matrix-media-repo/api/_responses"
 	"github.com/t2bot/matrix-media-repo/api/_routers"
 	"github.com/t2bot/matrix-media-repo/api/apimeta"
+	"github.com/t2bot/matrix-media-repo/api/responses"
 	"github.com/t2bot/matrix-media-repo/database"
 	"github.com/t2bot/matrix-media-repo/tasks/task_runner"
 
@@ -24,7 +24,7 @@ type MediaQuarantinedResponse struct {
 func QuarantineRoomMedia(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	canQuarantine, allowOtherHosts, isLocalAdmin := getQuarantineRequestInfo(r, rctx, user)
 	if !canQuarantine {
-		return _responses.AuthFailed()
+		return responses.AuthFailed()
 	}
 
 	roomId := _routers.GetParam("roomId", r)
@@ -38,7 +38,7 @@ func QuarantineRoomMedia(r *http.Request, rctx rcontext.RequestContext, user api
 	if err != nil {
 		rctx.Log.Error("Error while listing media in the room: ", err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError(errors.New("error retrieving media in room"))
+		return responses.InternalServerError(errors.New("error retrieving media in room"))
 	}
 
 	var mxcs []string
@@ -55,7 +55,7 @@ func QuarantineRoomMedia(r *http.Request, rctx rcontext.RequestContext, user api
 func QuarantineUserMedia(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	canQuarantine, allowOtherHosts, isLocalAdmin := getQuarantineRequestInfo(r, rctx, user)
 	if !canQuarantine {
-		return _responses.AuthFailed()
+		return responses.AuthFailed()
 	}
 
 	userId := _routers.GetParam("userId", r)
@@ -69,11 +69,11 @@ func QuarantineUserMedia(r *http.Request, rctx rcontext.RequestContext, user api
 	if err != nil {
 		rctx.Log.Error("Error parsing user ID ("+userId+"): ", err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError(errors.New("error parsing user ID"))
+		return responses.InternalServerError(errors.New("error parsing user ID"))
 	}
 
 	if !allowOtherHosts && userDomain != r.Host {
-		return _responses.AuthFailed()
+		return responses.AuthFailed()
 	}
 
 	db := database.GetInstance().Media.Prepare(rctx)
@@ -81,7 +81,7 @@ func QuarantineUserMedia(r *http.Request, rctx rcontext.RequestContext, user api
 	if err != nil {
 		rctx.Log.Error("Error while listing media for the user: ", err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError(errors.New("error retrieving media for user"))
+		return responses.InternalServerError(errors.New("error retrieving media for user"))
 	}
 
 	return performQuarantineRequest(rctx, r.Host, allowOtherHosts, &task_runner.QuarantineThis{
@@ -92,13 +92,13 @@ func QuarantineUserMedia(r *http.Request, rctx rcontext.RequestContext, user api
 func QuarantineDomainMedia(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	canQuarantine, allowOtherHosts, isLocalAdmin := getQuarantineRequestInfo(r, rctx, user)
 	if !canQuarantine {
-		return _responses.AuthFailed()
+		return responses.AuthFailed()
 	}
 
 	serverName := _routers.GetParam("serverName", r)
 
 	if !_routers.ServerNameRegex.MatchString(serverName) {
-		return _responses.BadRequest(errors.New("invalid server name"))
+		return responses.BadRequest(errors.New("invalid server name"))
 	}
 
 	rctx = rctx.LogWithFields(logrus.Fields{
@@ -107,7 +107,7 @@ func QuarantineDomainMedia(r *http.Request, rctx rcontext.RequestContext, user a
 	})
 
 	if !allowOtherHosts && serverName != r.Host {
-		return _responses.AuthFailed()
+		return responses.AuthFailed()
 	}
 
 	db := database.GetInstance().Media.Prepare(rctx)
@@ -115,7 +115,7 @@ func QuarantineDomainMedia(r *http.Request, rctx rcontext.RequestContext, user a
 	if err != nil {
 		rctx.Log.Error("Error while listing media for the server: ", err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError(errors.New("error retrieving media for server"))
+		return responses.InternalServerError(errors.New("error retrieving media for server"))
 	}
 
 	return performQuarantineRequest(rctx, r.Host, allowOtherHosts, &task_runner.QuarantineThis{
@@ -126,14 +126,14 @@ func QuarantineDomainMedia(r *http.Request, rctx rcontext.RequestContext, user a
 func QuarantineMedia(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	canQuarantine, allowOtherHosts, isLocalAdmin := getQuarantineRequestInfo(r, rctx, user)
 	if !canQuarantine {
-		return _responses.AuthFailed()
+		return responses.AuthFailed()
 	}
 
 	server := _routers.GetParam("server", r)
 	mediaId := _routers.GetParam("mediaId", r)
 
 	if !_routers.ServerNameRegex.MatchString(server) {
-		return _responses.BadRequest(errors.New("invalid server ID"))
+		return responses.BadRequest(errors.New("invalid server ID"))
 	}
 
 	rctx = rctx.LogWithFields(logrus.Fields{
@@ -143,7 +143,7 @@ func QuarantineMedia(r *http.Request, rctx rcontext.RequestContext, user apimeta
 	})
 
 	if !allowOtherHosts && r.Host != server {
-		return _responses.BadRequest(errors.New("unable to quarantine media on other homeservers"))
+		return responses.BadRequest(errors.New("unable to quarantine media on other homeservers"))
 	}
 
 	return performQuarantineRequest(rctx, r.Host, allowOtherHosts, &task_runner.QuarantineThis{
@@ -164,10 +164,10 @@ func performQuarantineRequest(ctx rcontext.RequestContext, host string, allowOth
 	if err != nil {
 		ctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError(errors.New("error quarantining media"))
+		return responses.InternalServerError(errors.New("error quarantining media"))
 	}
 
-	return &_responses.DoNotCacheResponse{Payload: &MediaQuarantinedResponse{NumQuarantined: total}}
+	return &responses.DoNotCacheResponse{Payload: &MediaQuarantinedResponse{NumQuarantined: total}}
 }
 
 func getQuarantineRequestInfo(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) (bool, bool, bool) {

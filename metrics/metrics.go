@@ -11,7 +11,7 @@ var InvalidHttpRequests = prometheus.NewCounterVec(prometheus.CounterOpts{
 	Name: "media_invalid_http_requests_total",
 }, []string{"action", "method"})
 var HttpResponses = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Name: "media_http_responses_total",
+	Name: "media_httpresponses_total",
 }, []string{"host", "action", "method", "statusCode"})
 var HttpResponseTime = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Name: "media_http_response_time_seconds",

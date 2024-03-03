@@ -6,9 +6,9 @@ import (
 	"strconv"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/t2bot/matrix-media-repo/api/_responses"
 	"github.com/t2bot/matrix-media-repo/api/_routers"
 	"github.com/t2bot/matrix-media-repo/api/apimeta"
+	"github.com/t2bot/matrix-media-repo/api/responses"
 	"github.com/t2bot/matrix-media-repo/database"
 
 	"github.com/sirupsen/logrus"
@@ -30,7 +30,7 @@ func GetTask(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInf
 	taskId, err := strconv.Atoi(taskIdStr)
 	if err != nil {
 		rctx.Log.Error(err)
-		return _responses.BadRequest(errors.New("invalid task ID"))
+		return responses.BadRequest(errors.New("invalid task ID"))
 	}
 
 	rctx = rctx.LogWithFields(logrus.Fields{
@@ -43,13 +43,13 @@ func GetTask(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInf
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError(errors.New("failed to get task information"))
+		return responses.InternalServerError(errors.New("failed to get task information"))
 	}
 	if task == nil {
-		return _responses.NotFoundError()
+		return responses.NotFoundError()
 	}
 
-	return &_responses.DoNotCacheResponse{Payload: &TaskStatus{
+	return &responses.DoNotCacheResponse{Payload: &TaskStatus{
 		TaskID:     task.TaskId,
 		Name:       task.Name,
 		Params:     task.Params,
@@ -67,7 +67,7 @@ func ListAllTasks(r *http.Request, rctx rcontext.RequestContext, user apimeta.Us
 	if err != nil {
 		logrus.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError(errors.New("Failed to get background tasks"))
+		return responses.InternalServerError(errors.New("Failed to get background tasks"))
 	}
 
 	statusObjs := make([]*TaskStatus, 0)
@@ -83,7 +83,7 @@ func ListAllTasks(r *http.Request, rctx rcontext.RequestContext, user apimeta.Us
 		})
 	}
 
-	return &_responses.DoNotCacheResponse{Payload: statusObjs}
+	return &responses.DoNotCacheResponse{Payload: statusObjs}
 }
 
 func ListUnfinishedTasks(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
@@ -93,7 +93,7 @@ func ListUnfinishedTasks(r *http.Request, rctx rcontext.RequestContext, user api
 	if err != nil {
 		logrus.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError(errors.New("Failed to get background tasks"))
+		return responses.InternalServerError(errors.New("Failed to get background tasks"))
 	}
 
 	statusObjs := make([]*TaskStatus, 0)
@@ -109,5 +109,5 @@ func ListUnfinishedTasks(r *http.Request, rctx rcontext.RequestContext, user api
 		})
 	}
 
-	return &_responses.DoNotCacheResponse{Payload: statusObjs}
+	return &responses.DoNotCacheResponse{Payload: statusObjs}
 }

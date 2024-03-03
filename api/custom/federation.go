@@ -6,9 +6,9 @@ import (
 	"net/http"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/t2bot/matrix-media-repo/api/_responses"
 	"github.com/t2bot/matrix-media-repo/api/_routers"
 	"github.com/t2bot/matrix-media-repo/api/apimeta"
+	"github.com/t2bot/matrix-media-repo/api/responses"
 
 	"github.com/sirupsen/logrus"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
@@ -19,7 +19,7 @@ func GetFederationInfo(r *http.Request, rctx rcontext.RequestContext, user apime
 	serverName := _routers.GetParam("serverName", r)
 
 	if !_routers.ServerNameRegex.MatchString(serverName) {
-		return _responses.BadRequest(errors.New("invalid server name"))
+		return responses.BadRequest(errors.New("invalid server name"))
 	}
 
 	rctx = rctx.LogWithFields(logrus.Fields{
@@ -30,7 +30,7 @@ func GetFederationInfo(r *http.Request, rctx rcontext.RequestContext, user apime
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError(err)
+		return responses.InternalServerError(err)
 	}
 
 	versionUrl := url + "/_matrix/federation/v1/version"
@@ -38,7 +38,7 @@ func GetFederationInfo(r *http.Request, rctx rcontext.RequestContext, user apime
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError(err)
+		return responses.InternalServerError(err)
 	}
 
 	decoder := json.NewDecoder(versionResponse.Body)
@@ -47,12 +47,12 @@ func GetFederationInfo(r *http.Request, rctx rcontext.RequestContext, user apime
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError(err)
+		return responses.InternalServerError(err)
 	}
 
 	resp := make(map[string]interface{})
 	resp["base_url"] = url
 	resp["hostname"] = hostname
 	resp["versions_response"] = out
-	return &_responses.DoNotCacheResponse{Payload: resp}
+	return &responses.DoNotCacheResponse{Payload: resp}
 }

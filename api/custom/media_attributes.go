@@ -7,9 +7,9 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
-	"github.com/t2bot/matrix-media-repo/api/_responses"
 	"github.com/t2bot/matrix-media-repo/api/_routers"
 	"github.com/t2bot/matrix-media-repo/api/apimeta"
+	"github.com/t2bot/matrix-media-repo/api/responses"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/database"
 	"github.com/t2bot/matrix-media-repo/matrix"
@@ -38,7 +38,7 @@ func GetAttributes(r *http.Request, rctx rcontext.RequestContext, user apimeta.U
 	mediaId := _routers.GetParam("mediaId", r)
 
 	if !_routers.ServerNameRegex.MatchString(origin) {
-		return _responses.BadRequest(errors.New("invalid origin"))
+		return responses.BadRequest(errors.New("invalid origin"))
 	}
 
 	rctx = rctx.LogWithFields(logrus.Fields{
@@ -47,7 +47,7 @@ func GetAttributes(r *http.Request, rctx rcontext.RequestContext, user apimeta.U
 	})
 
 	if !canChangeAttributes(rctx, r, origin, user) {
-		return _responses.AuthFailed()
+		return responses.AuthFailed()
 	}
 
 	// Check to see if the media exists
@@ -56,10 +56,10 @@ func GetAttributes(r *http.Request, rctx rcontext.RequestContext, user apimeta.U
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError(errors.New("failed to get media record"))
+		return responses.InternalServerError(errors.New("failed to get media record"))
 	}
 	if media == nil {
-		return _responses.NotFoundError()
+		return responses.NotFoundError()
 	}
 
 	attrDb := database.GetInstance().MediaAttributes.Prepare(rctx)
@@ -67,7 +67,7 @@ func GetAttributes(r *http.Request, rctx rcontext.RequestContext, user apimeta.U
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError(errors.New("failed to get attributes record"))
+		return responses.InternalServerError(errors.New("failed to get attributes record"))
 	}
 	retAttrs := &Attributes{
 		Purpose: database.PurposeNone,
@@ -76,7 +76,7 @@ func GetAttributes(r *http.Request, rctx rcontext.RequestContext, user apimeta.U
 		retAttrs.Purpose = attrs.Purpose
 	}
 
-	return &_responses.DoNotCacheResponse{Payload: retAttrs}
+	return &responses.DoNotCacheResponse{Payload: retAttrs}
 }
 
 func SetAttributes(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
@@ -84,7 +84,7 @@ func SetAttributes(r *http.Request, rctx rcontext.RequestContext, user apimeta.U
 	mediaId := _routers.GetParam("mediaId", r)
 
 	if !_routers.ServerNameRegex.MatchString(origin) {
-		return _responses.BadRequest(errors.New("invalid origin"))
+		return responses.BadRequest(errors.New("invalid origin"))
 	}
 
 	rctx = rctx.LogWithFields(logrus.Fields{
@@ -93,7 +93,7 @@ func SetAttributes(r *http.Request, rctx rcontext.RequestContext, user apimeta.U
 	})
 
 	if !canChangeAttributes(rctx, r, origin, user) {
-		return _responses.AuthFailed()
+		return responses.AuthFailed()
 	}
 
 	defer r.Body.Close()
@@ -103,7 +103,7 @@ func SetAttributes(r *http.Request, rctx rcontext.RequestContext, user apimeta.U
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError(errors.New("failed to read attributes"))
+		return responses.InternalServerError(errors.New("failed to read attributes"))
 	}
 
 	attrDb := database.GetInstance().MediaAttributes.Prepare(rctx)
@@ -111,20 +111,20 @@ func SetAttributes(r *http.Request, rctx rcontext.RequestContext, user apimeta.U
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError(errors.New("failed to get attributes"))
+		return responses.InternalServerError(errors.New("failed to get attributes"))
 	}
 
 	if attrs == nil || attrs.Purpose != newAttrs.Purpose {
 		if !database.IsPurpose(newAttrs.Purpose) {
-			return _responses.BadRequest(errors.New("unknown purpose"))
+			return responses.BadRequest(errors.New("unknown purpose"))
 		}
 		err = attrDb.UpsertPurpose(origin, mediaId, newAttrs.Purpose)
 		if err != nil {
 			rctx.Log.Error(err)
 			sentry.CaptureException(err)
-			return _responses.InternalServerError(errors.New("failed to update attributes: purpose"))
+			return responses.InternalServerError(errors.New("failed to update attributes: purpose"))
 		}
 	}
 
-	return &_responses.DoNotCacheResponse{Payload: newAttrs}
+	return &responses.DoNotCacheResponse{Payload: newAttrs}
 }

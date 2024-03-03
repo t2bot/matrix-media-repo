@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/t2bot/matrix-media-repo/api/_responses"
 	"github.com/t2bot/matrix-media-repo/api/_routers"
 	"github.com/t2bot/matrix-media-repo/api/apimeta"
+	"github.com/t2bot/matrix-media-repo/api/responses"
 	"github.com/t2bot/matrix-media-repo/datastores"
 	"github.com/t2bot/matrix-media-repo/pipelines/pipeline_download"
 	"github.com/t2bot/matrix-media-repo/util"
@@ -28,14 +28,14 @@ func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user apimeta.U
 	timeoutMs := r.URL.Query().Get("timeout_ms")
 
 	if !_routers.ServerNameRegex.MatchString(server) {
-		return _responses.BadRequest(errors.New("invalid server ID"))
+		return responses.BadRequest(errors.New("invalid server ID"))
 	}
 
 	downloadRemote := true
 	if allowRemote != "" {
 		parsedFlag, err := strconv.ParseBool(allowRemote)
 		if err != nil {
-			return _responses.BadRequest(errors.New("allow_remote flag does not appear to be a boolean"))
+			return responses.BadRequest(errors.New("allow_remote flag does not appear to be a boolean"))
 		}
 		downloadRemote = parsedFlag
 	}
@@ -44,14 +44,14 @@ func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user apimeta.U
 	if allowRedirect != "" {
 		parsedFlag, err := strconv.ParseBool(allowRedirect)
 		if err != nil {
-			return _responses.BadRequest(errors.New("allow_redirect flag does not appear to be a boolean"))
+			return responses.BadRequest(errors.New("allow_redirect flag does not appear to be a boolean"))
 		}
 		canRedirect = parsedFlag
 	}
 
 	timeoutMS, err := strconv.ParseInt(timeoutMs, 10, 64)
 	if err != nil {
-		return _responses.BadRequest(errors.New("timeout_ms does not appear to be an integer"))
+		return responses.BadRequest(errors.New("timeout_ms does not appear to be an integer"))
 	}
 	timeout := time.Duration(timeoutMS) * time.Millisecond
 	if timeout > time.Minute {
@@ -68,7 +68,7 @@ func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user apimeta.U
 
 	if !util.IsGlobalAdmin(user.UserId) && util.IsHostIgnored(server) {
 		rctx.Log.Warn("Request blocked due to domain being ignored.")
-		return _responses.MediaBlocked()
+		return responses.MediaBlocked()
 	}
 
 	media, stream, err := pipeline_download.Execute(rctx, server, mediaId, pipeline_download.DownloadOpts{
@@ -79,31 +79,31 @@ func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user apimeta.U
 	if err != nil {
 		var redirect datastores.RedirectError
 		if errors.Is(err, common.ErrMediaNotFound) {
-			return _responses.NotFoundError()
+			return responses.NotFoundError()
 		} else if errors.Is(err, common.ErrMediaTooLarge) {
-			return _responses.RequestTooLarge()
+			return responses.RequestTooLarge()
 		} else if errors.Is(err, common.ErrMediaQuarantined) {
 			rctx.Log.Debug("Quarantined media accessed. Has stream? ", stream != nil)
 			if stream != nil {
-				return _responses.MakeQuarantinedImageResponse(stream)
+				return responses.MakeQuarantinedImageResponse(stream)
 			} else {
-				return _responses.NotFoundError() // We lie for security
+				return responses.NotFoundError() // We lie for security
 			}
 		} else if errors.Is(err, common.ErrMediaNotYetUploaded) {
-			return _responses.NotYetUploaded()
+			return responses.NotYetUploaded()
 		} else if errors.As(err, &redirect) {
-			return _responses.Redirect(redirect.RedirectUrl)
+			return responses.Redirect(redirect.RedirectUrl)
 		}
 		rctx.Log.Error("Unexpected error locating media: ", err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError(errors.New("Unexpected Error"))
+		return responses.InternalServerError(errors.New("Unexpected Error"))
 	}
 
 	if filename == "" {
 		filename = media.UploadName
 	}
 
-	return &_responses.DownloadResponse{
+	return &responses.DownloadResponse{
 		ContentType:       media.ContentType,
 		Filename:          filename,
 		SizeBytes:         media.SizeBytes,

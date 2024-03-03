@@ -1,4 +1,4 @@
-package _responses
+package responses
 
 type RedirectResponse struct {
 	ToUrl string

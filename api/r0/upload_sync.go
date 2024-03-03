@@ -8,8 +8,8 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
-	"github.com/t2bot/matrix-media-repo/api/_responses"
 	"github.com/t2bot/matrix-media-repo/api/apimeta"
+	"github.com/t2bot/matrix-media-repo/api/responses"
 	"github.com/t2bot/matrix-media-repo/common"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/datastores"
@@ -42,11 +42,11 @@ func UploadMediaSync(r *http.Request, rctx rcontext.RequestContext, user apimeta
 	media, err := pipeline_upload.Execute(rctx, r.Host, "", r.Body, contentType, filename, user.UserId, datastores.LocalMediaKind)
 	if err != nil {
 		if errors.Is(err, common.ErrQuotaExceeded) {
-			return _responses.QuotaExceeded()
+			return responses.QuotaExceeded()
 		}
 		rctx.Log.Error("Unexpected error uploading media: ", err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError(errors.New("Unexpected Error"))
+		return responses.InternalServerError(errors.New("Unexpected Error"))
 	}
 
 	return &MediaUploadedResponse{
@@ -54,26 +54,26 @@ func UploadMediaSync(r *http.Request, rctx rcontext.RequestContext, user apimeta
 	}
 }
 
-func uploadRequestSizeCheck(rctx rcontext.RequestContext, r *http.Request) *_responses.ErrorResponse {
+func uploadRequestSizeCheck(rctx rcontext.RequestContext, r *http.Request) *responses.ErrorResponse {
 	maxSize := rctx.Config.Uploads.MaxSizeBytes
 	minSize := rctx.Config.Uploads.MinSizeBytes
 	if maxSize > 0 || minSize > 0 {
 		if r.ContentLength > 0 {
 			if maxSize > 0 && maxSize < r.ContentLength {
-				return _responses.RequestTooLarge()
+				return responses.RequestTooLarge()
 			}
 			if minSize > 0 && minSize > r.ContentLength {
-				return _responses.RequestTooSmall()
+				return responses.RequestTooSmall()
 			}
 		} else {
 			header := r.Header.Get("Content-Length")
 			if header != "" {
 				parsed, _ := strconv.ParseInt(header, 10, 64)
 				if maxSize > 0 && maxSize < parsed {
-					return _responses.RequestTooLarge()
+					return responses.RequestTooLarge()
 				}
 				if minSize > 0 && minSize > parsed {
-					return _responses.RequestTooSmall()
+					return responses.RequestTooSmall()
 				}
 			}
 		}

@@ -16,7 +16,7 @@ import (
 	"github.com/alioygur/is"
 	"github.com/getsentry/sentry-go"
 	"github.com/t2bot/gotd-contrib/http_range"
-	"github.com/t2bot/matrix-media-repo/api/_responses"
+	"github.com/t2bot/matrix-media-repo/api/responses"
 	"github.com/t2bot/matrix-media-repo/common"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/util"
@@ -52,11 +52,11 @@ func (c *RContextRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var res interface{}
 	res = c.generatorFn(r, rctx)
 	if res == nil {
-		res = &_responses.EmptyResponse{}
+		res = &responses.EmptyResponse{}
 	}
 
 	shouldCache := true
-	wrappedRes, isNoCache := res.(*_responses.DoNotCacheResponse)
+	wrappedRes, isNoCache := res.(*responses.DoNotCacheResponse)
 	if isNoCache {
 		shouldCache = false
 		res = wrappedRes.Payload
@@ -65,7 +65,7 @@ func (c *RContextRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	headers := w.Header()
 
 	// Check for redirection early
-	if redirect, isRedirect := res.(*_responses.RedirectResponse); isRedirect {
+	if redirect, isRedirect := res.(*responses.RedirectResponse); isRedirect {
 		log.Infof("Replying with result: %T <%s>", res, redirect.ToUrl)
 		headers.Set("Location", redirect.ToUrl)
 		r = writeStatusCode(w, r, http.StatusTemporaryRedirect)
@@ -73,7 +73,7 @@ func (c *RContextRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check for HTML response and reply accordingly
-	if htmlRes, isHtml := res.(*_responses.HtmlResponse); isHtml {
+	if htmlRes, isHtml := res.(*responses.HtmlResponse); isHtml {
 		log.Infof("Replying with result: %T <%d chars of html>", res, len(htmlRes.HTML))
 
 		// Write out HTML here, now that we know it's happening
@@ -100,20 +100,20 @@ func (c *RContextRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var contentType string
 beforeParseDownload:
 	log.Infof("Replying with result: %T %+v", res, res)
-	if downloadRes, isDownload := res.(*_responses.DownloadResponse); isDownload {
+	if downloadRes, isDownload := res.(*responses.DownloadResponse); isDownload {
 		ranges, err := http_range.ParseRange(r.Header.Get("Range"), downloadRes.SizeBytes, rctx.Config.Downloads.DefaultRangeChunkSizeBytes)
 		if errors.Is(err, http_range.ErrInvalid) {
 			proposedStatusCode = http.StatusRequestedRangeNotSatisfiable
-			res = _responses.BadRequest(errors.New("invalid range header"))
+			res = responses.BadRequest(errors.New("invalid range header"))
 			goto beforeParseDownload // reprocess `res`
 		} else if errors.Is(err, http_range.ErrNoOverlap) {
 			proposedStatusCode = http.StatusRequestedRangeNotSatisfiable
-			res = _responses.BadRequest(errors.New("out of range"))
+			res = responses.BadRequest(errors.New("out of range"))
 			goto beforeParseDownload // reprocess `res`
 		}
 		if len(ranges) > 1 {
 			proposedStatusCode = http.StatusRequestedRangeNotSatisfiable
-			res = _responses.BadRequest(errors.New("only 1 range is supported"))
+			res = responses.BadRequest(errors.New("only 1 range is supported"))
 			goto beforeParseDownload // reprocess `res`
 		}
 
@@ -182,10 +182,10 @@ beforeParseDownload:
 	}
 
 	// Try to find a suitable error code, if one is needed
-	if errRes, isError := res.(_responses.ErrorResponse); isError {
+	if errRes, isError := res.(responses.ErrorResponse); isError {
 		res = &errRes // just fix it
 	}
-	if errRes, isError := res.(*_responses.ErrorResponse); isError && proposedStatusCode == http.StatusOK {
+	if errRes, isError := res.(*responses.ErrorResponse); isError && proposedStatusCode == http.StatusOK {
 		switch errRes.InternalCode {
 		case common.ErrCodeMissingToken:
 			proposedStatusCode = http.StatusUnauthorized

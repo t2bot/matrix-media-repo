@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/t2bot/matrix-media-repo/api/_responses"
 	"github.com/t2bot/matrix-media-repo/api/apimeta"
+	"github.com/t2bot/matrix-media-repo/api/responses"
 	"github.com/t2bot/matrix-media-repo/pipelines/pipeline_preview"
 
 	"github.com/t2bot/matrix-media-repo/common"
@@ -31,7 +31,7 @@ type MatrixOpenGraph struct {
 
 func PreviewUrl(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	if !rctx.Config.UrlPreviews.Enabled {
-		return _responses.NotFoundError()
+		return responses.NotFoundError()
 	}
 
 	params := r.URL.Query()
@@ -46,7 +46,7 @@ func PreviewUrl(r *http.Request, rctx rcontext.RequestContext, user apimeta.User
 		ts, err = strconv.ParseInt(tsStr, 10, 64)
 		if err != nil {
 			rctx.Log.Error("Error parsing ts: ", err)
-			return _responses.BadRequest(err)
+			return responses.BadRequest(err)
 		}
 	}
 	if ts == 0 {
@@ -55,11 +55,11 @@ func PreviewUrl(r *http.Request, rctx rcontext.RequestContext, user apimeta.User
 
 	// Validate the URL
 	if urlStr == "" {
-		return _responses.BadRequest(errors.New("No url provided"))
+		return responses.BadRequest(errors.New("No url provided"))
 	}
 	//goland:noinspection HttpUrlsUsage
 	if strings.Index(urlStr, "http://") != 0 && strings.Index(urlStr, "https://") != 0 {
-		return _responses.BadRequest(errors.New("Scheme not accepted"))
+		return responses.BadRequest(errors.New("Scheme not accepted"))
 	}
 
 	languageHeader := rctx.Config.UrlPreviews.DefaultLanguage
@@ -82,13 +82,13 @@ func PreviewUrl(r *http.Request, rctx rcontext.RequestContext, user apimeta.User
 	}
 	if err != nil {
 		if errors.Is(err, common.ErrMediaNotFound) || errors.Is(err, common.ErrHostNotFound) {
-			return _responses.NotFoundError()
+			return responses.NotFoundError()
 		}
 		if errors.Is(err, common.ErrInvalidHost) || errors.Is(err, common.ErrHostNotAllowed) {
-			return _responses.BadRequest(err)
+			return responses.BadRequest(err)
 		}
 		sentry.CaptureException(err)
-		return _responses.InternalServerError(errors.New("Unexpected Error"))
+		return responses.InternalServerError(errors.New("Unexpected Error"))
 	}
 
 	return &MatrixOpenGraph{

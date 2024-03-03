@@ -7,8 +7,8 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
 	"github.com/t2bot/matrix-media-repo/api/_auth_cache"
-	"github.com/t2bot/matrix-media-repo/api/_responses"
 	"github.com/t2bot/matrix-media-repo/api/apimeta"
+	"github.com/t2bot/matrix-media-repo/api/responses"
 	"github.com/t2bot/matrix-media-repo/common"
 	"github.com/t2bot/matrix-media-repo/common/config"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
@@ -22,7 +22,7 @@ func RequireAccessToken(generator GeneratorWithUserFn) GeneratorFn {
 	return func(r *http.Request, ctx rcontext.RequestContext) interface{} {
 		accessToken := util.GetAccessTokenFromRequest(r)
 		if accessToken == "" {
-			return &_responses.ErrorResponse{
+			return &responses.ErrorResponse{
 				Code:         common.ErrCodeMissingToken,
 				Message:      "no token provided (required)",
 				InternalCode: common.ErrCodeMissingToken,
@@ -40,14 +40,14 @@ func RequireAccessToken(generator GeneratorWithUserFn) GeneratorFn {
 		userId, err := _auth_cache.GetUserId(ctx, accessToken, appserviceUserId)
 		if err != nil || userId == "" {
 			if errors.Is(err, matrix.ErrGuestToken) {
-				return _responses.GuestAuthFailed()
+				return responses.GuestAuthFailed()
 			}
 			if err != nil && !errors.Is(err, matrix.ErrInvalidToken) {
 				sentry.CaptureException(err)
 				ctx.Log.Error("Error verifying token: ", err)
-				return _responses.InternalServerError(errors.New("unexpected error validating access token"))
+				return responses.InternalServerError(errors.New("unexpected error validating access token"))
 			}
-			return _responses.AuthFailed()
+			return responses.AuthFailed()
 		}
 
 		ctx = ctx.LogWithFields(logrus.Fields{"authUserId": userId})

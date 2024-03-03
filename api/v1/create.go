@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/t2bot/matrix-media-repo/api/_responses"
 	"github.com/t2bot/matrix-media-repo/api/apimeta"
+	"github.com/t2bot/matrix-media-repo/api/responses"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/pipelines/pipeline_create"
 	"github.com/t2bot/matrix-media-repo/util"
@@ -22,7 +22,7 @@ func CreateMedia(r *http.Request, rctx rcontext.RequestContext, user apimeta.Use
 	if err != nil {
 		rctx.Log.Error("Unexpected error creating media ID:", err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError(errors.New("unexpected error"))
+		return responses.InternalServerError(errors.New("unexpected error"))
 	}
 
 	return &MediaCreatedResponse{

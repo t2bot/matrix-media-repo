@@ -7,8 +7,8 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
 	"github.com/t2bot/matrix-media-repo/api/_auth_cache"
-	"github.com/t2bot/matrix-media-repo/api/_responses"
 	"github.com/t2bot/matrix-media-repo/api/apimeta"
+	"github.com/t2bot/matrix-media-repo/api/responses"
 	"github.com/t2bot/matrix-media-repo/common/config"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/matrix"
@@ -39,7 +39,7 @@ func OptionalAccessToken(generator GeneratorWithUserFn) GeneratorFn {
 			if !errors.Is(err, matrix.ErrInvalidToken) {
 				sentry.CaptureException(err)
 				ctx.Log.Error("Error verifying token: ", err)
-				return _responses.InternalServerError(errors.New("unexpected error validating access token"))
+				return responses.InternalServerError(errors.New("unexpected error validating access token"))
 			}
 
 			ctx.Log.Warn("Failed to verify token (non-fatal): ", err)

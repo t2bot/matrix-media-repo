@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/t2bot/matrix-media-repo/api/_responses"
 	"github.com/t2bot/matrix-media-repo/api/_routers"
 	"github.com/t2bot/matrix-media-repo/api/apimeta"
+	"github.com/t2bot/matrix-media-repo/api/responses"
 	"github.com/t2bot/matrix-media-repo/common/config"
 	"github.com/t2bot/matrix-media-repo/datastores"
 	"github.com/t2bot/matrix-media-repo/tasks"
@@ -31,7 +31,7 @@ func GetDatastores(r *http.Request, rctx rcontext.RequestContext, user apimeta.U
 		if err != nil {
 			sentry.CaptureException(err)
 			rctx.Log.Error("Error getting datastore URI: ", err)
-			return _responses.InternalServerError(errors.New("unexpected error getting datastore information"))
+			return responses.InternalServerError(errors.New("unexpected error getting datastore information"))
 		}
 		dataStoreMap := make(map[string]interface{})
 		dataStoreMap["type"] = store.Type
@@ -39,7 +39,7 @@ func GetDatastores(r *http.Request, rctx rcontext.RequestContext, user apimeta.U
 		response[store.Id] = dataStoreMap
 	}
 
-	return &_responses.DoNotCacheResponse{Payload: response}
+	return &responses.DoNotCacheResponse{Payload: response}
 }
 
 func MigrateBetweenDatastores(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
@@ -49,7 +49,7 @@ func MigrateBetweenDatastores(r *http.Request, rctx rcontext.RequestContext, use
 	if beforeTsStr != "" {
 		beforeTs, err = strconv.ParseInt(beforeTsStr, 10, 64)
 		if err != nil {
-			return _responses.BadRequest(fmt.Errorf("Error parsing before_ts: %w", err))
+			return responses.BadRequest(fmt.Errorf("Error parsing before_ts: %w", err))
 		}
 	}
 
@@ -63,20 +63,20 @@ func MigrateBetweenDatastores(r *http.Request, rctx rcontext.RequestContext, use
 	})
 
 	if sourceDsId == targetDsId {
-		return _responses.BadRequest(errors.New("Source and target datastore cannot be the same"))
+		return responses.BadRequest(errors.New("Source and target datastore cannot be the same"))
 	}
 	if _, ok := datastores.Get(rctx, sourceDsId); !ok {
-		return _responses.BadRequest(errors.New("Source datastore does not appear to exist"))
+		return responses.BadRequest(errors.New("Source datastore does not appear to exist"))
 	}
 	if _, ok := datastores.Get(rctx, targetDsId); !ok {
-		return _responses.BadRequest(errors.New("Target datastore does not appear to exist"))
+		return responses.BadRequest(errors.New("Target datastore does not appear to exist"))
 	}
 
 	estimate, err := datastores.SizeOfDsIdWithAge(rctx, sourceDsId, beforeTs)
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError(errors.New("Unexpected error getting storage estimate"))
+		return responses.InternalServerError(errors.New("Unexpected error getting storage estimate"))
 	}
 
 	rctx.Log.Infof("User %s has started a datastore media transfer", user.UserId)
@@ -84,7 +84,7 @@ func MigrateBetweenDatastores(r *http.Request, rctx rcontext.RequestContext, use
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError(errors.New("Unexpected error starting migration"))
+		return responses.InternalServerError(errors.New("Unexpected error starting migration"))
 	}
 
 	migration := &DatastoreMigration{
@@ -92,7 +92,7 @@ func MigrateBetweenDatastores(r *http.Request, rctx rcontext.RequestContext, use
 		TaskID:       task.TaskId,
 	}
 
-	return &_responses.DoNotCacheResponse{Payload: migration}
+	return &responses.DoNotCacheResponse{Payload: migration}
 }
 
 func GetDatastoreStorageEstimate(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
@@ -102,7 +102,7 @@ func GetDatastoreStorageEstimate(r *http.Request, rctx rcontext.RequestContext, 
 	if beforeTsStr != "" {
 		beforeTs, err = strconv.ParseInt(beforeTsStr, 10, 64)
 		if err != nil {
-			return _responses.BadRequest(fmt.Errorf("Error parsing before_ts: %w", err))
+			return responses.BadRequest(fmt.Errorf("Error parsing before_ts: %w", err))
 		}
 	}
 
@@ -117,7 +117,7 @@ func GetDatastoreStorageEstimate(r *http.Request, rctx rcontext.RequestContext, 
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError(errors.New("Unexpected error getting storage estimate"))
+		return responses.InternalServerError(errors.New("Unexpected error getting storage estimate"))
 	}
-	return &_responses.DoNotCacheResponse{Payload: result}
+	return &responses.DoNotCacheResponse{Payload: result}
 }

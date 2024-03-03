@@ -12,7 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sebest/xff"
 	"github.com/sirupsen/logrus"
-	"github.com/t2bot/matrix-media-repo/api/_responses"
+	"github.com/t2bot/matrix-media-repo/api/responses"
 	"github.com/t2bot/matrix-media-repo/common"
 	"github.com/t2bot/matrix-media-repo/common/config"
 	"github.com/t2bot/matrix-media-repo/metrics"
@@ -62,7 +62,7 @@ func (h *HostRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadGateway)
 
 		var b []byte
-		if b, err = json.Marshal(_responses.BadGatewayError(errors.New("Review server logs to continue"))); err != nil {
+		if b, err = json.Marshal(responses.BadGatewayError(errors.New("Review server logs to continue"))); err != nil {
 			logger.Errorf("Error preparing BadGateway: %v", err)
 			sentry.CaptureException(err)
 			return

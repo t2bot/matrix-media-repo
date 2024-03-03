@@ -7,9 +7,9 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
-	"github.com/t2bot/matrix-media-repo/api/_responses"
 	"github.com/t2bot/matrix-media-repo/api/_routers"
 	"github.com/t2bot/matrix-media-repo/api/apimeta"
+	"github.com/t2bot/matrix-media-repo/api/responses"
 	"github.com/t2bot/matrix-media-repo/common"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/pipelines/pipeline_upload"
@@ -27,7 +27,7 @@ func UploadMediaAsync(r *http.Request, rctx rcontext.RequestContext, user apimet
 	})
 
 	if r.Host != server {
-		return &_responses.ErrorResponse{
+		return &responses.ErrorResponse{
 			Code:         common.ErrCodeNotFound,
 			Message:      "Upload request is for another domain.",
 			InternalCode: common.ErrCodeForbidden,
@@ -48,21 +48,21 @@ func UploadMediaAsync(r *http.Request, rctx rcontext.RequestContext, user apimet
 	_, err := pipeline_upload.ExecutePut(rctx, server, mediaId, r.Body, contentType, filename, user.UserId)
 	if err != nil {
 		if errors.Is(err, common.ErrQuotaExceeded) {
-			return _responses.QuotaExceeded()
+			return responses.QuotaExceeded()
 		} else if errors.Is(err, common.ErrAlreadyUploaded) {
-			return &_responses.ErrorResponse{
+			return &responses.ErrorResponse{
 				Code:         common.ErrCodeCannotOverwrite,
 				Message:      "This media has already been uploaded.",
 				InternalCode: common.ErrCodeCannotOverwrite,
 			}
 		} else if errors.Is(err, common.ErrWrongUser) {
-			return &_responses.ErrorResponse{
+			return &responses.ErrorResponse{
 				Code:         common.ErrCodeForbidden,
 				Message:      "You do not have permission to upload this media.",
 				InternalCode: common.ErrCodeForbidden,
 			}
 		} else if errors.Is(err, common.ErrExpired) {
-			return &_responses.ErrorResponse{
+			return &responses.ErrorResponse{
 				Code:         common.ErrCodeNotFound,
 				Message:      "Media expired or not found.",
 				InternalCode: common.ErrCodeNotFound,
@@ -70,7 +70,7 @@ func UploadMediaAsync(r *http.Request, rctx rcontext.RequestContext, user apimet
 		}
 		rctx.Log.Error("Unexpected error uploading media: ", err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError(errors.New("Unexpected Error"))
+		return responses.InternalServerError(errors.New("Unexpected Error"))
 	}
 
 	return &MediaUploadedResponse{

@@ -9,8 +9,8 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/julienschmidt/httprouter"
 	"github.com/sirupsen/logrus"
-	"github.com/t2bot/matrix-media-repo/api/_responses"
 	"github.com/t2bot/matrix-media-repo/api/_routers"
+	"github.com/t2bot/matrix-media-repo/api/responses"
 	"github.com/t2bot/matrix-media-repo/util"
 )
 
@@ -29,7 +29,7 @@ func buildPrimaryRouter() *httprouter.Router {
 func methodNotAllowedFn(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusMethodNotAllowed)
-	reponse, err := json.Marshal(_responses.MethodNotAllowed())
+	reponse, err := json.Marshal(responses.MethodNotAllowed())
 	if err != nil {
 		sentry.CaptureException(fmt.Errorf("error preparing MethodNotAllowed: %v", err))
 		logrus.Errorf("error preparing MethodNotAllowed: %v", err)
@@ -41,7 +41,7 @@ func methodNotAllowedFn(w http.ResponseWriter, r *http.Request) {
 func notFoundFn(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNotFound)
-	reponse, err := json.Marshal(_responses.NotFoundError())
+	reponse, err := json.Marshal(responses.NotFoundError())
 	if err != nil {
 		sentry.CaptureException(fmt.Errorf("error preparing NotFound: %v", err))
 		logrus.Errorf("error preparing NotFound: %v", err)
@@ -67,7 +67,7 @@ func panicFn(w http.ResponseWriter, r *http.Request, i interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusInternalServerError)
 
-	reponse, err := json.Marshal(_responses.InternalServerError(errors.New("unexpected error")))
+	reponse, err := json.Marshal(responses.InternalServerError(errors.New("unexpected error")))
 	if err != nil {
 		sentry.CaptureException(fmt.Errorf("error preparing InternalServerError: %v", err))
 		logrus.Errorf("error preparing InternalServerError: %v", err)

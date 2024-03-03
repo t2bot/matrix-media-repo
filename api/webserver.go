@@ -14,7 +14,7 @@ import (
 	"github.com/getsentry/sentry-go"
 	sentryhttp "github.com/getsentry/sentry-go/http"
 	"github.com/sirupsen/logrus"
-	"github.com/t2bot/matrix-media-repo/api/_responses"
+	"github.com/t2bot/matrix-media-repo/api/responses"
 	"github.com/t2bot/matrix-media-repo/common/config"
 )
 
@@ -37,7 +37,7 @@ func Init() *sync.WaitGroup {
 		limiter.SetBurst(config.Get().RateLimit.BurstCount)
 		limiter.SetMax(config.Get().RateLimit.RequestsPerSecond)
 
-		reponse, _ := json.Marshal(_responses.RateLimitReached())
+		reponse, _ := json.Marshal(responses.RateLimitReached())
 		limiter.SetMessage(string(reponse))
 		limiter.SetMessageContentType("application/json")
 

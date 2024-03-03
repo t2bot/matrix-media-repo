@@ -1,4 +1,4 @@
-package _responses
+package responses
 
 import "io"
 
