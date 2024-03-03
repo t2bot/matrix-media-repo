@@ -7,8 +7,8 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/sirupsen/logrus"
-	"github.com/t2bot/matrix-media-repo/api/_debug"
 	"github.com/t2bot/matrix-media-repo/api/custom"
+	"github.com/t2bot/matrix-media-repo/api/debug"
 	"github.com/t2bot/matrix-media-repo/api/r0"
 	"github.com/t2bot/matrix-media-repo/api/routers"
 	"github.com/t2bot/matrix-media-repo/api/unstable"
@@ -26,7 +26,7 @@ func buildRoutes() http.Handler {
 	pprofSecret := os.Getenv("MEDIA_PPROF_SECRET_KEY")
 	if pprofSecret != "" {
 		logrus.Warn("Enabling pprof/debug http endpoints")
-		_debug.BindPprofEndpoints(router, pprofSecret)
+		debug.BindPprofEndpoints(router, pprofSecret)
 	}
 
 	// Standard (spec) features

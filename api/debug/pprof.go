@@ -1,4 +1,4 @@
-package _debug
+package debug
 
 import (
 	"encoding/json"
