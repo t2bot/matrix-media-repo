@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/didip/tollbooth"
+	"github.com/didip/tollbooth/v7"
 	"github.com/getsentry/sentry-go"
 	sentryhttp "github.com/getsentry/sentry-go/http"
 	"github.com/sirupsen/logrus"
