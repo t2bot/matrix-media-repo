@@ -12,6 +12,19 @@
         ]
     },
     {
+        "provider_name": "3Q",
+        "provider_url": "https://3q.video/",
+        "endpoints": [
+            {
+                "schemes": [
+                    "https://playout.3qsdn.com/embed/1111c681-0052-4952-b42b-f4b20aae99d5"
+                ],
+                "url": "https://playout.3qsdn.com/oembed",
+                "discovery": true
+            }
+        ]
+    },
+    {
         "provider_name": "Abraia",
         "provider_url": "https://abraia.me",
         "endpoints": [
@@ -1219,6 +1232,19 @@
                     "https://faithlifetv.com/media/resource/*/*"
                 ],
                 "url": "https://faithlifetv.com/api/oembed",
+                "discovery": true
+            }
+        ]
+    },
+    {
+        "provider_name": "Figma",
+        "provider_url": "https://www.figma.com",
+        "endpoints": [
+            {
+                "schemes": [
+                    "https://www.figma.com/file/*"
+                ],
+                "url": "https://www.figma.com/api/oembed",
                 "discovery": true
             }
         ]
@@ -4142,7 +4168,12 @@
                 "schemes": [
                     "https://share.viostream.com/*"
                 ],
-                "url": "https://play.viostream.com/oembed"
+                "url": "https://play.viostream.com/oembed",
+                "discovery": true,
+                "formats": [
+                    "json",
+                    "xml"
+                ]
             }
         ]
     },
@@ -4255,6 +4286,21 @@
                     "https://embed.wave.video/*"
                 ],
                 "url": "https://embed.wave.video/oembed",
+                "discovery": true
+            }
+        ]
+    },
+    {
+        "provider_name": "Web3 is Going Just Great",
+        "provider_url": "https://www.web3isgoinggreat.com/",
+        "endpoints": [
+            {
+                "schemes": [
+                    "https://www.web3isgoinggreat.com/?id=*",
+                    "https://www.web3isgoinggreat.com/single/*",
+                    "https://www.web3isgoinggreat.com/embed/*"
+                ],
+                "url": "https://www.web3isgoinggreat.com/api/oembed",
                 "discovery": true
             }
         ]
