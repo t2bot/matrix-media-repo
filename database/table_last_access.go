@@ -2,7 +2,7 @@ package database
 
 import (
 	"database/sql"
-	"errors"
+	"fmt"
 
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 )
@@ -25,10 +25,10 @@ type lastAccessTableWithContext struct {
 
 func prepareLastAccessTables(db *sql.DB) (*lastAccessTableStatements, error) {
 	var err error
-	var stmts = &lastAccessTableStatements{}
+	stmts := &lastAccessTableStatements{}
 
 	if stmts.upsertLastAccess, err = db.Prepare(upsertLastAccess); err != nil {
-		return nil, errors.New("error preparing upsertLastAccess: " + err.Error())
+		return nil, fmt.Errorf("error preparing upsertLastAccess: %w", err)
 	}
 
 	return stmts, nil

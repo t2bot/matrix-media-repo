@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 )
@@ -25,10 +26,10 @@ type userStatsTableWithContext struct {
 
 func prepareUserStatsTables(db *sql.DB) (*userStatsTableStatements, error) {
 	var err error
-	var stmts = &userStatsTableStatements{}
+	stmts := &userStatsTableStatements{}
 
 	if stmts.selectUserStatsUploadedBytes, err = db.Prepare(selectUserStatsUploadedBytes); err != nil {
-		return nil, errors.New("error preparing selectUserStatsUploadedBytes: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectUserStatsUploadedBytes: %w", err)
 	}
 
 	return stmts, nil

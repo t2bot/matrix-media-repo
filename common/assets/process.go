@@ -24,7 +24,7 @@ func SetupMigrations(givenMigrationsPath string) {
 	if !exists {
 		tempMigrations, err = os.MkdirTemp(os.TempDir(), "media-repo-migrations")
 		if err != nil {
-			panic(err)
+			logrus.Fatalf("Failed to create temporary migrations directory: %v", err)
 		}
 		logrus.Info("Migrations path doesn't exist - attempting to unpack from compiled data")
 		extractPrefixTo("migrations", tempMigrations)

@@ -10,15 +10,15 @@ import (
 	"github.com/disintegration/imaging"
 	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
-	"github.com/t2bot/matrix-media-repo/api/_apimeta"
-	"github.com/t2bot/matrix-media-repo/api/_responses"
-	"github.com/t2bot/matrix-media-repo/api/_routers"
+	"github.com/t2bot/matrix-media-repo/api/apimeta"
+	"github.com/t2bot/matrix-media-repo/api/responses"
+	"github.com/t2bot/matrix-media-repo/api/routers"
 	"github.com/t2bot/matrix-media-repo/common"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/database"
 	"github.com/t2bot/matrix-media-repo/pipelines/pipeline_download"
 	"github.com/t2bot/matrix-media-repo/thumbnailing"
-	"github.com/t2bot/matrix-media-repo/thumbnailing/i"
+	"github.com/t2bot/matrix-media-repo/thumbnailing/preview"
 	"github.com/t2bot/matrix-media-repo/util"
 )
 
@@ -48,20 +48,20 @@ type MediaInfoResponse struct {
 	NumChannels     int                   `json:"num_channels,omitempty"`
 }
 
-func MediaInfo(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
-	server := _routers.GetParam("server", r)
-	mediaId := _routers.GetParam("mediaId", r)
+func MediaInfo(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
+	server := routers.GetParam("server", r)
+	mediaId := routers.GetParam("mediaId", r)
 	allowRemote := r.URL.Query().Get("allow_remote")
 
-	if !_routers.ServerNameRegex.MatchString(server) {
-		return _responses.BadRequest("invalid server ID")
+	if !routers.ServerNameRegex.MatchString(server) {
+		return responses.BadRequest(errors.New("invalid server ID"))
 	}
 
 	downloadRemote := true
 	if allowRemote != "" {
 		parsedFlag, err := strconv.ParseBool(allowRemote)
 		if err != nil {
-			return _responses.InternalServerError("allow_remote flag does not appear to be a boolean")
+			return responses.InternalServerError(errors.New("allow_remote flag does not appear to be a boolean"))
 		}
 		downloadRemote = parsedFlag
 	}
@@ -74,7 +74,7 @@ func MediaInfo(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 
 	if !util.IsGlobalAdmin(user.UserId) && util.IsHostIgnored(server) {
 		rctx.Log.Warn("Request blocked due to domain being ignored.")
-		return _responses.MediaBlocked()
+		return responses.MediaBlocked()
 	}
 
 	record, stream, err := pipeline_download.Execute(rctx, server, mediaId, pipeline_download.DownloadOpts{
@@ -85,22 +85,22 @@ func MediaInfo(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 	// Error handling copied from download endpoint
 	if err != nil {
 		if errors.Is(err, common.ErrMediaNotFound) {
-			return _responses.NotFoundError()
+			return responses.NotFoundError()
 		} else if errors.Is(err, common.ErrMediaTooLarge) {
-			return _responses.RequestTooLarge()
+			return responses.RequestTooLarge()
 		} else if errors.Is(err, common.ErrMediaQuarantined) {
 			rctx.Log.Debug("Quarantined media accessed. Has stream? ", stream != nil)
 			if stream != nil {
-				return _responses.MakeQuarantinedImageResponse(stream)
+				return responses.MakeQuarantinedImageResponse(stream)
 			} else {
-				return _responses.NotFoundError() // We lie for security
+				return responses.NotFoundError() // We lie for security
 			}
 		} else if errors.Is(err, common.ErrMediaNotYetUploaded) {
-			return _responses.NotYetUploaded()
+			return responses.NotYetUploaded()
 		}
 		rctx.Log.Error("Unexpected error locating media: ", err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("Unexpected Error")
+		return responses.InternalServerError(errors.New("Unexpected Error"))
 	}
 
 	response := &MediaInfoResponse{
@@ -121,7 +121,7 @@ func MediaInfo(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 	} else if strings.HasPrefix(response.ContentType, "audio/") {
 		generator, reconstructed, err := thumbnailing.GetGenerator(stream, response.ContentType, false)
 		if err == nil {
-			if audiogenerator, ok := generator.(i.AudioGenerator); ok {
+			if audiogenerator, ok := generator.(preview.AudioGenerator); ok {
 				audioInfo, err := audiogenerator.GetAudioData(reconstructed, 768, rctx)
 				if err == nil {
 					response.KeySamples = audioInfo.KeySamples
@@ -137,7 +137,7 @@ func MediaInfo(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 	if err != nil {
 		rctx.Log.Error("Unexpected error locating media thumbnails: ", err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("Unexpected Error")
+		return responses.InternalServerError(errors.New("Unexpected Error"))
 	}
 
 	if len(thumbs) > 0 {

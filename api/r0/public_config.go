@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/t2bot/matrix-media-repo/api/_apimeta"
+	"github.com/t2bot/matrix-media-repo/api/apimeta"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/pipelines/_steps/quota"
+	"github.com/t2bot/matrix-media-repo/pipelines/steps/quota"
 )
 
 type PublicConfigResponse struct {
@@ -15,7 +15,7 @@ type PublicConfigResponse struct {
 	StorageMaxFiles int64 `json:"org.matrix.msc4034.storage.max_files,omitempty"`
 }
 
-func PublicConfig(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func PublicConfig(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	uploadSize := rctx.Config.Uploads.ReportedMaxSizeBytes
 	if uploadSize == 0 {
 		uploadSize = rctx.Config.Uploads.MaxSizeBytes

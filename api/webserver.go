@@ -14,22 +14,18 @@ import (
 	"github.com/getsentry/sentry-go"
 	sentryhttp "github.com/getsentry/sentry-go/http"
 	"github.com/sirupsen/logrus"
-	"github.com/t2bot/matrix-media-repo/api/_responses"
+	"github.com/t2bot/matrix-media-repo/api/responses"
 	"github.com/t2bot/matrix-media-repo/common/config"
 )
 
-var srv *http.Server
-var waitGroup = &sync.WaitGroup{}
-var reload = false
+var (
+	srv       *http.Server
+	waitGroup = &sync.WaitGroup{}
+	reload    = false
+)
 
 func Init() *sync.WaitGroup {
 	address := net.JoinHostPort(config.Get().General.BindAddress, strconv.Itoa(config.Get().General.Port))
-
-	//defer func() {
-	//	if err := recover(); err != nil {
-	//		logrus.Fatal(err)
-	//	}
-	//}()
 
 	handler := buildRoutes()
 
@@ -41,8 +37,8 @@ func Init() *sync.WaitGroup {
 		limiter.SetBurst(config.Get().RateLimit.BurstCount)
 		limiter.SetMax(config.Get().RateLimit.RequestsPerSecond)
 
-		b, _ := json.Marshal(_responses.RateLimitReached())
-		limiter.SetMessage(string(b))
+		reponse, _ := json.Marshal(responses.RateLimitReached())
+		limiter.SetMessage(string(reponse))
 		limiter.SetMessageContentType("application/json")
 
 		handler = tollbooth.LimitHandler(limiter, handler)
@@ -86,7 +82,7 @@ func Stop() {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		if err := srv.Shutdown(ctx); err != nil {
-			panic(err)
+			logrus.Fatalf("Could not gracefully shutdown the server: %v", err)
 		}
 	}
 }

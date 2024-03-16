@@ -2,13 +2,14 @@ package custom
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
-	"github.com/t2bot/matrix-media-repo/api/_apimeta"
-	"github.com/t2bot/matrix-media-repo/api/_responses"
-	"github.com/t2bot/matrix-media-repo/api/_routers"
+	"github.com/t2bot/matrix-media-repo/api/apimeta"
+	"github.com/t2bot/matrix-media-repo/api/responses"
+	"github.com/t2bot/matrix-media-repo/api/routers"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/database"
 	"github.com/t2bot/matrix-media-repo/matrix"
@@ -19,7 +20,7 @@ type Attributes struct {
 	Purpose database.Purpose `json:"purpose"`
 }
 
-func canChangeAttributes(rctx rcontext.RequestContext, r *http.Request, origin string, user _apimeta.UserInfo) bool {
+func canChangeAttributes(rctx rcontext.RequestContext, r *http.Request, origin string, user apimeta.UserInfo) bool {
 	isGlobalAdmin := util.IsGlobalAdmin(user.UserId) || user.IsShared
 	if isGlobalAdmin {
 		return true
@@ -32,12 +33,12 @@ func canChangeAttributes(rctx rcontext.RequestContext, r *http.Request, origin s
 	return isLocalAdmin
 }
 
-func GetAttributes(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
-	origin := _routers.GetParam("server", r)
-	mediaId := _routers.GetParam("mediaId", r)
+func GetAttributes(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
+	origin := routers.GetParam("server", r)
+	mediaId := routers.GetParam("mediaId", r)
 
-	if !_routers.ServerNameRegex.MatchString(origin) {
-		return _responses.BadRequest("invalid origin")
+	if !routers.ServerNameRegex.MatchString(origin) {
+		return responses.BadRequest(errors.New("invalid origin"))
 	}
 
 	rctx = rctx.LogWithFields(logrus.Fields{
@@ -46,7 +47,7 @@ func GetAttributes(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 	})
 
 	if !canChangeAttributes(rctx, r, origin, user) {
-		return _responses.AuthFailed()
+		return responses.AuthFailed()
 	}
 
 	// Check to see if the media exists
@@ -55,10 +56,10 @@ func GetAttributes(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("failed to get media record")
+		return responses.InternalServerError(errors.New("failed to get media record"))
 	}
 	if media == nil {
-		return _responses.NotFoundError()
+		return responses.NotFoundError()
 	}
 
 	attrDb := database.GetInstance().MediaAttributes.Prepare(rctx)
@@ -66,7 +67,7 @@ func GetAttributes(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("failed to get attributes record")
+		return responses.InternalServerError(errors.New("failed to get attributes record"))
 	}
 	retAttrs := &Attributes{
 		Purpose: database.PurposeNone,
@@ -75,15 +76,15 @@ func GetAttributes(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 		retAttrs.Purpose = attrs.Purpose
 	}
 
-	return &_responses.DoNotCacheResponse{Payload: retAttrs}
+	return &responses.DoNotCacheResponse{Payload: retAttrs}
 }
 
-func SetAttributes(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
-	origin := _routers.GetParam("server", r)
-	mediaId := _routers.GetParam("mediaId", r)
+func SetAttributes(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
+	origin := routers.GetParam("server", r)
+	mediaId := routers.GetParam("mediaId", r)
 
-	if !_routers.ServerNameRegex.MatchString(origin) {
-		return _responses.BadRequest("invalid origin")
+	if !routers.ServerNameRegex.MatchString(origin) {
+		return responses.BadRequest(errors.New("invalid origin"))
 	}
 
 	rctx = rctx.LogWithFields(logrus.Fields{
@@ -92,7 +93,7 @@ func SetAttributes(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 	})
 
 	if !canChangeAttributes(rctx, r, origin, user) {
-		return _responses.AuthFailed()
+		return responses.AuthFailed()
 	}
 
 	defer r.Body.Close()
@@ -102,7 +103,7 @@ func SetAttributes(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("failed to read attributes")
+		return responses.InternalServerError(errors.New("failed to read attributes"))
 	}
 
 	attrDb := database.GetInstance().MediaAttributes.Prepare(rctx)
@@ -110,20 +111,20 @@ func SetAttributes(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("failed to get attributes")
+		return responses.InternalServerError(errors.New("failed to get attributes"))
 	}
 
 	if attrs == nil || attrs.Purpose != newAttrs.Purpose {
 		if !database.IsPurpose(newAttrs.Purpose) {
-			return _responses.BadRequest("unknown purpose")
+			return responses.BadRequest(errors.New("unknown purpose"))
 		}
 		err = attrDb.UpsertPurpose(origin, mediaId, newAttrs.Purpose)
 		if err != nil {
 			rctx.Log.Error(err)
 			sentry.CaptureException(err)
-			return _responses.InternalServerError("failed to update attributes: purpose")
+			return responses.InternalServerError(errors.New("failed to update attributes: purpose"))
 		}
 	}
 
-	return &_responses.DoNotCacheResponse{Payload: newAttrs}
+	return &responses.DoNotCacheResponse{Payload: newAttrs}
 }

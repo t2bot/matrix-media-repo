@@ -1,23 +1,24 @@
 package main
 
 import (
-	"github.com/t2bot/matrix-media-repo/cmd/homeserver_live_importers/_common"
+	"github.com/sirupsen/logrus"
+	"github.com/t2bot/matrix-media-repo/cmd/homeserver_live_importers/internal"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/homeserver_interop/dendrite"
 )
 
 func main() {
-	cfg := _common.InitImportPsqlMatrixDownload("Dendrite")
+	cfg := internal.InitImportPsqlMatrixDownload("Dendrite")
 	ctx := rcontext.Initial()
 
 	ctx.Log.Debug("Connecting to homeserver database...")
 	hsDb, err := dendrite.OpenDatabase(cfg.ConnectionString, cfg.ServerName)
 	if err != nil {
-		panic(err)
+		logrus.Fatalf("Failed to open database: %v", err)
 	}
 
-	_common.PsqlMatrixDownloadCopy[dendrite.LocalMedia](ctx, cfg, hsDb, func(record *dendrite.LocalMedia) (*_common.MediaMetadata, error) {
-		return &_common.MediaMetadata{
+	internal.PsqlMatrixDownloadCopy[dendrite.LocalMedia](ctx, cfg, hsDb, func(record *dendrite.LocalMedia) (*internal.MediaMetadata, error) {
+		return &internal.MediaMetadata{
 			MediaId:        record.MediaId,
 			ContentType:    record.ContentType,
 			FileName:       record.UploadName,

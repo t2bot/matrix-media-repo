@@ -9,8 +9,8 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/julienschmidt/httprouter"
 	"github.com/sirupsen/logrus"
-	"github.com/t2bot/matrix-media-repo/api/_responses"
-	"github.com/t2bot/matrix-media-repo/api/_routers"
+	"github.com/t2bot/matrix-media-repo/api/responses"
+	"github.com/t2bot/matrix-media-repo/api/routers"
 	"github.com/t2bot/matrix-media-repo/util"
 )
 
@@ -21,7 +21,7 @@ func buildPrimaryRouter() *httprouter.Router {
 	router.MethodNotAllowed = http.HandlerFunc(methodNotAllowedFn)
 	router.NotFound = http.HandlerFunc(notFoundFn)
 	router.HandleOPTIONS = true
-	router.GlobalOPTIONS = _routers.NewInstallHeadersRouter(http.HandlerFunc(finishCorsFn))
+	router.GlobalOPTIONS = routers.NewInstallHeadersRouter(http.HandlerFunc(finishCorsFn))
 	router.PanicHandler = panicFn
 	return router
 }
@@ -29,25 +29,25 @@ func buildPrimaryRouter() *httprouter.Router {
 func methodNotAllowedFn(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusMethodNotAllowed)
-	if b, err := json.Marshal(_responses.MethodNotAllowed()); err != nil {
-		panic(errors.New("error preparing MethodNotAllowed: " + err.Error()))
-	} else {
-		if _, err = w.Write(b); err != nil {
-			panic(errors.New("error sending MethodNotAllowed: " + err.Error()))
-		}
+	reponse, err := json.Marshal(responses.MethodNotAllowed())
+	if err != nil {
+		sentry.CaptureException(fmt.Errorf("error preparing MethodNotAllowed: %v", err))
+		logrus.Errorf("error preparing MethodNotAllowed: %v", err)
+		return
 	}
+	w.Write(reponse)
 }
 
 func notFoundFn(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNotFound)
-	if b, err := json.Marshal(_responses.NotFoundError()); err != nil {
-		panic(errors.New("error preparing NotFound: " + err.Error()))
-	} else {
-		if _, err = w.Write(b); err != nil {
-			panic(errors.New("error sending NotFound: " + err.Error()))
-		}
+	reponse, err := json.Marshal(responses.NotFoundError())
+	if err != nil {
+		sentry.CaptureException(fmt.Errorf("error preparing NotFound: %v", err))
+		logrus.Errorf("error preparing NotFound: %v", err)
+		return
 	}
+	w.Write(reponse)
 }
 
 func finishCorsFn(w http.ResponseWriter, r *http.Request) {
@@ -66,11 +66,12 @@ func panicFn(w http.ResponseWriter, r *http.Request, i interface{}) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusInternalServerError)
-	if b, err := json.Marshal(_responses.InternalServerError("unexpected error")); err != nil {
-		panic(errors.New("error preparing InternalServerError: " + err.Error()))
-	} else {
-		if _, err = w.Write(b); err != nil {
-			panic(errors.New("error sending InternalServerError: " + err.Error()))
-		}
+
+	reponse, err := json.Marshal(responses.InternalServerError(errors.New("unexpected error")))
+	if err != nil {
+		sentry.CaptureException(fmt.Errorf("error preparing InternalServerError: %v", err))
+		logrus.Errorf("error preparing InternalServerError: %v", err)
+		return
 	}
+	w.Write(reponse)
 }

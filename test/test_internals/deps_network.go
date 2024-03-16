@@ -57,6 +57,6 @@ func (n *NetworkDep) ApplyToContainer() testcontainers.ContainerCustomizer {
 
 func (n *NetworkDep) Teardown() {
 	if err := n.dockerNet.Remove(n.ctx); err != nil {
-		log.Fatalf("Error cleaning up docker network '%s': %s", n.NetId, err.Error())
+		log.Fatalf("Error cleaning up docker network '%s': %v", n.NetId, err)
 	}
 }

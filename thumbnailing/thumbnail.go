@@ -2,36 +2,36 @@ package thumbnailing
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"reflect"
+	"slices"
 
 	"github.com/t2bot/matrix-media-repo/common"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/thumbnailing/i"
-	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
-	"github.com/t2bot/matrix-media-repo/thumbnailing/u"
-	"github.com/t2bot/matrix-media-repo/util"
+	"github.com/t2bot/matrix-media-repo/thumbnailing/preview"
+	"github.com/t2bot/matrix-media-repo/thumbnailing/preview/metadata"
 	"github.com/t2bot/matrix-media-repo/util/readers"
 )
 
 var ErrUnsupported = errors.New("unsupported thumbnail type")
 
 func IsSupported(contentType string) bool {
-	return util.ArrayContains(i.GetSupportedContentTypes(), contentType)
+	return slices.Contains(preview.GetSupportedContentTypes(), contentType)
 }
 
-func GenerateThumbnail(imgStream io.ReadCloser, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
+func GenerateThumbnail(imgStream io.ReadCloser, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*preview.Thumbnail, error) {
 	defer imgStream.Close()
 	if !IsSupported(contentType) {
 		ctx.Log.Debugf("Unsupported content type '%s'", contentType)
 		return nil, ErrUnsupported
 	}
-	if !util.ArrayContains(ctx.Config.Thumbnails.Types, contentType) {
+	if !slices.Contains(ctx.Config.Thumbnails.Types, contentType) {
 		ctx.Log.Debugf("Disabled content type '%s'", contentType)
 		return nil, ErrUnsupported
 	}
 
-	generator, reconstructed := i.GetGenerator(imgStream, contentType, animated)
+	generator, reconstructed := preview.GetGenerator(imgStream, contentType, animated)
 	if generator == nil {
 		ctx.Log.Debugf("Unsupported thumbnail type at generator for '%s'", contentType)
 		return nil, ErrUnsupported
@@ -43,7 +43,7 @@ func GenerateThumbnail(imgStream io.ReadCloser, contentType string, width int, h
 	buffered := readers.NewBufferReadsReader(reconstructed)
 	dimensional, w, h, err := generator.GetOriginDimensions(buffered, contentType, ctx)
 	if err != nil {
-		return nil, errors.New("error getting dimensions: " + err.Error())
+		return nil, fmt.Errorf("error getting dimensions: %w", err)
 	}
 	if dimensional {
 		if (w * h) >= ctx.Config.Thumbnails.MaxPixels {
@@ -53,7 +53,7 @@ func GenerateThumbnail(imgStream io.ReadCloser, contentType string, width int, h
 
 		// While we're here, check to ensure we're not about to produce a thumbnail which is larger than the source material
 		shouldThumbnail := true
-		shouldThumbnail, width, height, method = u.AdjustProperties(w, h, width, height, animated, method)
+		shouldThumbnail, width, height, method = metadata.AdjustProperties(w, h, width, height, animated, method)
 		if !shouldThumbnail {
 			return nil, common.ErrMediaDimensionsTooSmall
 		}
@@ -62,8 +62,8 @@ func GenerateThumbnail(imgStream io.ReadCloser, contentType string, width int, h
 	return generator.GenerateThumbnail(buffered.GetRewoundReader(), contentType, width, height, method, animated, ctx)
 }
 
-func GetGenerator(imgStream io.Reader, contentType string, animated bool) (i.Generator, io.Reader, error) {
-	generator, reconstructed := i.GetGenerator(imgStream, contentType, animated)
+func GetGenerator(imgStream io.Reader, contentType string, animated bool) (preview.Generator, io.Reader, error) {
+	generator, reconstructed := preview.GetGenerator(imgStream, contentType, animated)
 	if generator == nil {
 		return nil, reconstructed, ErrUnsupported
 	}

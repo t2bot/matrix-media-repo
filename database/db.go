@@ -2,7 +2,7 @@ package database
 
 import (
 	"database/sql"
-	"errors"
+	"fmt"
 	"sync"
 
 	"github.com/DavidHuie/gomigrate"
@@ -70,7 +70,7 @@ func openDatabase(connectionString string, maxConns int, maxIdleConns int) error
 	var err error
 
 	if d.conn, err = sql.Open("postgres", connectionString); err != nil {
-		return errors.New("error connecting to db: " + err.Error())
+		return fmt.Errorf("error connecting to db: %w", err)
 	}
 	d.conn.SetMaxOpenConns(maxConns)
 	d.conn.SetMaxIdleConns(maxIdleConns)
@@ -78,51 +78,51 @@ func openDatabase(connectionString string, maxConns int, maxIdleConns int) error
 	// Run migrations
 	var migrator *gomigrate.Migrator
 	if migrator, err = gomigrate.NewMigratorWithLogger(d.conn, gomigrate.Postgres{}, config.Runtime.MigrationsPath, &logging.SendToDebugLogger{}); err != nil {
-		return errors.New("error setting up migrator: " + err.Error())
+		return fmt.Errorf("error setting up migrator: %w", err)
 	}
 	if err = migrator.Migrate(); err != nil {
-		return errors.New("error running migrations: " + err.Error())
+		return fmt.Errorf("error running migrations: %w", err)
 	}
 
 	// Prepare the table accessors
 	if d.Media, err = prepareMediaTables(d.conn); err != nil {
-		return errors.New("failed to create media table accessor: " + err.Error())
+		return fmt.Errorf("failed to create media table accessor: %w", err)
 	}
 	if d.ExpiringMedia, err = prepareExpiringMediaTables(d.conn); err != nil {
-		return errors.New("failed to create expiring media table accessor: " + err.Error())
+		return fmt.Errorf("failed to create expiring media table accessor: %w", err)
 	}
 	if d.UserStats, err = prepareUserStatsTables(d.conn); err != nil {
-		return errors.New("failed to create user stats table accessor: " + err.Error())
+		return fmt.Errorf("failed to create user stats table accessor: %w", err)
 	}
 	if d.ReservedMedia, err = prepareReservedMediaTables(d.conn); err != nil {
-		return errors.New("failed to create reserved media table accessor: " + err.Error())
+		return fmt.Errorf("failed to create reserved media table accessor: %w", err)
 	}
 	if d.MetadataView, err = prepareMetadataVirtualTables(d.conn); err != nil {
-		return errors.New("failed to create metadata virtual table accessor: " + err.Error())
+		return fmt.Errorf("failed to create metadata virtual table accessor: %w", err)
 	}
 	if d.HeldMedia, err = prepareHeldMediaTables(d.conn); err != nil {
-		return errors.New("failed to create held media table accessor: " + err.Error())
+		return fmt.Errorf("failed to create held media table accessor: %w", err)
 	}
 	if d.Thumbnails, err = prepareThumbnailsTables(d.conn); err != nil {
-		return errors.New("failed to create thumbnails table accessor: " + err.Error())
+		return fmt.Errorf("failed to create thumbnails table accessor: %w", err)
 	}
 	if d.LastAccess, err = prepareLastAccessTables(d.conn); err != nil {
-		return errors.New("failed to create last access table accessor: " + err.Error())
+		return fmt.Errorf("failed to create last access table accessor: %w", err)
 	}
 	if d.UrlPreviews, err = prepareUrlPreviewsTables(d.conn); err != nil {
-		return errors.New("failed to create url previews table accessor: " + err.Error())
+		return fmt.Errorf("failed to create url previews table accessor: %w", err)
 	}
 	if d.MediaAttributes, err = prepareMediaAttributesTables(d.conn); err != nil {
-		return errors.New("failed to create media attributes table accessor: " + err.Error())
+		return fmt.Errorf("failed to create media attributes table accessor: %w", err)
 	}
 	if d.Tasks, err = prepareTasksTables(d.conn); err != nil {
-		return errors.New("failed to create tasks table accessor: " + err.Error())
+		return fmt.Errorf("failed to create tasks table accessor: %w", err)
 	}
 	if d.Exports, err = prepareExportsTables(d.conn); err != nil {
-		return errors.New("failed to create exports table accessor: " + err.Error())
+		return fmt.Errorf("failed to create exports table accessor: %w", err)
 	}
 	if d.ExportParts, err = prepareExportPartsTables(d.conn); err != nil {
-		return errors.New("failed to create export parts table accessor: " + err.Error())
+		return fmt.Errorf("failed to create export parts table accessor: %w", err)
 	}
 
 	instance = d

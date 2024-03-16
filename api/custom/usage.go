@@ -1,14 +1,16 @@
 package custom
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/t2bot/matrix-media-repo/api/_apimeta"
-	"github.com/t2bot/matrix-media-repo/api/_responses"
-	"github.com/t2bot/matrix-media-repo/api/_routers"
+	"github.com/t2bot/matrix-media-repo/api/apimeta"
+	"github.com/t2bot/matrix-media-repo/api/responses"
+	"github.com/t2bot/matrix-media-repo/api/routers"
 	"github.com/t2bot/matrix-media-repo/database"
 	"github.com/t2bot/matrix-media-repo/homeserver_interop/synapse"
 
@@ -52,11 +54,11 @@ type MediaUsageEntry struct {
 	CreatedTs         int64  `json:"created_ts"`
 }
 
-func GetDomainUsage(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
-	serverName := _routers.GetParam("serverName", r)
+func GetDomainUsage(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
+	serverName := routers.GetParam("serverName", r)
 
-	if !_routers.ServerNameRegex.MatchString(serverName) {
-		return _responses.BadRequest("invalid server name")
+	if !routers.ServerNameRegex.MatchString(serverName) {
+		return responses.BadRequest(errors.New("invalid server name"))
 	}
 
 	rctx = rctx.LogWithFields(logrus.Fields{
@@ -69,17 +71,17 @@ func GetDomainUsage(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("Failed to get byte usage for server")
+		return responses.InternalServerError(errors.New("Failed to get byte usage for server"))
 	}
 
 	mediaCount, thumbCount, err := db.CountUsageForServer(serverName)
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("Failed to get count usage for server")
+		return responses.InternalServerError(errors.New("Failed to get count usage for server"))
 	}
 
-	return &_responses.DoNotCacheResponse{
+	return &responses.DoNotCacheResponse{
 		Payload: &CountsUsageResponse{
 			RawBytes: &UsageInfo{
 				MinimalUsageInfo: &MinimalUsageInfo{
@@ -99,12 +101,12 @@ func GetDomainUsage(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 	}
 }
 
-func GetUserUsage(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
-	serverName := _routers.GetParam("serverName", r)
+func GetUserUsage(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
+	serverName := routers.GetParam("serverName", r)
 	userIds := r.URL.Query()["user_id"]
 
-	if !_routers.ServerNameRegex.MatchString(serverName) {
-		return _responses.BadRequest("invalid server name")
+	if !routers.ServerNameRegex.MatchString(serverName) {
+		return responses.BadRequest(errors.New("invalid server name"))
 	}
 
 	rctx = rctx.LogWithFields(logrus.Fields{
@@ -124,7 +126,7 @@ func GetUserUsage(r *http.Request, rctx rcontext.RequestContext, user _apimeta.U
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("Failed to get media records for users")
+		return responses.InternalServerError(errors.New("Failed to get media records for users"))
 	}
 
 	parsed := make(map[string]*UserUsageEntry)
@@ -155,15 +157,15 @@ func GetUserUsage(r *http.Request, rctx rcontext.RequestContext, user _apimeta.U
 		entry.UploadedMxcs = append(entry.UploadedMxcs, util.MxcUri(media.Origin, media.MediaId))
 	}
 
-	return &_responses.DoNotCacheResponse{Payload: parsed}
+	return &responses.DoNotCacheResponse{Payload: parsed}
 }
 
-func GetUploadsUsage(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
-	serverName := _routers.GetParam("serverName", r)
+func GetUploadsUsage(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
+	serverName := routers.GetParam("serverName", r)
 	mxcs := r.URL.Query()["mxc"]
 
-	if !_routers.ServerNameRegex.MatchString(serverName) {
-		return _responses.BadRequest("invalid server name")
+	if !routers.ServerNameRegex.MatchString(serverName) {
+		return responses.BadRequest(errors.New("invalid server name"))
 	}
 
 	rctx = rctx.LogWithFields(logrus.Fields{
@@ -183,11 +185,11 @@ func GetUploadsUsage(r *http.Request, rctx rcontext.RequestContext, user _apimet
 			if err != nil {
 				rctx.Log.Error(err)
 				sentry.CaptureException(err)
-				return _responses.InternalServerError("Error parsing MXC " + mxc)
+				return responses.InternalServerError(fmt.Errorf("Error parsing MXC %s", mxc))
 			}
 
 			if o != serverName {
-				return _responses.BadRequest("MXC URIs must match the requested server")
+				return responses.BadRequest(errors.New("MXC URIs must match the requested server"))
 			}
 
 			split = append(split, i)
@@ -198,7 +200,7 @@ func GetUploadsUsage(r *http.Request, rctx rcontext.RequestContext, user _apimet
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("Failed to get media records for users")
+		return responses.InternalServerError(errors.New("Failed to get media records for users"))
 	}
 
 	parsed := make(map[string]*MediaUsageEntry)
@@ -217,27 +219,27 @@ func GetUploadsUsage(r *http.Request, rctx rcontext.RequestContext, user _apimet
 		}
 	}
 
-	return &_responses.DoNotCacheResponse{Payload: parsed}
+	return &responses.DoNotCacheResponse{Payload: parsed}
 }
 
 // SynGetUsersMediaStats attempts to provide a loose equivalent to this Synapse admin endpoint:
 // https://matrix-org.github.io/synapse/v1.88/admin_api/statistics.html#users-media-usage-statistics
-func SynGetUsersMediaStats(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func SynGetUsersMediaStats(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	qs := r.URL.Query()
 	var err error
 
-	serverName := _routers.GetParam("serverName", r)
+	serverName := routers.GetParam("serverName", r)
 	if serverName == "" && strings.HasPrefix(r.URL.Path, synapse.PrefixAdminApi) {
 		serverName = r.Host
 	}
 
-	if !_routers.ServerNameRegex.MatchString(serverName) {
-		return _responses.BadRequest("invalid server name")
+	if !routers.ServerNameRegex.MatchString(serverName) {
+		return responses.BadRequest(errors.New("invalid server name"))
 	}
 
-	isGlobalAdmin, isLocalAdmin := _apimeta.GetRequestUserAdminStatus(r, rctx, user)
+	isGlobalAdmin, isLocalAdmin := apimeta.GetRequestUserAdminStatus(r, rctx, user)
 	if !isGlobalAdmin && (serverName != r.Host || !isLocalAdmin) {
-		return _responses.AuthFailed()
+		return responses.AuthFailed()
 	}
 
 	orderBy := database.SynStatUserOrderBy(qs.Get("order_by"))
@@ -245,14 +247,14 @@ func SynGetUsersMediaStats(r *http.Request, rctx rcontext.RequestContext, user _
 		orderBy = database.DefaultSynStatUserOrderBy
 	}
 	if !database.IsSynStatUserOrderBy(orderBy) {
-		return _responses.BadRequest("Query parameter 'order_by' must be one of the accepted values")
+		return responses.BadRequest(errors.New("Query parameter 'order_by' must be one of the accepted values"))
 	}
 
 	var start int64 = 0
 	if len(qs["from"]) > 0 {
 		start, err = strconv.ParseInt(qs.Get("from"), 10, 64)
 		if err != nil || start < 0 {
-			return _responses.BadRequest("Query parameter 'from' must be a non-negative integer")
+			return responses.BadRequest(errors.New("Query parameter 'from' must be a non-negative integer"))
 		}
 	}
 
@@ -260,7 +262,7 @@ func SynGetUsersMediaStats(r *http.Request, rctx rcontext.RequestContext, user _
 	if len(qs["limit"]) > 0 {
 		limit, err = strconv.ParseInt(qs.Get("limit"), 10, 64)
 		if err != nil || limit < 0 {
-			return _responses.BadRequest("Query parameter 'limit' must be a non-negative integer")
+			return responses.BadRequest(errors.New("Query parameter 'limit' must be a non-negative integer"))
 		}
 	}
 	if limit > 50 {
@@ -272,7 +274,7 @@ func SynGetUsersMediaStats(r *http.Request, rctx rcontext.RequestContext, user _
 	if len(qs["from_ts"]) > 0 {
 		fromTS, err = strconv.ParseInt(qs.Get("from_ts"), 10, 64)
 		if err != nil || fromTS < 0 {
-			return _responses.BadRequest("Query parameter 'from_ts' must be a non-negative integer")
+			return responses.BadRequest(errors.New("Query parameter 'from_ts' must be a non-negative integer"))
 		}
 	}
 
@@ -280,15 +282,15 @@ func SynGetUsersMediaStats(r *http.Request, rctx rcontext.RequestContext, user _
 	if len(qs["until_ts"]) > 0 {
 		untilTS, err = strconv.ParseInt(qs.Get("until_ts"), 10, 64)
 		if err != nil || untilTS < 0 {
-			return _responses.BadRequest("Query parameter 'until_ts' must be a non-negative integer")
+			return responses.BadRequest(errors.New("Query parameter 'until_ts' must be a non-negative integer"))
 		} else if untilTS <= fromTS {
-			return _responses.BadRequest("Query parameter 'until_ts' must be greater than 'from_ts'")
+			return responses.BadRequest(errors.New("Query parameter 'until_ts' must be greater than 'from_ts'"))
 		}
 	}
 
 	searchTerm := qs.Get("search_term")
 	if searchTerm == "" && len(qs["search_term"]) > 0 {
-		return _responses.BadRequest("Query parameter 'search_term' cannot be an empty string")
+		return responses.BadRequest(errors.New("Query parameter 'search_term' cannot be an empty string"))
 	}
 
 	isAscendingOrder := true
@@ -296,7 +298,7 @@ func SynGetUsersMediaStats(r *http.Request, rctx rcontext.RequestContext, user _
 	if direction == "b" && len(qs["dir"]) > 0 {
 		isAscendingOrder = false
 	} else {
-		return _responses.BadRequest("Query parameter 'dir' must be one of ['f', 'b']")
+		return responses.BadRequest(errors.New("Query parameter 'dir' must be one of ['f', 'b']"))
 	}
 
 	rctx = rctx.LogWithFields(logrus.Fields{
@@ -313,11 +315,10 @@ func SynGetUsersMediaStats(r *http.Request, rctx rcontext.RequestContext, user _
 	db := database.GetInstance().MetadataView.Prepare(rctx)
 
 	stats, totalCount, err := db.UnoptimizedSynapseUserStatsPage(serverName, orderBy, start, limit, fromTS, untilTS, searchTerm, isAscendingOrder)
-
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
-		return _responses.InternalServerError("Failed to get users' usage stats on specified server")
+		return responses.InternalServerError(errors.New("Failed to get users' usage stats on specified server"))
 	}
 
 	result := &synapse.SynUserStatsResponse{
@@ -338,5 +339,5 @@ func SynGetUsersMediaStats(r *http.Request, rctx rcontext.RequestContext, user _
 		result.NextToken = start + int64(len(stats))
 	}
 
-	return &_responses.DoNotCacheResponse{Payload: result}
+	return &responses.DoNotCacheResponse{Payload: result}
 }

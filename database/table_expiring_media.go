@@ -3,9 +3,10 @@ package database
 import (
 	"database/sql"
 	"errors"
+	"fmt"
+	"time"
 
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/util"
 )
 
 type DbExpiringMedia struct {
@@ -16,7 +17,8 @@ type DbExpiringMedia struct {
 }
 
 func (r *DbExpiringMedia) IsExpired() bool {
-	return r.ExpiresTs < util.NowMillis()
+	expiresTs := time.UnixMilli(r.ExpiresTs)
+	return expiresTs.Before(time.Now())
 }
 
 const insertExpiringMedia = "INSERT INTO expiring_media (origin, media_id, user_id, expires_ts) VALUES ($1, $2, $3, $4);"
@@ -40,19 +42,19 @@ type expiringMediaTableWithContext struct {
 
 func prepareExpiringMediaTables(db *sql.DB) (*expiringMediaTableStatements, error) {
 	var err error
-	var stmts = &expiringMediaTableStatements{}
+	stmts := &expiringMediaTableStatements{}
 
 	if stmts.insertExpiringMedia, err = db.Prepare(insertExpiringMedia); err != nil {
-		return nil, errors.New("error preparing insertExpiringMedia: " + err.Error())
+		return nil, fmt.Errorf("error preparing insertExpiringMedia: %w", err)
 	}
 	if stmts.selectExpiringMediaByUserCount, err = db.Prepare(selectExpiringMediaByUserCount); err != nil {
-		return nil, errors.New("error preparing selectExpiringMediaByUserCount: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectExpiringMediaByUserCount: %w", err)
 	}
 	if stmts.selectExpiringMediaById, err = db.Prepare(selectExpiringMediaById); err != nil {
-		return nil, errors.New("error preparing selectExpiringMediaById: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectExpiringMediaById: %w", err)
 	}
 	if stmts.deleteExpiringMediaById, err = db.Prepare(deleteExpiringMediaById); err != nil {
-		return nil, errors.New("error preparing deleteExpiringMediaById: " + err.Error())
+		return nil, fmt.Errorf("error preparing deleteExpiringMediaById: %w", err)
 	}
 
 	return stmts, nil
@@ -71,7 +73,7 @@ func (s *expiringMediaTableWithContext) Insert(origin string, mediaId string, us
 }
 
 func (s *expiringMediaTableWithContext) ByUserCount(userId string) (int64, error) {
-	row := s.statements.selectExpiringMediaByUserCount.QueryRowContext(s.ctx, userId, util.NowMillis())
+	row := s.statements.selectExpiringMediaByUserCount.QueryRowContext(s.ctx, userId, time.Now().UnixMilli())
 	val := int64(0)
 	err := row.Scan(&val)
 	if errors.Is(err, sql.ErrNoRows) {

@@ -1,6 +1,8 @@
 package task_runner
 
 import (
+	"time"
+
 	"github.com/getsentry/sentry-go"
 	"github.com/t2bot/matrix-media-repo/common/config"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
@@ -15,8 +17,8 @@ func PurgeRemoteMedia(ctx rcontext.RequestContext) {
 		return
 	}
 
-	beforeTs := util.NowMillis() - int64(config.Get().Downloads.ExpireDays*24*60*60*1000)
-	_, err := PurgeRemoteMediaBefore(ctx, beforeTs)
+	before := time.Now().AddDate(0, 0, -1*config.Get().Downloads.ExpireDays)
+	_, err := PurgeRemoteMediaBefore(ctx, before)
 	if err != nil {
 		ctx.Log.Error("Error purging media: ", err)
 		sentry.CaptureException(err)
@@ -24,7 +26,7 @@ func PurgeRemoteMedia(ctx rcontext.RequestContext) {
 }
 
 // PurgeRemoteMediaBefore returns (count affected, error)
-func PurgeRemoteMediaBefore(ctx rcontext.RequestContext, beforeTs int64) (int, error) {
+func PurgeRemoteMediaBefore(ctx rcontext.RequestContext, beforeTs time.Time) (int, error) {
 	mediaDb := database.GetInstance().Media.Prepare(ctx)
 
 	origins := util.GetOurDomains()

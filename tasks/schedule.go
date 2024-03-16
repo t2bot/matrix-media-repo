@@ -11,7 +11,6 @@ import (
 	"github.com/t2bot/matrix-media-repo/database"
 	"github.com/t2bot/matrix-media-repo/notifier"
 	"github.com/t2bot/matrix-media-repo/tasks/task_runner"
-	"github.com/t2bot/matrix-media-repo/util"
 	"github.com/t2bot/matrix-media-repo/util/ids"
 )
 
@@ -34,7 +33,7 @@ const ExecutingMachineId = int64(0)
 
 type RecurringTaskFn func(ctx rcontext.RequestContext)
 
-var localRand = rand.New(rand.NewSource(util.NowMillis()))
+var localRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 var recurDoneChs = make(map[RecurringTaskName]chan bool)
 var recurLock = new(sync.RWMutex)
 
@@ -44,7 +43,7 @@ func scheduleTask(ctx rcontext.RequestContext, name TaskName, params interface{}
 		return nil, err
 	}
 	db := database.GetInstance().Tasks.Prepare(ctx)
-	r, err := db.Insert(string(name), jsonParams, util.NowMillis())
+	r, err := db.Insert(string(name), jsonParams, time.Now().UnixMilli())
 	if err != nil {
 		return nil, err
 	}

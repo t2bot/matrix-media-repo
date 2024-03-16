@@ -64,30 +64,30 @@ type metadataVirtualTableWithContext struct {
 
 func prepareMetadataVirtualTables(db *sql.DB) (*metadataVirtualTableStatements, error) {
 	var err error
-	var stmts = &metadataVirtualTableStatements{
+	stmts := &metadataVirtualTableStatements{
 		db: db,
 	}
 
 	if stmts.selectEstimatedDatastoreSize, err = db.Prepare(selectEstimatedDatastoreSize); err != nil {
-		return nil, errors.New("error preparing selectEstimatedDatastoreSize: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectEstimatedDatastoreSize: %w", err)
 	}
 	if stmts.selectUploadSizesForServer, err = db.Prepare(selectUploadSizesForServer); err != nil {
-		return nil, errors.New("error preparing selectUploadSizesForServer: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectUploadSizesForServer: %w", err)
 	}
 	if stmts.selectUploadCountsForServer, err = db.Prepare(selectUploadCountsForServer); err != nil {
-		return nil, errors.New("error preparing selectUploadCountsForServer: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectUploadCountsForServer: %w", err)
 	}
 	if stmts.selectMediaForDatastoreWithLastAccess, err = db.Prepare(selectMediaForDatastoreWithLastAccess); err != nil {
-		return nil, errors.New("error preparing selectMediaForDatastoreWithLastAccess: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectMediaForDatastoreWithLastAccess: %w", err)
 	}
 	if stmts.selectThumbnailsForDatastoreWithLastAccess, err = db.Prepare(selectThumbnailsForDatastoreWithLastAccess); err != nil {
-		return nil, errors.New("error preparing selectThumbnailsForDatastoreWithLastAccess: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectThumbnailsForDatastoreWithLastAccess: %w", err)
 	}
 	if stmts.updateQuarantineByHash, err = db.Prepare(updateQuarantineByHash); err != nil {
-		return nil, errors.New("error preparing updateQuarantineByHash: " + err.Error())
+		return nil, fmt.Errorf("error preparing updateQuarantineByHash: %w", err)
 	}
 	if stmts.updateQuarantineByHashAndOrigin, err = db.Prepare(updateQuarantineByHashAndOrigin); err != nil {
-		return nil, errors.New("error preparing updateQuarantineByHashAndOrigin: " + err.Error())
+		return nil, fmt.Errorf("error preparing updateQuarantineByHashAndOrigin: %w", err)
 	}
 
 	return stmts, nil

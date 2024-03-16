@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 )
@@ -24,16 +25,16 @@ type exportsTableWithContext struct {
 
 func prepareExportsTables(db *sql.DB) (*exportsTableStatements, error) {
 	var err error
-	var stmts = &exportsTableStatements{}
+	stmts := &exportsTableStatements{}
 
 	if stmts.insertExport, err = db.Prepare(insertExport); err != nil {
-		return nil, errors.New("error preparing insertExport: " + err.Error())
+		return nil, fmt.Errorf("error preparing insertExport: %w", err)
 	}
 	if stmts.selectExportEntity, err = db.Prepare(selectExportEntity); err != nil {
-		return nil, errors.New("error preparing selectExportEntity: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectExportEntity: %w", err)
 	}
 	if stmts.deleteExport, err = db.Prepare(deleteExport); err != nil {
-		return nil, errors.New("error preparing deleteExport: " + err.Error())
+		return nil, fmt.Errorf("error preparing deleteExport: %w", err)
 	}
 
 	return stmts, nil

@@ -5,15 +5,15 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/t2bot/matrix-media-repo/api/_apimeta"
-	"github.com/t2bot/matrix-media-repo/api/_responses"
+	"github.com/t2bot/matrix-media-repo/api/apimeta"
+	"github.com/t2bot/matrix-media-repo/api/responses"
 	"github.com/t2bot/matrix-media-repo/pipelines/pipeline_preview"
 
 	"github.com/t2bot/matrix-media-repo/common"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/util"
 )
 
 type MatrixOpenGraph struct {
@@ -29,9 +29,9 @@ type MatrixOpenGraph struct {
 	ImageHeight int    `json:"og:image:height,omitempty"`
 }
 
-func PreviewUrl(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func PreviewUrl(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	if !rctx.Config.UrlPreviews.Enabled {
-		return _responses.NotFoundError()
+		return responses.NotFoundError()
 	}
 
 	params := r.URL.Query()
@@ -39,23 +39,27 @@ func PreviewUrl(r *http.Request, rctx rcontext.RequestContext, user _apimeta.Use
 	// Parse the parameters
 	urlStr := params.Get("url")
 	tsStr := params.Get("ts")
-	ts := util.NowMillis()
+
+	var ts int64
 	var err error
 	if tsStr != "" {
 		ts, err = strconv.ParseInt(tsStr, 10, 64)
 		if err != nil {
 			rctx.Log.Error("Error parsing ts: ", err)
-			return _responses.BadRequest(err.Error())
+			return responses.BadRequest(err)
 		}
+	}
+	if ts == 0 {
+		ts = time.Now().UnixMilli()
 	}
 
 	// Validate the URL
 	if urlStr == "" {
-		return _responses.BadRequest("No url provided")
+		return responses.BadRequest(errors.New("No url provided"))
 	}
 	//goland:noinspection HttpUrlsUsage
 	if strings.Index(urlStr, "http://") != 0 && strings.Index(urlStr, "https://") != 0 {
-		return _responses.BadRequest("Scheme not accepted")
+		return responses.BadRequest(errors.New("Scheme not accepted"))
 	}
 
 	languageHeader := rctx.Config.UrlPreviews.DefaultLanguage
@@ -78,13 +82,13 @@ func PreviewUrl(r *http.Request, rctx rcontext.RequestContext, user _apimeta.Use
 	}
 	if err != nil {
 		if errors.Is(err, common.ErrMediaNotFound) || errors.Is(err, common.ErrHostNotFound) {
-			return _responses.NotFoundError()
-		} else if errors.Is(err, common.ErrInvalidHost) || errors.Is(err, common.ErrHostNotAllowed) {
-			return _responses.BadRequest(err.Error())
-		} else {
-			sentry.CaptureException(err)
-			return _responses.InternalServerError("Unexpected Error")
+			return responses.NotFoundError()
 		}
+		if errors.Is(err, common.ErrInvalidHost) || errors.Is(err, common.ErrHostNotAllowed) {
+			return responses.BadRequest(err)
+		}
+		sentry.CaptureException(err)
+		return responses.InternalServerError(errors.New("Unexpected Error"))
 	}
 
 	return &MatrixOpenGraph{

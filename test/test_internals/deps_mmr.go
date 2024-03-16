@@ -137,10 +137,10 @@ func makeMmrInstances(ctx context.Context, count int, depNet *NetworkDep, tmplAr
 
 func (c *mmrContainer) Teardown() {
 	if err := c.container.Terminate(c.ctx); err != nil {
-		log.Fatalf("Error shutting down MMR machine %d: %s", c.MachineId, err.Error())
+		log.Fatalf("Error shutting down MMR machine %d: %v", c.MachineId, err)
 	}
 	if err := os.Remove(c.tmpConfigPath); err != nil && !os.IsNotExist(err) {
-		log.Fatalf("Error cleaning up MMR config file '%s': %s", c.tmpConfigPath, err.Error())
+		log.Fatalf("Error cleaning up MMR config file '%s': %v", c.tmpConfigPath, err)
 	}
 }
 

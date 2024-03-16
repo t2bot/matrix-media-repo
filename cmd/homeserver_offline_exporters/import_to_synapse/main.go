@@ -10,7 +10,7 @@ import (
 
 	"github.com/disintegration/imaging"
 	"github.com/t2bot/matrix-media-repo/archival/v2archive"
-	"github.com/t2bot/matrix-media-repo/cmd/homeserver_offline_exporters/_common"
+	"github.com/t2bot/matrix-media-repo/cmd/homeserver_offline_exporters/internal"
 	"github.com/t2bot/matrix-media-repo/common/config"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/homeserver_interop/synapse"
@@ -33,7 +33,7 @@ var synapseDefaultSizes = []thumbnailSize{
 }
 
 func main() {
-	cfg := _common.InitExportPsqlFlatFile("Synapse", "media_store_path")
+	cfg := internal.InitExportPsqlFlatFile("Synapse", "media_store_path")
 	ctx := rcontext.InitialNoConfig()
 	ctx.Config.Thumbnails = config.ThumbnailsConfig{
 		Types: []string{
@@ -58,7 +58,7 @@ func main() {
 		panic(err)
 	}
 
-	err = _common.ProcessArchiveDirectory(ctx, cfg.ServerName, cfg.SourcePath, func(record *v2archive.ManifestRecord, f io.ReadCloser) error {
+	err = internal.ProcessArchiveDirectory(ctx, cfg.ServerName, cfg.SourcePath, func(record *v2archive.ManifestRecord, f io.ReadCloser) error {
 		defer f.Close()
 		mxc := util.MxcUri(record.Origin, record.MediaId)
 

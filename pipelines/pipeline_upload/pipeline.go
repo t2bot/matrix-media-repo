@@ -3,6 +3,7 @@ package pipeline_upload
 import (
 	"errors"
 	"io"
+	"time"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/t2bot/matrix-media-repo/common"
@@ -11,10 +12,9 @@ import (
 	"github.com/t2bot/matrix-media-repo/database"
 	"github.com/t2bot/matrix-media-repo/datastores"
 	"github.com/t2bot/matrix-media-repo/notifier"
-	"github.com/t2bot/matrix-media-repo/pipelines/_steps/meta"
-	"github.com/t2bot/matrix-media-repo/pipelines/_steps/quota"
-	"github.com/t2bot/matrix-media-repo/pipelines/_steps/upload"
-	"github.com/t2bot/matrix-media-repo/util"
+	"github.com/t2bot/matrix-media-repo/pipelines/steps/meta"
+	"github.com/t2bot/matrix-media-repo/pipelines/steps/quota"
+	"github.com/t2bot/matrix-media-repo/pipelines/steps/upload"
 	"github.com/t2bot/matrix-media-repo/util/readers"
 )
 
@@ -117,7 +117,7 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, r io.Re
 		ContentType: contentType,
 		UserId:      userId,
 		SizeBytes:   sizeBytes,
-		CreationTs:  util.NowMillis(),
+		CreationTs:  time.Now().UnixMilli(),
 		Quarantined: false,
 		Locatable: &database.Locatable{
 			Sha256Hash:  sha256hash,

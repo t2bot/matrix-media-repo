@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
-	"github.com/t2bot/matrix-media-repo/cmd/utilities/_common"
+	"github.com/t2bot/matrix-media-repo/cmd/utilities/common"
 	"github.com/t2bot/matrix-media-repo/homeserver_interop"
 	"github.com/t2bot/matrix-media-repo/homeserver_interop/any_server"
 )
@@ -44,7 +44,7 @@ func main() {
 
 	logrus.Infof("Key ID will be 'ed25519:%s'", key.KeyVersion)
 
-	_common.EncodeSigningKeys([]*homeserver_interop.SigningKey{key}, *outputFormat, *outputFile)
+	common.EncodeSigningKeys([]*homeserver_interop.SigningKey{key}, *outputFormat, *outputFile)
 }
 
 func makeKeyVersion() string {
@@ -53,7 +53,6 @@ func makeKeyVersion() string {
 	for i := 0; i < len(chars); i++ {
 		sort.Slice(chars, func(i int, j int) bool {
 			c, err := rand.Read(buf)
-
 			// "should never happen" clauses
 			if err != nil {
 				panic(err)

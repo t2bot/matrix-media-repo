@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 )
@@ -28,13 +29,13 @@ type reservedMediaTableWithContext struct {
 
 func prepareReservedMediaTables(db *sql.DB) (*reservedMediaTableStatements, error) {
 	var err error
-	var stmts = &reservedMediaTableStatements{}
+	stmts := &reservedMediaTableStatements{}
 
 	if stmts.insertReservedMediaNoConflict, err = db.Prepare(insertReservedMediaNoConflict); err != nil {
-		return nil, errors.New("error preparing insertReservedMediaNoConflict: " + err.Error())
+		return nil, fmt.Errorf("error preparing insertReservedMediaNoConflict: %w", err)
 	}
 	if stmts.selectReservedMediaExists, err = db.Prepare(selectReservedMediaExists); err != nil {
-		return nil, errors.New("error preparing selectReservedMediaExists: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectReservedMediaExists: %w", err)
 	}
 
 	return stmts, nil

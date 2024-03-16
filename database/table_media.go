@@ -3,6 +3,8 @@ package database
 import (
 	"database/sql"
 	"errors"
+	"fmt"
+	"time"
 
 	"github.com/lib/pq"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
@@ -80,67 +82,67 @@ type MediaTableWithContext struct {
 
 func prepareMediaTables(db *sql.DB) (*mediaTableStatements, error) {
 	var err error
-	var stmts = &mediaTableStatements{}
+	stmts := &mediaTableStatements{}
 
 	if stmts.selectDistinctMediaDatastoreIds, err = db.Prepare(selectDistinctMediaDatastoreIds); err != nil {
-		return nil, errors.New("error preparing selectDistinctMediaDatastoreIds: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectDistinctMediaDatastoreIds: %w", err)
 	}
 	if stmts.selectMediaIsQuarantinedByHash, err = db.Prepare(selectMediaIsQuarantinedByHash); err != nil {
-		return nil, errors.New("error preparing selectMediaIsQuarantinedByHash: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectMediaIsQuarantinedByHash: %w", err)
 	}
 	if stmts.selectMediaByHash, err = db.Prepare(selectMediaByHash); err != nil {
-		return nil, errors.New("error preparing selectMediaByHash: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectMediaByHash: %w", err)
 	}
 	if stmts.insertMedia, err = db.Prepare(insertMedia); err != nil {
-		return nil, errors.New("error preparing insertMedia: " + err.Error())
+		return nil, fmt.Errorf("error preparing insertMedia: %w", err)
 	}
 	if stmts.selectMediaExists, err = db.Prepare(selectMediaExists); err != nil {
-		return nil, errors.New("error preparing selectMediaExists: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectMediaExists: %w", err)
 	}
 	if stmts.selectMediaById, err = db.Prepare(selectMediaById); err != nil {
-		return nil, errors.New("error preparing selectMediaById: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectMediaById: %w", err)
 	}
 	if stmts.selectMediaByUserId, err = db.Prepare(selectMediaByUserId); err != nil {
-		return nil, errors.New("error preparing selectMediaByUserId: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectMediaByUserId: %w", err)
 	}
 	if stmts.selectOldMediaByUserId, err = db.Prepare(selectOldMediaByUserId); err != nil {
-		return nil, errors.New("error preparing selectOldMediaByUserId: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectOldMediaByUserId: %w", err)
 	}
 	if stmts.selectMediaByOrigin, err = db.Prepare(selectMediaByOrigin); err != nil {
-		return nil, errors.New("error preparing selectMediaByOrigin: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectMediaByOrigin: %w", err)
 	}
 	if stmts.selectOldMediaByOrigin, err = db.Prepare(selectOldMediaByOrigin); err != nil {
-		return nil, errors.New("error preparing selectOldMediaByOrigin: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectOldMediaByOrigin: %w", err)
 	}
 	if stmts.selectMediaByLocationExists, err = db.Prepare(selectMediaByLocationExists); err != nil {
-		return nil, errors.New("error preparing selectMediaByLocationExists: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectMediaByLocationExists: %w", err)
 	}
 	if stmts.selectMediaByUserCount, err = db.Prepare(selectMediaByUserCount); err != nil {
-		return nil, errors.New("error preparing selectMediaByUserCount: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectMediaByUserCount: %w", err)
 	}
 	if stmts.selectMediaByOriginAndUserIds, err = db.Prepare(selectMediaByOriginAndUserIds); err != nil {
-		return nil, errors.New("error preparing selectMediaByOriginAndUserIds: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectMediaByOriginAndUserIds: %w", err)
 	}
 	if stmts.selectMediaByOriginAndIds, err = db.Prepare(selectMediaByOriginAndIds); err != nil {
-		return nil, errors.New("error preparing selectMediaByOriginAndIds: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectMediaByOriginAndIds: %w", err)
 	}
 	if stmts.selectOldMediaExcludingDomains, err = db.Prepare(selectOldMediaExcludingDomains); err != nil {
-		return nil, errors.New("error preparing selectOldMediaExcludingDomains: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectOldMediaExcludingDomains: %w", err)
 	}
 	if stmts.deleteMedia, err = db.Prepare(deleteMedia); err != nil {
-		return nil, errors.New("error preparing deleteMedia: " + err.Error())
+		return nil, fmt.Errorf("error preparing deleteMedia: %w", err)
 	}
 	if stmts.updateMediaLocation, err = db.Prepare(updateMediaLocation); err != nil {
-		return nil, errors.New("error preparing updateMediaLocation: " + err.Error())
+		return nil, fmt.Errorf("error preparing updateMediaLocation: %w", err)
 	}
 	if stmts.selectMediaByLocation, err = db.Prepare(selectMediaByLocation); err != nil {
-		return nil, errors.New("error preparing selectMediaByLocation: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectMediaByLocation: %w", err)
 	}
 	if stmts.selectMediaByQuarantine, err = db.Prepare(selectMediaByQuarantine); err != nil {
-		return nil, errors.New("error preparing selectMediaByQuarantine: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectMediaByQuarantine: %w", err)
 	}
 	if stmts.selectMediaByQuarantineAndOrigin, err = db.Prepare(selectMediaByQuarantineAndOrigin); err != nil {
-		return nil, errors.New("error preparing selectMediaByQuarantineAndOrigin: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectMediaByQuarantineAndOrigin: %w", err)
 	}
 
 	return stmts, nil
@@ -233,8 +235,8 @@ func (s *MediaTableWithContext) GetByIds(origin string, mediaIds []string) ([]*D
 	return s.scanRows(s.statements.selectMediaByOriginAndIds.QueryContext(s.ctx, origin, pq.Array(mediaIds)))
 }
 
-func (s *MediaTableWithContext) GetOldExcluding(origins []string, beforeTs int64) ([]*DbMedia, error) {
-	return s.scanRows(s.statements.selectOldMediaExcludingDomains.QueryContext(s.ctx, pq.Array(origins), beforeTs))
+func (s *MediaTableWithContext) GetOldExcluding(origins []string, beforeTs time.Time) ([]*DbMedia, error) {
+	return s.scanRows(s.statements.selectOldMediaExcludingDomains.QueryContext(s.ctx, pq.Array(origins), beforeTs.UnixMilli()))
 }
 
 func (s *MediaTableWithContext) GetByLocation(datastoreId string, location string) ([]*DbMedia, error) {

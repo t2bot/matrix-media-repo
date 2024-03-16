@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 )
@@ -39,25 +40,25 @@ type tasksTableWithContext struct {
 
 func prepareTasksTables(db *sql.DB) (*tasksTableStatements, error) {
 	var err error
-	var stmts = &tasksTableStatements{}
+	stmts := &tasksTableStatements{}
 
 	if stmts.selectTask, err = db.Prepare(selectTask); err != nil {
-		return nil, errors.New("error preparing selectTask: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectTask: %w", err)
 	}
 	if stmts.insertTask, err = db.Prepare(insertTask); err != nil {
-		return nil, errors.New("error preparing insertTask: " + err.Error())
+		return nil, fmt.Errorf("error preparing insertTask: %w", err)
 	}
 	if stmts.selectAllTasks, err = db.Prepare(selectAllTasks); err != nil {
-		return nil, errors.New("error preparing selectAllTasks: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectAllTasks: %w", err)
 	}
 	if stmts.selectIncompleteTasks, err = db.Prepare(selectIncompleteTasks); err != nil {
-		return nil, errors.New("error preparing selectIncompleteTasks: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectIncompleteTasks: %w", err)
 	}
 	if stmts.updateTaskEndTime, err = db.Prepare(updateTaskEndTime); err != nil {
-		return nil, errors.New("error preparing updateTaskEndTime: " + err.Error())
+		return nil, fmt.Errorf("error preparing updateTaskEndTime: %w", err)
 	}
 	if stmts.updateTaskError, err = db.Prepare(updateTaskError); err != nil {
-		return nil, errors.New("error preparing updateTaskError: " + err.Error())
+		return nil, fmt.Errorf("error preparing updateTaskError: %w", err)
 	}
 
 	return stmts, nil

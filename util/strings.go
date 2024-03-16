@@ -5,8 +5,8 @@ import (
 )
 
 func HasAnyPrefix(val string, prefixes []string) bool {
-	for _, p := range prefixes {
-		if strings.HasPrefix(val, p) {
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(val, prefix) {
 			return true
 		}
 	}

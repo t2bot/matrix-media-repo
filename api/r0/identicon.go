@@ -2,6 +2,7 @@ package r0
 
 import (
 	"crypto/md5"
+	"fmt"
 	"image/color"
 	"io"
 	"net/http"
@@ -10,18 +11,18 @@ import (
 	"github.com/cupcake/sigil/gen"
 	"github.com/disintegration/imaging"
 	"github.com/sirupsen/logrus"
-	"github.com/t2bot/matrix-media-repo/api/_apimeta"
-	"github.com/t2bot/matrix-media-repo/api/_responses"
-	"github.com/t2bot/matrix-media-repo/api/_routers"
+	"github.com/t2bot/matrix-media-repo/api/apimeta"
+	"github.com/t2bot/matrix-media-repo/api/responses"
+	"github.com/t2bot/matrix-media-repo/api/routers"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 )
 
-func Identicon(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func Identicon(r *http.Request, rctx rcontext.RequestContext, user apimeta.UserInfo) interface{} {
 	if !rctx.Config.Identicons.Enabled {
-		return _responses.NotFoundError()
+		return responses.NotFoundError()
 	}
 
-	seed := _routers.GetParam("seed", r)
+	seed := routers.GetParam("seed", r)
 
 	var err error
 	width := 96
@@ -32,14 +33,14 @@ func Identicon(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 	if widthStr != "" {
 		width, err = strconv.Atoi(widthStr)
 		if err != nil {
-			return _responses.InternalServerError("Error parsing width: " + err.Error())
+			return responses.InternalServerError(fmt.Errorf("Error parsing width: %w", err))
 		}
 		height = width
 	}
 	if heightStr != "" {
 		height, err = strconv.Atoi(heightStr)
 		if err != nil {
-			return _responses.InternalServerError("Error parsing height: " + err.Error())
+			return responses.InternalServerError(fmt.Errorf("Error parsing height: %w", err))
 		}
 	}
 
@@ -98,7 +99,7 @@ func Identicon(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 		}
 	}()
 
-	return &_responses.DownloadResponse{
+	return &responses.DownloadResponse{
 		ContentType:       "image/png",
 		Filename:          string(hashed) + ".png",
 		SizeBytes:         0,

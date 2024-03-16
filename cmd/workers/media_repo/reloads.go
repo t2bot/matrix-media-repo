@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/sirupsen/logrus"
 	"github.com/t2bot/matrix-media-repo/api"
-	"github.com/t2bot/matrix-media-repo/api/_auth_cache"
+	"github.com/t2bot/matrix-media-repo/api/auth_cache"
 	"github.com/t2bot/matrix-media-repo/common/config"
 	"github.com/t2bot/matrix-media-repo/common/globals"
 	"github.com/t2bot/matrix-media-repo/common/runtime"
@@ -136,7 +136,7 @@ func reloadAccessTokensOnChan(reloadChan chan bool) {
 		for {
 			shouldReload := <-reloadChan
 			if shouldReload {
-				_auth_cache.FlushCache()
+				auth_cache.FlushCache()
 			} else {
 				return // received stop
 			}

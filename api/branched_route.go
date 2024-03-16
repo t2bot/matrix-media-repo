@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/t2bot/matrix-media-repo/api/_routers"
+	"github.com/t2bot/matrix-media-repo/api/routers"
 )
 
 type branch struct {
@@ -19,29 +19,29 @@ type splitBranch struct {
 
 func branchedRoute(branches []branch) http.Handler {
 	sbranches := make([]splitBranch, len(branches))
-	for i, b := range branches {
+	for i, branch := range branches {
 		sbranches[i] = splitBranch{
-			segments: strings.Split(b.string, "/"),
-			handler:  b.Handler,
+			segments: strings.Split(branch.string, "/"),
+			handler:  branch.Handler,
 		}
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		catchAll := _routers.GetParam("branch", r)
+		catchAll := routers.GetParam("branch", r)
 		if catchAll[0] == '/' {
 			catchAll = catchAll[1:]
 		}
 		params := strings.Split(catchAll, "/")
-		for _, b := range sbranches {
-			if b.segments[0][0] == ':' || b.segments[0] == params[0] {
-				if len(b.segments) != len(params) {
+		for _, branch := range sbranches {
+			if branch.segments[0][0] == ':' || branch.segments[0] == params[0] {
+				if len(branch.segments) != len(params) {
 					continue
 				}
-				for i, s := range b.segments {
-					if s[0] == ':' {
-						r = _routers.ForceSetParam(s[1:], params[i], r)
+				for i, segment := range branch.segments {
+					if segment[0] == ':' {
+						r = routers.ForceSetParam(segment[1:], params[i], r)
 					}
 				}
-				b.handler.ServeHTTP(w, r)
+				branch.handler.ServeHTTP(w, r)
 				return
 			}
 		}

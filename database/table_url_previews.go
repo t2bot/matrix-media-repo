@@ -3,9 +3,10 @@ package database
 import (
 	"database/sql"
 	"errors"
+	"fmt"
+	"time"
 
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/util"
 )
 
 type DbUrlPreview struct {
@@ -42,16 +43,16 @@ type urlPreviewsTableWithContext struct {
 
 func prepareUrlPreviewsTables(db *sql.DB) (*urlPreviewsTableStatements, error) {
 	var err error
-	var stmts = &urlPreviewsTableStatements{}
+	stmts := &urlPreviewsTableStatements{}
 
 	if stmts.selectUrlPreview, err = db.Prepare(selectUrlPreview); err != nil {
-		return nil, errors.New("error preparing selectUrlPreview: " + err.Error())
+		return nil, fmt.Errorf("error preparing selectUrlPreview: %w", err)
 	}
 	if stmts.insertUrlPreview, err = db.Prepare(insertUrlPreview); err != nil {
-		return nil, errors.New("error preparing insertUrlPreview: " + err.Error())
+		return nil, fmt.Errorf("error preparing insertUrlPreview: %w", err)
 	}
 	if stmts.deleteOldUrlPreviews, err = db.Prepare(deleteOldUrlPreviews); err != nil {
-		return nil, errors.New("error preparing deleteOldUrlPreviews: " + err.Error())
+		return nil, fmt.Errorf("error preparing deleteOldUrlPreviews: %w", err)
 	}
 
 	return stmts, nil
@@ -64,8 +65,8 @@ func (s *urlPreviewsTableStatements) Prepare(ctx rcontext.RequestContext) *urlPr
 	}
 }
 
-func (s *urlPreviewsTableWithContext) Get(url string, ts int64, languageHeader string) (*DbUrlPreview, error) {
-	row := s.statements.selectUrlPreview.QueryRowContext(s.ctx, url, ts, languageHeader)
+func (s *urlPreviewsTableWithContext) Get(url string, timestamp int64, languageHeader string) (*DbUrlPreview, error) {
+	row := s.statements.selectUrlPreview.QueryRowContext(s.ctx, url, timestamp, languageHeader)
 	val := &DbUrlPreview{}
 	err := row.Scan(&val.Url, &val.ErrorCode, &val.BucketTs, &val.SiteUrl, &val.SiteName, &val.ResourceType, &val.Description, &val.Title, &val.ImageMxc, &val.ImageType, &val.ImageSize, &val.ImageWidth, &val.ImageHeight, &val.LanguageHeader)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -74,8 +75,8 @@ func (s *urlPreviewsTableWithContext) Get(url string, ts int64, languageHeader s
 	return val, err
 }
 
-func (s *urlPreviewsTableWithContext) Insert(p *DbUrlPreview) error {
-	_, err := s.statements.insertUrlPreview.ExecContext(s.ctx, p.Url, p.ErrorCode, p.BucketTs, p.SiteUrl, p.SiteName, p.ResourceType, p.Description, p.Title, p.ImageMxc, p.ImageType, p.ImageSize, p.ImageWidth, p.ImageHeight, p.LanguageHeader)
+func (s *urlPreviewsTableWithContext) Insert(preview *DbUrlPreview) error {
+	_, err := s.statements.insertUrlPreview.ExecContext(s.ctx, preview.Url, preview.ErrorCode, preview.BucketTs, preview.SiteUrl, preview.SiteName, preview.ResourceType, preview.Description, preview.Title, preview.ImageMxc, preview.ImageType, preview.ImageSize, preview.ImageWidth, preview.ImageHeight, preview.LanguageHeader)
 	return err
 }
 
@@ -83,12 +84,12 @@ func (s *urlPreviewsTableWithContext) InsertError(url string, errorCode string) 
 	_ = s.Insert(&DbUrlPreview{
 		Url:       url,
 		ErrorCode: errorCode,
-		BucketTs:  util.GetHourBucket(util.NowMillis()),
+		BucketTs:  time.Now().UnixMilli(),
 		// remainder of fields don't matter
 	})
 }
 
-func (s *urlPreviewsTableWithContext) DeleteOlderThan(ts int64) error {
-	_, err := s.statements.deleteOldUrlPreviews.ExecContext(s.ctx, ts)
+func (s *urlPreviewsTableWithContext) DeleteOlderThan(ts time.Time) error {
+	_, err := s.statements.deleteOldUrlPreviews.ExecContext(s.ctx, ts.UnixMilli())
 	return err
 }
