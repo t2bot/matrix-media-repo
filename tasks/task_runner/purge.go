@@ -44,7 +44,7 @@ func PurgeMedia(ctx rcontext.RequestContext, authContext *PurgeAuthContext, toHa
 	}
 
 	// Now we process all the records
-	return doPurge(ctx, records, &purgeConfig{IncludeQuarantined: true})
+	return doPurge(ctx.AsBackground(), records, &purgeConfig{IncludeQuarantined: true})
 }
 
 func doPurge(ctx rcontext.RequestContext, records []*database.DbMedia, config *purgeConfig) ([]string, error) {

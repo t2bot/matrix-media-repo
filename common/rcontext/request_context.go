@@ -61,3 +61,12 @@ func (c RequestContext) ReplaceLogger(log *logrus.Entry) RequestContext {
 func (c RequestContext) LogWithFields(fields logrus.Fields) RequestContext {
 	return c.ReplaceLogger(c.Log.WithFields(fields))
 }
+
+func (c RequestContext) AsBackground() RequestContext {
+	return RequestContext{
+		Context: context.Background(),
+		Log:     c.Log,
+		Config:  c.Config,
+		Request: c.Request,
+	}.populate()
+}

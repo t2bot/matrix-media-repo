@@ -141,13 +141,13 @@ func PurgeOldMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 		"include_local": includeLocal,
 	})
 
-	domains := make([]string, 0)
+	excludeDomains := make([]string, 0)
 	if !includeLocal {
-		domains = util.GetOurDomains()
+		excludeDomains = util.GetOurDomains()
 	}
 
 	mediaDb := database.GetInstance().Media.Prepare(rctx)
-	records, err := mediaDb.GetOldExcluding(domains, beforeTs)
+	records, err := mediaDb.GetOldExcluding(excludeDomains, beforeTs)
 	if err != nil {
 		rctx.Log.Error(err)
 		sentry.CaptureException(err)
