@@ -34,7 +34,7 @@ func PurgeRemoteMediaBefore(ctx rcontext.RequestContext, beforeTs int64) (int, e
 		return 0, err
 	}
 
-	removed, err := doPurge(ctx, records, &purgeConfig{IncludeQuarantined: false})
+	removed, err := doPurge(ctx.AsBackground(), records, &purgeConfig{IncludeQuarantined: false})
 	if err != nil {
 		return 0, err
 	}
