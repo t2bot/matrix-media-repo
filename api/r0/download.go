@@ -53,6 +53,13 @@ func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 		return _responses.BadRequest("timeout_ms does not appear to be an integer")
 	}
 
+	recordOnly := false
+	if r.Method == http.MethodHead {
+		rctx.Log.Debug("HEAD request received - changing parameters")
+		//downloadRemote = false // we allow the download to go through to ensure proper metadata is returned
+		recordOnly = true
+	}
+
 	rctx = rctx.LogWithFields(logrus.Fields{
 		"mediaId":       mediaId,
 		"server":        server,
@@ -70,6 +77,7 @@ func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 		FetchRemoteIfNeeded: downloadRemote,
 		BlockForReadUntil:   blockFor,
 		CanRedirect:         canRedirect,
+		RecordOnly:          recordOnly,
 	})
 	if err != nil {
 		var redirect datastores.RedirectError
