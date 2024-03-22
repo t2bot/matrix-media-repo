@@ -367,6 +367,8 @@ github.com/strukturag/libheif v1.17.6 h1:UFz4FI7kKLINWyL7bcNEBu4gZxK7rHRkwq49IOz
 github.com/strukturag/libheif v1.17.6/go.mod h1:E/PNRlmVtrtj9j2AvBZlrO4dsBDu6KfwDZn7X1Ce8Ks=
 github.com/stvp/tempredis v0.0.0-20181119212430-b82af8480203 h1:QVqDTf3h2WHt08YuiTGPZLls0Wq99X9bWd0Q5ZSBesM=
 github.com/stvp/tempredis v0.0.0-20181119212430-b82af8480203/go.mod h1:oqN97ltKNihBbwlX8dLpwxCl3+HnXKV/R0e+sRLd9C8=
+github.com/t2bot/go-leaky-bucket v1.0.0 h1:w16tqQj4pslBFNc8xEYvOcu5rt8QhLugx1e5TKyT9zI=
+github.com/t2bot/go-leaky-bucket v1.0.0/go.mod h1:nfXBJMcKJaD2SzYjfo6IXc4lg/AhA751Itjp13edotA=
 github.com/t2bot/go-singleflight-streams v1.0.0 h1:pA/g2o2kv+kDF0pk66azo27vFM1Tqmgj+H1GjBPrHbg=
 github.com/t2bot/go-singleflight-streams v1.0.0/go.mod h1:pEIFm6l/utrXZBeP4tkIuMdYwBBN0TTw7feSEhozNzg=
 github.com/t2bot/go-typed-singleflight v0.0.3 h1:TAQyjhfa5BA63BwFTEVY1a4NF07ekX9JRgite5Cbq0A=

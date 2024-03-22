@@ -85,6 +85,8 @@ func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 			return _responses.NotFoundError()
 		} else if errors.Is(err, common.ErrMediaTooLarge) {
 			return _responses.RequestTooLarge()
+		} else if errors.Is(err, common.ErrRateLimitExceeded) {
+			return _responses.RateLimitReached()
 		} else if errors.Is(err, common.ErrMediaQuarantined) {
 			rctx.Log.Debug("Quarantined media accessed. Has stream? ", stream != nil)
 			if stream != nil {

@@ -113,6 +113,13 @@ func NewDefaultMainConfig() MainRepoConfig {
 			Enabled:           true,
 			RequestsPerSecond: 5,
 			BurstCount:        10,
+			Buckets: RateLimitBucketsConfig{
+				Downloads: RateLimitDownloadBucketConfig{
+					CapacityBytes:       314572800, // 300mb
+					DrainBytesPerMinute: 5242880,   // 5mb
+					OverflowLimitBytes:  104857600, // 10mb
+				},
+			},
 		},
 		Metrics: MetricsConfig{
 			Enabled:     false,
