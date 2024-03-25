@@ -313,6 +313,8 @@ Only repository administrators can use these endpoints.
 
 URL: `GET /_matrix/media/unstable/admin/users/quota?access_token=your_access_token`
 
+This endpoint queries the database for per-user quota entries set via the admin API. It will NOT retrieve the user's quota values if there is a glob entry in the config file that matches the user id. To query the quota values that currently take effect for the given user, you must use the media limits `/config` endpoint as specified in https://github.com/matrix-org/matrix-spec-proposals/pull/4034
+
 You may specify one or more `?user_id=@alice:example.org` query parameters. Note that encoding the values may be required (not shown here). Users that are unknown to the media repo will not be returned.
 
 The response for querying a user's quota:
