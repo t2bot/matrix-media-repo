@@ -97,6 +97,8 @@ func buildRoutes() http.Handler {
 		{":taskId", makeRoute(_routers.RequireRepoAdmin(custom.GetTask), "get_background_task", counter)},
 	})
 	register([]string{"GET"}, PrefixMedia, "admin/tasks/*branch", mxUnstable, router, tasksBranch)
+	register([]string{"GET"}, PrefixMedia, "admin/users/quota", mxUnstable, router, makeRoute(_routers.RequireRepoAdmin(custom.GetUserQuota), "get_user_quota", counter))
+	register([]string{"PUT"}, PrefixMedia, "admin/users/quota", mxUnstable, router, makeRoute(_routers.RequireRepoAdmin(custom.SetUserQuota), "set_user_quota", counter))
 	register([]string{"POST"}, PrefixMedia, "admin/user/:userId/export", mxUnstable, router, makeRoute(_routers.RequireAccessToken(custom.ExportUserData), "export_user_data", counter))
 	register([]string{"POST"}, PrefixMedia, "admin/server/:serverName/export", mxUnstable, router, makeRoute(_routers.RequireAccessToken(custom.ExportServerData), "export_server_data", counter))
 	register([]string{"GET"}, PrefixMedia, "admin/export/:exportId/view", mxUnstable, router, makeRoute(_routers.OptionalAccessToken(custom.ViewExport), "view_export", counter))
