@@ -271,7 +271,8 @@ uploads:
     # The upload quota rules which affect users. The first rule to match the user ID will take
     # effect. If a user does not match a rule, the defaults implied by the above config will
     # take effect instead. The user will not be permitted to upload anything above these quota
-    # values, but can match them exactly.
+    # values, but can match them exactly. Note that quotas can also be set per-user via the
+    # admin API and will take precedence over any matches listed in the config file.
     users:
       - glob: "@*:*"  # Affect all users. Use asterisks (*) to match any character.
         # The maximum number of TOTAL bytes a user can upload. Defaults to zero (no limit).
