@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 
 * New datastore option to ignore Redis cache when downloading media served by a `publicBaseUrl`. This can help ensure more requests get redirected to the CDN.
+* `HEAD /download` is now supported, as per [MSC4120](https://github.com/matrix-org/matrix-spec-proposals/pull/4120).
 
 ### Fixed
 
