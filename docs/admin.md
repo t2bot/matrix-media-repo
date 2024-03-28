@@ -112,13 +112,13 @@ Note that this will only quarantine what is currently known to the repo. It will
 
 ## Datastore management
 
-Datastores are used by the media repository to put files. Typically these match what is configured in the config file, such as s3 and directories. 
+Datastores are used by the media repository to put files. Typically these match what is configured in the config file, such as s3 and directories.
 
 #### Listing available datastores
 
 URL: `GET /_matrix/media/unstable/admin/datastores?access_token=your_access_token`
 
-The result will be something like: 
+The result will be something like:
 ```json
 {
   "00be9363007feb66de554a79e16b7b49": {
@@ -300,6 +300,50 @@ The response is how much data the server is using:
 Use the same endpoint as above, but specifying one or more `?mxc=mxc://example.org/abc123` query parameters. Note that encoding the values may be required (not shown here).
 
 Only repository administrators can use these endpoints.
+
+## User quotas
+
+In addition to specifying quotas in the config file, you may also set per-user quota entries via the admin API. Any value set via the API will take precedence over any matches to the user specified in the config file. To unset any user's quota values, you must set the entry to '-1'. To set a user's quota values using the default limits, set the entries to '0'.
+
+Note that quotas must be enabled in the config in order for any quota values set via the admin API to take effect.
+
+Only repository administrators can use these endpoints.
+
+#### Get user quotas
+
+URL: `GET /_matrix/media/unstable/admin/users/quota?access_token=your_access_token`
+
+This endpoint queries the database for per-user quota entries set via the admin API. It will NOT retrieve the user's quota values if there is a glob entry in the config file that matches the user id. To query the quota values that currently take effect for the given user, you must use the media limits `/config` endpoint as specified in https://github.com/matrix-org/matrix-spec-proposals/pull/4034
+
+You may specify one or more `?user_id=@alice:example.org` query parameters. Note that encoding the values may be required (not shown here). Users that are unknown to the media repo will not be returned.
+
+The response for querying a user's quota:
+```json
+{
+  "@alice:example.org": {
+      "max_bytes": 53687063712,
+      "max_pending": -1,
+      "max_files": 100
+    }
+}
+```
+
+#### Set user quotas
+
+URL: `PUT /_matrix/media/unstable/admin/users/quota?access_token=your_access_token`
+
+You may specify one or more user ids in the json body. Note that encoding the values may be required (not shown here). Also, you may set the quota value for a user even if the user entry does not already exist.
+
+The example json body for setting a user's quota:
+```json
+{
+  "@alice:example.org": {
+      "max_bytes": 53687063712,
+      "max_pending": -1,
+      "max_files": 100
+    }
+}
+```
 
 ## Background Tasks API
 
@@ -494,9 +538,9 @@ URL: `POST /_matrix/media/unstable/admin/import`
 
 The request body is the bytes of the first archive (eg: `TravisR-part-1.tgz` in the above examples).
 
-The response body will be something like the following: 
+The response body will be something like the following:
 ```json
-{ 
+{
   "import_id": "abcdef",
   "task_id": 13
 }

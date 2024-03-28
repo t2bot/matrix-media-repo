@@ -89,6 +89,37 @@ func Limit(ctx rcontext.RequestContext, userId string, quotaType Type) (int64, e
 		return defaultLimit(ctx, quotaType)
 	}
 
+	db := database.GetInstance().UserStats.Prepare(ctx)
+	record, err := db.GetUserQuota([]string{userId})
+	if err != nil {
+		ctx.Log.Warn("Error querying DB quota for user " + userId + ": " + err.Error())
+	}
+
+	// DB quotas takes precedence over config quotas if value is not -1
+	quota := record[0].UserQuota
+	switch quotaType {
+	case MaxBytes:
+		if quota.MaxBytes > 0 {
+			return quota.MaxBytes, nil
+		} else if quota.MaxBytes == 0 {
+			return defaultLimit(ctx, quotaType)
+		}
+	case MaxPending:
+		if quota.MaxPending > 0 {
+			return quota.MaxPending, nil
+		} else if quota.MaxPending == 0 {
+			return defaultLimit(ctx, quotaType)
+		}
+	case MaxCount:
+		if quota.MaxFiles > 0 {
+			return quota.MaxFiles, nil
+		} else if quota.MaxFiles == 0 {
+			return defaultLimit(ctx, quotaType)
+		}
+	default:
+		return 0, errors.New("missing db switch for quota type - contact developer")
+	}
+
 	for _, q := range ctx.Config.Uploads.Quota.UserQuotas {
 		if glob.Glob(q.Glob, userId) {
 			if quotaType == MaxBytes {
