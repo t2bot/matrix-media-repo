@@ -45,6 +45,7 @@ func buildRoutes() http.Handler {
 	register([]string{"POST"}, PrefixClient, "logout", mxSpecV3TransitionCS, router, makeRoute(_routers.RequireAccessToken(r0.Logout), "logout", counter))
 	register([]string{"POST"}, PrefixClient, "logout/all", mxSpecV3TransitionCS, router, makeRoute(_routers.RequireAccessToken(r0.LogoutAll), "logout_all", counter))
 	register([]string{"POST"}, PrefixMedia, "create", mxV1, router, makeRoute(_routers.RequireAccessToken(v1.CreateMedia), "create", counter))
+	register([]string{"GET"}, PrefixClient, "versions", mxNoVersion, router, makeRoute(_routers.OptionalAccessToken(r0.ClientVersions), "client_versions", counter))
 
 	// MSC3916 - Authentication & endpoint API separation
 	register([]string{"GET"}, PrefixClient, "media/preview_url", msc3916, router, previewUrlRoute)
@@ -148,12 +149,16 @@ var (
 	mxR0                 matrixVersions = []string{"r0"}
 	mxV1                 matrixVersions = []string{"v1"}
 	mxV3                 matrixVersions = []string{"v3"}
+	mxNoVersion          matrixVersions = []string{""}
 )
 
 func register(methods []string, prefix string, postfix string, versions matrixVersions, router *httprouter.Router, handler http.Handler) {
 	for _, method := range methods {
 		for _, version := range versions {
 			path := fmt.Sprintf("%s/%s/%s", prefix, version, postfix)
+			if version == "" {
+				path = fmt.Sprintf("%s/%s", prefix, postfix)
+			}
 			router.Handler(method, path, http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 				defer func() {
 					// hopefully the body was already closed, but maybe it wasn't
