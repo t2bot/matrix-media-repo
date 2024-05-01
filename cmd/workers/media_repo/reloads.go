@@ -10,6 +10,7 @@ import (
 	"github.com/t2bot/matrix-media-repo/database"
 	"github.com/t2bot/matrix-media-repo/errcache"
 	"github.com/t2bot/matrix-media-repo/limits"
+	"github.com/t2bot/matrix-media-repo/matrix"
 	"github.com/t2bot/matrix-media-repo/metrics"
 	"github.com/t2bot/matrix-media-repo/pgo_internal"
 	"github.com/t2bot/matrix-media-repo/plugins"
@@ -29,6 +30,7 @@ func setupReloads() {
 	reloadPluginsOnChan(globals.PluginReloadChan)
 	reloadPoolOnChan(globals.PoolReloadChan)
 	reloadErrorCachesOnChan(globals.ErrorCacheReloadChan)
+	reloadMatrixCachesOnChan(globals.MatrixCachesReloadChan)
 	reloadPGOOnChan(globals.PGOReloadChan)
 	reloadBucketsOnChan(globals.BucketsReloadChan)
 }
@@ -55,6 +57,8 @@ func stopReloads() {
 	globals.PoolReloadChan <- false
 	logrus.Debug("Stopping ErrorCacheReloadChan")
 	globals.ErrorCacheReloadChan <- false
+	logrus.Debug("Stopping MatrixCachesReloadChan")
+	globals.MatrixCachesReloadChan <- false
 	logrus.Debug("Stopping PGOReloadChan")
 	globals.PGOReloadChan <- false
 	logrus.Debug("Stopping BucketsReloadChan")
@@ -200,6 +204,20 @@ func reloadErrorCachesOnChan(reloadChan chan bool) {
 			shouldReload := <-reloadChan
 			if shouldReload {
 				errcache.AdjustSize()
+			} else {
+				return // received stop
+			}
+		}
+	}()
+}
+
+func reloadMatrixCachesOnChan(reloadChan chan bool) {
+	go func() {
+		defer close(reloadChan)
+		for {
+			shouldReload := <-reloadChan
+			if shouldReload {
+				matrix.FlushSigningKeyCache()
 			} else {
 				return // received stop
 			}

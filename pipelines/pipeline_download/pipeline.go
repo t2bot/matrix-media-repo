@@ -14,6 +14,7 @@ import (
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/database"
 	"github.com/t2bot/matrix-media-repo/limits"
+	"github.com/t2bot/matrix-media-repo/matrix"
 	"github.com/t2bot/matrix-media-repo/pipelines/_steps/download"
 	"github.com/t2bot/matrix-media-repo/pipelines/_steps/meta"
 	"github.com/t2bot/matrix-media-repo/pipelines/_steps/quarantine"
@@ -140,6 +141,14 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 	if errors.Is(err, common.ErrMediaQuarantined) {
 		cancel()
 		return nil, r, err
+	}
+	var notAllowedErr *matrix.ServerNotAllowedError
+	if errors.As(err, &notAllowedErr) {
+		if notAllowedErr.ServerName != ctx.Request.Host {
+			ctx.Log.Debug("'Not allowed' error is for another server - retrying")
+			cancel()
+			return Execute(ctx, origin, mediaId, opts)
+		}
 	}
 	if err != nil {
 		cancel()

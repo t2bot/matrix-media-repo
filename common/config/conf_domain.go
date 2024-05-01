@@ -16,6 +16,7 @@ func NewDefaultDomainConfig() DomainRepoConfig {
 			ClientServerApi: "https://UNDEFINED",
 			BackoffAt:       10,
 			AdminApiKind:    "matrix",
+			SigningKeyPath:  "",
 		},
 		Downloads: DownloadsConfig{
 			MaxSizeBytes:               104857600, // 100mb
