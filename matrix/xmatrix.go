@@ -11,6 +11,7 @@ import (
 )
 
 var ErrNoXMatrixAuth = errors.New("no X-Matrix auth headers")
+var ErrWrongDestination = errors.New("wrong destination")
 
 func ValidateXMatrixAuth(request *http.Request, expectNoContent bool) (string, error) {
 	if !expectNoContent {
@@ -30,14 +31,14 @@ func ValidateXMatrixAuth(request *http.Request, expectNoContent bool) (string, e
 		return "", err
 	}
 
-	err = ValidateXMatrixAuthHeader(request.Method, request.RequestURI, &database.AnonymousJson{}, auths, keys)
+	err = ValidateXMatrixAuthHeader(request.Method, request.RequestURI, &database.AnonymousJson{}, auths, keys, request.Host)
 	if err != nil {
 		return "", err
 	}
 	return auths[0].Origin, nil
 }
 
-func ValidateXMatrixAuthHeader(requestMethod string, requestUri string, content any, headers []util.XMatrixAuth, originKeys ServerSigningKeys) error {
+func ValidateXMatrixAuthHeader(requestMethod string, requestUri string, content any, headers []util.XMatrixAuth, originKeys ServerSigningKeys, destinationHost string) error {
 	if len(headers) == 0 {
 		return ErrNoXMatrixAuth
 	}
@@ -61,8 +62,8 @@ func ValidateXMatrixAuthHeader(requestMethod string, requestUri string, content 
 		if h.Destination != obj["destination"] {
 			return errors.New("auth is for multiple servers")
 		}
-		if h.Destination != "" && !util.IsServerOurs(h.Destination) {
-			return errors.New("unknown destination")
+		if h.Destination != "" && (!util.IsServerOurs(h.Destination) || destinationHost != h.Destination) {
+			return ErrWrongDestination
 		}
 
 		if key, ok := (originKeys)[h.KeyId]; ok {
@@ -77,7 +78,7 @@ func ValidateXMatrixAuthHeader(requestMethod string, requestUri string, content 
 	return nil
 }
 
-func CreateXMatrixHeader(origin string, destination string, requestMethod string, requestUri string, content any, key *ed25519.PrivateKey, keyVersion string) (string, error) {
+func CreateXMatrixHeader(origin string, destination string, requestMethod string, requestUri string, content any, key ed25519.PrivateKey, keyVersion string) (string, error) {
 	obj := map[string]interface{}{
 		"method":      requestMethod,
 		"uri":         requestUri,
@@ -90,7 +91,7 @@ func CreateXMatrixHeader(origin string, destination string, requestMethod string
 		return "", err
 	}
 
-	b := ed25519.Sign(*key, canonical)
+	b := ed25519.Sign(key, canonical)
 	sig := util.EncodeUnpaddedBase64ToString(b)
 
 	return fmt.Sprintf("X-Matrix origin=\"%s\",destination=\"%s\",key=\"ed25519:%s\",sig=\"%s\"", origin, destination, keyVersion, sig), nil
