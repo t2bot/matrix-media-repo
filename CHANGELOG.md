@@ -14,9 +14,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * S3 datastores can now specify a `prefixLength` to improve S3 performance on some providers. See `config.sample.yaml` for details.
 * Add `multipartUploads` flag for running MMR against unsupported S3 providers. See `config.sample.yaml` for details. 
 * A new "leaky bucket" rate limit algorithm has been applied to downloads. See `rateLimit.buckets` in the config for details.
-* Add *unstable* support for [MSC3916: Authentication for media](https://github.com/matrix-org/matrix-spec-proposals/pull/3916).
-  * **Note**: MMR will *not* attempt to use authentication to download media over federation in this version. 
-    * ***Subject to change during development.*** 
+* Add *unstable* support for [MSC3916: Authentication for media](https://github.com/matrix-org/matrix-spec-proposals/pull/3916). 
+  * To enable full support, use `signingKeyPath` in your config. See sample config for details. 
 
 ### Changed
 
