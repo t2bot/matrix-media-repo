@@ -1,6 +1,7 @@
 package _routers
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/t2bot/matrix-media-repo/api/_apimeta"
@@ -17,10 +18,24 @@ func RequireServerAuth(generator GeneratorWithServerFn) GeneratorFn {
 		serverName, err := matrix.ValidateXMatrixAuth(r, true)
 		if err != nil {
 			ctx.Log.Debug("Error with X-Matrix auth: ", err)
+			if errors.Is(err, matrix.ErrNoXMatrixAuth) {
+				return &_responses.ErrorResponse{
+					Code:         common.ErrCodeUnauthorized,
+					Message:      "no auth provided (required)",
+					InternalCode: common.ErrCodeMissingToken,
+				}
+			}
+			if errors.Is(err, matrix.ErrWrongDestination) {
+				return &_responses.ErrorResponse{
+					Code:         common.ErrCodeUnauthorized,
+					Message:      "no auth provided for this destination (required)",
+					InternalCode: common.ErrCodeBadRequest,
+				}
+			}
 			return &_responses.ErrorResponse{
 				Code:         common.ErrCodeForbidden,
-				Message:      "no auth provided (required)",
-				InternalCode: common.ErrCodeMissingToken,
+				Message:      "invalid auth provided (required)",
+				InternalCode: common.ErrCodeBadRequest,
 			}
 		}
 		return generator(r, ctx, _apimeta.ServerInfo{
