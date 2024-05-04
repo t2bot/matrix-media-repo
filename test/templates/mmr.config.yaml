@@ -18,6 +18,7 @@ homeservers:
     csApi: "{{.ClientServerApiUrl}}"
     backoffAt: 10
     adminApiKind: "synapse"
+    signingKeyPath: "{{.SigningKeyPath}}"
   {{end}}
 redis:
   enabled: true
