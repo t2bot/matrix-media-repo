@@ -274,7 +274,7 @@ func UniqueDatastores() []DatastoreConfig {
 func PrintDomainInfo() {
 	logrus.Info("Domains loaded:")
 	for _, d := range domains {
-		logrus.Info(fmt.Sprintf("\t%s (%s)", d.Name, d.ClientServerApi))
+		logrus.Info(fmt.Sprintf("\t%s (%s | Signing Key Path=%s)", d.Name, d.ClientServerApi, d.SigningKeyPath))
 	}
 }
 
