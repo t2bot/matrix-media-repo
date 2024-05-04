@@ -19,6 +19,7 @@ import (
 type mmrHomeserverTmplArgs struct {
 	ServerName         string
 	ClientServerApiUrl string
+	SigningKeyPath     string
 }
 
 type mmrTmplArgs struct {

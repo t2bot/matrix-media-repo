@@ -7,22 +7,26 @@ import (
 	"log"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/t2bot/matrix-media-repo/common/assets"
 	"github.com/t2bot/matrix-media-repo/common/config"
+	"github.com/t2bot/matrix-media-repo/homeserver_interop"
+	"github.com/t2bot/matrix-media-repo/homeserver_interop/mmr"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
 type ContainerDeps struct {
-	ctx              context.Context
-	pgContainer      *postgres.PostgresContainer
-	redisContainer   testcontainers.Container
-	minioDep         *MinioDep
-	depNet           *NetworkDep
-	mmrExtConfigPath string
+	ctx               context.Context
+	pgContainer       *postgres.PostgresContainer
+	redisContainer    testcontainers.Container
+	minioDep          *MinioDep
+	depNet            *NetworkDep
+	mmrExtConfigPath  string
+	mmrSigningKeyPath string
 
 	Homeservers []*SynapseDep
 	Machines    []*mmrContainer
@@ -111,16 +115,40 @@ func MakeTestDeps() (*ContainerDeps, error) {
 		return nil, err
 	}
 
+	// Create a shared signing key for the MMR instances
+	signingKeyFile, err := os.CreateTemp(os.TempDir(), "mmr-signing-key")
+	if err != nil {
+		return nil, err
+	}
+	signingKey, err := homeserver_interop.GenerateSigningKey()
+	if err != nil {
+		return nil, err
+	}
+	b, err := mmr.EncodeSigningKey(signingKey)
+	if err != nil {
+		return nil, err
+	}
+	_, err = signingKeyFile.Write(b)
+	if err != nil {
+		return nil, err
+	}
+	err = signingKeyFile.Close()
+	if err != nil {
+		return nil, err
+	}
+
 	// Start two MMRs for testing
 	tmplArgs := mmrTmplArgs{
 		Homeservers: []mmrHomeserverTmplArgs{
 			{
 				ServerName:         syn1.ServerName,
 				ClientServerApiUrl: syn1.InternalClientServerApiUrl,
+				SigningKeyPath:     strings.ReplaceAll(signingKeyFile.Name(), "\\", "\\\\"),
 			},
 			{
 				ServerName:         syn2.ServerName,
 				ClientServerApiUrl: syn2.InternalClientServerApiUrl,
+				SigningKeyPath:     strings.ReplaceAll(signingKeyFile.Name(), "\\", "\\\\"),
 			},
 		},
 		RedisAddr:          fmt.Sprintf("%s:%d", redisIp, 6379), // we're behind the network for redis
@@ -148,14 +176,15 @@ func MakeTestDeps() (*ContainerDeps, error) {
 	assets.SetupAssets(config.DefaultAssetsPath)
 
 	return &ContainerDeps{
-		ctx:              ctx,
-		pgContainer:      pgContainer,
-		redisContainer:   redisContainer,
-		minioDep:         minioDep,
-		mmrExtConfigPath: tmpPath,
-		Homeservers:      []*SynapseDep{syn1, syn2},
-		Machines:         mmrs,
-		depNet:           depNet,
+		ctx:               ctx,
+		pgContainer:       pgContainer,
+		redisContainer:    redisContainer,
+		minioDep:          minioDep,
+		mmrExtConfigPath:  tmpPath,
+		mmrSigningKeyPath: signingKeyFile.Name(),
+		Homeservers:       []*SynapseDep{syn1, syn2},
+		Machines:          mmrs,
+		depNet:            depNet,
 	}, nil
 }
 
@@ -176,6 +205,9 @@ func (c *ContainerDeps) Teardown() {
 	c.depNet.Teardown()
 	if err := os.Remove(c.mmrExtConfigPath); err != nil && !os.IsNotExist(err) {
 		log.Fatalf("Error cleaning up MMR-External config file '%s': %s", c.mmrExtConfigPath, err.Error())
+	}
+	if err := os.Remove(c.mmrSigningKeyPath); err != nil && !os.IsNotExist(err) {
+		log.Fatalf("Error cleaning up MMR-Signing Key file '%s': %s", c.mmrSigningKeyPath, err.Error())
 	}
 }
 
