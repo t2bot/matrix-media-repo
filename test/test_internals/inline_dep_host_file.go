@@ -17,36 +17,57 @@ type HostedFile struct {
 	nginx             testcontainers.Container
 	tempDirectoryPath string
 
-	PublicUrl string
+	PublicUrl      string
+	PublicHostname string
 }
 
 func ServeFile(fileName string, deps *ContainerDeps, contents string) (*HostedFile, error) {
+	container, writeFn, err := LazyServeFile(fileName, deps)
+	if writeFn != nil {
+		err2 := writeFn(contents)
+		if err2 != nil {
+			return nil, err2
+		}
+	}
+	return container, err
+}
+
+func LazyServeFile(fileName string, deps *ContainerDeps) (*HostedFile, func(string) error, error) {
 	tmp, err := os.MkdirTemp(os.TempDir(), "mmr-nginx")
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	err = os.Chmod(tmp, 0755)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	f, err := os.Create(path.Join(tmp, fileName))
+	err = os.MkdirAll(path.Join(tmp, path.Dir(fileName)), 0755)
 	if err != nil {
-		return nil, err
-	}
-	defer func(f *os.File) {
-		_ = f.Close()
-	}(f)
-
-	_, err = f.Write([]byte(contents))
-	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	err = f.Close()
-	if err != nil {
-		return nil, err
+	writeFn := func(contents string) error {
+		f, err := os.Create(path.Join(tmp, fileName))
+		if err != nil {
+			return err
+		}
+		defer func(f *os.File) {
+			_ = f.Close()
+		}(f)
+
+		_, err = f.Write([]byte(contents))
+		if err != nil {
+			return err
+		}
+
+		err = f.Close()
+		if err != nil {
+			return err
+		}
+
+		return nil
 	}
 
 	nginx, err := testcontainers.GenericContainer(deps.ctx, testcontainers.GenericContainerRequest{
@@ -62,12 +83,12 @@ func ServeFile(fileName string, deps *ContainerDeps, contents string) (*HostedFi
 		Started: true,
 	})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	nginxIp, err := nginx.ContainerIP(deps.ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	//goland:noinspection HttpUrlsUsage
@@ -76,7 +97,8 @@ func ServeFile(fileName string, deps *ContainerDeps, contents string) (*HostedFi
 		nginx:             nginx,
 		tempDirectoryPath: tmp,
 		PublicUrl:         fmt.Sprintf("http://%s:%d/%s", nginxIp, 80, fileName),
-	}, nil
+		PublicHostname:    fmt.Sprintf("%s:%d", nginxIp, 80),
+	}, writeFn, nil
 }
 
 func (f *HostedFile) Teardown() {
