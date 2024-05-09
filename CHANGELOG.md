@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to 
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 * New datastore option to ignore Redis cache when downloading media served by a `publicBaseUrl`. This can help ensure more requests get redirected to the CDN.
 * `HEAD /download` is now supported, as per [MSC4120](https://github.com/matrix-org/matrix-spec-proposals/pull/4120).
+* The `POST /_matrix/media/unstable/admin/purge/<server>/<media id>` endpoint now supports batch purging of media ids.
 
 ### Fixed
 
@@ -109,13 +110,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 * IPFS support has been removed due to maintenance burden.
 * Exports initiated through the admin API no longer support `?include_data=false`. Exports will always contain data.
-* Server-side blurhash calculation has been removed. Clients and bridges already calculate blurhashes locally where applicable. 
+* Server-side blurhash calculation has been removed. Clients and bridges already calculate blurhashes locally where applicable.
 
 ### Changed
 
 * **Mandatory configuration change**: You must add datastore IDs to your datastore configuration, as matrix-media-repo will no longer manage datastores for you.
 * If compiling `matrix-media-repo`, note that new external dependencies are required. See [the docs](https://docs.t2bot.io/matrix-media-repo/v1.3.3/installing/method/compilation.html).
-  * Docker images already contain these dependencies. 
+  * Docker images already contain these dependencies.
 * Datastores no longer use the `enabled` flag set on them. Use `forKinds: []` instead to disable a datastore's usage.
 * Per-user upload quotas now do not allow users to exceed the maximum values, even by 1 byte. Previously, users could exceed the limits by a little bit.
 * Updated to Go 1.19, then Go 1.20 in the same release cycle.
@@ -355,7 +356,7 @@ a large database (more than about 100k uploaded files), run the following steps 
    user is `media`, then run:
    ```sql
    ALTER TABLE user_stats OWNER TO media;
-   ALTER FUNCTION track_update_user_media() OWNER TO media; 
+   ALTER FUNCTION track_update_user_media() OWNER TO media;
    ```
 
 ### Added
