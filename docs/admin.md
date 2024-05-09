@@ -44,13 +44,15 @@ URL: `POST /_matrix/media/unstable/admin/purge/quarantined?access_token=your_acc
 
 This will delete all media that has previously been quarantined, local or remote. If called by a homeserver administrator (who is not a repository administrator), only content quarantined for their domain will be purged.
 
-#### Purge individual record
+#### Purge individual record (batch of records / single record)
 
 URL: `POST /_matrix/media/unstable/admin/purge/<server>/<media id>?access_token=your_access_token`
 
 **Note**: Prior to v1.3, this endpoint did not require the `/media` component, but does now.
 
 This will delete the media record, regardless of it being local or remote. Can be called by homeserver administrators and the uploader to delete it.
+
+For a batch of records, use the same endpoint as above, but specifying one or more `?id=<media id>` query parameters.
 
 #### Purge media uploaded by user
 

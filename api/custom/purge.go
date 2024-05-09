@@ -53,6 +53,7 @@ func PurgeIndividualRecord(r *http.Request, rctx rcontext.RequestContext, user _
 
 	server := _routers.GetParam("server", r)
 	mediaId := _routers.GetParam("mediaId", r)
+	additionalMediaIds := r.URL.Query()["id"]
 
 	if !_routers.ServerNameRegex.MatchString(server) {
 		return _responses.BadRequest("invalid server ID")
@@ -63,12 +64,23 @@ func PurgeIndividualRecord(r *http.Request, rctx rcontext.RequestContext, user _
 		"mediaId": mediaId,
 	})
 
-	_, err := task_runner.PurgeMedia(rctx, authCtx, &task_runner.QuarantineThis{
+	records := make([]*task_runner.QuarantineThis, 0)
+	records = append(records, &task_runner.QuarantineThis{
 		Single: &task_runner.QuarantineRecord{
 			Origin:  server,
 			MediaId: mediaId,
 		},
 	})
+	for _, id := range additionalMediaIds {
+		records = append(records, &task_runner.QuarantineThis{
+			Single: &task_runner.QuarantineRecord{
+				Origin:  server,
+				MediaId: id,
+			},
+		})
+	}
+
+	_, err := task_runner.PurgeMedia(rctx, authCtx, records)
 	if err != nil {
 		if errors.Is(err, common.ErrWrongUser) {
 			return _responses.AuthFailed()
@@ -101,9 +113,9 @@ func PurgeQuarantined(r *http.Request, rctx rcontext.RequestContext, user _apime
 		return _responses.InternalServerError("error fetching media records")
 	}
 
-	mxcs, err := task_runner.PurgeMedia(rctx, authCtx, &task_runner.QuarantineThis{
+	mxcs, err := task_runner.PurgeMedia(rctx, authCtx, []*task_runner.QuarantineThis{{
 		DbMedia: affected,
-	})
+	}})
 	if err != nil {
 		if errors.Is(err, common.ErrWrongUser) {
 			return _responses.AuthFailed()
@@ -154,9 +166,9 @@ func PurgeOldMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.
 		return _responses.InternalServerError("error fetching media records")
 	}
 
-	mxcs, err := task_runner.PurgeMedia(rctx, &task_runner.PurgeAuthContext{}, &task_runner.QuarantineThis{
+	mxcs, err := task_runner.PurgeMedia(rctx, &task_runner.PurgeAuthContext{}, []*task_runner.QuarantineThis{{
 		DbMedia: records,
-	})
+	}})
 	if err != nil {
 		if errors.Is(err, common.ErrWrongUser) {
 			return _responses.AuthFailed()
@@ -211,9 +223,9 @@ func PurgeUserMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 		return _responses.InternalServerError("error fetching media records")
 	}
 
-	mxcs, err := task_runner.PurgeMedia(rctx, authCtx, &task_runner.QuarantineThis{
+	mxcs, err := task_runner.PurgeMedia(rctx, authCtx, []*task_runner.QuarantineThis{{
 		DbMedia: records,
-	})
+	}})
 	if err != nil {
 		if errors.Is(err, common.ErrWrongUser) {
 			return _responses.AuthFailed()
@@ -284,9 +296,9 @@ func PurgeRoomMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 		mxcs = append(mxcs, allMedia.RemoteMxcs...)
 	}
 
-	mxcs2, err := task_runner.PurgeMedia(rctx, authCtx, &task_runner.QuarantineThis{
+	mxcs2, err := task_runner.PurgeMedia(rctx, authCtx, []*task_runner.QuarantineThis{{
 		MxcUris: mxcs,
-	})
+	}})
 	if err != nil {
 		if errors.Is(err, common.ErrWrongUser) {
 			return _responses.AuthFailed()
@@ -338,9 +350,9 @@ func PurgeDomainMedia(r *http.Request, rctx rcontext.RequestContext, user _apime
 		return _responses.InternalServerError("error fetching media records")
 	}
 
-	mxcs, err := task_runner.PurgeMedia(rctx, authCtx, &task_runner.QuarantineThis{
+	mxcs, err := task_runner.PurgeMedia(rctx, authCtx, []*task_runner.QuarantineThis{{
 		DbMedia: records,
-	})
+	}})
 	if err != nil {
 		if errors.Is(err, common.ErrWrongUser) {
 			return _responses.AuthFailed()

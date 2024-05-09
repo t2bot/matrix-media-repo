@@ -30,10 +30,16 @@ func (c *PurgeAuthContext) canAffect(media *database.DbMedia) bool {
 	return true
 }
 
-func PurgeMedia(ctx rcontext.RequestContext, authContext *PurgeAuthContext, toHandle *QuarantineThis) ([]string, error) {
-	records, err := resolveMedia(ctx, "", toHandle)
-	if err != nil {
-		return nil, err
+func PurgeMedia(ctx rcontext.RequestContext, authContext *PurgeAuthContext, toHandles []*QuarantineThis) ([]string, error) {
+	records := make([]*database.DbMedia, 0)
+
+	for _, toHandle := range toHandles {
+		record, err := resolveMedia(ctx, "", toHandle)
+		if err != nil {
+			return nil, err
+		}
+
+		records = append(records, record...)
 	}
 
 	// Check auth on all records before actually processing them
