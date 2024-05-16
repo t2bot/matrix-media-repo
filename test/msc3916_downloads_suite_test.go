@@ -167,16 +167,20 @@ func (s *MSC3916DownloadsSuite) TestFederationDownloads() {
 	assert.Equal(t, http.StatusOK, raw.StatusCode)
 }
 
-//func (s *MSC3916DownloadsSuite) TestFederationMakesAuthedDownloads() {
-//	t := s.T()
-//
-//	// TODO: Tests for:
-//	// * Actually tries MSC3916 for downloads
-//	// 		* Falls back on failure
-//	// 		* Doesn't call unauthenticated endpoint if MSC3916 was successful
-//	//		* Sets correct auth
-//	t.Error("not yet implemented")
-//}
+// TODO: Tests for:
+// * Actually tries MSC3916 for downloads
+// 		* Doesn't call unauthenticated endpoint if MSC3916 was successful & sets correct auth
+// 		* Falls back on failure
+
+func (s *MSC3916DownloadsSuite) TestFederationMakesAuthedDownloads() {
+	t := s.T()
+	t.Error("not yet implemented")
+}
+
+func (s *MSC3916DownloadsSuite) TestFederationMakesAuthedDownloadsAndFallsBack() {
+	t := s.T()
+	t.Error("not yet implemented")
+}
 
 func TestMSC3916DownloadsSuite(t *testing.T) {
 	suite.Run(t, new(MSC3916DownloadsSuite))
