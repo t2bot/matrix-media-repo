@@ -77,11 +77,6 @@ func (s *MSC3916ThumbnailsSuite) TestClientThumbnails() {
 	//test_internals.AssertIsTestImage(t, raw.Body) // we can't verify that the resulting image is correct
 }
 
-func (s *MSC3916ThumbnailsSuite) TestFederationThumbnails() {
-	t := s.T()
-	t.Error("Not yet implemented")
-}
-
 func TestMSC3916ThumbnailsSuite(t *testing.T) {
 	suite.Run(t, new(MSC3916ThumbnailsSuite))
 }
