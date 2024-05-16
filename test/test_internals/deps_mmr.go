@@ -100,7 +100,8 @@ func makeMmrInstances(ctx context.Context, count int, depNet *NetworkDep, tmplAr
 					testcontainers.BindMount(intTmpName, "/data/media-repo.yaml"),
 				},
 				Env: map[string]string{
-					"MACHINE_ID": strconv.Itoa(i),
+					"MACHINE_ID":                      strconv.Itoa(i),
+					"MEDIA_REPO_HTTP_ONLY_FEDERATION": "true",
 				},
 				Networks:   []string{depNet.NetId},
 				WaitingFor: wait.ForHTTP("/healthz").WithPort(p),
