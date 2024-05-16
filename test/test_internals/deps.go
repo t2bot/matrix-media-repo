@@ -189,8 +189,8 @@ func MakeTestDeps() (*ContainerDeps, error) {
 }
 
 func (c *ContainerDeps) Teardown() {
-	for _, mmr := range c.Machines {
-		mmr.Teardown()
+	for _, machine := range c.Machines {
+		machine.Teardown()
 	}
 	for _, hs := range c.Homeservers {
 		hs.Teardown()
@@ -202,13 +202,15 @@ func (c *ContainerDeps) Teardown() {
 		log.Fatalf("Error shutting down mmr-postgres container: %s", err.Error())
 	}
 	c.minioDep.Teardown()
-	c.depNet.Teardown()
 	if err := os.Remove(c.mmrExtConfigPath); err != nil && !os.IsNotExist(err) {
 		log.Fatalf("Error cleaning up MMR-External config file '%s': %s", c.mmrExtConfigPath, err.Error())
 	}
 	if err := os.Remove(c.mmrSigningKeyPath); err != nil && !os.IsNotExist(err) {
 		log.Fatalf("Error cleaning up MMR-Signing Key file '%s': %s", c.mmrSigningKeyPath, err.Error())
 	}
+
+	// XXX: We should be shutting this down, but it appears testcontainers leaves something attached :(
+	//c.depNet.Teardown()
 }
 
 func (c *ContainerDeps) Debug() {
