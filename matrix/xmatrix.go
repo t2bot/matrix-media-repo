@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/t2bot/matrix-media-repo/database"
 	"github.com/t2bot/matrix-media-repo/util"
@@ -31,7 +32,12 @@ func ValidateXMatrixAuth(request *http.Request, expectNoContent bool) (string, e
 		return "", err
 	}
 
-	err = ValidateXMatrixAuthHeader(request.Method, request.RequestURI, &database.AnonymousJson{}, auths, keys, request.Host)
+	uri := request.RequestURI
+	if strings.HasSuffix(uri, "?") {
+		uri = uri[:len(uri)-1]
+	}
+
+	err = ValidateXMatrixAuthHeader(request.Method, uri, &database.AnonymousJson{}, auths, keys, request.Host)
 	if err != nil {
 		return "", err
 	}
@@ -55,7 +61,7 @@ func ValidateXMatrixAuthHeader(requestMethod string, requestUri string, content 
 		return err
 	}
 
-	for _, h := range headers {
+	for i, h := range headers {
 		if h.Origin != obj["origin"] {
 			return errors.New("auth is from multiple servers")
 		}
@@ -68,7 +74,7 @@ func ValidateXMatrixAuthHeader(requestMethod string, requestUri string, content 
 
 		if key, ok := (originKeys)[h.KeyId]; ok {
 			if !ed25519.Verify(key, canonical, h.Signature) {
-				return fmt.Errorf("failed signatures on '%s'", h.KeyId)
+				return fmt.Errorf("failed signatures on '%s', header %d", h.KeyId, i)
 			}
 		} else {
 			return fmt.Errorf("unknown key '%s'", h.KeyId)
