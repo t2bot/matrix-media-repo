@@ -159,7 +159,6 @@ func (s *MSC3916DownloadsSuite) TestFederationDownloads() {
 	assert.Equal(t, http.StatusUnauthorized, raw.StatusCode)
 
 	// Now add the X-Matrix auth and try again
-	// TODO: We probably need to tell MMR to use an insecure environment to pass the federation test.
 	header, err := matrix.CreateXMatrixHeader(s.keyServer.PublicHostname, remoteClient.ServerName, "GET", uri, &database.AnonymousJson{}, s.keyServerKey.PrivateKey, s.keyServerKey.KeyVersion)
 	assert.NoError(t, err)
 	remoteClient.AuthHeaderOverride = header
