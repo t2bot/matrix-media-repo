@@ -10,6 +10,14 @@ func FixContentType(ct string) string {
 }
 
 func ExtensionForContentType(ct string) string {
+	// custom overrides
+	if ct == "image/png" {
+		return ".png"
+	} else if ct == "image/jpeg" {
+		return ".jpg"
+	}
+
+	// Otherwise look it up
 	exts, _ := mime.ExtensionsByType(ct)
 	if len(exts) > 0 {
 		return exts[0]
