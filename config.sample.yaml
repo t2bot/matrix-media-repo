@@ -212,6 +212,10 @@ datastores:
       # when `publicBaseUrl` is unset. Defaults to false (cached media will be served by MMR
       # before redirection if present).
       #redirectWhenCached: true
+      # The size of the prefix (path component) to use when storing media in S3. This can
+      # help improve download speeds in some S3 providers. Should not be set to higher than
+      # 16 to avoid future incompatibilities with MMR. Defaults to zero (no prefix).
+      #prefixLength: 3
 
 # Options for controlling archives. Archives are exports of a particular user's content for
 # the purpose of GDPR or moving media to a different server.

@@ -38,6 +38,10 @@ func Upload(ctx rcontext.RequestContext, ds config.DatastoreConfig, data io.Read
 			return "", err
 		}
 
+		if s3c.prefixLength > 0 {
+			objectName = objectName[:s3c.prefixLength] + "/" + objectName[s3c.prefixLength:]
+		}
+
 		metrics.S3Operations.With(prometheus.Labels{"operation": "PutObject"}).Inc()
 		var info minio.UploadInfo
 		info, err = s3c.client.PutObject(ctx.Context, s3c.bucket, objectName, tee, size, minio.PutObjectOptions{StorageClass: s3c.storageClass, ContentType: contentType})
