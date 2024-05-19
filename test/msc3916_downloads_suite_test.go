@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -174,7 +176,27 @@ func (s *MSC3916DownloadsSuite) TestFederationDownloads() {
 
 func (s *MSC3916DownloadsSuite) TestFederationMakesAuthedDownloads() {
 	t := s.T()
-	t.Error("not yet implemented")
+
+	client1 := s.deps.Homeservers[0].UnprivilegedUsers[0].WithCsUrl(s.deps.Machines[0].HttpUrl)
+
+	origin := ""
+	mediaId := "abc123"
+	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, fmt.Sprintf("/_matrix/federation/unstable/org.matrix.msc3916/media/download/%s/%s", origin, mediaId), r.URL.Path)
+		origin, err := matrix.ValidateXMatrixAuth(r, true)
+		assert.NoError(t, err)
+		assert.Equal(t, client1.ServerName, origin)
+		w.Header().Set("Content-Type", "multipart/mixed; boundary=gc0p4Jq0M2Yt08jU534c0p")
+		_, _ = w.Write([]byte("--gc0p4Jq0M2Yt08jU534c0p\nContent-Type: application/json\n\n{}\n\n--gc0p4Jq0M2Yt08jU534c0p\nContent-Type: text/plain\n\nThis media is plain text. Maybe somebody used it as a paste bin.\n\n--gc0p4Jq0M2Yt08jU534c0p"))
+	}))
+	defer testServer.Close()
+
+	u, _ := url.Parse(testServer.URL)
+	origin = fmt.Sprintf("host.docker.internal:%s", u.Port())
+
+	raw, err := client1.DoRaw("GET", fmt.Sprintf("/_matrix/client/unstable/org.matrix.msc3916/media/download/%s/%s", origin, mediaId), nil, "", nil)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, raw.StatusCode)
 }
 
 func (s *MSC3916DownloadsSuite) TestFederationMakesAuthedDownloadsAndFallsBack() {
