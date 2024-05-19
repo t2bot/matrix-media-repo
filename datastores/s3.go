@@ -23,6 +23,7 @@ type s3 struct {
 	publicBaseUrl      string
 	redirectWhenCached bool
 	prefixLength       int
+	multipartUploads   bool
 }
 
 func ResetS3Clients() {
@@ -44,6 +45,7 @@ func getS3(ds config.DatastoreConfig) (*s3, error) {
 	publicBaseUrl := ds.Options["publicBaseUrl"]
 	redirectWhenCachedStr, hasRedirectWhenCached := ds.Options["redirectWhenCached"]
 	prefixLengthStr, hasPrefixLength := ds.Options["prefixLength"]
+	useMultipartStr, hasMultipart := ds.Options["multipartUploads"]
 
 	if !hasStorageClass {
 		storageClass = "STANDARD"
@@ -52,6 +54,11 @@ func getS3(ds config.DatastoreConfig) (*s3, error) {
 	useSsl := true
 	if hasSsl && useSslStr != "" {
 		useSsl, _ = strconv.ParseBool(useSslStr)
+	}
+
+	useMultipart := true
+	if hasMultipart && useMultipartStr != "" {
+		useMultipart, _ = strconv.ParseBool(useMultipartStr)
 	}
 
 	redirectWhenCached := false
@@ -88,6 +95,7 @@ func getS3(ds config.DatastoreConfig) (*s3, error) {
 		publicBaseUrl:      publicBaseUrl,
 		redirectWhenCached: redirectWhenCached,
 		prefixLength:       prefixLength,
+		multipartUploads:   useMultipart,
 	}
 	s3clients.Store(ds.Id, s3c)
 	return s3c, nil
