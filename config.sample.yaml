@@ -216,6 +216,12 @@ datastores:
       # help improve download speeds in some S3 providers. Should not be set to higher than
       # 16 to avoid future incompatibilities with MMR. Defaults to zero (no prefix).
       #prefixLength: 3
+      # Set to false to disable multipart uploads. This may be required for some *unsupported*
+      # S3 providers. Note that performance may be significantly degraded with this option set
+      # to false - installations with multipart uploads disabled will not receive support,
+      # particularly for performance concerns. If you are using AWS, DigitalOcean Spaces, or
+      # MinIO, you do not need to set or change this option - your environment is supported.
+      #multipartUploads: true
 
 # Options for controlling archives. Archives are exports of a particular user's content for
 # the purpose of GDPR or moving media to a different server.

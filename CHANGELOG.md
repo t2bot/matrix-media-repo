@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * New datastore option to ignore Redis cache when downloading media served by a `publicBaseUrl`. This can help ensure more requests get redirected to the CDN.
 * `HEAD /download` is now supported, as per [MSC4120](https://github.com/matrix-org/matrix-spec-proposals/pull/4120).
 * S3 datastores can now specify a `prefixLength` to improve S3 performance on some providers. See `config.sample.yaml` for details.
+* Add `multipartUploads` flag for running MMR against unsupported S3 providers. See `config.sample.yaml` for details. 
 
 ### Fixed
 
