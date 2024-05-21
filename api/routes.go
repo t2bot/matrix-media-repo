@@ -55,6 +55,7 @@ func buildRoutes() http.Handler {
 	register([]string{"GET"}, PrefixClient, "media/download/:server/:mediaId", msc3916, router, authedDownloadRoute)
 	register([]string{"GET"}, PrefixClient, "media/thumbnail/:server/:mediaId", msc3916, router, makeRoute(_routers.RequireAccessToken(r0.ThumbnailMedia), "thumbnail", counter))
 	register([]string{"GET"}, PrefixFederation, "media/download/:server/:mediaId", msc3916, router, makeRoute(_routers.RequireServerAuth(unstable.FederationDownloadMedia), "download", counter))
+	register([]string{"GET"}, PrefixFederation, "media/download/:mediaId", msc3916, router, makeRoute(_routers.RequireServerAuth(unstable.FederationDownloadMedia), "download", counter))
 	register([]string{"GET"}, PrefixFederation, "media/thumbnail/:server/:mediaId", msc3916, router, makeRoute(_routers.RequireServerAuth(unstable.FederationThumbnailMedia), "thumbnail", counter))
 
 	// Custom features
@@ -143,7 +144,7 @@ var (
 	//mxAllSpec            matrixVersions = []string{"r0", "v1", "v3", "unstable", "unstable/io.t2bot.media" /* and MSC routes */}
 	mxUnstable           matrixVersions = []string{"unstable", "unstable/io.t2bot.media"}
 	msc4034              matrixVersions = []string{"unstable/org.matrix.msc4034"}
-	msc3916              matrixVersions = []string{"unstable/org.matrix.msc3916"}
+	msc3916              matrixVersions = []string{"unstable/org.matrix.msc3916", "unstable/org.matrix.msc3916.v2"}
 	mxSpecV3Transition   matrixVersions = []string{"r0", "v1", "v3"}
 	mxSpecV3TransitionCS matrixVersions = []string{"r0", "v3"}
 	mxR0                 matrixVersions = []string{"r0"}
