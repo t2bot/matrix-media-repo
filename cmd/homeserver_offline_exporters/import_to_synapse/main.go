@@ -119,6 +119,12 @@ func main() {
 
 				thumb, err := thumbnailing.GenerateThumbnail(src, record.ContentType, s.width, s.height, s.method, false, ctx)
 				if err != nil {
+					if thumb.Reader != nil {
+						err2 := thumb.Reader.Close()
+						if err2 != nil {
+							ctx.Log.Warn("Non-fatal error cleaning up thumbnail stream: ", err2)
+						}
+					}
 					ctx.Log.Debug("Error generating thumbnail (you can probably ignore this). ", s, err)
 					return
 				}

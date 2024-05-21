@@ -46,6 +46,12 @@ func Generate(ctx rcontext.RequestContext, mediaRecord *database.DbMedia, width 
 
 		i, err := thumbnailing.GenerateThumbnail(mediaStream, fixedContentType, width, height, method, animated, ctx)
 		if err != nil {
+			if i.Reader != nil {
+				err2 := i.Reader.Close()
+				if err2 != nil {
+					ctx.Log.Warn("Non-fatal error cleaning up thumbnail stream: ", err2)
+				}
+			}
 			if errors.Is(err, common.ErrMediaDimensionsTooSmall) {
 				metric.Inc()
 			}
