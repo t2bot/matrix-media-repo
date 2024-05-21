@@ -21,7 +21,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Long-running purge requests no longer fail when the requesting client times out. They are continued in the background.
 * Purging old media has been fixed to actually identify old media.
 * JPEG thumbnails will now use sensible extensions.
+* Fixed directory permissions when exporting MMR to Synapse.
 * In some rare cases, memory usage may have leaked due to thumbnail error handling. This has been fixed.
+
 
 ## [1.3.4] - February 9, 2024
 
