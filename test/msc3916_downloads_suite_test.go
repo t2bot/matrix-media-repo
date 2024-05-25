@@ -9,10 +9,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"github.com/t2bot/matrix-media-repo/common/config"
 	"github.com/t2bot/matrix-media-repo/database"
 	"github.com/t2bot/matrix-media-repo/homeserver_interop"
 	"github.com/t2bot/matrix-media-repo/homeserver_interop/mmr"
@@ -29,6 +31,11 @@ type MSC3916DownloadsSuite struct {
 }
 
 func (s *MSC3916DownloadsSuite) SetupSuite() {
+	err := os.Setenv("MEDIA_REPO_HTTP_ONLY_FEDERATION", "true")
+	if err != nil {
+		s.T().Fatal(err)
+	}
+
 	deps, err := test_internals.MakeTestDeps()
 	if err != nil {
 		log.Fatal(err)
@@ -81,6 +88,10 @@ PJt0OaIImDJk8P/PDb4TNQHgI/1AA1C+AaQaABxAcgc=
 }
 
 func (s *MSC3916DownloadsSuite) TearDownSuite() {
+	err := os.Unsetenv("MEDIA_REPO_HTTP_ONLY_FEDERATION")
+	if err != nil {
+		s.T().Fatal(err)
+	}
 	if s.deps != nil {
 		if s.T().Failed() {
 			s.deps.Debug()
@@ -181,6 +192,8 @@ func (s *MSC3916DownloadsSuite) TestFederationMakesAuthedDownloads() {
 
 	origin := ""
 	mediaId := "abc123"
+	err := matrix.TestsOnlyInjectSigningKey(s.deps.Homeservers[0].ServerName, s.deps.Homeservers[0].ExternalClientServerApiUrl)
+	assert.NoError(t, err)
 	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, fmt.Sprintf("/_matrix/federation/unstable/org.matrix.msc3916/media/download/%s/%s", origin, mediaId), r.URL.Path)
 		origin, err := matrix.ValidateXMatrixAuth(r, true)
@@ -193,6 +206,7 @@ func (s *MSC3916DownloadsSuite) TestFederationMakesAuthedDownloads() {
 
 	u, _ := url.Parse(testServer.URL)
 	origin = fmt.Sprintf("host.docker.internal:%s", u.Port())
+	config.AddDomainForTesting("host.docker.internal", nil) // no port for config lookup
 
 	raw, err := client1.DoRaw("GET", fmt.Sprintf("/_matrix/client/unstable/org.matrix.msc3916/media/download/%s/%s", origin, mediaId), nil, "", nil)
 	assert.NoError(t, err)

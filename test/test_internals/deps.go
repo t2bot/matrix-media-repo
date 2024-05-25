@@ -14,6 +14,7 @@ import (
 	"github.com/t2bot/matrix-media-repo/common/config"
 	"github.com/t2bot/matrix-media-repo/homeserver_interop"
 	"github.com/t2bot/matrix-media-repo/homeserver_interop/mmr"
+	"github.com/t2bot/matrix-media-repo/homeserver_interop/synapse"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -41,12 +42,52 @@ func MakeTestDeps() (*ContainerDeps, error) {
 		return nil, err
 	}
 
-	// Start two synapses for testing
-	syn1, err := MakeSynapse("first.example.org", depNet)
+	// Create a shared signing key for the MMR instances
+	signingKeyFile, err := os.CreateTemp(os.TempDir(), "mmr-signing-key")
 	if err != nil {
 		return nil, err
 	}
-	syn2, err := MakeSynapse("second.example.org", depNet)
+	signingKey, err := homeserver_interop.GenerateSigningKey()
+	if err != nil {
+		return nil, err
+	}
+	b, err := mmr.EncodeSigningKey(signingKey)
+	if err != nil {
+		return nil, err
+	}
+	_, err = signingKeyFile.Write(b)
+	if err != nil {
+		return nil, err
+	}
+	err = signingKeyFile.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	// And use that same signing key for Synapse
+	synapseSigningKeyFile, err := os.CreateTemp(os.TempDir(), "mmr-synapse-signing-key")
+	if err != nil {
+		return nil, err
+	}
+	b, err = synapse.EncodeSigningKey(signingKey)
+	if err != nil {
+		return nil, err
+	}
+	_, err = synapseSigningKeyFile.Write(b)
+	if err != nil {
+		return nil, err
+	}
+	err = synapseSigningKeyFile.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	// Start two synapses for testing
+	syn1, err := MakeSynapse("first.example.org", depNet, synapseSigningKeyFile.Name())
+	if err != nil {
+		return nil, err
+	}
+	syn2, err := MakeSynapse("second.example.org", depNet, synapseSigningKeyFile.Name())
 	if err != nil {
 		return nil, err
 	}
@@ -115,31 +156,9 @@ func MakeTestDeps() (*ContainerDeps, error) {
 		return nil, err
 	}
 
-	// Create a shared signing key for the MMR instances
-	signingKeyFile, err := os.CreateTemp(os.TempDir(), "mmr-signing-key")
-	if err != nil {
-		return nil, err
-	}
-	signingKey, err := homeserver_interop.GenerateSigningKey()
-	if err != nil {
-		return nil, err
-	}
-	b, err := mmr.EncodeSigningKey(signingKey)
-	if err != nil {
-		return nil, err
-	}
-	_, err = signingKeyFile.Write(b)
-	if err != nil {
-		return nil, err
-	}
-	err = signingKeyFile.Close()
-	if err != nil {
-		return nil, err
-	}
-
 	// Start two MMRs for testing
 	tmplArgs := mmrTmplArgs{
-		Homeservers: []mmrHomeserverTmplArgs{
+		Homeservers: []*mmrHomeserverTmplArgs{
 			{
 				ServerName:         syn1.ServerName,
 				ClientServerApiUrl: syn1.InternalClientServerApiUrl,

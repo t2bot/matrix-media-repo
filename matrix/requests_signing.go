@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"sync"
 	"time"
 
@@ -34,9 +35,44 @@ var signingKeySf = new(typedsf.Group[ServerSigningKeys])
 var signingKeyCache = cache.New(cache.NoExpiration, 30*time.Second)
 var signingKeyRWLock = new(sync.RWMutex)
 
+// TestsOnlyInjectSigningKey
+// Deprecated: For tests only.
+func TestsOnlyInjectSigningKey(serverName string, httpFederationUrl string) error {
+	resp, err := http.Get(httpFederationUrl + "/_matrix/key/v2/server")
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	decoder := json.NewDecoder(resp.Body)
+	raw := database.AnonymousJson{}
+	if err = decoder.Decode(&raw); err != nil {
+		return err
+	}
+	keyInfo := new(ServerKeyResult)
+	if err = raw.ApplyTo(keyInfo); err != nil {
+		return err
+	}
+
+	// Convert keys to something useful, and check signatures
+	serverKeys, err := CheckSigningKeySignatures(serverName, keyInfo, raw)
+	if err != nil {
+		return err
+	}
+
+	// Cache & return (unlock is deferred)
+	signingKeyRWLock.Lock()
+	defer signingKeyRWLock.Unlock()
+	cacheUntil := time.Until(time.UnixMilli(keyInfo.ValidUntilTs)) / 2
+	signingKeyCache.Set(serverName, &serverKeys, cacheUntil)
+
+	return nil
+}
+
 func querySigningKeyCache(serverName string) ServerSigningKeys {
 	if val, ok := signingKeyCache.Get(serverName); ok {
-		return val.(ServerSigningKeys)
+		ptr := val.(*ServerSigningKeys)
+		return *ptr
 	}
 	return nil
 }

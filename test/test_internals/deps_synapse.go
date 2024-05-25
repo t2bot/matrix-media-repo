@@ -42,7 +42,7 @@ type SynapseDep struct {
 	UnprivilegedUsers []*MatrixClient // uses ExternalClientServerApiUrl
 }
 
-func MakeSynapse(domainName string, depNet *NetworkDep) (*SynapseDep, error) {
+func MakeSynapse(domainName string, depNet *NetworkDep, signingKeyFilePath string) (*SynapseDep, error) {
 	ctx := context.Background()
 
 	// Start postgresql database
@@ -117,6 +117,7 @@ func MakeSynapse(domainName string, depNet *NetworkDep) (*SynapseDep, error) {
 			ExposedPorts: []string{"8008/tcp"},
 			Mounts: []testcontainers.ContainerMount{
 				testcontainers.BindMount(f.Name(), "/data/homeserver.yaml"),
+				testcontainers.BindMount(signingKeyFilePath, "/data/signing.key"),
 				testcontainers.BindMount(path.Join(cwd, ".", "test", "templates", "synapse.log.config"), "/data/log.config"),
 				testcontainers.BindMount(d, "/app"),
 			},
