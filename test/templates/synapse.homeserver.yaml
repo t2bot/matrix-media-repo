@@ -25,7 +25,7 @@ registration_shared_secret: "l,jbms,sR_Z82JNP2,sv-~^5bXqFTV-T=j,,~=OKZ8I_Tardk;"
 report_stats: false
 macaroon_secret_key: "KV*8qANyBE28e*pZ-9RP+u86~i8+.j9IZEKU8Vb4+jdIoe~ncw"
 form_secret: "mQrUxtt6^F3uQ3nVrGdg7yAK64p*#Uf@2n=e9y8ggLbhy3-QIy"
-signing_key_path: "/app/signing.key"
+signing_key_path: "/data/signing.key"
 enable_media_repo: false
 enable_registration: true
 enable_registration_without_verification: true
