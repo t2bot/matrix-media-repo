@@ -153,6 +153,7 @@ func reloadConfig() (*MainRepoConfig, map[string]*DomainRepoConfig, error) {
 		dc.ClientServerApi = d.ClientServerApi
 		dc.BackoffAt = d.BackoffAt
 		dc.AdminApiKind = d.AdminApiKind
+		dc.SigningKeyPath = d.SigningKeyPath
 
 		m, err := objToMapYaml(dc)
 		if err != nil {
