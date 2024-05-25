@@ -23,7 +23,7 @@ type mmrHomeserverTmplArgs struct {
 }
 
 type mmrTmplArgs struct {
-	Homeservers        []mmrHomeserverTmplArgs
+	Homeservers        []*mmrHomeserverTmplArgs
 	RedisAddr          string
 	PgConnectionString string
 	S3Endpoint         string
