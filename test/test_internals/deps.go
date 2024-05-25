@@ -81,6 +81,10 @@ func MakeTestDeps() (*ContainerDeps, error) {
 	if err != nil {
 		return nil, err
 	}
+	err = os.Chmod(synapseSigningKeyFile.Name(), 0777) // XXX: Not great, but works.
+	if err != nil {
+		return nil, err
+	}
 
 	// Start two synapses for testing
 	syn1, err := MakeSynapse("first.example.org", depNet, synapseSigningKeyFile.Name())
