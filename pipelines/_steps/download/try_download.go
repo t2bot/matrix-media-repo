@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/t2bot/matrix-media-repo/common"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
@@ -179,6 +180,26 @@ func TryDownload(ctx rcontext.RequestContext, origin string, mediaId string) (*d
 			}
 			mediaPart = util.MatrixMediaPartFromMimeMultipart(bodyPart)
 			contentType = mediaPart.Header.Get("Content-Type") // Content-Type should really be the media content type
+
+			locationHeader := mediaPart.Header.Get("Location")
+			if locationHeader != "" {
+				// the media part body won't have anything for us - go `GET` the URL.
+				ctx.Log.Debugf("Redirecting to %s", locationHeader)
+
+				err = mediaPart.Body.Close()
+				if err != nil {
+					sentry.CaptureException(errors.Join(errors.New("non-fatal error closing redirected MSC3916 body"), err))
+					ctx.Log.Debug("Non-fatal error closing redirected MSC3916 body: ", err)
+				}
+
+				resp, err = http.DefaultClient.Get(locationHeader)
+				if err != nil {
+					errFn(err)
+					return
+				}
+				mediaPart = util.MatrixMediaPartFromResponse(resp)
+				contentType = mediaPart.Header.Get("Content-Type")
+			}
 		}
 
 		// Default the Content-Type if we haven't already
