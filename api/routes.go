@@ -53,7 +53,7 @@ func buildRoutes() http.Handler {
 	authedDownloadRoute := makeRoute(_routers.RequireAccessToken(unstable.ClientDownloadMedia), "download", counter)
 	register([]string{"GET"}, PrefixClient, "media/download/:server/:mediaId/:filename", msc3916, router, authedDownloadRoute)
 	register([]string{"GET"}, PrefixClient, "media/download/:server/:mediaId", msc3916, router, authedDownloadRoute)
-	register([]string{"GET"}, PrefixClient, "media/thumbnail/:server/:mediaId", msc3916, router, makeRoute(_routers.RequireAccessToken(r0.ThumbnailMedia), "thumbnail", counter))
+	register([]string{"GET"}, PrefixClient, "media/thumbnail/:server/:mediaId", msc3916, router, makeRoute(_routers.RequireAccessToken(unstable.ClientThumbnailMedia), "thumbnail", counter))
 	register([]string{"GET"}, PrefixFederation, "media/download/:server/:mediaId", msc3916, router, makeRoute(_routers.RequireServerAuth(unstable.FederationDownloadMedia), "download", counter))
 	register([]string{"GET"}, PrefixFederation, "media/download/:mediaId", msc3916v2, router, makeRoute(_routers.RequireServerAuth(unstable.FederationDownloadMedia), "download", counter))
 	register([]string{"GET"}, PrefixFederation, "media/thumbnail/:server/:mediaId", msc3916, router, makeRoute(_routers.RequireServerAuth(unstable.FederationThumbnailMedia), "thumbnail", counter))

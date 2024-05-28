@@ -11,8 +11,15 @@ import (
 	"github.com/t2bot/matrix-media-repo/util/readers"
 )
 
+func ClientThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+	r.URL.Query().Set("allow_remote", "true")
+	r.URL.Query().Set("allow_redirect", "true")
+	return r0.ThumbnailMedia(r, rctx, user)
+}
+
 func FederationThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, server _apimeta.ServerInfo) interface{} {
 	r.URL.Query().Set("allow_remote", "false")
+	r.URL.Query().Set("allow_redirect", "false") // not supported at the top level
 
 	res := r0.ThumbnailMedia(r, rctx, _apimeta.UserInfo{})
 	if dl, ok := res.(*_responses.DownloadResponse); ok {

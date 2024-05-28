@@ -14,11 +14,13 @@ import (
 
 func ClientDownloadMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
 	r.URL.Query().Set("allow_remote", "true")
+	r.URL.Query().Set("allow_redirect", "true")
 	return r0.DownloadMedia(r, rctx, user)
 }
 
 func FederationDownloadMedia(r *http.Request, rctx rcontext.RequestContext, server _apimeta.ServerInfo) interface{} {
 	r.URL.Query().Set("allow_remote", "false")
+	r.URL.Query().Set("allow_redirect", "false") // not supported at the top level
 	r = _routers.ForceSetParam("server", r.Host, r)
 
 	res := r0.DownloadMedia(r, rctx, _apimeta.UserInfo{})
