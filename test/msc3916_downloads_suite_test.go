@@ -5,6 +5,7 @@ import (
 	"crypto/ed25519"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -180,11 +181,6 @@ func (s *MSC3916DownloadsSuite) TestFederationDownloads() {
 	assert.Equal(t, http.StatusOK, raw.StatusCode)
 }
 
-// TODO: Tests for:
-// * Actually tries MSC3916 for downloads
-// 		* Doesn't call unauthenticated endpoint if MSC3916 was successful & sets correct auth
-// 		* Falls back on failure
-
 func (s *MSC3916DownloadsSuite) TestFederationMakesAuthedDownloads() {
 	t := s.T()
 
@@ -213,9 +209,92 @@ func (s *MSC3916DownloadsSuite) TestFederationMakesAuthedDownloads() {
 	assert.Equal(t, http.StatusOK, raw.StatusCode)
 }
 
+func (s *MSC3916DownloadsSuite) TestFederationFollowsRedirects() {
+	t := s.T()
+
+	client1 := s.deps.Homeservers[0].UnprivilegedUsers[0].WithCsUrl(s.deps.Machines[0].HttpUrl)
+
+	origin := ""
+	mediaId := "abc123"
+	fileContents := "hello world! This is a test file"
+	err := matrix.TestsOnlyInjectSigningKey(s.deps.Homeservers[0].ServerName, s.deps.Homeservers[0].ExternalClientServerApiUrl)
+	assert.NoError(t, err)
+
+	// Mock CDN (2nd hop)
+	testServer2 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/cdn/file", r.URL.Path)
+		w.Header().Set("Content-Type", "text/plain")
+		_, _ = w.Write([]byte(fileContents))
+	}))
+	defer testServer2.Close()
+	u, _ := url.Parse(testServer2.URL)
+	//goland:noinspection HttpUrlsUsage
+	redirectUrl := fmt.Sprintf("http://host.docker.internal:%s/cdn/file", u.Port())
+
+	// Mock homeserver (1st hop)
+	testServer1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, fmt.Sprintf("/_matrix/federation/unstable/org.matrix.msc3916.v2/media/download/%s", mediaId), r.URL.Path)
+		origin, err := matrix.ValidateXMatrixAuth(r, true)
+		assert.NoError(t, err)
+		assert.Equal(t, client1.ServerName, origin)
+		w.Header().Set("Content-Type", "multipart/mixed; boundary=gc0p4Jq0M2Yt08jU534c0p")
+		_, _ = w.Write([]byte(fmt.Sprintf("--gc0p4Jq0M2Yt08jU534c0p\nContent-Type: application/json\n\n{}\n\n--gc0p4Jq0M2Yt08jU534c0p\nLocation: %s\n\n-gc0p4Jq0M2Yt08jU534c0p", redirectUrl)))
+	}))
+	defer testServer1.Close()
+
+	u, _ = url.Parse(testServer1.URL)
+	origin = fmt.Sprintf("host.docker.internal:%s", u.Port())
+	config.AddDomainForTesting("host.docker.internal", nil) // no port for config lookup
+
+	raw, err := client1.DoRaw("GET", fmt.Sprintf("/_matrix/client/unstable/org.matrix.msc3916/media/download/%s/%s", origin, mediaId), nil, "", nil)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, raw.StatusCode)
+
+	b, err := io.ReadAll(raw.Body)
+	assert.NoError(t, err)
+	assert.Equal(t, fileContents, string(b))
+}
+
 func (s *MSC3916DownloadsSuite) TestFederationMakesAuthedDownloadsAndFallsBack() {
 	t := s.T()
-	t.Error("not yet implemented")
+
+	client1 := s.deps.Homeservers[0].UnprivilegedUsers[0].WithCsUrl(s.deps.Machines[0].HttpUrl)
+
+	origin := ""
+	mediaId := "abc123"
+	fileContents := "hello world! This is a test file"
+	err := matrix.TestsOnlyInjectSigningKey(s.deps.Homeservers[0].ServerName, s.deps.Homeservers[0].ExternalClientServerApiUrl)
+	assert.NoError(t, err)
+
+	reqNum := 0
+	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if reqNum == 0 {
+			origin, err := matrix.ValidateXMatrixAuth(r, true)
+			assert.NoError(t, err)
+			assert.Equal(t, client1.ServerName, origin)
+			assert.Equal(t, fmt.Sprintf("/_matrix/federation/unstable/org.matrix.msc3916.v2/media/download/%s", mediaId), r.URL.Path)
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write([]byte("{\"errcode\":\"M_UNRECOGNIZED\"}"))
+			reqNum++
+		} else {
+			assert.Equal(t, fmt.Sprintf("/_matrix/media/v3/download/%s/%s", origin, mediaId), r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "text/plain")
+		_, _ = w.Write([]byte(fileContents))
+	}))
+	defer testServer.Close()
+
+	u, _ := url.Parse(testServer.URL)
+	origin = fmt.Sprintf("host.docker.internal:%s", u.Port())
+	config.AddDomainForTesting("host.docker.internal", nil) // no port for config lookup
+
+	raw, err := client1.DoRaw("GET", fmt.Sprintf("/_matrix/client/unstable/org.matrix.msc3916/media/download/%s/%s", origin, mediaId), nil, "", nil)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, raw.StatusCode)
+
+	b, err := io.ReadAll(raw.Body)
+	assert.NoError(t, err)
+	assert.Equal(t, fileContents, string(b))
 }
 
 func TestMSC3916DownloadsSuite(t *testing.T) {
