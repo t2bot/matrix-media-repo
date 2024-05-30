@@ -61,6 +61,8 @@ func Reload() {
 	GetInstance()
 }
 
+// GetAccessorForTests
+// Deprecated: For tests only.
 func GetAccessorForTests() *sql.DB {
 	return GetInstance().conn
 }
