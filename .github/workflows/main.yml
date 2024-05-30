@@ -44,5 +44,5 @@ jobs:
       - name: "Run: compile assets"
         run: "$PWD/bin/compile_assets"
       - name: "Run: tests"
-        run: "go test -c -v ./test && ./test.test '-test.v'" # cheat and work around working directory issues
+        run: "go test -c -v ./test && ./test.test '-test.v' -test.parallel 1" # cheat and work around working directory issues
         timeout-minutes: 30
