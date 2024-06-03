@@ -6,6 +6,7 @@ import (
 
 	"github.com/t2bot/matrix-media-repo/api/_apimeta"
 	"github.com/t2bot/matrix-media-repo/api/_responses"
+	"github.com/t2bot/matrix-media-repo/api/_routers"
 	"github.com/t2bot/matrix-media-repo/api/r0"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/util/readers"
@@ -20,6 +21,7 @@ func ClientThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user _a
 func FederationThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, server _apimeta.ServerInfo) interface{} {
 	r.URL.Query().Set("allow_remote", "false")
 	r.URL.Query().Set("allow_redirect", "false") // not supported at the top level
+	r = _routers.ForceSetParam("server", r.Host, r)
 
 	res := r0.ThumbnailMedia(r, rctx, _apimeta.UserInfo{})
 	if dl, ok := res.(*_responses.DownloadResponse); ok {
