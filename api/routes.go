@@ -57,6 +57,7 @@ func buildRoutes() http.Handler {
 	register([]string{"GET"}, PrefixFederation, "media/download/:server/:mediaId", msc3916, router, makeRoute(_routers.RequireServerAuth(unstable.FederationDownloadMedia), "download", counter))
 	register([]string{"GET"}, PrefixFederation, "media/download/:mediaId", msc3916v2, router, makeRoute(_routers.RequireServerAuth(unstable.FederationDownloadMedia), "download", counter))
 	register([]string{"GET"}, PrefixFederation, "media/thumbnail/:server/:mediaId", msc3916, router, makeRoute(_routers.RequireServerAuth(unstable.FederationThumbnailMedia), "thumbnail", counter))
+	register([]string{"GET"}, PrefixFederation, "media/thumbnail/:mediaId", msc3916v2, router, makeRoute(_routers.RequireServerAuth(unstable.FederationThumbnailMedia), "thumbnail", counter))
 
 	// Custom features
 	register([]string{"GET"}, PrefixMedia, "local_copy/:server/:mediaId", mxUnstable, router, makeRoute(_routers.RequireAccessToken(unstable.LocalCopy), "local_copy", counter))
