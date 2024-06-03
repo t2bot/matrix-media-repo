@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"sync"
-	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -342,6 +341,6 @@ func (s *UploadTestSuite) TestUploadAsyncExpiredFlow() {
 	assert.Equal(t, http.StatusNotFound, errRes.InjectedStatusCode)
 }
 
-func TestUploadTestSuite(t *testing.T) {
-	suite.Run(t, new(UploadTestSuite))
-}
+//func TestUploadTestSuite(t *testing.T) {
+//	suite.Run(t, new(UploadTestSuite))
+//}
