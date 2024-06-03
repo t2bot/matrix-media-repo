@@ -109,16 +109,21 @@ func (s *MSC3916ThumbnailsSuite) TestFederationThumbnails() {
 	assert.NotEmpty(t, mediaId)
 
 	// Verify the federation download *fails* when lacking auth
-	uri := fmt.Sprintf("/_matrix/federation/unstable/org.matrix.msc3916.v2/media/thumbnail/%s?width=96&height=96&method=scale", mediaId)
-	raw, err := remoteClient.DoRaw("GET", uri, nil, "", nil)
+	uri := fmt.Sprintf("/_matrix/federation/unstable/org.matrix.msc3916.v2/media/thumbnail/%s", mediaId)
+	qs := url.Values{
+		"width":  []string{"96"},
+		"height": []string{"96"},
+		"method": []string{"scale"},
+	}
+	raw, err := remoteClient.DoRaw("GET", uri, qs, "", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusUnauthorized, raw.StatusCode)
 
 	// Now add the X-Matrix auth and try again
-	header, err := matrix.CreateXMatrixHeader(s.keyServer.PublicHostname, remoteClient.ServerName, "GET", uri, &database.AnonymousJson{}, s.keyServerKey.PrivateKey, s.keyServerKey.KeyVersion)
+	header, err := matrix.CreateXMatrixHeader(s.keyServer.PublicHostname, remoteClient.ServerName, "GET", fmt.Sprintf("%s?%s", uri, qs.Encode()), &database.AnonymousJson{}, s.keyServerKey.PrivateKey, s.keyServerKey.KeyVersion)
 	assert.NoError(t, err)
 	remoteClient.AuthHeaderOverride = header
-	raw, err = remoteClient.DoRaw("GET", uri, nil, "", nil)
+	raw, err = remoteClient.DoRaw("GET", uri, qs, "", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, raw.StatusCode)
 }
