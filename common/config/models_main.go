@@ -47,9 +47,20 @@ type MainUrlPreviewsConfig struct {
 }
 
 type RateLimitConfig struct {
-	RequestsPerSecond float64 `yaml:"requestsPerSecond"`
-	Enabled           bool    `yaml:"enabled"`
-	BurstCount        int     `yaml:"burst"`
+	RequestsPerSecond float64                `yaml:"requestsPerSecond"`
+	Enabled           bool                   `yaml:"enabled"`
+	BurstCount        int                    `yaml:"burst"`
+	Buckets           RateLimitBucketsConfig `yaml:"buckets"`
+}
+
+type RateLimitBucketsConfig struct {
+	Downloads RateLimitDownloadBucketConfig `yaml:"downloads"`
+}
+
+type RateLimitDownloadBucketConfig struct {
+	CapacityBytes       int64 `yaml:"capacityBytes"`
+	DrainBytesPerMinute int64 `yaml:"drainBytesPerMinute"`
+	OverflowLimitBytes  int64 `yaml:"overflowLimitBytes"`
 }
 
 type MetricsConfig struct {

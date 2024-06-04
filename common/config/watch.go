@@ -102,6 +102,9 @@ func onFileChanged() {
 		globals.CacheReplaceChan <- true
 	}
 
+	// Always expand buckets (could be a no-op)
+	globals.BucketsReloadChan <- true
+
 	// Always flush the access token cache
 	logrus.Warn("Flushing access token cache")
 	globals.AccessTokenReloadChan <- true

@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net"
 	"net/http"
@@ -14,8 +13,8 @@ import (
 	"github.com/getsentry/sentry-go"
 	sentryhttp "github.com/getsentry/sentry-go/http"
 	"github.com/sirupsen/logrus"
-	"github.com/t2bot/matrix-media-repo/api/_responses"
 	"github.com/t2bot/matrix-media-repo/common/config"
+	"github.com/t2bot/matrix-media-repo/limits"
 )
 
 var srv *http.Server
@@ -35,17 +34,7 @@ func Init() *sync.WaitGroup {
 
 	if config.Get().RateLimit.Enabled {
 		logrus.Debug("Enabling rate limit")
-		limiter := tollbooth.NewLimiter(0, nil)
-		limiter.SetIPLookups([]string{"X-Forwarded-For", "X-Real-IP", "RemoteAddr"})
-		limiter.SetTokenBucketExpirationTTL(time.Hour)
-		limiter.SetBurst(config.Get().RateLimit.BurstCount)
-		limiter.SetMax(config.Get().RateLimit.RequestsPerSecond)
-
-		b, _ := json.Marshal(_responses.RateLimitReached())
-		limiter.SetMessage(string(b))
-		limiter.SetMessageContentType("application/json")
-
-		handler = tollbooth.LimitHandler(limiter, handler)
+		handler = tollbooth.LimitHandler(limits.GetRequestLimiter(), handler)
 	}
 
 	// Note: we bind Sentry here to ensure we capture *everything*

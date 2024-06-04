@@ -13,6 +13,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * `HEAD /download` is now supported, as per [MSC4120](https://github.com/matrix-org/matrix-spec-proposals/pull/4120).
 * S3 datastores can now specify a `prefixLength` to improve S3 performance on some providers. See `config.sample.yaml` for details.
 * Add `multipartUploads` flag for running MMR against unsupported S3 providers. See `config.sample.yaml` for details. 
+* A new "leaky bucket" rate limit algorithm has been applied to downloads. See `rateLimit.buckets` in the config for details.
+
+### Changed
+
+* The leaky bucket rate limiting introduced above is turned on by default. Administrators are encouraged to review the default settings and adjust as needed.
 
 ### Fixed
 

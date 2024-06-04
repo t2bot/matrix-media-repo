@@ -9,6 +9,7 @@ import (
 	"github.com/t2bot/matrix-media-repo/common/runtime"
 	"github.com/t2bot/matrix-media-repo/database"
 	"github.com/t2bot/matrix-media-repo/errcache"
+	"github.com/t2bot/matrix-media-repo/limits"
 	"github.com/t2bot/matrix-media-repo/metrics"
 	"github.com/t2bot/matrix-media-repo/pgo_internal"
 	"github.com/t2bot/matrix-media-repo/plugins"
@@ -29,6 +30,7 @@ func setupReloads() {
 	reloadPoolOnChan(globals.PoolReloadChan)
 	reloadErrorCachesOnChan(globals.ErrorCacheReloadChan)
 	reloadPGOOnChan(globals.PGOReloadChan)
+	reloadBucketsOnChan(globals.BucketsReloadChan)
 }
 
 func stopReloads() {
@@ -55,6 +57,8 @@ func stopReloads() {
 	globals.ErrorCacheReloadChan <- false
 	logrus.Debug("Stopping PGOReloadChan")
 	globals.PGOReloadChan <- false
+	logrus.Debug("Stopping BucketsReloadChan")
+	globals.BucketsReloadChan <- false
 }
 
 func reloadWebOnChan(reloadChan chan bool) {
@@ -214,6 +218,20 @@ func reloadPGOOnChan(reloadChan chan bool) {
 				} else {
 					pgo_internal.Disable()
 				}
+			} else {
+				return // received stop
+			}
+		}
+	}()
+}
+
+func reloadBucketsOnChan(reloadChan chan bool) {
+	go func() {
+		defer close(reloadChan)
+		for {
+			shouldReload := <-reloadChan
+			if shouldReload {
+				limits.ExpandBuckets()
 			} else {
 				return // received stop
 			}
