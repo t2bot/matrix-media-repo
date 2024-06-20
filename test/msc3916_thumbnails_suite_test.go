@@ -57,8 +57,6 @@ func (s *MSC3916ThumbnailsSuite) TestClientThumbnails() {
 	assert.NoError(t, err)
 	fname := "image" + util.ExtensionForContentType(contentType)
 
-	//res := new(test_internals.MatrixUploadResponse)
-	//err = client1.DoReturnJson("POST", "/_matrix/client/unstable/org.matrix.msc3916/media/upload", url.Values{"filename": []string{fname}}, contentType, img, res)
 	res, err := client1.Upload(fname, contentType, img)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, res.MxcUri)
@@ -74,11 +72,11 @@ func (s *MSC3916ThumbnailsSuite) TestClientThumbnails() {
 		"method": []string{"scale"},
 	}
 
-	raw, err := client2.DoRaw("GET", fmt.Sprintf("/_matrix/client/unstable/org.matrix.msc3916/media/thumbnail/%s/%s", origin, mediaId), qs, "", nil)
+	raw, err := client2.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/thumbnail/%s/%s", origin, mediaId), qs, "", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusUnauthorized, raw.StatusCode)
 
-	raw, err = client1.DoRaw("GET", fmt.Sprintf("/_matrix/client/unstable/org.matrix.msc3916/media/thumbnail/%s/%s", origin, mediaId), qs, "", nil)
+	raw, err = client1.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/thumbnail/%s/%s", origin, mediaId), qs, "", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, raw.StatusCode)
 	//test_internals.AssertIsTestImage(t, raw.Body) // we can't verify that the resulting image is correct
@@ -109,7 +107,7 @@ func (s *MSC3916ThumbnailsSuite) TestFederationThumbnails() {
 	assert.NotEmpty(t, mediaId)
 
 	// Verify the federation download *fails* when lacking auth
-	uri := fmt.Sprintf("/_matrix/federation/unstable/org.matrix.msc3916.v2/media/thumbnail/%s", mediaId)
+	uri := fmt.Sprintf("/_matrix/federation/v1.v2/media/thumbnail/%s", mediaId)
 	qs := url.Values{
 		"width":  []string{"96"},
 		"height": []string{"96"},

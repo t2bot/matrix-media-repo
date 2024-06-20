@@ -64,7 +64,7 @@ func TryDownload(ctx rcontext.RequestContext, origin string, mediaId string) (*d
 		var downloadUrl string
 		usesMultipartFormat := false
 		if ctx.Config.SigningKeyPath != "" {
-			downloadUrl = fmt.Sprintf("%s/_matrix/federation/unstable/org.matrix.msc3916.v2/media/download/%s", baseUrl, url.PathEscape(mediaId))
+			downloadUrl = fmt.Sprintf("%s/_matrix/federation/v1/media/download/%s", baseUrl, url.PathEscape(mediaId))
 			resp, err = matrix.FederatedGet(ctx, downloadUrl, realHost, ctx.Config.SigningKeyPath)
 			metrics.MediaDownloaded.With(prometheus.Labels{"origin": origin}).Inc()
 			if err != nil {
