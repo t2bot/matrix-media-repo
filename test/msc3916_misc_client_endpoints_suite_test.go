@@ -61,11 +61,11 @@ func (s *MSC3916MiscClientEndpointsSuite) TestPreviewUrlRequiresAuth() {
 	qs := url.Values{
 		"url": []string{s.htmlPage.PublicUrl},
 	}
-	raw, err := client2.DoRaw("GET", "/_matrix/client/unstable/org.matrix.msc3916/media/preview_url", qs, "", nil)
+	raw, err := client2.DoRaw("GET", "/_matrix/client/v1/media/preview_url", qs, "", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusUnauthorized, raw.StatusCode)
 
-	raw, err = client1.DoRaw("GET", "/_matrix/client/unstable/org.matrix.msc3916/media/preview_url", qs, "", nil)
+	raw, err = client1.DoRaw("GET", "/_matrix/client/v1/media/preview_url", qs, "", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, raw.StatusCode)
 }
@@ -81,11 +81,11 @@ func (s *MSC3916MiscClientEndpointsSuite) TestConfigRequiresAuth() {
 		UserId:          "", // no auth on this client
 	}
 
-	raw, err := client2.DoRaw("GET", "/_matrix/client/unstable/org.matrix.msc3916/media/config", nil, "", nil)
+	raw, err := client2.DoRaw("GET", "/_matrix/client/v1/media/config", nil, "", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusUnauthorized, raw.StatusCode)
 
-	raw, err = client1.DoRaw("GET", "/_matrix/client/unstable/org.matrix.msc3916/media/config", nil, "", nil)
+	raw, err = client1.DoRaw("GET", "/_matrix/client/v1/media/config", nil, "", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, raw.StatusCode)
 }
