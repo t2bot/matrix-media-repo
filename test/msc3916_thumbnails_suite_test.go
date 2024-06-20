@@ -107,7 +107,7 @@ func (s *MSC3916ThumbnailsSuite) TestFederationThumbnails() {
 	assert.NotEmpty(t, mediaId)
 
 	// Verify the federation download *fails* when lacking auth
-	uri := fmt.Sprintf("/_matrix/federation/v1.v2/media/thumbnail/%s", mediaId)
+	uri := fmt.Sprintf("/_matrix/federation/v1/media/thumbnail/%s", mediaId)
 	qs := url.Values{
 		"width":  []string{"96"},
 		"height": []string{"96"},

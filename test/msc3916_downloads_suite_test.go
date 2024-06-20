@@ -121,7 +121,7 @@ func (s *MSC3916DownloadsSuite) TestFederationDownloads() {
 	assert.NotEmpty(t, mediaId)
 
 	// Verify the federation download *fails* when lacking auth
-	uri := fmt.Sprintf("/_matrix/federation/v1.v2/media/download/%s", mediaId)
+	uri := fmt.Sprintf("/_matrix/federation/v1/media/download/%s", mediaId)
 	raw, err := remoteClient.DoRaw("GET", uri, nil, "", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusUnauthorized, raw.StatusCode)
@@ -145,7 +145,7 @@ func (s *MSC3916DownloadsSuite) TestFederationMakesAuthedDownloads() {
 	err := matrix.TestsOnlyInjectSigningKey(s.deps.Homeservers[0].ServerName, s.deps.Homeservers[0].ExternalClientServerApiUrl)
 	assert.NoError(t, err)
 	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, fmt.Sprintf("/_matrix/federation/v1.v2/media/download/%s", mediaId), r.URL.Path)
+		assert.Equal(t, fmt.Sprintf("/_matrix/federation/v1/media/download/%s", mediaId), r.URL.Path)
 		origin, err := matrix.ValidateXMatrixAuth(r, true)
 		assert.NoError(t, err)
 		assert.Equal(t, client1.ServerName, origin)
@@ -187,7 +187,7 @@ func (s *MSC3916DownloadsSuite) TestFederationFollowsRedirects() {
 
 	// Mock homeserver (1st hop)
 	testServer1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, fmt.Sprintf("/_matrix/federation/v1.v2/media/download/%s", mediaId), r.URL.Path)
+		assert.Equal(t, fmt.Sprintf("/_matrix/federation/v1/media/download/%s", mediaId), r.URL.Path)
 		origin, err := matrix.ValidateXMatrixAuth(r, true)
 		assert.NoError(t, err)
 		assert.Equal(t, client1.ServerName, origin)
@@ -226,7 +226,7 @@ func (s *MSC3916DownloadsSuite) TestFederationMakesAuthedDownloadsAndFallsBack()
 			origin, err := matrix.ValidateXMatrixAuth(r, true)
 			assert.NoError(t, err)
 			assert.Equal(t, client1.ServerName, origin)
-			assert.Equal(t, fmt.Sprintf("/_matrix/federation/v1.v2/media/download/%s", mediaId), r.URL.Path)
+			assert.Equal(t, fmt.Sprintf("/_matrix/federation/v1/media/download/%s", mediaId), r.URL.Path)
 			w.WriteHeader(http.StatusNotFound)
 			_, _ = w.Write([]byte("{\"errcode\":\"M_UNRECOGNIZED\"}"))
 			reqNum++
