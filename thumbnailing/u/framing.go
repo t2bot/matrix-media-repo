@@ -46,13 +46,17 @@ func MakeThumbnailByImaging(src image.Image, method string, width int, height in
 	return result, nil
 }
 
-func MakeThumbnailByVips(i *vips.ImageRef, method string, width int, height int) ([]byte, error) {
+func MakeThumbnailByVips(i *vips.ImageRef, method string, width int, height int, animated bool) ([]byte, error) {
 	var result []byte
 	var err error
 	if method == "scale" {
-		err = i.Thumbnail(width, height, vips.InterestingCentre)
+		err = i.Thumbnail(width, height, vips.InterestingNone)
 	} else if method == "crop" {
-		err = i.SmartCrop(width, height, vips.InterestingCentre)
+		if animated {
+			err = i.SmartCrop(width, height, vips.InterestingNone)
+		} else {
+			err = i.SmartCrop(width, height, vips.InterestingCentre)
+		}
 	} else {
 		return nil, errors.New("unrecognized method: " + method)
 	}

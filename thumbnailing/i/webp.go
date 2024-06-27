@@ -51,7 +51,7 @@ func (d webpGenerator) GenerateThumbnail(b io.Reader, contentType string, width 
 }
 
 func (d webpGenerator) GenerateThumbnailOf(i *vips.ImageRef, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
-	tb, err := u.MakeThumbnailByVips(i, method, width, height)
+	tb, err := u.MakeThumbnailByVips(i, method, width, height, animated)
 	if err != nil {
 		return nil, err
 	}
