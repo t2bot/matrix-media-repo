@@ -41,7 +41,12 @@ func (d webpGenerator) GenerateThumbnail(b io.Reader, contentType string, width 
 		return nil, errors.New("thumbnail: error reading data: " + err.Error())
 	}
 	p := &vips.ImportParams{}
-	p.NumPages.Set(-1) // Set parameter for libvip loader to support more than one page
+	if animated {
+		p.NumPages.Set(-1) // Set parameter for libvip loader to support more than one page
+	} else {
+		p.NumPages.Set(1) // Reduce page loading
+	}
+
 	i, err := vips.LoadImageFromBuffer(buf, p)
 	if err != nil {
 		return nil, errors.New("vips: error decoding: " + err.Error())
