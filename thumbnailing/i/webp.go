@@ -35,7 +35,14 @@ func (d webpGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx 
 }
 
 func (d webpGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
-	i, err := vips.NewImageFromReader(b)
+	// Fix: animated webp support
+	buf, err := io.ReadAll(b)
+	if err != nil {
+		return nil, errors.New("thumbnail: error reading data: " + err.Error())
+	}
+	p := &vips.ImportParams{}
+	p.NumPages.Set(-1) // Set parameter for libvip loader to support more than one page
+	i, err := vips.LoadImageFromBuffer(buf, p)
 	if err != nil {
 		return nil, errors.New("vips: error decoding: " + err.Error())
 	}
