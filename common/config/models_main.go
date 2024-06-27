@@ -16,6 +16,7 @@ type HomeserverConfig struct {
 	ClientServerApi string `yaml:"csApi"`
 	BackoffAt       int    `yaml:"backoffAt"`
 	AdminApiKind    string `yaml:"adminApiKind"`
+	SigningKeyPath  string `yaml:"signingKeyPath"`
 }
 
 type DatabaseConfig struct {

@@ -11,10 +11,11 @@ import (
 )
 
 type MatrixClient struct {
-	AccessToken     string
-	ClientServerUrl string
-	UserId          string
-	ServerName      string
+	AccessToken        string
+	ClientServerUrl    string
+	UserId             string
+	ServerName         string
+	AuthHeaderOverride string
 }
 
 func (c *MatrixClient) WithCsUrl(newUrl string) *MatrixClient {
@@ -80,10 +81,14 @@ func (c *MatrixClient) DoRaw(method string, endpoint string, qs url.Values, cont
 	if contentType != "" {
 		req.Header.Set("Content-Type", contentType)
 	}
+
 	if c.AccessToken != "" {
 		req.Header.Set("Authorization", "Bearer "+c.AccessToken)
 	}
+	if c.AuthHeaderOverride != "" {
+		req.Header.Set("Authorization", c.AuthHeaderOverride)
+	}
 
-	log.Printf("[HTTP] [Auth=%s] [Host=%s] %s %s", c.AccessToken, c.ServerName, req.Method, req.URL.String())
+	log.Printf("[HTTP] [Auth=%s] [Host=%s] %s %s", req.Header.Get("Authorization"), c.ServerName, req.Method, req.URL.String())
 	return http.DefaultClient.Do(req)
 }
