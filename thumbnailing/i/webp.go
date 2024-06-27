@@ -1,12 +1,14 @@
 package i
 
 import (
+	"bytes"
 	"errors"
+	"image"
 	"io"
 
+	"github.com/davidbyttow/govips/v2/vips"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
-	"golang.org/x/image/webp"
 )
 
 type webpGenerator struct {
@@ -25,15 +27,25 @@ func (d webpGenerator) matches(img io.Reader, contentType string) bool {
 }
 
 func (d webpGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx rcontext.RequestContext) (bool, int, int, error) {
-	i, err := webp.DecodeConfig(b)
+	i, err := vips.NewImageFromReader(b)
 	if err != nil {
 		return false, 0, 0, err
 	}
-	return true, i.Width, i.Height, nil
+	m := i.Metadata()
+	return true, m.Width, m.Height, nil
 }
 
 func (d webpGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
-	src, err := webp.Decode(b)
+	i, err := vips.NewImageFromReader(b)
+	if err != nil {
+		return nil, errors.New("vips: error decoding: " + err.Error())
+	}
+	data, _, err := i.ExportPng(&vips.PngExportParams{StripMetadata: true})
+	if err != nil {
+		return nil, errors.New("vips: error when preprocessing the file: " + err.Error())
+	}
+
+	src, _, err := image.Decode(bytes.NewReader(data))
 	if err != nil {
 		return nil, errors.New("webp: error decoding thumbnail: " + err.Error())
 	}

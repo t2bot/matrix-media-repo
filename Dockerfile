@@ -9,7 +9,7 @@ WORKDIR /opt
 COPY . /opt
 
 # Build libheif manually
-RUN apk add --no-cache build-base libtool cmake libjpeg-turbo-dev x265-dev ffmpeg-dev zlib-dev libwebp-dev libheif-dev
+RUN apk add --no-cache build-base libtool cmake libjpeg-turbo-dev x265-dev ffmpeg-dev zlib-dev libwebp-dev libheif-dev vips-dev
 WORKDIR /opt
 
 # Run remaining build steps
@@ -27,6 +27,7 @@ RUN apk add --no-cache \
         dos2unix \
         imagemagick \
         imagemagick-webp \
+        vips \
         libheif \
         libwebp \
         libwebp-tools \
