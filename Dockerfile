@@ -1,6 +1,6 @@
 # ---- Stage 0 ----
 # Builds media repo binaries
-FROM golang:1.21-alpine3.18 AS builder
+FROM golang:1.22-alpine3.20 AS builder
 
 # Install build dependencies
 RUN apk add --no-cache git musl-dev dos2unix build-base libde265-dev
@@ -9,15 +9,7 @@ WORKDIR /opt
 COPY . /opt
 
 # Build libheif manually
-RUN apk add --no-cache build-base libtool cmake libjpeg-turbo-dev x265-dev ffmpeg-dev zlib-dev
-RUN git clone https://github.com/strukturag/libheif.git
-WORKDIR /opt/libheif
-RUN git checkout v1.17.6
-RUN mkdir build
-WORKDIR /opt/libheif/build
-RUN cmake --preset=release ..
-RUN make
-RUN make install
+RUN apk add --no-cache build-base libtool cmake libjpeg-turbo-dev x265-dev ffmpeg-dev zlib-dev libwebp-dev libheif-dev vips-dev
 WORKDIR /opt
 
 # Run remaining build steps
@@ -26,7 +18,7 @@ RUN ./build.sh
 
 # ---- Stage 1 ----
 # Final runtime stage.
-FROM alpine:3.18
+FROM alpine:3.20
 
 RUN mkdir /plugins
 RUN apk add --no-cache \
@@ -34,6 +26,11 @@ RUN apk add --no-cache \
         ca-certificates \
         dos2unix \
         imagemagick \
+        imagemagick-webp \
+        vips \
+        libheif \
+        libwebp \
+        libwebp-tools \
         ffmpeg
 
 COPY --from=builder /opt/bin/plugin_antispam_ocr /plugins/

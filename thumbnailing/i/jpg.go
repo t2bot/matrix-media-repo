@@ -43,12 +43,12 @@ func (d jpgGenerator) GenerateThumbnail(b io.Reader, contentType string, width i
 		return nil, errors.New("jpg: error decoding thumbnail: " + err.Error())
 	}
 
-	thumb, err := u.MakeThumbnail(src, method, width, height)
+	thumb, err := u.MakeThumbnailByImaging(src, method, width, height)
 	if err != nil {
 		return nil, errors.New("jpg: error making thumbnail: " + err.Error())
 	}
 
-	thumb = u.ApplyOrientation(thumb, orientation)
+	thumb = u.ApplyOrientationByImaging(thumb, orientation)
 
 	pr, pw := io.Pipe()
 	go func(pw *io.PipeWriter, p image.Image) {
