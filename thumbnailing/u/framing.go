@@ -5,12 +5,36 @@ import (
 	"image"
 	"io"
 
+	"github.com/davidbyttow/govips/v2/vips"
 	"github.com/disintegration/imaging"
 	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
 )
 
+/*
 func MakeThumbnail(src image.Image, method string, width int, height int) (image.Image, error) {
+	buff := new(bytes.Buffer)
+	err := png.Encode(buff, src)
+	if err != nil {
+		return nil, errors.New("thumbnail: error when preprocessing the file: " + err.Error())
+	}
+	i, err := vips.NewImageFromBuffer(buff.Bytes())
+	if err != nil {
+		return nil, errors.New("thumbnail: error when loading by vips: " + err.Error())
+	}
+	tByte, err := MakeThumbnailByVips(i, method, width, height)
+	if err != nil {
+		return nil, err
+	}
+	result, _, err := image.Decode(bytes.NewReader(tByte))
+	if err != nil {
+		return nil, errors.New("webp: error decoding thumbnail: " + err.Error())
+	}
+	return result, nil
+}
+*/
+
+func MakeThumbnailByImaging(src image.Image, method string, width int, height int) (image.Image, error) {
 	var result image.Image
 	if method == "scale" {
 		result = imaging.Fit(src, width, height, imaging.Linear)
@@ -20,6 +44,23 @@ func MakeThumbnail(src image.Image, method string, width int, height int) (image
 		return nil, errors.New("unrecognized method: " + method)
 	}
 	return result, nil
+}
+
+func MakeThumbnailByVips(i *vips.ImageRef, method string, width int, height int) ([]byte, error) {
+	var result []byte
+	var err error
+	if method == "scale" {
+		err = i.Thumbnail(width, height, vips.InterestingCentre)
+	} else if method == "crop" {
+		err = i.SmartCrop(width, height, vips.InterestingCentre)
+	} else {
+		return nil, errors.New("unrecognized method: " + method)
+	}
+	if err != nil {
+		return nil, err
+	}
+	result, _, err = i.ExportNative()
+	return result, err
 }
 
 func ExtractExifOrientation(r io.Reader) *ExifOrientation {
@@ -33,7 +74,7 @@ func ExtractExifOrientation(r io.Reader) *ExifOrientation {
 	return orientation
 }
 
-func ApplyOrientation(src image.Image, orientation *ExifOrientation) image.Image {
+func ApplyOrientationByImaging(src image.Image, orientation *ExifOrientation) image.Image {
 	result := src
 	if orientation != nil {
 		// Rotate first
@@ -55,4 +96,27 @@ func ApplyOrientation(src image.Image, orientation *ExifOrientation) image.Image
 	}
 
 	return result
+}
+
+func ApplyOrientationByVips(i *vips.ImageRef, orientation *ExifOrientation) *vips.ImageRef {
+	if orientation != nil {
+		// Rotate first
+		if orientation.RotateDegrees == 90 {
+			i.Rotate(vips.Angle90)
+		} else if orientation.RotateDegrees == 180 {
+			i.Rotate(vips.Angle180)
+		} else if orientation.RotateDegrees == 270 {
+			i.Rotate(vips.Angle270)
+		}
+
+		// Flip second
+		if orientation.FlipHorizontal {
+			i.Flip(vips.DirectionHorizontal)
+		}
+		if orientation.FlipVertical {
+			i.Flip(vips.DirectionVertical)
+		}
+	}
+
+	return i
 }

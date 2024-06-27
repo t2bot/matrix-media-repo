@@ -1,14 +1,13 @@
 package i
 
 import (
-	"bytes"
 	"errors"
-	"image"
 	"io"
 
 	"github.com/davidbyttow/govips/v2/vips"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
+	"github.com/t2bot/matrix-media-repo/thumbnailing/u"
 )
 
 type webpGenerator struct {
@@ -40,17 +39,31 @@ func (d webpGenerator) GenerateThumbnail(b io.Reader, contentType string, width 
 	if err != nil {
 		return nil, errors.New("vips: error decoding: " + err.Error())
 	}
-	data, _, err := i.ExportPng(&vips.PngExportParams{StripMetadata: true})
+
+	return d.GenerateThumbnailOf(i, width, height, method, animated, ctx)
+}
+
+func (d webpGenerator) GenerateThumbnailOf(i *vips.ImageRef, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
+	tb, err := u.MakeThumbnailByVips(i, method, width, height)
 	if err != nil {
-		return nil, errors.New("vips: error when preprocessing the file: " + err.Error())
+		return nil, err
 	}
 
-	src, _, err := image.Decode(bytes.NewReader(data))
-	if err != nil {
-		return nil, errors.New("webp: error decoding thumbnail: " + err.Error())
-	}
+	pr, pw := io.Pipe()
+	go func(pw *io.PipeWriter, bt []byte) {
+		_, err := pw.Write(bt)
+		if err != nil {
+			_ = pw.CloseWithError(errors.New("webp: error loading thumbnail data: " + err.Error()))
+		} else {
+			_ = pw.Close()
+		}
+	}(pw, tb)
 
-	return pngGenerator{}.GenerateThumbnailOf(src, width, height, method, ctx)
+	return &m.Thumbnail{
+		Animated:    animated,
+		ContentType: "image/webp",
+		Reader:      pr,
+	}, nil
 }
 
 func init() {
