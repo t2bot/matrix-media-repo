@@ -48,12 +48,12 @@ func buildRoutes() http.Handler {
 	register([]string{"GET"}, PrefixClient, "versions", mxNoVersion, router, makeRoute(_routers.OptionalAccessToken(r0.ClientVersions), "client_versions", counter))
 	register([]string{"GET"}, PrefixClient, "media/preview_url", mxV1, router, previewUrlRoute)
 	register([]string{"GET"}, PrefixClient, "media/config", mxV1, router, configRoute)
-	authedDownloadRoute := makeRoute(_routers.RequireAccessToken(unstable.ClientDownloadMedia), "download", counter)
+	authedDownloadRoute := makeRoute(_routers.RequireAccessToken(v1.ClientDownloadMedia), "download", counter)
 	register([]string{"GET"}, PrefixClient, "media/download/:server/:mediaId/:filename", mxV1, router, authedDownloadRoute)
 	register([]string{"GET"}, PrefixClient, "media/download/:server/:mediaId", mxV1, router, authedDownloadRoute)
-	register([]string{"GET"}, PrefixClient, "media/thumbnail/:server/:mediaId", mxV1, router, makeRoute(_routers.RequireAccessToken(unstable.ClientThumbnailMedia), "thumbnail", counter))
-	register([]string{"GET"}, PrefixFederation, "media/download/:mediaId", mxV1, router, makeRoute(_routers.RequireServerAuth(unstable.FederationDownloadMedia), "download", counter))
-	register([]string{"GET"}, PrefixFederation, "media/thumbnail/:mediaId", mxV1, router, makeRoute(_routers.RequireServerAuth(unstable.FederationThumbnailMedia), "thumbnail", counter))
+	register([]string{"GET"}, PrefixClient, "media/thumbnail/:server/:mediaId", mxV1, router, makeRoute(_routers.RequireAccessToken(v1.ClientThumbnailMedia), "thumbnail", counter))
+	register([]string{"GET"}, PrefixFederation, "media/download/:mediaId", mxV1, router, makeRoute(_routers.RequireServerAuth(v1.FederationDownloadMedia), "download", counter))
+	register([]string{"GET"}, PrefixFederation, "media/thumbnail/:mediaId", mxV1, router, makeRoute(_routers.RequireServerAuth(v1.FederationThumbnailMedia), "thumbnail", counter))
 
 	// Custom features
 	register([]string{"GET"}, PrefixMedia, "local_copy/:server/:mediaId", mxUnstable, router, makeRoute(_routers.RequireAccessToken(unstable.LocalCopy), "local_copy", counter))

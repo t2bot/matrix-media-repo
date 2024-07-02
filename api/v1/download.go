@@ -1,4 +1,4 @@
-package unstable
+package v1
 
 import (
 	"bytes"
