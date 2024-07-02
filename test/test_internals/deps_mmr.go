@@ -21,6 +21,7 @@ type mmrHomeserverTmplArgs struct {
 	ServerName         string
 	ClientServerApiUrl string
 	SigningKeyPath     string
+	PublicBaseUrl      string
 }
 
 type mmrTmplArgs struct {

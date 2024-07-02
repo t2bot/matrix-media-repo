@@ -209,6 +209,42 @@ func (s *MSC3916DownloadsSuite) TestFederationFollowsRedirects() {
 	assert.Equal(t, fileContents, string(b))
 }
 
+func (s *MSC3916DownloadsSuite) TestFederationProducesRedirects() {
+	t := s.T()
+
+	client1 := s.deps.Homeservers[0].UnprivilegedUsers[0].WithCsUrl(s.deps.Machines[0].HttpUrl)
+	remoteClient := &test_internals.MatrixClient{
+		ClientServerUrl: s.deps.Machines[0].HttpUrl,
+		ServerName:      s.deps.Homeservers[0].ServerName,
+		AccessToken:     "", // this client isn't authed over the CS API
+		UserId:          "", // this client isn't authed over the CS API
+	}
+
+	contentType, img, err := test_internals.MakeTestImage(512, 512)
+	assert.NoError(t, err)
+	fname := "image" + util.ExtensionForContentType(contentType)
+
+	res, err := client1.Upload(fname, contentType, img)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, res.MxcUri)
+
+	origin, mediaId, err := util.SplitMxc(res.MxcUri)
+	assert.NoError(t, err)
+	assert.Equal(t, client1.ServerName, origin)
+	assert.NotEmpty(t, mediaId)
+
+	// Verify the federation download *fails* when lacking auth
+	uri := fmt.Sprintf("/_matrix/federation/v1/media/download/%s", mediaId)
+	header, err := matrix.CreateXMatrixHeader(s.keyServer.PublicHostname, remoteClient.ServerName, "GET", uri, &database.AnonymousJson{}, s.keyServerKey.PrivateKey, s.keyServerKey.KeyVersion)
+	assert.NoError(t, err)
+	remoteClient.AuthHeaderOverride = header
+	raw, err := remoteClient.DoRaw("GET", uri, nil, "", nil)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, raw.StatusCode)
+
+	// TODO: Need to actually test that redirects are properly formed, and set up the test suite to produce them
+}
+
 func (s *MSC3916DownloadsSuite) TestFederationMakesAuthedDownloadsAndFallsBack() {
 	t := s.T()
 

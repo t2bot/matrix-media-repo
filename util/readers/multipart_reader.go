@@ -1,6 +1,7 @@
 package readers
 
 import (
+	"bytes"
 	"io"
 	"mime/multipart"
 	"net/textproto"
@@ -12,6 +13,7 @@ import (
 type MultipartPart struct {
 	ContentType string
 	FileName    string
+	Location    string
 	Reader      io.ReadCloser
 }
 
@@ -31,6 +33,10 @@ func NewMultipartReader(parts ...*MultipartPart) io.ReadCloser {
 				} else {
 					headers.Set("Content-Disposition", "attachment; filename*=utf-8''"+url.QueryEscape(part.FileName))
 				}
+			}
+			if part.Location != "" {
+				headers.Set("Location", part.Location)
+				part.Reader = io.NopCloser(bytes.NewReader(make([]byte, 0)))
 			}
 
 			partW, err := mpw.CreatePart(headers)
