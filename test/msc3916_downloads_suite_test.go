@@ -155,8 +155,8 @@ func (s *MSC3916DownloadsSuite) TestFederationMakesAuthedDownloads() {
 	defer testServer.Close()
 
 	u, _ := url.Parse(testServer.URL)
-	origin = fmt.Sprintf("%s:%s", test_internals.DockerHostAddress(), u.Port())
-	config.AddDomainForTesting(test_internals.DockerHostAddress(), nil) // no port for config lookup
+	origin = fmt.Sprintf("%s:%s", "host.docker.internal", u.Port())
+	config.AddDomainForTesting("host.docker.internal", nil) // no port for config lookup
 
 	raw, err := client1.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/download/%s/%s", origin, mediaId), nil, "", nil)
 	assert.NoError(t, err)
@@ -183,7 +183,7 @@ func (s *MSC3916DownloadsSuite) TestFederationFollowsRedirects() {
 	defer testServer2.Close()
 	u, _ := url.Parse(testServer2.URL)
 	//goland:noinspection HttpUrlsUsage
-	redirectUrl := fmt.Sprintf("http://%s:%s/cdn/file", test_internals.DockerHostAddress(), u.Port())
+	redirectUrl := fmt.Sprintf("http://%s:%s/cdn/file", "host.docker.internal", u.Port())
 
 	// Mock homeserver (1st hop)
 	testServer1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -197,8 +197,8 @@ func (s *MSC3916DownloadsSuite) TestFederationFollowsRedirects() {
 	defer testServer1.Close()
 
 	u, _ = url.Parse(testServer1.URL)
-	origin = fmt.Sprintf("%s:%s", test_internals.DockerHostAddress(), u.Port())
-	config.AddDomainForTesting(test_internals.DockerHostAddress(), nil) // no port for config lookup
+	origin = fmt.Sprintf("%s:%s", "host.docker.internal", u.Port())
+	config.AddDomainForTesting("host.docker.internal", nil) // no port for config lookup
 
 	raw, err := client1.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/download/%s/%s", origin, mediaId), nil, "", nil)
 	assert.NoError(t, err)
@@ -239,8 +239,8 @@ func (s *MSC3916DownloadsSuite) TestFederationMakesAuthedDownloadsAndFallsBack()
 	defer testServer.Close()
 
 	u, _ := url.Parse(testServer.URL)
-	origin = fmt.Sprintf("%s:%s", test_internals.DockerHostAddress(), u.Port())
-	config.AddDomainForTesting(test_internals.DockerHostAddress(), nil) // no port for config lookup
+	origin = fmt.Sprintf("%s:%s", "host.docker.internal", u.Port())
+	config.AddDomainForTesting("host.docker.internal", nil) // no port for config lookup
 
 	raw, err := client1.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/download/%s/%s", origin, mediaId), nil, "", nil)
 	assert.NoError(t, err)

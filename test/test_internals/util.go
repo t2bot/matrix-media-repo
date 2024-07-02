@@ -58,10 +58,3 @@ func AssertIsTestImage(t *testing.T, i io.Reader) {
 		}
 	}
 }
-
-func DockerHostAddress() string {
-	//if runtime.GOOS == "linux" {
-	//	return "172.17.0.1" // XXX: This is bad
-	//}
-	return "host.docker.internal"
-}
