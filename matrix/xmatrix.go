@@ -15,7 +15,6 @@ var ErrNoXMatrixAuth = errors.New("no X-Matrix auth headers")
 var ErrWrongDestination = errors.New("wrong destination")
 
 func ValidateXMatrixAuth(request *http.Request, expectNoContent bool) (string, error) {
-	return "localhost", nil
 	if !expectNoContent {
 		panic("development error: X-Matrix auth validation can only be done with an empty body for now")
 	}
