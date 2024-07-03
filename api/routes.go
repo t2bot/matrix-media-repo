@@ -18,6 +18,7 @@ import (
 
 const PrefixMedia = "/_matrix/media"
 const PrefixClient = "/_matrix/client"
+const PrefixFederation = "/_matrix/federation"
 
 func buildRoutes() http.Handler {
 	counter := &_routers.RequestCounter{}
@@ -36,12 +37,23 @@ func buildRoutes() http.Handler {
 	register([]string{"GET", "HEAD"}, PrefixMedia, "download/:server/:mediaId/:filename", mxSpecV3Transition, router, downloadRoute)
 	register([]string{"GET", "HEAD"}, PrefixMedia, "download/:server/:mediaId", mxSpecV3Transition, router, downloadRoute)
 	register([]string{"GET"}, PrefixMedia, "thumbnail/:server/:mediaId", mxSpecV3Transition, router, makeRoute(_routers.OptionalAccessToken(r0.ThumbnailMedia), "thumbnail", counter))
-	register([]string{"GET"}, PrefixMedia, "preview_url", mxSpecV3TransitionCS, router, makeRoute(_routers.RequireAccessToken(r0.PreviewUrl), "url_preview", counter))
+	previewUrlRoute := makeRoute(_routers.RequireAccessToken(r0.PreviewUrl), "url_preview", counter)
+	register([]string{"GET"}, PrefixMedia, "preview_url", mxSpecV3TransitionCS, router, previewUrlRoute)
 	register([]string{"GET"}, PrefixMedia, "identicon/*seed", mxR0, router, makeRoute(_routers.OptionalAccessToken(r0.Identicon), "identicon", counter))
-	register([]string{"GET"}, PrefixMedia, "config", mxSpecV3TransitionCS, router, makeRoute(_routers.RequireAccessToken(r0.PublicConfig), "config", counter))
+	configRoute := makeRoute(_routers.RequireAccessToken(r0.PublicConfig), "config", counter)
+	register([]string{"GET"}, PrefixMedia, "config", mxSpecV3TransitionCS, router, configRoute)
 	register([]string{"POST"}, PrefixClient, "logout", mxSpecV3TransitionCS, router, makeRoute(_routers.RequireAccessToken(r0.Logout), "logout", counter))
 	register([]string{"POST"}, PrefixClient, "logout/all", mxSpecV3TransitionCS, router, makeRoute(_routers.RequireAccessToken(r0.LogoutAll), "logout_all", counter))
 	register([]string{"POST"}, PrefixMedia, "create", mxV1, router, makeRoute(_routers.RequireAccessToken(v1.CreateMedia), "create", counter))
+	register([]string{"GET"}, PrefixClient, "versions", mxNoVersion, router, makeRoute(_routers.OptionalAccessToken(r0.ClientVersions), "client_versions", counter))
+	register([]string{"GET"}, PrefixClient, "media/preview_url", mxV1, router, previewUrlRoute)
+	register([]string{"GET"}, PrefixClient, "media/config", mxV1, router, configRoute)
+	authedDownloadRoute := makeRoute(_routers.RequireAccessToken(v1.ClientDownloadMedia), "download", counter)
+	register([]string{"GET"}, PrefixClient, "media/download/:server/:mediaId/:filename", mxV1, router, authedDownloadRoute)
+	register([]string{"GET"}, PrefixClient, "media/download/:server/:mediaId", mxV1, router, authedDownloadRoute)
+	register([]string{"GET"}, PrefixClient, "media/thumbnail/:server/:mediaId", mxV1, router, makeRoute(_routers.RequireAccessToken(v1.ClientThumbnailMedia), "thumbnail", counter))
+	register([]string{"GET"}, PrefixFederation, "media/download/:mediaId", mxV1, router, makeRoute(_routers.RequireServerAuth(v1.FederationDownloadMedia), "download", counter))
+	register([]string{"GET"}, PrefixFederation, "media/thumbnail/:mediaId", mxV1, router, makeRoute(_routers.RequireServerAuth(v1.FederationThumbnailMedia), "thumbnail", counter))
 
 	// Custom features
 	register([]string{"GET"}, PrefixMedia, "local_copy/:server/:mediaId", mxUnstable, router, makeRoute(_routers.RequireAccessToken(unstable.LocalCopy), "local_copy", counter))
@@ -134,12 +146,16 @@ var (
 	mxR0                 matrixVersions = []string{"r0"}
 	mxV1                 matrixVersions = []string{"v1"}
 	mxV3                 matrixVersions = []string{"v3"}
+	mxNoVersion          matrixVersions = []string{""}
 )
 
 func register(methods []string, prefix string, postfix string, versions matrixVersions, router *httprouter.Router, handler http.Handler) {
 	for _, method := range methods {
 		for _, version := range versions {
 			path := fmt.Sprintf("%s/%s/%s", prefix, version, postfix)
+			if version == "" {
+				path = fmt.Sprintf("%s/%s", prefix, postfix)
+			}
 			router.Handler(method, path, http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 				defer func() {
 					// hopefully the body was already closed, but maybe it wasn't

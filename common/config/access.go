@@ -153,6 +153,7 @@ func reloadConfig() (*MainRepoConfig, map[string]*DomainRepoConfig, error) {
 		dc.ClientServerApi = d.ClientServerApi
 		dc.BackoffAt = d.BackoffAt
 		dc.AdminApiKind = d.AdminApiKind
+		dc.SigningKeyPath = d.SigningKeyPath
 
 		m, err := objToMapYaml(dc)
 		if err != nil {
@@ -222,6 +223,15 @@ func GetDomain(domain string) *DomainRepoConfig {
 	return domains[domain]
 }
 
+func AddDomainForTesting(domain string, config *DomainRepoConfig) {
+	Get() // Ensure the "main" config was loaded first
+	if config == nil {
+		c := NewDefaultDomainConfig()
+		config = &c
+	}
+	domains[domain] = config
+}
+
 func DomainConfigFrom(c MainRepoConfig) DomainRepoConfig {
 	// HACK: We should be better at this kind of inheritance
 	dc := NewDefaultDomainConfig()
@@ -265,7 +275,7 @@ func UniqueDatastores() []DatastoreConfig {
 func PrintDomainInfo() {
 	logrus.Info("Domains loaded:")
 	for _, d := range domains {
-		logrus.Info(fmt.Sprintf("\t%s (%s)", d.Name, d.ClientServerApi))
+		logrus.Info(fmt.Sprintf("\t%s (%s | Signing Key Path=%s)", d.Name, d.ClientServerApi, d.SigningKeyPath))
 	}
 }
 

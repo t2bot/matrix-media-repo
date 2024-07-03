@@ -92,6 +92,11 @@ homeservers:
     # to "matrix", most functionality requiring the admin API will not work.
     adminApiKind: "synapse"
 
+    # The signing key to use for authorizing outbound federation requests. If not specified,
+    # requests will not be authorized. See https://docs.t2bot.io/matrix-media-repo/v1.3.5/installation/signing-key/
+    # for details.
+    #signingKeyPath: "/data/example.org.key"
+
 # Options for controlling how access tokens work with the media repo. It is recommended that if
 # you are going to use these options that the `/logout` and `/logout/all` client-server endpoints
 # be proxied through this process. They will also be called on the homeserver, and the response

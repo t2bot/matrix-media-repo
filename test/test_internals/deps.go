@@ -7,22 +7,27 @@ import (
 	"log"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/t2bot/matrix-media-repo/common/assets"
 	"github.com/t2bot/matrix-media-repo/common/config"
+	"github.com/t2bot/matrix-media-repo/homeserver_interop"
+	"github.com/t2bot/matrix-media-repo/homeserver_interop/mmr"
+	"github.com/t2bot/matrix-media-repo/homeserver_interop/synapse"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
 type ContainerDeps struct {
-	ctx              context.Context
-	pgContainer      *postgres.PostgresContainer
-	redisContainer   testcontainers.Container
-	minioDep         *MinioDep
-	depNet           *NetworkDep
-	mmrExtConfigPath string
+	ctx               context.Context
+	pgContainer       *postgres.PostgresContainer
+	redisContainer    testcontainers.Container
+	minioDep          *MinioDep
+	depNet            *NetworkDep
+	mmrExtConfigPath  string
+	mmrSigningKeyPath string
 
 	Homeservers []*SynapseDep
 	Machines    []*mmrContainer
@@ -37,12 +42,56 @@ func MakeTestDeps() (*ContainerDeps, error) {
 		return nil, err
 	}
 
-	// Start two synapses for testing
-	syn1, err := MakeSynapse("first.example.org", depNet)
+	// Create a shared signing key for the MMR instances
+	signingKeyFile, err := os.CreateTemp(os.TempDir(), "mmr-signing-key")
 	if err != nil {
 		return nil, err
 	}
-	syn2, err := MakeSynapse("second.example.org", depNet)
+	signingKey, err := homeserver_interop.GenerateSigningKey()
+	if err != nil {
+		return nil, err
+	}
+	b, err := mmr.EncodeSigningKey(signingKey)
+	if err != nil {
+		return nil, err
+	}
+	_, err = signingKeyFile.Write(b)
+	if err != nil {
+		return nil, err
+	}
+	err = signingKeyFile.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	// And use that same signing key for Synapse
+	synapseSigningKeyFile, err := os.CreateTemp(os.TempDir(), "mmr-synapse-signing-key")
+	if err != nil {
+		return nil, err
+	}
+	b, err = synapse.EncodeSigningKey(signingKey)
+	if err != nil {
+		return nil, err
+	}
+	_, err = synapseSigningKeyFile.Write(b)
+	if err != nil {
+		return nil, err
+	}
+	err = synapseSigningKeyFile.Close()
+	if err != nil {
+		return nil, err
+	}
+	err = os.Chmod(synapseSigningKeyFile.Name(), 0777) // XXX: Not great, but works.
+	if err != nil {
+		return nil, err
+	}
+
+	// Start two synapses for testing
+	syn1, err := MakeSynapse("first.example.org", depNet, synapseSigningKeyFile.Name())
+	if err != nil {
+		return nil, err
+	}
+	syn2, err := MakeSynapse("second.example.org", depNet, synapseSigningKeyFile.Name())
 	if err != nil {
 		return nil, err
 	}
@@ -113,14 +162,16 @@ func MakeTestDeps() (*ContainerDeps, error) {
 
 	// Start two MMRs for testing
 	tmplArgs := mmrTmplArgs{
-		Homeservers: []mmrHomeserverTmplArgs{
+		Homeservers: []*mmrHomeserverTmplArgs{
 			{
 				ServerName:         syn1.ServerName,
 				ClientServerApiUrl: syn1.InternalClientServerApiUrl,
+				SigningKeyPath:     strings.ReplaceAll(signingKeyFile.Name(), "\\", "\\\\"),
 			},
 			{
 				ServerName:         syn2.ServerName,
 				ClientServerApiUrl: syn2.InternalClientServerApiUrl,
+				SigningKeyPath:     strings.ReplaceAll(signingKeyFile.Name(), "\\", "\\\\"),
 			},
 		},
 		RedisAddr:          fmt.Sprintf("%s:%d", redisIp, 6379), // we're behind the network for redis
@@ -148,20 +199,21 @@ func MakeTestDeps() (*ContainerDeps, error) {
 	assets.SetupAssets(config.DefaultAssetsPath)
 
 	return &ContainerDeps{
-		ctx:              ctx,
-		pgContainer:      pgContainer,
-		redisContainer:   redisContainer,
-		minioDep:         minioDep,
-		mmrExtConfigPath: tmpPath,
-		Homeservers:      []*SynapseDep{syn1, syn2},
-		Machines:         mmrs,
-		depNet:           depNet,
+		ctx:               ctx,
+		pgContainer:       pgContainer,
+		redisContainer:    redisContainer,
+		minioDep:          minioDep,
+		mmrExtConfigPath:  tmpPath,
+		mmrSigningKeyPath: signingKeyFile.Name(),
+		Homeservers:       []*SynapseDep{syn1, syn2},
+		Machines:          mmrs,
+		depNet:            depNet,
 	}, nil
 }
 
 func (c *ContainerDeps) Teardown() {
-	for _, mmr := range c.Machines {
-		mmr.Teardown()
+	for _, machine := range c.Machines {
+		machine.Teardown()
 	}
 	for _, hs := range c.Homeservers {
 		hs.Teardown()
@@ -173,28 +225,37 @@ func (c *ContainerDeps) Teardown() {
 		log.Fatalf("Error shutting down mmr-postgres container: %s", err.Error())
 	}
 	c.minioDep.Teardown()
-	c.depNet.Teardown()
 	if err := os.Remove(c.mmrExtConfigPath); err != nil && !os.IsNotExist(err) {
 		log.Fatalf("Error cleaning up MMR-External config file '%s': %s", c.mmrExtConfigPath, err.Error())
 	}
+	if err := os.Remove(c.mmrSigningKeyPath); err != nil && !os.IsNotExist(err) {
+		log.Fatalf("Error cleaning up MMR-Signing Key file '%s': %s", c.mmrSigningKeyPath, err.Error())
+	}
+
+	// XXX: We should be shutting this down, but it appears testcontainers leaves something attached :(
+	//c.depNet.Teardown()
 }
 
 func (c *ContainerDeps) Debug() {
 	for i, m := range c.Machines {
 		logs, err := m.Logs()
-		if err != nil {
-			log.Fatal(err)
-		}
-		b, err := io.ReadAll(logs)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Printf("[MMR Deps] Logs from index %d (%s)", i, m.HttpUrl)
-		fmt.Println()
-		fmt.Println(string(b))
-		err = logs.Close()
-		if err != nil {
-			log.Fatal(err)
-		}
+		c.DumpDebugLogs(logs, err, i, m.HttpUrl)
+	}
+}
+
+func (c *ContainerDeps) DumpDebugLogs(logs io.ReadCloser, err error, i int, url string) {
+	if err != nil {
+		log.Fatal(err)
+	}
+	b, err := io.ReadAll(logs)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("[MMR Deps] Logs from index %d (%s)", i, url)
+	fmt.Println()
+	fmt.Println(string(b))
+	err = logs.Close()
+	if err != nil {
+		log.Fatal(err)
 	}
 }
