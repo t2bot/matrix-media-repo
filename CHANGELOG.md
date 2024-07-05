@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * Add `multipartUploads` flag for running MMR against unsupported S3 providers. See `config.sample.yaml` for details. 
 * A new "leaky bucket" rate limit algorithm has been applied to downloads. See `rateLimit.buckets` in the config for details.
 * Add support for [MSC3916: Authentication for media](https://github.com/matrix-org/matrix-spec-proposals/pull/3916). 
-  * To enable full support, use `signingKeyPath` in your config. See sample config for details. 
+  * To enable full support, use `signingKeyPath` in your config. See `config.sample.yaml` for details. 
 
 ### Changed
 
