@@ -30,7 +30,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * JPEG thumbnails will now use sensible extensions.
 * Fixed directory permissions when exporting MMR to Synapse.
 * In some rare cases, memory usage may have leaked due to thumbnail error handling. This has been fixed.
-
+* Synapse signing keys with blank lines can now be decoded/combined with other keys.
 
 ## [1.3.4] - February 9, 2024
 
