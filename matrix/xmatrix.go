@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/t2bot/matrix-media-repo/database"
 	"github.com/t2bot/matrix-media-repo/util"
 )
 
@@ -37,14 +36,14 @@ func ValidateXMatrixAuth(request *http.Request, expectNoContent bool) (string, e
 		uri = uri[:len(uri)-1]
 	}
 
-	err = ValidateXMatrixAuthHeader(request.Method, uri, &database.AnonymousJson{}, auths, keys, request.Host)
+	err = ValidateXMatrixAuthHeader(request.Method, uri, nil, auths, keys, request.Host)
 	if err != nil {
 		return "", err
 	}
 	return auths[0].Origin, nil
 }
 
-func ValidateXMatrixAuthHeader(requestMethod string, requestUri string, content any, headers []util.XMatrixAuth, originKeys ServerSigningKeys, destinationHost string) error {
+func ValidateXMatrixAuthHeader(requestMethod string, requestUri string, content []byte, headers []util.XMatrixAuth, originKeys ServerSigningKeys, destinationHost string) error {
 	if len(headers) == 0 {
 		return ErrNoXMatrixAuth
 	}
@@ -54,7 +53,9 @@ func ValidateXMatrixAuthHeader(requestMethod string, requestUri string, content 
 		"uri":         requestUri,
 		"origin":      headers[0].Origin,
 		"destination": headers[0].Destination,
-		"content":     content,
+	}
+	if content != nil {
+		obj["content"] = content // we can't modify the content, so don't
 	}
 	canonical, err := util.EncodeCanonicalJson(obj)
 	if err != nil {
@@ -84,7 +85,7 @@ func ValidateXMatrixAuthHeader(requestMethod string, requestUri string, content 
 	return nil
 }
 
-func CreateXMatrixHeader(origin string, destination string, requestMethod string, requestUri string, content any, key ed25519.PrivateKey, keyVersion string) (string, error) {
+func CreateXMatrixHeader(origin string, destination string, requestMethod string, requestUri string, content []byte, key ed25519.PrivateKey, keyVersion string) (string, error) {
 	obj := map[string]interface{}{
 		"method":      requestMethod,
 		"uri":         requestUri,
@@ -92,11 +93,7 @@ func CreateXMatrixHeader(origin string, destination string, requestMethod string
 		"destination": destination,
 	}
 	if content != nil {
-		serializedContent, err := util.EncodeCanonicalJson(content)
-		if err != nil {
-			return "", err
-		}
-		obj["content"] = serializedContent
+		obj["content"] = content
 	}
 	canonical, err := util.EncodeCanonicalJson(obj)
 	if err != nil {

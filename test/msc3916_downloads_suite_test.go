@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"github.com/t2bot/matrix-media-repo/common/config"
-	"github.com/t2bot/matrix-media-repo/database"
 	"github.com/t2bot/matrix-media-repo/homeserver_interop"
 	"github.com/t2bot/matrix-media-repo/matrix"
 	"github.com/t2bot/matrix-media-repo/test/test_internals"
@@ -127,7 +126,7 @@ func (s *MSC3916DownloadsSuite) TestFederationDownloads() {
 	assert.Equal(t, http.StatusUnauthorized, raw.StatusCode)
 
 	// Now add the X-Matrix auth and try again
-	header, err := matrix.CreateXMatrixHeader(s.keyServer.PublicHostname, remoteClient.ServerName, "GET", uri, &database.AnonymousJson{}, s.keyServerKey.PrivateKey, s.keyServerKey.KeyVersion)
+	header, err := matrix.CreateXMatrixHeader(s.keyServer.PublicHostname, remoteClient.ServerName, "GET", uri, nil, s.keyServerKey.PrivateKey, s.keyServerKey.KeyVersion)
 	assert.NoError(t, err)
 	remoteClient.AuthHeaderOverride = header
 	raw, err = remoteClient.DoRaw("GET", uri, nil, "", nil)
@@ -235,7 +234,7 @@ func (s *MSC3916DownloadsSuite) TestFederationProducesRedirects() {
 
 	// Verify the federation download *fails* when lacking auth
 	uri := fmt.Sprintf("/_matrix/federation/v1/media/download/%s", mediaId)
-	header, err := matrix.CreateXMatrixHeader(s.keyServer.PublicHostname, remoteClient.ServerName, "GET", uri, &database.AnonymousJson{}, s.keyServerKey.PrivateKey, s.keyServerKey.KeyVersion)
+	header, err := matrix.CreateXMatrixHeader(s.keyServer.PublicHostname, remoteClient.ServerName, "GET", uri, nil, s.keyServerKey.PrivateKey, s.keyServerKey.KeyVersion)
 	assert.NoError(t, err)
 	remoteClient.AuthHeaderOverride = header
 	raw, err := remoteClient.DoRaw("GET", uri, nil, "", nil)
