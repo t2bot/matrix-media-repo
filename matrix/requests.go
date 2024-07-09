@@ -82,7 +82,7 @@ func doRequest(ctx rcontext.RequestContext, method string, urlStr string, body i
 	return nil
 }
 
-func FederatedGet(ctx rcontext.RequestContext, reqUrl string, realHost string, useSigningKeyPath string) (*http.Response, error) {
+func FederatedGet(ctx rcontext.RequestContext, reqUrl string, realHost string, destination string, useSigningKeyPath string) (*http.Response, error) {
 	ctx.Log.Debug("Doing federated GET to " + reqUrl + " with host " + realHost)
 
 	cb := getFederationBreaker(realHost)
@@ -109,7 +109,7 @@ func FederatedGet(ctx rcontext.RequestContext, reqUrl string, realHost string, u
 			if err != nil {
 				return err
 			}
-			auth, err := CreateXMatrixHeader(ctx.Request.Host, realHost, http.MethodGet, parsed.RequestURI(), &database.AnonymousJson{}, key.Key, key.Version)
+			auth, err := CreateXMatrixHeader(ctx.Request.Host, destination, http.MethodGet, parsed.RequestURI(), &database.AnonymousJson{}, key.Key, key.Version)
 			if err != nil {
 				return err
 			}
