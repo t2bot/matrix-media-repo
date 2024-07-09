@@ -85,16 +85,18 @@ func ValidateXMatrixAuthHeader(requestMethod string, requestUri string, content 
 }
 
 func CreateXMatrixHeader(origin string, destination string, requestMethod string, requestUri string, content any, key ed25519.PrivateKey, keyVersion string) (string, error) {
-	serializedContent, err := util.EncodeCanonicalJson(content)
-	if err != nil {
-		return "", err
-	}
 	obj := map[string]interface{}{
 		"method":      requestMethod,
 		"uri":         requestUri,
 		"origin":      origin,
 		"destination": destination,
-		"content":     serializedContent,
+	}
+	if content != nil {
+		serializedContent, err := util.EncodeCanonicalJson(content)
+		if err != nil {
+			return "", err
+		}
+		obj["content"] = serializedContent
 	}
 	canonical, err := util.EncodeCanonicalJson(obj)
 	if err != nil {

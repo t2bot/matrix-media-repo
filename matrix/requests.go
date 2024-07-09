@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
-	"github.com/t2bot/matrix-media-repo/database"
 )
 
 const NoSigningKey = ""
@@ -109,7 +108,7 @@ func FederatedGet(ctx rcontext.RequestContext, reqUrl string, realHost string, d
 			if err != nil {
 				return err
 			}
-			auth, err := CreateXMatrixHeader(ctx.Request.Host, destination, http.MethodGet, parsed.RequestURI(), &database.AnonymousJson{}, key.Key, key.Version)
+			auth, err := CreateXMatrixHeader(ctx.Request.Host, destination, http.MethodGet, parsed.RequestURI(), nil, key.Key, key.Version)
 			if err != nil {
 				return err
 			}
