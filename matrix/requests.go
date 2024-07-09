@@ -180,6 +180,8 @@ func FederatedGet(ctx rcontext.RequestContext, reqUrl string, realHost string, d
 			return err
 		}
 		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
+			b, _ := io.ReadAll(resp.Body)
+			ctx.Log.Warn(string(b))
 			return fmt.Errorf("response not ok: %d", resp.StatusCode)
 		}
 		return nil
