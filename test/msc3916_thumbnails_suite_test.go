@@ -9,7 +9,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"github.com/t2bot/matrix-media-repo/database"
 	"github.com/t2bot/matrix-media-repo/homeserver_interop"
 	"github.com/t2bot/matrix-media-repo/matrix"
 	"github.com/t2bot/matrix-media-repo/test/test_internals"
@@ -118,7 +117,7 @@ func (s *MSC3916ThumbnailsSuite) TestFederationThumbnails() {
 	assert.Equal(t, http.StatusUnauthorized, raw.StatusCode)
 
 	// Now add the X-Matrix auth and try again
-	header, err := matrix.CreateXMatrixHeader(s.keyServer.PublicHostname, remoteClient.ServerName, "GET", fmt.Sprintf("%s?%s", uri, qs.Encode()), &database.AnonymousJson{}, s.keyServerKey.PrivateKey, s.keyServerKey.KeyVersion)
+	header, err := matrix.CreateXMatrixHeader(s.keyServer.PublicHostname, remoteClient.ServerName, "GET", fmt.Sprintf("%s?%s", uri, qs.Encode()), nil, s.keyServerKey.PrivateKey, s.keyServerKey.KeyVersion)
 	assert.NoError(t, err)
 	remoteClient.AuthHeaderOverride = header
 	raw, err = remoteClient.DoRaw("GET", uri, qs, "", nil)
