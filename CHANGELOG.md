@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * A new "leaky bucket" rate limit algorithm has been applied to downloads. See `rateLimit.buckets` in `config.sample.yaml` for details.
 * Add support for [MSC3916: Authentication for media](https://github.com/matrix-org/matrix-spec-proposals/pull/3916). 
   * To enable full support, use `signingKeyPath` in your config. See `config.sample.yaml` for details. 
+  * Server operators should point `/_matrix/client/v1/media/*` and `/_matrix/federation/v1/media/*` at MMR.
 
 ### Changed
 
