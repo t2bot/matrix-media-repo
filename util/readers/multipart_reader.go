@@ -17,10 +17,15 @@ type MultipartPart struct {
 	Reader      io.ReadCloser
 }
 
-func NewMultipartReader(parts ...*MultipartPart) io.ReadCloser {
+func NewMultipartReader(boundary string, parts ...*MultipartPart) io.ReadCloser {
 	r, w := io.Pipe()
 	go func() {
 		mpw := multipart.NewWriter(w)
+		err := mpw.SetBoundary(boundary)
+		if err != nil {
+			// We don't have a good error route, and don't expect this to fail anyways.
+			panic(err)
+		}
 
 		for _, part := range parts {
 			headers := textproto.MIMEHeader{}

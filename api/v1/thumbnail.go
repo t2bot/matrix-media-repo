@@ -2,6 +2,7 @@ package v1
 
 import (
 	"bytes"
+	"github.com/t2bot/matrix-media-repo/util/ids"
 	"net/http"
 
 	"github.com/t2bot/matrix-media-repo/api/_apimeta"
@@ -26,12 +27,18 @@ func FederationThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, ser
 	r = _routers.ForceSetParam("server", r.Host, r)
 
 	res := r0.ThumbnailMedia(r, rctx, _apimeta.UserInfo{})
+	boundary, err := ids.NewUniqueId()
+	if err != nil {
+		rctx.Log.Error("Error generating boundary on response: ", err)
+		return _responses.InternalServerError("unable to generate boundary")
+	}
 	if dl, ok := res.(*_responses.DownloadResponse); ok {
 		return &_responses.DownloadResponse{
-			ContentType: "multipart/mixed",
+			ContentType: "multipart/mixed; boundary=" + boundary,
 			Filename:    "",
 			SizeBytes:   0,
 			Data: readers.NewMultipartReader(
+				boundary,
 				&readers.MultipartPart{ContentType: "application/json", Reader: readers.MakeCloser(bytes.NewReader([]byte("{}")))},
 				&readers.MultipartPart{ContentType: dl.ContentType, FileName: dl.Filename, Reader: dl.Data},
 			),
@@ -39,10 +46,11 @@ func FederationThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, ser
 		}
 	} else if rd, ok := res.(*_responses.RedirectResponse); ok {
 		return &_responses.DownloadResponse{
-			ContentType: "multipart/mixed",
+			ContentType: "multipart/mixed; boundary=" + boundary,
 			Filename:    "",
 			SizeBytes:   0,
 			Data: readers.NewMultipartReader(
+				boundary,
 				&readers.MultipartPart{ContentType: "application/json", Reader: readers.MakeCloser(bytes.NewReader([]byte("{}")))},
 				&readers.MultipartPart{Location: rd.ToUrl},
 			),
