@@ -530,7 +530,8 @@ a large database (more than about 100k uploaded files), run the following steps 
 * Various other features that would be expected like maximum/minimum size controls, rate limiting, etc. Check out the
   sample config for a better idea of what else is possible.
 
-[unreleased]: https://github.com/t2bot/matrix-media-repo/compare/v1.3.5...HEAD
+[unreleased]: https://github.com/t2bot/matrix-media-repo/compare/v1.3.6...HEAD
+[1.3.6]: https://github.com/t2bot/matrix-media-repo/compare/v1.3.5...v1.3.6
 [1.3.5]: https://github.com/t2bot/matrix-media-repo/compare/v1.3.4...v1.3.5
 [1.3.4]: https://github.com/t2bot/matrix-media-repo/compare/v1.3.3...v1.3.4
 [1.3.3]: https://github.com/t2bot/matrix-media-repo/compare/v1.3.2...v1.3.3
