@@ -502,14 +502,14 @@ rateLimit:
     # will use the authenticated entity as the subject - either a user or remote server.
     downloads:
       # The maximum size of each bucket.
-      capacityBytes: 314572800 # 300mb default
+      capacityBytes: 524288000 # 500mb default
       # The number of bytes to "drain" from the bucket every minute.
       drainBytesPerMinute: 5242880 # 5mb default
       # The number of bytes a requester can go over the capacity, once. This is used to give some
       # buffer to allow a single file to be downloaded when the caller is near the limit. This
       # should be set to either your max remote download size or 30% of the capacityBytes, whichever
       # is smaller.
-      overflowLimitBytes: 104857600 # 100mb default
+      overflowLimitBytes: 104857600 # 100mb default (the same as the default remote download maxBytes)
 
 
 # Identicons are generated avatars for a given username. Some clients use these to give users a
