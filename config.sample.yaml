@@ -34,6 +34,17 @@ repo:
   # See https://github.com/t2bot/matrix-media-repo/issues/202 for more information.
   useForwardedHost: true
 
+  # If true, media uploaded or cached from that point forwards will require authentication in order to
+  # be accessed. Media uploaded or cached prior will remain accessible on the unauthenticated endpoints.
+  # If set to false after being set to true, media uploaded or cached while the flag was true will still
+  # only be accessible over authenticated endpoints, though future media will be accessible on both
+  # authenticated and unauthenticated media.
+  #
+  # This flag currently defaults to false. A future release, likely in August 2024, will remove this flag
+  # and have the same effect as it being true (always on). This flag is primarily intended for servers to
+  # opt-in to the behaviour early.
+  freezeUnauthenticatedMedia: false
+
 # Options for dealing with federation
 federation:
   # On a per-host basis, the number of consecutive failures in calling the host before the

@@ -14,6 +14,7 @@ import (
 	"github.com/t2bot/matrix-media-repo/pipelines/_steps/meta"
 	"github.com/t2bot/matrix-media-repo/pipelines/_steps/quota"
 	"github.com/t2bot/matrix-media-repo/pipelines/_steps/upload"
+	"github.com/t2bot/matrix-media-repo/restrictions"
 	"github.com/t2bot/matrix-media-repo/util"
 	"github.com/t2bot/matrix-media-repo/util/readers"
 )
@@ -142,6 +143,11 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, r io.Re
 			if err = database.GetInstance().Media.Prepare(ctx).Insert(newRecord); err != nil {
 				return nil, err
 			}
+			if config.Get().General.FreezeUnauthenticatedMedia {
+				if err = restrictions.SetMediaRequiresAuth(ctx, newRecord.Origin, newRecord.MediaId); err != nil {
+					return nil, err
+				}
+			}
 			uploadDone(newRecord)
 			return newRecord, nil
 		}
@@ -172,6 +178,11 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, r io.Re
 			ctx.Log.Warn("Error deleting upload (delete attempted due to persistence error): ", err2)
 		}
 		return nil, err
+	}
+	if config.Get().General.FreezeUnauthenticatedMedia {
+		if err = restrictions.SetMediaRequiresAuth(ctx, newRecord.Origin, newRecord.MediaId); err != nil {
+			return nil, err
+		}
 	}
 	uploadDone(newRecord)
 	return newRecord, nil

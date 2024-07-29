@@ -17,6 +17,7 @@ import (
 	"github.com/t2bot/matrix-media-repo/pipelines/_steps/quarantine"
 	"github.com/t2bot/matrix-media-repo/pipelines/_steps/thumbnails"
 	"github.com/t2bot/matrix-media-repo/pipelines/pipeline_download"
+	"github.com/t2bot/matrix-media-repo/restrictions"
 	"github.com/t2bot/matrix-media-repo/util/readers"
 	"github.com/t2bot/matrix-media-repo/util/sfcache"
 )
@@ -46,10 +47,18 @@ func (o ThumbnailOpts) ImpliedDownloadOpts() pipeline_download.DownloadOpts {
 		FetchRemoteIfNeeded: o.FetchRemoteIfNeeded,
 		BlockForReadUntil:   o.BlockForReadUntil,
 		RecordOnly:          true,
+		AuthProvided:        o.AuthProvided,
 	}
 }
 
 func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts ThumbnailOpts) (*database.DbThumbnail, io.ReadCloser, error) {
+	// Step 0: Check restrictions
+	if requiresAuth, err := restrictions.DoesMediaRequireAuth(ctx, origin, mediaId); err != nil {
+		return nil, nil, err
+	} else if requiresAuth && !opts.AuthProvided {
+		return nil, nil, common.ErrRestrictedAuth
+	}
+
 	// Step 1: Fix the request parameters
 	w, h, method, err1 := thumbnails.PickNewDimensions(ctx, opts.Width, opts.Height, opts.Method)
 	if err1 != nil {
