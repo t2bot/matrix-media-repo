@@ -2,8 +2,9 @@ package v1
 
 import (
 	"bytes"
-	"github.com/t2bot/matrix-media-repo/util/ids"
 	"net/http"
+
+	"github.com/t2bot/matrix-media-repo/util/ids"
 
 	"github.com/t2bot/matrix-media-repo/api/_apimeta"
 	"github.com/t2bot/matrix-media-repo/api/_responses"
@@ -16,7 +17,7 @@ import (
 func ClientThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
 	r.URL.Query().Set("allow_remote", "true")
 	r.URL.Query().Set("allow_redirect", "true")
-	return r0.ThumbnailMedia(r, rctx, user)
+	return r0.ThumbnailMedia(r, rctx, _apimeta.AuthContext{User: user})
 }
 
 func FederationThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, server _apimeta.ServerInfo) interface{} {
@@ -26,7 +27,7 @@ func FederationThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, ser
 	r.URL.RawQuery = query.Encode()
 	r = _routers.ForceSetParam("server", r.Host, r)
 
-	res := r0.ThumbnailMedia(r, rctx, _apimeta.UserInfo{})
+	res := r0.ThumbnailMedia(r, rctx, _apimeta.AuthContext{Server: server})
 	boundary, err := ids.NewUniqueId()
 	if err != nil {
 		rctx.Log.Error("Error generating boundary on response: ", err)

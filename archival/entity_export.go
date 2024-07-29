@@ -44,6 +44,7 @@ func ExportEntityData(ctx rcontext.RequestContext, exportId string, entityId str
 			FetchRemoteIfNeeded: false,
 			BlockForReadUntil:   10 * time.Minute,
 			RecordOnly:          false,
+			AuthProvided:        true, // it's for an export, so assume authentication
 		})
 		if errors.Is(err, common.ErrMediaQuarantined) {
 			ctx.Log.Warnf("%s is quarantined and will not be included in the export", mxc)

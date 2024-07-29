@@ -20,7 +20,11 @@ import (
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 )
 
-func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+func ThumbnailMediaUser(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
+	return ThumbnailMedia(r, rctx, _apimeta.AuthContext{User: user})
+}
+
+func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, auth _apimeta.AuthContext) interface{} {
 	server := _routers.GetParam("server", r)
 	mediaId := _routers.GetParam("mediaId", r)
 	allowRemote := r.URL.Query().Get("allow_remote")
@@ -55,15 +59,19 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 	}
 
 	rctx = rctx.LogWithFields(logrus.Fields{
-		"mediaId":       mediaId,
-		"server":        server,
-		"allowRemote":   downloadRemote,
-		"allowRedirect": canRedirect,
+		"mediaId":        mediaId,
+		"server":         server,
+		"allowRemote":    downloadRemote,
+		"allowRedirect":  canRedirect,
+		"authUserId":     auth.User.UserId,
+		"authServerName": auth.Server.ServerName,
 	})
 
-	if !util.IsGlobalAdmin(user.UserId) && util.IsHostIgnored(server) {
-		rctx.Log.Warn("Request blocked due to domain being ignored.")
-		return _responses.MediaBlocked()
+	if auth.User.UserId != "" {
+		if !util.IsGlobalAdmin(auth.User.UserId) && util.IsHostIgnored(server) {
+			rctx.Log.Warn("Request blocked due to domain being ignored.")
+			return _responses.MediaBlocked()
+		}
 	}
 
 	widthStr := r.URL.Query().Get("width")
@@ -124,6 +132,7 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 			BlockForReadUntil:   blockFor,
 			RecordOnly:          false, // overridden
 			CanRedirect:         canRedirect,
+			AuthProvided:        auth.IsAuthenticated(),
 		},
 		Width:    width,
 		Height:   height,
@@ -134,6 +143,12 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta
 		var redirect datastores.RedirectError
 		if errors.Is(err, common.ErrMediaNotFound) {
 			return _responses.NotFoundError()
+		} else if errors.Is(err, common.ErrRestrictedAuth) {
+			return _responses.ErrorResponse{
+				Code:         common.ErrCodeNotFound,
+				Message:      "authentication is required to download this media",
+				InternalCode: common.ErrCodeUnauthorized,
+			}
 		} else if errors.Is(err, common.ErrMediaTooLarge) {
 			return _responses.RequestTooLarge()
 		} else if errors.Is(err, common.ErrRateLimitExceeded) {
