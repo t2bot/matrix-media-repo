@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+*Nothing yet*
+
+## [1.3.7] - July 30, 2024
+
 ### Added
 
 * A new global config option, `repo.freezeUnauthenticatedMedia`, is supported to enact the unauthenticated media freeze early. See `config.sample.yaml` for details.
@@ -536,7 +540,8 @@ a large database (more than about 100k uploaded files), run the following steps 
 * Various other features that would be expected like maximum/minimum size controls, rate limiting, etc. Check out the
   sample config for a better idea of what else is possible.
 
-[unreleased]: https://github.com/t2bot/matrix-media-repo/compare/v1.3.6...HEAD
+[unreleased]: https://github.com/t2bot/matrix-media-repo/compare/v1.3.7...HEAD
+[1.3.7]: https://github.com/t2bot/matrix-media-repo/compare/v1.3.6...v1.3.7
 [1.3.6]: https://github.com/t2bot/matrix-media-repo/compare/v1.3.5...v1.3.6
 [1.3.5]: https://github.com/t2bot/matrix-media-repo/compare/v1.3.4...v1.3.5
 [1.3.4]: https://github.com/t2bot/matrix-media-repo/compare/v1.3.3...v1.3.4
