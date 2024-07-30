@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
-* A new global config option, `repo.freezeUnauthenticatedMedia`, is supported to enact the unauthenticated media freeze early.
+* A new global config option, `repo.freezeUnauthenticatedMedia`, is supported to enact the unauthenticated media freeze early. See `config.sample.yaml` for details.
 
 ### Changed
 
