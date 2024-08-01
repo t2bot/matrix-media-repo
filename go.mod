@@ -45,6 +45,7 @@ require (
 
 require (
 	github.com/didip/tollbooth/v7 v7.0.1
+	github.com/docker/docker v25.0.6+incompatible
 	github.com/docker/go-connections v0.5.0
 	github.com/go-redsync/redsync/v4 v4.12.1
 	github.com/julienschmidt/httprouter v1.3.0
@@ -81,7 +82,6 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/distribution/reference v0.5.0 // indirect
-	github.com/docker/docker v25.0.5+incompatible // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dsoprea/go-utility/v2 v2.0.0-20221003172846-a3e1774ef349 // indirect
 	github.com/fatih/color v1.16.0 // indirect
