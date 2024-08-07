@@ -147,7 +147,7 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, auth _apimeta
 			return _responses.ErrorResponse{
 				Code:         common.ErrCodeNotFound,
 				Message:      "authentication is required to download this media",
-				InternalCode: common.ErrCodeUnauthorized,
+				InternalCode: common.ErrCodeNotFound, // used to determine http status code
 			}
 		} else if errors.Is(err, common.ErrMediaTooLarge) {
 			return _responses.RequestTooLarge()
