@@ -7,7 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
-*Nothing yet*
+### Fixed
+
+* Return a 404 instead of 500 when clients access media which is frozen.
 
 ## [1.3.7] - July 30, 2024
 
