@@ -15,8 +15,10 @@ import (
 )
 
 func ClientDownloadMedia(r *http.Request, rctx rcontext.RequestContext, user _apimeta.UserInfo) interface{} {
-	r.URL.Query().Set("allow_remote", "true")
-	r.URL.Query().Set("allow_redirect", "true")
+	query := r.URL.Query()
+	query.Set("allow_remote", "true")
+	query.Set("allow_redirect", "true")
+	r.URL.RawQuery = query.Encode()
 	return r0.DownloadMedia(r, rctx, _apimeta.AuthContext{User: user})
 }
 
