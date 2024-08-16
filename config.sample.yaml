@@ -34,6 +34,17 @@ repo:
   # See https://github.com/t2bot/matrix-media-repo/issues/202 for more information.
   useForwardedHost: true
 
+  # If true, media uploaded or cached from that point forwards will require authentication in order to
+  # be accessed. Media uploaded or cached prior will remain accessible on the unauthenticated endpoints.
+  # If set to false after being set to true, media uploaded or cached while the flag was true will still
+  # only be accessible over authenticated endpoints, though future media will be accessible on both
+  # authenticated and unauthenticated media.
+  #
+  # This flag currently defaults to false. A future release, likely in August 2024, will remove this flag
+  # and have the same effect as it being true (always on). This flag is primarily intended for servers to
+  # opt-in to the behaviour early.
+  freezeUnauthenticatedMedia: false
+
 # Options for dealing with federation
 federation:
   # On a per-host basis, the number of consecutive failures in calling the host before the
@@ -91,6 +102,11 @@ homeservers:
     # admin status. This should be set to one of "synapse", "dendrite", or "matrix". When set
     # to "matrix", most functionality requiring the admin API will not work.
     adminApiKind: "synapse"
+
+    # The signing key to use for authorizing outbound federation requests. If not specified,
+    # requests will not be authorized. See https://docs.t2bot.io/matrix-media-repo/v1.3.5/installation/signing-key/
+    # for details.
+    #signingKeyPath: "/data/example.org.key"
 
 # Options for controlling how access tokens work with the media repo. It is recommended that if
 # you are going to use these options that the `/logout` and `/logout/all` client-server endpoints
@@ -497,14 +513,14 @@ rateLimit:
     # will use the authenticated entity as the subject - either a user or remote server.
     downloads:
       # The maximum size of each bucket.
-      capacityBytes: 314572800 # 300mb default
+      capacityBytes: 524288000 # 500mb default
       # The number of bytes to "drain" from the bucket every minute.
       drainBytesPerMinute: 5242880 # 5mb default
       # The number of bytes a requester can go over the capacity, once. This is used to give some
       # buffer to allow a single file to be downloaded when the caller is near the limit. This
       # should be set to either your max remote download size or 30% of the capacityBytes, whichever
       # is smaller.
-      overflowLimitBytes: 104857600 # 100mb default
+      overflowLimitBytes: 104857600 # 100mb default (the same as the default remote download maxBytes)
 
 
 # Identicons are generated avatars for a given username. Some clients use these to give users a

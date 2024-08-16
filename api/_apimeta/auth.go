@@ -16,6 +16,19 @@ type UserInfo struct {
 	IsShared    bool
 }
 
+type ServerInfo struct {
+	ServerName string
+}
+
+type AuthContext struct {
+	User   UserInfo
+	Server ServerInfo
+}
+
+func (a AuthContext) IsAuthenticated() bool {
+	return a.User.UserId != "" || a.Server.ServerName != ""
+}
+
 func GetRequestUserAdminStatus(r *http.Request, rctx rcontext.RequestContext, user UserInfo) (bool, bool) {
 	isGlobalAdmin := util.IsGlobalAdmin(user.UserId) || user.IsShared
 	isLocalAdmin, err := matrix.IsUserAdmin(rctx, r.Host, user.AccessToken, r.RemoteAddr)

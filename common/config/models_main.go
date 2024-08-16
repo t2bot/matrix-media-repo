@@ -1,14 +1,15 @@
 package config
 
 type GeneralConfig struct {
-	BindAddress      string `yaml:"bindAddress"`
-	Port             int    `yaml:"port"`
-	LogDirectory     string `yaml:"logDirectory"`
-	LogColors        bool   `yaml:"logColors"`
-	JsonLogs         bool   `yaml:"jsonLogs"`
-	LogLevel         string `yaml:"logLevel"`
-	TrustAnyForward  bool   `yaml:"trustAnyForwardedAddress"`
-	UseForwardedHost bool   `yaml:"useForwardedHost"`
+	BindAddress                string `yaml:"bindAddress"`
+	Port                       int    `yaml:"port"`
+	LogDirectory               string `yaml:"logDirectory"`
+	LogColors                  bool   `yaml:"logColors"`
+	JsonLogs                   bool   `yaml:"jsonLogs"`
+	LogLevel                   string `yaml:"logLevel"`
+	TrustAnyForward            bool   `yaml:"trustAnyForwardedAddress"`
+	UseForwardedHost           bool   `yaml:"useForwardedHost"`
+	FreezeUnauthenticatedMedia bool   `yaml:"freezeUnauthenticatedMedia"`
 }
 
 type HomeserverConfig struct {
@@ -16,6 +17,7 @@ type HomeserverConfig struct {
 	ClientServerApi string `yaml:"csApi"`
 	BackoffAt       int    `yaml:"backoffAt"`
 	AdminApiKind    string `yaml:"adminApiKind"`
+	SigningKeyPath  string `yaml:"signingKeyPath"`
 }
 
 type DatabaseConfig struct {

@@ -149,10 +149,12 @@
             {
                 "schemes": [
                     "https://amtraker.com/trains/*",
-                    "https://beta.amtraker.com/trains/*"
+                    "https://amtraker.com/trains/*/*",
+                    "https://*.amtraker.com/trains/*",
+                    "https://*.amtraker.com/trains/*/*"
                 ],
-                "url": "https://api.amtraker.com/v2/oembed",
-                "discovery": false
+                "url": "https://api.amtraker.com/v3/oembed",
+                "discovery": true
             }
         ]
     },
@@ -517,6 +519,25 @@
                     "https://www.bumper.com/oembed-s/bumper"
                 ],
                 "url": "https://www.bumper.com/oembed/bumper",
+                "discovery": true
+            }
+        ]
+    },
+    {
+        "provider_name": "Bunny",
+        "provider_url": "https://bunny.net/",
+        "endpoints": [
+            {
+                "schemes": [
+                    "https://iframe.mediadelivery.net/*",
+                    "http://iframe.mediadelivery.net/*",
+                    "https://video.bunnycdn.com/*",
+                    "http://video.bunnycdn.com/*"
+                ],
+                "url": "https://video.bunnycdn.com/OEmbed",
+                "formats": [
+                    "json"
+                ],
                 "discovery": true
             }
         ]
@@ -1595,6 +1616,7 @@
         "endpoints": [
             {
                 "schemes": [
+                    "https://gumlet.tv/watch/*",
                     "https://www.gumlet.com/watch/*",
                     "https://play.gumlet.io/embed/*"
                 ],
@@ -1923,6 +1945,19 @@
         ]
     },
     {
+        "provider_name": "Insight Timer",
+        "provider_url": "https://insighttimer.com/",
+        "endpoints": [
+            {
+                "schemes": [
+                    "https://insighttimer.com/*"
+                ],
+                "url": "https://widgets.insighttimer.com/services/oembed",
+                "discovery": true
+            }
+        ]
+    },
+    {
         "provider_name": "Instagram",
         "provider_url": "https://instagram.com",
         "endpoints": [
@@ -1984,6 +2019,19 @@
                     "https://issuu.com/*/docs/*"
                 ],
                 "url": "https://issuu.com/oembed",
+                "discovery": true
+            }
+        ]
+    },
+    {
+        "provider_name": "Itabtech infosys",
+        "provider_url": "https://samay.itabtechinfosys.com/",
+        "endpoints": [
+            {
+                "schemes": [
+                    "https://samay.itabtechinfosys.com/*"
+                ],
+                "url": "https://samay.itabtechinfosys.com/oembed/",
                 "discovery": true
             }
         ]
@@ -3363,6 +3411,19 @@
         ]
     },
     {
+        "provider_name": "SharedFile",
+        "provider_url": "https://shared-file-kappa.vercel.app/file/",
+        "endpoints": [
+            {
+                "schemes": [
+                    "https://shared-file-kappa.vercel.app/file/*"
+                ],
+                "url": "https://shared-file-kappa.vercel.app/file/api/oembed",
+                "discovery": true
+            }
+        ]
+    },
+    {
         "provider_name": "Shopshare",
         "provider_url": "https://shopshare.tv",
         "endpoints": [
@@ -4540,6 +4601,7 @@
                     "https://*.youtube.com/playlist?list=*",
                     "https://youtube.com/playlist?list=*",
                     "https://*.youtube.com/shorts*",
+                    "https://youtube.com/shorts*",
                     "https://*.youtube.com/embed/*"
                 ],
                 "url": "https://www.youtube.com/oembed",

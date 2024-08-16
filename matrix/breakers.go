@@ -50,10 +50,6 @@ func getFederationBreaker(hostname string) *circuit.Breaker {
 }
 
 func doBreakerRequest(ctx rcontext.RequestContext, serverName string, accessToken string, appserviceUserId string, ipAddr string, method string, path string, resp interface{}) error {
-	if accessToken == "" {
-		return ErrInvalidToken
-	}
-
 	hs, cb := getBreakerAndConfig(serverName)
 
 	var replyError error

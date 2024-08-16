@@ -14,9 +14,11 @@ import (
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/database"
 	"github.com/t2bot/matrix-media-repo/limits"
+	"github.com/t2bot/matrix-media-repo/matrix"
 	"github.com/t2bot/matrix-media-repo/pipelines/_steps/download"
 	"github.com/t2bot/matrix-media-repo/pipelines/_steps/meta"
 	"github.com/t2bot/matrix-media-repo/pipelines/_steps/quarantine"
+	"github.com/t2bot/matrix-media-repo/restrictions"
 	"github.com/t2bot/matrix-media-repo/util/readers"
 	"github.com/t2bot/matrix-media-repo/util/sfcache"
 )
@@ -33,6 +35,7 @@ type DownloadOpts struct {
 	BlockForReadUntil   time.Duration
 	RecordOnly          bool
 	CanRedirect         bool
+	AuthProvided        bool
 }
 
 func (o DownloadOpts) String() string {
@@ -40,6 +43,13 @@ func (o DownloadOpts) String() string {
 }
 
 func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts DownloadOpts) (*database.DbMedia, io.ReadCloser, error) {
+	// Step 0: Check restrictions
+	if requiresAuth, err := restrictions.DoesMediaRequireAuth(ctx, origin, mediaId); err != nil {
+		return nil, nil, err
+	} else if requiresAuth && !opts.AuthProvided {
+		return nil, nil, common.ErrRestrictedAuth
+	}
+
 	// Step 1: Make our context a timeout context
 	var cancel context.CancelFunc
 	//goland:noinspection GoVetLostCancel - we handle the function in our custom cancelCloser struct
@@ -140,6 +150,14 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 	if errors.Is(err, common.ErrMediaQuarantined) {
 		cancel()
 		return nil, r, err
+	}
+	var notAllowedErr *matrix.ServerNotAllowedError
+	if errors.As(err, &notAllowedErr) {
+		if notAllowedErr.ServerName != ctx.Request.Host {
+			ctx.Log.Debug("'Not allowed' error is for another server - retrying")
+			cancel()
+			return Execute(ctx, origin, mediaId, opts)
+		}
 	}
 	if err != nil {
 		cancel()

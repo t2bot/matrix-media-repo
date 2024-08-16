@@ -11,6 +11,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/go-connections/nat"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -19,10 +20,12 @@ import (
 type mmrHomeserverTmplArgs struct {
 	ServerName         string
 	ClientServerApiUrl string
+	SigningKeyPath     string
+	PublicBaseUrl      string
 }
 
 type mmrTmplArgs struct {
-	Homeservers        []mmrHomeserverTmplArgs
+	Homeservers        []*mmrHomeserverTmplArgs
 	RedisAddr          string
 	PgConnectionString string
 	S3Endpoint         string
@@ -71,6 +74,17 @@ func writeMmrConfig(tmplArgs mmrTmplArgs) (string, error) {
 }
 
 func makeMmrInstances(ctx context.Context, count int, depNet *NetworkDep, tmplArgs mmrTmplArgs) ([]*mmrContainer, error) {
+	// We need to relocate the signing key paths for a Docker mount
+	additionalMounts := make([]testcontainers.ContainerMount, 0)
+	for i, hs := range tmplArgs.Homeservers {
+		if hs.SigningKeyPath != "" {
+			inContainerName := fmt.Sprintf("/data/hs%d.key", i)
+			additionalMounts = append(additionalMounts, testcontainers.BindMount(hs.SigningKeyPath, testcontainers.ContainerMountTarget(inContainerName)))
+			hs.SigningKeyPath = inContainerName
+		}
+	}
+
+	// ... then we can write the config and get the temp file path for it
 	intTmpName, err := writeMmrConfig(tmplArgs)
 	if err != nil {
 		return nil, err
@@ -95,14 +109,18 @@ func makeMmrInstances(ctx context.Context, count int, depNet *NetworkDep, tmplAr
 					KeepImage:      true,
 				},
 				ExposedPorts: []string{"8000/tcp"},
-				Mounts: []testcontainers.ContainerMount{
+				Mounts: append([]testcontainers.ContainerMount{
 					testcontainers.BindMount(intTmpName, "/data/media-repo.yaml"),
-				},
+				}, additionalMounts...),
 				Env: map[string]string{
-					"MACHINE_ID": strconv.Itoa(i),
+					"MACHINE_ID":                      strconv.Itoa(i),
+					"MEDIA_REPO_HTTP_ONLY_FEDERATION": "true",
 				},
 				Networks:   []string{depNet.NetId},
 				WaitingFor: wait.ForHTTP("/healthz").WithPort(p),
+				HostConfigModifier: func(c *container.HostConfig) {
+					c.ExtraHosts = append(c.ExtraHosts, "host.docker.internal:host-gateway")
+				},
 			},
 			Started: true,
 		})

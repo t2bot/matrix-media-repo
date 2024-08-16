@@ -1,13 +1,8 @@
 package main
 
 import (
-	"crypto/ed25519"
-	"crypto/rand"
 	"flag"
-	"fmt"
 	"os"
-	"sort"
-	"strings"
 
 	"github.com/sirupsen/logrus"
 	"github.com/t2bot/matrix-media-repo/cmd/utilities/_common"
@@ -27,16 +22,7 @@ func main() {
 	if *inputFile != "" {
 		key, err = decodeKey(*inputFile)
 	} else {
-		keyVersion := makeKeyVersion()
-
-		var priv ed25519.PrivateKey
-		_, priv, err = ed25519.GenerateKey(nil)
-		priv = priv[len(priv)-32:]
-
-		key = &homeserver_interop.SigningKey{
-			PrivateKey: priv,
-			KeyVersion: keyVersion,
-		}
+		key, err = homeserver_interop.GenerateSigningKey()
 	}
 	if err != nil {
 		logrus.Fatal(err)
@@ -45,28 +31,6 @@ func main() {
 	logrus.Infof("Key ID will be 'ed25519:%s'", key.KeyVersion)
 
 	_common.EncodeSigningKeys([]*homeserver_interop.SigningKey{key}, *outputFormat, *outputFile)
-}
-
-func makeKeyVersion() string {
-	buf := make([]byte, 2)
-	chars := strings.Split("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", "")
-	for i := 0; i < len(chars); i++ {
-		sort.Slice(chars, func(i int, j int) bool {
-			c, err := rand.Read(buf)
-
-			// "should never happen" clauses
-			if err != nil {
-				panic(err)
-			}
-			if c != len(buf) || c != 2 {
-				panic(fmt.Sprintf("crypto rand read %d bytes, expected %d", c, len(buf)))
-			}
-
-			return buf[0] < buf[1]
-		})
-	}
-
-	return strings.Join(chars[:6], "")
 }
 
 func decodeKey(fileName string) (*homeserver_interop.SigningKey, error) {

@@ -10,11 +10,14 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 )
+
+const NoSigningKey = ""
 
 // Based in part on https://github.com/matrix-org/gomatrix/blob/072b39f7fa6b40257b4eead8c958d71985c28bdd/client.go#L180-L243
 func doRequest(ctx rcontext.RequestContext, method string, urlStr string, body interface{}, result interface{}, accessToken string, ipAddr string) error {
@@ -60,7 +63,7 @@ func doRequest(ctx rcontext.RequestContext, method string, urlStr string, body i
 		return err
 	}
 	if res.StatusCode != http.StatusOK {
-		mtxErr := &errorResponse{}
+		mtxErr := &ErrorResponse{}
 		err = json.Unmarshal(contents, mtxErr)
 		if err == nil && mtxErr.ErrorCode != "" {
 			return mtxErr
@@ -78,14 +81,14 @@ func doRequest(ctx rcontext.RequestContext, method string, urlStr string, body i
 	return nil
 }
 
-func FederatedGet(url string, realHost string, ctx rcontext.RequestContext) (*http.Response, error) {
-	ctx.Log.Debug("Doing federated GET to " + url + " with host " + realHost)
+func FederatedGet(ctx rcontext.RequestContext, reqUrl string, realHost string, destination string, useSigningKeyPath string) (*http.Response, error) {
+	ctx.Log.Debug("Doing federated GET to " + reqUrl + " with host " + realHost)
 
 	cb := getFederationBreaker(realHost)
 
 	var resp *http.Response
 	replyError := cb.CallContext(ctx, func() error {
-		req, err := http.NewRequest("GET", url, nil)
+		req, err := http.NewRequest(http.MethodGet, reqUrl, nil)
 		if err != nil {
 			return err
 		}
@@ -94,6 +97,23 @@ func FederatedGet(url string, realHost string, ctx rcontext.RequestContext) (*ht
 		req.Header.Set("Host", realHost)
 		req.Header.Set("User-Agent", "matrix-media-repo")
 		req.Host = realHost
+
+		if useSigningKeyPath != NoSigningKey {
+			ctx.Log.Debug("Reading signing key and adding authentication headers")
+			key, err := getLocalSigningKey(useSigningKeyPath)
+			if err != nil {
+				return err
+			}
+			parsed, err := url.Parse(reqUrl)
+			if err != nil {
+				return err
+			}
+			auth, err := CreateXMatrixHeader(ctx.Request.Host, destination, http.MethodGet, parsed.RequestURI(), nil, key.Key, key.Version)
+			if err != nil {
+				return err
+			}
+			req.Header.Set("Authorization", auth)
+		}
 
 		var client *http.Client
 		if os.Getenv("MEDIA_REPO_UNSAFE_FEDERATION") != "true" {
@@ -159,6 +179,8 @@ func FederatedGet(url string, realHost string, ctx rcontext.RequestContext) (*ht
 			return err
 		}
 		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
+			b, _ := io.ReadAll(resp.Body)
+			ctx.Log.Warn(string(b))
 			return fmt.Errorf("response not ok: %d", resp.StatusCode)
 		}
 		return nil

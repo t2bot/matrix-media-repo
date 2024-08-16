@@ -7,13 +7,39 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Fixed
+
+* Return a 404 instead of 500 when clients access media which is frozen.
+* Ensure the request parameters are correctly set for authenticated media client requests.
+
+## [1.3.7] - July 30, 2024
+
+### Added
+
+* A new global config option, `repo.freezeUnauthenticatedMedia`, is supported to enact the unauthenticated media freeze early. See `config.sample.yaml` for details.
+
+### Changed
+
+* The default leaky bucket capacity has changed from 300mb to 500mb, allowing for more downloads to go through. The drain rate and overflow limit are unchanged (5mb/minute and 100mb respectively).
+
+## [1.3.6] - July 10, 2024
+
+### Fixed
+
+* Ensure a `boundary` is set on federation downloads, allowing the download to work.
+
+## [1.3.5] - July 10, 2024
+
 ### Added
 
 * New datastore option to ignore Redis cache when downloading media served by a `publicBaseUrl`. This can help ensure more requests get redirected to the CDN.
 * `HEAD /download` is now supported, as per [MSC4120](https://github.com/matrix-org/matrix-spec-proposals/pull/4120).
 * S3 datastores can now specify a `prefixLength` to improve S3 performance on some providers. See `config.sample.yaml` for details.
 * Add `multipartUploads` flag for running MMR against unsupported S3 providers. See `config.sample.yaml` for details. 
-* A new "leaky bucket" rate limit algorithm has been applied to downloads. See `rateLimit.buckets` in the config for details.
+* A new "leaky bucket" rate limit algorithm has been applied to downloads. See `rateLimit.buckets` in `config.sample.yaml` for details.
+* Add support for [MSC3916: Authentication for media](https://github.com/matrix-org/matrix-spec-proposals/pull/3916). 
+  * To enable full support, use `signingKeyPath` in your config. See `config.sample.yaml` for details. 
+  * Server operators should point `/_matrix/client/v1/media/*` and `/_matrix/federation/v1/media/*` at MMR.
 
 ### Changed
 
@@ -28,7 +54,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 * JPEG thumbnails will now use sensible extensions.
 * Fixed directory permissions when exporting MMR to Synapse.
 * In some rare cases, memory usage may have leaked due to thumbnail error handling. This has been fixed.
-
+* Synapse signing keys with blank lines can now be decoded/combined with other keys.
 
 ## [1.3.4] - February 9, 2024
 
@@ -517,7 +543,10 @@ a large database (more than about 100k uploaded files), run the following steps 
 * Various other features that would be expected like maximum/minimum size controls, rate limiting, etc. Check out the
   sample config for a better idea of what else is possible.
 
-[unreleased]: https://github.com/t2bot/matrix-media-repo/compare/v1.3.4...HEAD
+[unreleased]: https://github.com/t2bot/matrix-media-repo/compare/v1.3.7...HEAD
+[1.3.7]: https://github.com/t2bot/matrix-media-repo/compare/v1.3.6...v1.3.7
+[1.3.6]: https://github.com/t2bot/matrix-media-repo/compare/v1.3.5...v1.3.6
+[1.3.5]: https://github.com/t2bot/matrix-media-repo/compare/v1.3.4...v1.3.5
 [1.3.4]: https://github.com/t2bot/matrix-media-repo/compare/v1.3.3...v1.3.4
 [1.3.3]: https://github.com/t2bot/matrix-media-repo/compare/v1.3.2...v1.3.3
 [1.3.2]: https://github.com/t2bot/matrix-media-repo/compare/v1.3.1...v1.3.2

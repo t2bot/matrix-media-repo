@@ -45,6 +45,9 @@ func DecodeAllSigningKeys(key io.Reader) ([]*homeserver_interop.SigningKey, erro
 	}
 	keys := make([]*homeserver_interop.SigningKey, 0)
 	for i, line := range lines {
+		if line == "" {
+			continue
+		}
 		parts := strings.Split(line, " ")
 		if len(parts) != 3 {
 			return nil, fmt.Errorf("i:%d - expected 3 parts to signing key, got %d", i, len(parts))

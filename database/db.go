@@ -28,6 +28,7 @@ type Database struct {
 	Tasks           *tasksTableStatements
 	Exports         *exportsTableStatements
 	ExportParts     *exportPartsTableStatements
+	RestrictedMedia *restrictedMediaTableStatements
 }
 
 var instance *Database
@@ -61,6 +62,8 @@ func Reload() {
 	GetInstance()
 }
 
+// GetAccessorForTests
+// Deprecated: For tests only.
 func GetAccessorForTests() *sql.DB {
 	return GetInstance().conn
 }
@@ -123,6 +126,9 @@ func openDatabase(connectionString string, maxConns int, maxIdleConns int) error
 	}
 	if d.ExportParts, err = prepareExportPartsTables(d.conn); err != nil {
 		return errors.New("failed to create export parts table accessor: " + err.Error())
+	}
+	if d.RestrictedMedia, err = prepareRestrictedMediaTables(d.conn); err != nil {
+		return errors.New("failed to create restricted media table accessor: " + err.Error())
 	}
 
 	instance = d
