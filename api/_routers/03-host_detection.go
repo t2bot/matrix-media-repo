@@ -12,6 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sebest/xff"
 	"github.com/sirupsen/logrus"
+
 	"github.com/t2bot/matrix-media-repo/api/_responses"
 	"github.com/t2bot/matrix-media-repo/common"
 	"github.com/t2bot/matrix-media-repo/common/config"
@@ -32,23 +33,7 @@ func (h *HostRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		r.Host = r.Header.Get("X-Forwarded-Host")
 	}
 	r.Host = strings.Split(r.Host, ":")[0]
-
-	var raddr string
-	if config.Get().General.TrustAnyForward {
-		raddr = r.Header.Get("X-Forwarded-For")
-	} else {
-		raddr = xff.GetRemoteAddr(r)
-	}
-	if raddr == "" {
-		raddr = r.RemoteAddr
-	}
-	host, _, err := net.SplitHostPort(raddr)
-	if err != nil {
-		logrus.Error(err)
-		sentry.CaptureException(err)
-		host = raddr
-	}
-	r.RemoteAddr = host
+	r.RemoteAddr = GetRemoteAddr(r)
 
 	ignoreHost := ShouldIgnoreHost(r)
 	isOurs := ignoreHost || util.IsServerOurs(r.Host)
@@ -83,6 +68,26 @@ func (h *HostRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if h.next != nil {
 		h.next.ServeHTTP(w, r)
 	}
+}
+
+func GetRemoteAddr(r *http.Request) string {
+	if config.Get().General.TrustAnyForward {
+		return r.Header.Get("X-Forwarded-For")
+	}
+
+	raddr := xff.GetRemoteAddr(r)
+	if raddr == "" {
+		raddr = r.RemoteAddr
+	}
+
+	host, _, err := net.SplitHostPort(raddr)
+	if err != nil {
+		logrus.WithField("raddr", raddr).WithError(err).Error("Invalid remote address")
+		sentry.CaptureException(err)
+		host = raddr
+	}
+
+	return host
 }
 
 func GetDomainConfig(r *http.Request) *config.DomainRepoConfig {
