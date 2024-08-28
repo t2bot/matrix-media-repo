@@ -29,6 +29,9 @@ func NewHostRouter(next http.Handler) *HostRouter {
 }
 
 func (h *HostRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	origHost := r.Host
+	origRemoteAddr := r.RemoteAddr
+
 	if r.Header.Get("X-Forwarded-Host") != "" && config.Get().General.UseForwardedHost {
 		r.Host = r.Header.Get("X-Forwarded-Host")
 	}
@@ -55,6 +58,13 @@ func (h *HostRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return // don't call next handler
 	}
 
+	logger := GetLogger(r).WithFields(logrus.Fields{
+		"host":           r.Host,
+		"remoteAddr":     r.RemoteAddr,
+		"origHost":       origHost,
+		"origRemoteAddr": origRemoteAddr,
+	})
+
 	cfg := config.GetDomain(r.Host)
 	if ignoreHost {
 		dc := config.DomainConfigFrom(*config.Get())
@@ -63,6 +73,7 @@ func (h *HostRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	ctx = context.WithValue(ctx, common.ContextDomainConfig, cfg)
+	ctx = context.WithValue(ctx, common.ContextLogger, logger)
 	r = r.WithContext(ctx)
 
 	if h.next != nil {
