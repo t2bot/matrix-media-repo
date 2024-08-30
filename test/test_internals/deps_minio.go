@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"path"
-	"path/filepath"
 	"strings"
 	"text/template"
 	"time"
@@ -42,12 +41,6 @@ func MakeMinio(depNet *NetworkDep) (*MinioDep, error) {
 			ContainerRequest: testcontainers.ContainerRequest{
 				ExposedPorts: []string{"9090/tcp"},
 				Cmd:          []string{"--console-address", ":9090"},
-				Files: []testcontainers.ContainerFile{
-					{
-						HostFilePath:      filepath.Join("testdata", "function.zip"),
-						ContainerFilePath: "/tmp/function.zip",
-					},
-				},
 			},
 		}),
 	)

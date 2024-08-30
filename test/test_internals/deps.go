@@ -128,9 +128,19 @@ func MakeTestDeps() (*ContainerDeps, error) {
 		return nil, err
 	}
 
+	wd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+
+	redisConf, err := filepath.Abs(filepath.Join(wd, "..", "dev", "redis.conf"))
+	if err != nil {
+		return nil, err
+	}
+
 	// Start a redis container
 	redisContainer, err := redis.Run(ctx, "docker.io/library/redis:7",
-		redis.WithConfigFile(filepath.Join("..", "..", "dev", "redis.conf")),
+		redis.WithConfigFile(redisConf),
 		tcnetwork.WithNetwork([]string{"redis"}, depNet.dockerNet),
 	)
 	if err != nil {
