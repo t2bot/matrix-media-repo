@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 	"text/template"
 	"time"
@@ -28,6 +28,9 @@ type MinioDep struct {
 	ExternalEndpoint string
 }
 
+// MakeMinio creates a new Minio instance for testing
+// This function should be called from the `test` package,
+// as it contains file paths relative to that package.
 func MakeMinio(depNet *NetworkDep) (*MinioDep, error) {
 	ctx := context.Background()
 
@@ -67,7 +70,7 @@ func MakeMinio(depNet *NetworkDep) (*MinioDep, error) {
 	}
 
 	// Prepare the test script
-	t, err := template.New("minio-config.sh").ParseFiles(path.Join(".", "test", "templates", "minio-config.sh"))
+	t, err := template.New("minio-config.sh").ParseFiles(filepath.Join("templates", "minio-config.sh"))
 	if err != nil {
 		return nil, err
 	}
