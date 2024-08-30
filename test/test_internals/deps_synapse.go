@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"text/template"
 	"time"
@@ -19,6 +20,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
+	tcnetwork "github.com/testcontainers/testcontainers-go/network"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
@@ -46,13 +48,13 @@ func MakeSynapse(domainName string, depNet *NetworkDep, signingKeyFilePath strin
 	ctx := context.Background()
 
 	// Start postgresql database
-	pgContainer, err := postgres.RunContainer(ctx,
-		testcontainers.WithImage("docker.io/library/postgres:15"),
+	pgContainer, err := postgres.Run(ctx,
+		"docker.io/library/postgres:15",
 		postgres.WithDatabase("synapse"),
 		postgres.WithUsername("postgres"),
 		postgres.WithPassword("test1234"),
-		WithEnvironment("POSTGRES_INITDB_ARGS", "--encoding=UTF8 --locale=C"),
-		depNet.ApplyToContainer(),
+		testcontainers.WithEnv(map[string]string{"POSTGRES_INITDB_ARGS": "--encoding=UTF8 --locale=C"}),
+		tcnetwork.WithNetwork([]string{"postgres"}, depNet.dockerNet),
 		testcontainers.WithWaitStrategy(
 			wait.ForLog("database system is ready to accept connections").WithOccurrence(2).WithStartupTimeout(5*time.Second)),
 	)
@@ -61,7 +63,7 @@ func MakeSynapse(domainName string, depNet *NetworkDep, signingKeyFilePath strin
 	}
 
 	// Prepare the synapse config
-	t, err := template.New("synapse.homeserver.yaml").ParseFiles(path.Join(".", "test", "templates", "synapse.homeserver.yaml"))
+	t, err := template.New("synapse.homeserver.yaml").ParseFiles(path.Join("..", "test", "templates", "synapse.homeserver.yaml"))
 	if err != nil {
 		return nil, err
 	}
@@ -107,19 +109,28 @@ func MakeSynapse(domainName string, depNet *NetworkDep, signingKeyFilePath strin
 	if err != nil {
 		return nil, err
 	}
-	cwd, err := os.Getwd()
-	if err != nil {
-		return nil, err
-	}
+
 	synContainer, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
 			Image:        "ghcr.io/element-hq/synapse:v1.110.0",
 			ExposedPorts: []string{"8008/tcp"},
-			Mounts: []testcontainers.ContainerMount{
-				testcontainers.BindMount(f.Name(), "/data/homeserver.yaml"),
-				testcontainers.BindMount(signingKeyFilePath, "/data/signing.key"),
-				testcontainers.BindMount(path.Join(cwd, ".", "test", "templates", "synapse.log.config"), "/data/log.config"),
-				testcontainers.BindMount(d, "/app"),
+			Files: []testcontainers.ContainerFile{
+				{
+					HostFilePath:      f.Name(),
+					ContainerFilePath: "/data/homeserver.yaml",
+				},
+				{
+					HostFilePath:      signingKeyFilePath,
+					ContainerFilePath: "/data/signing.key",
+				},
+				{
+					HostFilePath:      filepath.Join("..", "test", "templates", "synapse.log.config"),
+					ContainerFilePath: "/data/log.config",
+				},
+				{
+					HostFilePath:      d,
+					ContainerFilePath: "/app",
+				},
 			},
 			WaitingFor: wait.ForHTTP("/health").WithPort(p),
 			Networks:   []string{depNet.NetId},

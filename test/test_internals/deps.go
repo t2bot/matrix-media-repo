@@ -17,13 +17,15 @@ import (
 	"github.com/t2bot/matrix-media-repo/homeserver_interop/synapse"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
+	"github.com/testcontainers/testcontainers-go/modules/redis"
+	tcnetwork "github.com/testcontainers/testcontainers-go/network"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
 type ContainerDeps struct {
 	ctx               context.Context
 	pgContainer       *postgres.PostgresContainer
-	redisContainer    testcontainers.Container
+	redisContainer    *redis.RedisContainer
 	minioDep          *MinioDep
 	depNet            *NetworkDep
 	mmrExtConfigPath  string
@@ -37,9 +39,15 @@ func MakeTestDeps() (*ContainerDeps, error) {
 	ctx := context.Background()
 
 	// Create a network
-	depNet, err := MakeNetwork()
+	nw, err := tcnetwork.New(ctx)
 	if err != nil {
 		return nil, err
+	}
+
+	depNet := &NetworkDep{
+		ctx:       ctx,
+		dockerNet: nw,
+		NetId:     nw.ID,
 	}
 
 	// Create a shared signing key for the MMR instances
@@ -97,12 +105,12 @@ func MakeTestDeps() (*ContainerDeps, error) {
 	}
 
 	// Start postgresql database
-	pgContainer, err := postgres.RunContainer(ctx,
-		testcontainers.WithImage("docker.io/library/postgres:14"),
+	pgContainer, err := postgres.Run(ctx,
+		"docker.io/library/postgres:14",
 		postgres.WithDatabase("mmr"),
 		postgres.WithUsername("postgres"),
 		postgres.WithPassword("test1234"),
-		depNet.ApplyToContainer(),
+		tcnetwork.WithNetwork([]string{"postgres"}, depNet.dockerNet),
 		testcontainers.WithWaitStrategy(
 			wait.ForLog("database system is ready to accept connections").WithOccurrence(2).WithStartupTimeout(5*time.Second)),
 	)
@@ -125,19 +133,11 @@ func MakeTestDeps() (*ContainerDeps, error) {
 	if err != nil {
 		return nil, err
 	}
-	redisContainer, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: testcontainers.ContainerRequest{
-			Image:        "docker.io/library/redis:7",
-			ExposedPorts: []string{"6379/tcp"},
-			Mounts: []testcontainers.ContainerMount{
-				testcontainers.BindMount(path.Join(cwd, ".", "dev", "redis.conf"), "/usr/local/etc/redis/redis.conf"),
-			},
-			Cmd:        []string{"redis-server", "/usr/local/etc/redis/redis.conf"},
-			Networks:   []string{depNet.NetId},
-			WaitingFor: wait.ForListeningPort("6379/tcp"),
-		},
-		Started: true,
-	})
+
+	redisContainer, err := redis.Run(ctx, "docker.io/library/redis:7",
+		redis.WithConfigFile(path.Join(cwd, ".", "dev", "redis.conf")),
+		tcnetwork.WithNetwork([]string{"redis"}, depNet.dockerNet),
+	)
 	if err != nil {
 		return nil, err
 	}

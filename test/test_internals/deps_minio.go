@@ -6,12 +6,14 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"text/template"
 	"time"
 
-	"github.com/docker/go-connections/nat"
 	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/modules/minio"
+	tcnetwork "github.com/testcontainers/testcontainers-go/network"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
@@ -21,7 +23,7 @@ type minioTmplArgs struct {
 
 type MinioDep struct {
 	ctx       context.Context
-	container testcontainers.Container
+	container *minio.MinioContainer
 
 	Endpoint         string
 	ExternalEndpoint string
@@ -31,25 +33,28 @@ func MakeMinio(depNet *NetworkDep) (*MinioDep, error) {
 	ctx := context.Background()
 
 	// Start the minio container
-	consolePort, _ := nat.NewPort("tcp", "9090")
-	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: testcontainers.ContainerRequest{
-			Image:        "quay.io/minio/minio:latest",
-			ExposedPorts: []string{"9000/tcp", "9090/tcp"},
-			Env: map[string]string{
-				"MINIO_ROOT_USER":     "admin",
-				"MINIO_ROOT_PASSWORD": "test1234",
+	container, err := minio.Run(ctx,
+		"quay.io/minio/minio:latest",
+		minio.WithPassword("test1234"),
+		minio.WithUsername("admin"),
+		tcnetwork.WithNetwork([]string{"minio"}, depNet.dockerNet),
+		testcontainers.CustomizeRequest(testcontainers.GenericContainerRequest{
+			ContainerRequest: testcontainers.ContainerRequest{
+				ExposedPorts: []string{"9090/tcp"},
+				Cmd:          []string{"--console-address", ":9090"},
+				Files: []testcontainers.ContainerFile{
+					{
+						HostFilePath:      filepath.Join("testdata", "function.zip"),
+						ContainerFilePath: "/tmp/function.zip",
+					},
+				},
 			},
-			WaitingFor: wait.ForHTTP("/login").WithPort(consolePort),
-			Networks:   []string{depNet.NetId},
-			Cmd:        []string{"server", "/data", "--console-address", ":9090"},
-			// we don't bind any volumes because we don't care if we lose the data
-		},
-		Started: true,
-	})
+		}),
+	)
 	if err != nil {
 		return nil, err
 	}
+
 	if _, _, err = container.Exec(ctx, []string{"mkdir", "-p", "/data"}); err != nil {
 		return nil, err
 	}
