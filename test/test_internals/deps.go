@@ -6,7 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -129,13 +129,8 @@ func MakeTestDeps() (*ContainerDeps, error) {
 	}
 
 	// Start a redis container
-	cwd, err := os.Getwd()
-	if err != nil {
-		return nil, err
-	}
-
 	redisContainer, err := redis.Run(ctx, "docker.io/library/redis:7",
-		redis.WithConfigFile(path.Join(cwd, ".", "dev", "redis.conf")),
+		redis.WithConfigFile(filepath.Join("..", "..", "dev", "redis.conf")),
 		tcnetwork.WithNetwork([]string{"redis"}, depNet.dockerNet),
 	)
 	if err != nil {

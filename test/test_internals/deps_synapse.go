@@ -118,14 +118,17 @@ func MakeSynapse(domainName string, depNet *NetworkDep, signingKeyFilePath strin
 				{
 					HostFilePath:      f.Name(),
 					ContainerFilePath: "/data/homeserver.yaml",
+					FileMode:          0o0777,
 				},
 				{
 					HostFilePath:      signingKeyFilePath,
 					ContainerFilePath: "/data/signing.key",
+					FileMode:          0o0777,
 				},
 				{
 					HostFilePath:      filepath.Join("..", "test", "templates", "synapse.log.config"),
 					ContainerFilePath: "/data/log.config",
+					FileMode:          0o0777,
 				},
 				{
 					HostFilePath:      d,
