@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"sync"
 	"time"
@@ -128,11 +129,13 @@ func QuerySigningKeys(serverName string) (ServerSigningKeys, error) {
 		if keyInfo.ServerName != serverName {
 			return nil, fmt.Errorf("got keys for '%s' but expected '%s'", keyInfo.ServerName, serverName)
 		}
+		maxValidity := time.Now().Add(7 * 24 * time.Hour)
 		if keyInfo.ValidUntilTs <= util.NowMillis() {
 			return nil, errors.New("returned server keys are expired")
 		}
+		keyInfo.ValidUntilTs = int64(math.Min(float64(keyInfo.ValidUntilTs), float64(maxValidity.UnixMilli())))
 		cacheUntil := time.Until(time.UnixMilli(keyInfo.ValidUntilTs)) / 2
-		if cacheUntil <= (6 * time.Second) {
+		if cacheUntil <= (1 * time.Minute) {
 			return nil, errors.New("returned server keys would expire too quickly")
 		}
 
