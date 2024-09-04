@@ -58,44 +58,21 @@ func GetXMatrixAuth(headers []string) ([]XMatrixAuth, error) {
 
 		paramCsv := h[len("X-Matrix "):]
 		params := make(map[string]string)
-		isKey := true
-		keyName := ""
-		keyValue := ""
-		escape := false
-		for _, c := range paramCsv {
-			if c == ',' && isKey {
-				params[strings.TrimSpace(strings.ToLower(keyName))] = keyValue
-				keyName = ""
-				keyValue = ""
-				continue
-			}
-			if c == '=' {
-				isKey = false
-				continue
+
+		pairs := strings.Split(paramCsv, ",")
+		for _, pair := range pairs {
+			csv := strings.SplitN(pair, "=", 2)
+			if len(csv) != 2 {
+				return nil, fmt.Errorf("invalid auth param pair: %s", pair)
 			}
 
-			if isKey {
-				keyName = fmt.Sprintf("%s%s", keyName, string(c))
-			} else {
-				if c == '\\' && !escape {
-					escape = true
-					continue
-				}
-				if c == '"' && !escape {
-					escape = false
-					if len(keyValue) > 0 {
-						isKey = true
-					}
-					continue
-				}
-				if escape {
-					escape = false
-				}
-				keyValue = fmt.Sprintf("%s%s", keyValue, string(c))
+			key := strings.TrimSpace(strings.ToLower(csv[0]))
+			value := strings.Trim(strings.TrimSpace(csv[1]), "\"")
+			if _, ok := params[key]; ok {
+				return nil, fmt.Errorf("duplicate auth param: %s", key)
 			}
-		}
-		if len(keyName) > 0 && isKey {
-			params[strings.TrimSpace(strings.ToLower(keyName))] = keyValue
+
+			params[key] = value
 		}
 
 		sig, err := DecodeUnpaddedBase64String(params["sig"])
