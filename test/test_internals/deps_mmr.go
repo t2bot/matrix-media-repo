@@ -6,7 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
-	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"text/template"
@@ -40,9 +40,10 @@ type mmrContainer struct {
 	MachineId int
 }
 
+// call this function from the `test` package, as it contains file paths relative to that package.
 func writeMmrConfig(tmplArgs mmrTmplArgs) (string, error) {
 	// Prepare a config template
-	t, err := template.New("mmr.config.yaml").ParseFiles(path.Join(".", "test", "templates", "mmr.config.yaml"))
+	t, err := template.New("mmr.config.yaml").ParseFiles(filepath.Join(".", "templates", "mmr.config.yaml"))
 	if err != nil {
 		return "", err
 	}
@@ -75,11 +76,16 @@ func writeMmrConfig(tmplArgs mmrTmplArgs) (string, error) {
 
 func makeMmrInstances(ctx context.Context, count int, depNet *NetworkDep, tmplArgs mmrTmplArgs) ([]*mmrContainer, error) {
 	// We need to relocate the signing key paths for a Docker mount
-	additionalMounts := make([]testcontainers.ContainerMount, 0)
+	additionalFiles := make([]testcontainers.ContainerFile, 0)
 	for i, hs := range tmplArgs.Homeservers {
 		if hs.SigningKeyPath != "" {
 			inContainerName := fmt.Sprintf("/data/hs%d.key", i)
-			additionalMounts = append(additionalMounts, testcontainers.BindMount(hs.SigningKeyPath, testcontainers.ContainerMountTarget(inContainerName)))
+			additionalFiles = append(additionalFiles, testcontainers.ContainerFile{
+				HostFilePath:      hs.SigningKeyPath,
+				ContainerFilePath: inContainerName,
+				FileMode:          0o0777,
+			})
+
 			hs.SigningKeyPath = inContainerName
 		}
 	}
@@ -93,25 +99,21 @@ func makeMmrInstances(ctx context.Context, count int, depNet *NetworkDep, tmplAr
 	// Start the containers (using the same DB and config)
 	mmrs := make([]*mmrContainer, 0)
 	for i := 0; i < count; i++ {
-		// Create the docker container (from dockerfile)
-		cr, err := createDockerContext()
-		if err != nil {
-			return nil, err
-		}
+
 		p, _ := nat.NewPort("tcp", "8000")
 		container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 			ContainerRequest: testcontainers.ContainerRequest{
 				FromDockerfile: testcontainers.FromDockerfile{
-					Dockerfile:     "Dockerfile",
-					Context:        ".",
-					ContextArchive: cr,
-					PrintBuildLog:  true,
-					KeepImage:      true,
+					Context:       filepath.Join(".."),
+					Dockerfile:    "Dockerfile",
+					PrintBuildLog: true,
+					KeepImage:     true,
 				},
 				ExposedPorts: []string{"8000/tcp"},
-				Mounts: append([]testcontainers.ContainerMount{
-					testcontainers.BindMount(intTmpName, "/data/media-repo.yaml"),
-				}, additionalMounts...),
+				Files: append(additionalFiles, testcontainers.ContainerFile{
+					HostFilePath:      intTmpName,
+					ContainerFilePath: "/data/media-repo.yaml",
+				}),
 				Env: map[string]string{
 					"MACHINE_ID":                      strconv.Itoa(i),
 					"MEDIA_REPO_HTTP_ONLY_FEDERATION": "true",
