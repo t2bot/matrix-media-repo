@@ -407,6 +407,13 @@ urlPreviews:
   # Defaults to disabled.
   oEmbed: false
 
+  # When provided, preview webpage requests will be routed through the specified proxy.
+  # This can be useful to separate preview traffic from Matrix traffic in your network
+  # for more granular control. Currently only SOCKS5 proxies are supported. The URL
+  # should be in the format "socks5://127.0.0.1:1080"
+  # Defaults to a blank string.
+  proxyUrl: ""
+
 # The thumbnail configuration for the media repository.
 thumbnails:
   # The maximum number of bytes an image can be before the thumbnailer refuses.

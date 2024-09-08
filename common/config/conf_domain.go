@@ -50,6 +50,7 @@ func NewDefaultDomainConfig() DomainRepoConfig {
 			DefaultLanguage: "en-US,en",
 			UserAgent:       "matrix-media-repo",
 			OEmbed:          false,
+			ProxyURL:        "",
 		},
 		Thumbnails: ThumbnailsConfig{
 			MaxSourceBytes:      10485760, // 10mb
