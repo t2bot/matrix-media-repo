@@ -45,7 +45,7 @@ func (d pngGenerator) GenerateThumbnail(b io.Reader, contentType string, width i
 }
 
 func (d pngGenerator) GenerateThumbnailOf(src image.Image, width int, height int, method string, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
-	thumb, err := u.MakeThumbnail(src, method, width, height)
+	thumb, err := u.MakeThumbnailByImaging(src, method, width, height)
 	if err != nil || thumb == nil {
 		return nil, err
 	}
