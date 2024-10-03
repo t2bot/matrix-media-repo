@@ -7,13 +7,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Added
+
+* Allow guests to access uploaded media, as per [MSC4189](https://github.com/matrix-org/matrix-spec-proposals/pull/4189).
+
 ### Fixed
 
 * Return a 404 instead of 500 when clients access media which is frozen.
 * Ensure the request parameters are correctly set for authenticated media client requests.
 * Ensure remote signing keys expire after at most 7 days.
 * Fixed parsing of `Authorization` headers for federated servers.
-* Allow guests to access uploaded media, as per [MSC4189](https://github.com/matrix-org/matrix-spec-proposals/pull/4189).
 
 ## [1.3.7] - July 30, 2024
 
