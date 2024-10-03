@@ -35,7 +35,7 @@ func RequireAccessTokenAllowGuest(generator GeneratorWithUserFn) GeneratorFn {
 			})
 		}
 		appserviceUserId := util.GetAppserviceUserIdFromRequest(r)
-		userId, err := _auth_cache.GetUserId(ctx, accessToken, appserviceUserId)
+		userId, _, err := _auth_cache.GetUserId(ctx, accessToken, appserviceUserId)
 		if err != nil || userId == "" {
 			if err != nil && !errors.Is(err, matrix.ErrInvalidToken) {
 				sentry.CaptureException(err)
