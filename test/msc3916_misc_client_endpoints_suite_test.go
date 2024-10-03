@@ -57,15 +57,18 @@ func (s *MSC3916MiscClientEndpointsSuite) TestPreviewUrlRequiresAuth() {
 		AccessToken:     "", // no auth on this client
 		UserId:          "", // no auth on this client
 	}
+	clientGuest := s.deps.Homeservers[0].GuestUsers[0].WithCsUrl(s.deps.Machines[0].HttpUrl)
 
 	qs := url.Values{
 		"url": []string{s.htmlPage.PublicUrl},
 	}
-	raw, err := client2.DoRaw("GET", "/_matrix/client/v1/media/preview_url", qs, "", nil)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusUnauthorized, raw.StatusCode)
+	for _, unauthorizedClient := range []*test_internals.MatrixClient{client2, clientGuest} {
+		raw, err := unauthorizedClient.DoRaw("GET", "/_matrix/client/v1/media/preview_url", qs, "", nil)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusUnauthorized, raw.StatusCode)
+	}
 
-	raw, err = client1.DoRaw("GET", "/_matrix/client/v1/media/preview_url", qs, "", nil)
+	raw, err := client1.DoRaw("GET", "/_matrix/client/v1/media/preview_url", qs, "", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, raw.StatusCode)
 }
@@ -80,12 +83,15 @@ func (s *MSC3916MiscClientEndpointsSuite) TestConfigRequiresAuth() {
 		AccessToken:     "", // no auth on this client
 		UserId:          "", // no auth on this client
 	}
+	clientGuest := s.deps.Homeservers[0].GuestUsers[0].WithCsUrl(s.deps.Machines[0].HttpUrl)
 
-	raw, err := client2.DoRaw("GET", "/_matrix/client/v1/media/config", nil, "", nil)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusUnauthorized, raw.StatusCode)
+	for _, unauthorizedClient := range []*test_internals.MatrixClient{client2, clientGuest} {
+		raw, err := unauthorizedClient.DoRaw("GET", "/_matrix/client/v1/media/config", nil, "", nil)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusUnauthorized, raw.StatusCode)
+	}
 
-	raw, err = client1.DoRaw("GET", "/_matrix/client/v1/media/config", nil, "", nil)
+	raw, err := client1.DoRaw("GET", "/_matrix/client/v1/media/config", nil, "", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, raw.StatusCode)
 }
