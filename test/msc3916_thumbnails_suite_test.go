@@ -72,16 +72,16 @@ func (s *MSC3916ThumbnailsSuite) TestClientThumbnails() {
 		"method": []string{"scale"},
 	}
 
-	for _, unauthorizedClient := range []*test_internals.MatrixClient{client2, clientGuest} {
-		raw, err := unauthorizedClient.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/thumbnail/%s/%s", origin, mediaId), qs, "", nil)
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusUnauthorized, raw.StatusCode)
-	}
-
-	raw, err := client1.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/thumbnail/%s/%s", origin, mediaId), qs, "", nil)
+	raw, err := client2.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/thumbnail/%s/%s", origin, mediaId), qs, "", nil)
 	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, raw.StatusCode)
-	//test_internals.AssertIsTestImage(t, raw.Body) // we can't verify that the resulting image is correct
+	assert.Equal(t, http.StatusUnauthorized, raw.StatusCode)
+
+	for _, authedClient := range []*test_internals.MatrixClient{client1, clientGuest} {
+		raw, err := authedClient.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/thumbnail/%s/%s", origin, mediaId), qs, "", nil)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, raw.StatusCode)
+		//test_internals.AssertIsTestImage(t, raw.Body) // we can't verify that the resulting image is correct
+	}
 }
 
 func (s *MSC3916ThumbnailsSuite) TestFederationThumbnails() {
