@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Fixed
 
 * Return a 404 instead of 500 when clients access media which is frozen.
+* Return a 403 instead of 500 when guests access endpoints that are for registered users only.
 * Ensure the request parameters are correctly set for authenticated media client requests.
 * Ensure remote signing keys expire after at most 7 days.
 * Fixed parsing of `Authorization` headers for federated servers.

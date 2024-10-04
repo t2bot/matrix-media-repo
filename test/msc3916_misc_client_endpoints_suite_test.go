@@ -62,13 +62,15 @@ func (s *MSC3916MiscClientEndpointsSuite) TestPreviewUrlRequiresAuth() {
 	qs := url.Values{
 		"url": []string{s.htmlPage.PublicUrl},
 	}
-	for _, unauthorizedClient := range []*test_internals.MatrixClient{client2, clientGuest} {
-		raw, err := unauthorizedClient.DoRaw("GET", "/_matrix/client/v1/media/preview_url", qs, "", nil)
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusUnauthorized, raw.StatusCode)
-	}
+	raw, err := client2.DoRaw("GET", "/_matrix/client/v1/media/preview_url", qs, "", nil)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusUnauthorized, raw.StatusCode)
 
-	raw, err := client1.DoRaw("GET", "/_matrix/client/v1/media/preview_url", qs, "", nil)
+	raw, err = clientGuest.DoRaw("GET", "/_matrix/client/v1/media/preview_url", qs, "", nil)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusForbidden, raw.StatusCode)
+
+	raw, err = client1.DoRaw("GET", "/_matrix/client/v1/media/preview_url", qs, "", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, raw.StatusCode)
 }
@@ -85,13 +87,15 @@ func (s *MSC3916MiscClientEndpointsSuite) TestConfigRequiresAuth() {
 	}
 	clientGuest := s.deps.Homeservers[0].GuestUsers[0].WithCsUrl(s.deps.Machines[0].HttpUrl)
 
-	for _, unauthorizedClient := range []*test_internals.MatrixClient{client2, clientGuest} {
-		raw, err := unauthorizedClient.DoRaw("GET", "/_matrix/client/v1/media/config", nil, "", nil)
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusUnauthorized, raw.StatusCode)
-	}
+	raw, err := client2.DoRaw("GET", "/_matrix/client/v1/media/config", nil, "", nil)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusUnauthorized, raw.StatusCode)
 
-	raw, err := client1.DoRaw("GET", "/_matrix/client/v1/media/config", nil, "", nil)
+	raw, err = clientGuest.DoRaw("GET", "/_matrix/client/v1/media/config", nil, "", nil)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusForbidden, raw.StatusCode)
+
+	raw, err = client1.DoRaw("GET", "/_matrix/client/v1/media/config", nil, "", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, raw.StatusCode)
 }
