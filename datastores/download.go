@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"time"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/prometheus/client_golang/prometheus"
@@ -49,7 +50,15 @@ func DownloadOrRedirect(ctx rcontext.RequestContext, ds config.DatastoreConfig, 
 
 	if s3c.publicBaseUrl != "" {
 		metrics.S3Operations.With(prometheus.Labels{"operation": "RedirectGetObject"}).Inc()
-		return nil, redirect(fmt.Sprintf("%s%s", s3c.publicBaseUrl, dsFileName))
+		if s3c.presignUrl {
+			presignedUrl, err := s3c.client.PresignedGetObject(ctx.Context, s3c.bucket, dsFileName, time.Duration(s3c.presignExpiry)*time.Second, nil)
+			if err != nil {
+				return nil, err
+			}
+			return nil, redirect(presignedUrl.String())
+		} else {
+			return nil, redirect(fmt.Sprintf("%s%s", s3c.publicBaseUrl, dsFileName))
+		}
 	}
 
 	return Download(ctx, ds, dsFileName)
