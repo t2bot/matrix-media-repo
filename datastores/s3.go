@@ -23,6 +23,8 @@ type s3 struct {
 	publicBaseUrl      string
 	presignUrl         bool
 	presignExpiry      int
+	cachePresignedUrls bool
+	presignCacheExpiry int
 	redirectWhenCached bool
 	prefixLength       int
 	multipartUploads   bool
@@ -47,6 +49,8 @@ func getS3(ds config.DatastoreConfig) (*s3, error) {
 	publicBaseUrl := ds.Options["publicBaseUrl"]
 	presignUrlStr, hasPresignUrl := ds.Options["presignUrl"]
 	presignExpiryStr, hasPresignExpiry := ds.Options["presignExpiry"]
+	cachePresignedUrlsStr, hasCachePresignedUrls := ds.Options["cachePresignedUrls"]
+	presignCacheExpiryStr, hasPresignCacheExpiry := ds.Options["presignCacheExpiry"]
 	redirectWhenCachedStr, hasRedirectWhenCached := ds.Options["redirectWhenCached"]
 	prefixLengthStr, hasPrefixLength := ds.Options["prefixLength"]
 	useMultipartStr, hasMultipart := ds.Options["multipartUploads"]
@@ -78,6 +82,22 @@ func getS3(ds config.DatastoreConfig) (*s3, error) {
 		}
 		if presignExpiry > 604800 {
 			presignExpiry = 604800
+		}
+	}
+
+	cachePresignedUrls := true
+	if hasCachePresignedUrls && cachePresignedUrlsStr != "" {
+		cachePresignedUrls, _ = strconv.ParseBool(cachePresignedUrlsStr)
+	}
+
+	presignCacheExpiry := presignExpiry * 2 / 3
+	if hasPresignCacheExpiry && presignCacheExpiryStr != "" {
+		presignCacheExpiry, _ = strconv.Atoi(presignCacheExpiryStr)
+		if presignCacheExpiry >= presignExpiry {
+			presignCacheExpiry = presignExpiry * 2 / 3
+		}
+		if presignCacheExpiry < 0 {
+			presignCacheExpiry = 0
 		}
 	}
 
@@ -115,6 +135,8 @@ func getS3(ds config.DatastoreConfig) (*s3, error) {
 		publicBaseUrl:      publicBaseUrl,
 		presignUrl:         presignUrl,
 		presignExpiry:      presignExpiry,
+		cachePresignedUrls: cachePresignedUrls,
+		presignCacheExpiry: presignCacheExpiry,
 		redirectWhenCached: redirectWhenCached,
 		prefixLength:       prefixLength,
 		multipartUploads:   useMultipart,
