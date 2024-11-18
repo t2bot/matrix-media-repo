@@ -47,8 +47,8 @@ func (s *UploadTestSuite) TestUpload() {
 	client2 := &test_internals.MatrixClient{
 		ClientServerUrl: s.deps.Machines[1].HttpUrl,       // deliberately the second machine
 		ServerName:      s.deps.Homeservers[1].ServerName, // deliberately the second machine
-		AccessToken:     "",                               // no auth for downloads
-		UserId:          "",                               // no auth for downloads
+		AccessToken:     s.deps.Homeservers[1].UnprivilegedUsers[0].AccessToken,
+		UserId:          s.deps.Homeservers[1].UnprivilegedUsers[0].UserId,
 	}
 
 	contentType, img, err := test_internals.MakeTestImage(512, 512)
@@ -258,8 +258,8 @@ func (s *UploadTestSuite) TestUploadAsyncFlow() {
 	client2 := &test_internals.MatrixClient{
 		ClientServerUrl: s.deps.Machines[1].HttpUrl,       // deliberately the second machine
 		ServerName:      s.deps.Homeservers[1].ServerName, // deliberately the second machine
-		AccessToken:     "",                               // no auth for downloads
-		UserId:          "",                               // no auth for downloads
+		AccessToken:     s.deps.Homeservers[1].UnprivilegedUsers[0].AccessToken,
+		UserId:          s.deps.Homeservers[1].UnprivilegedUsers[0].UserId,
 	}
 
 	contentType, img, err := test_internals.MakeTestImage(512, 512)
