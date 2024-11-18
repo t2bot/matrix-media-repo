@@ -40,10 +40,10 @@ repo:
   # only be accessible over authenticated endpoints, though future media will be accessible on both
   # authenticated and unauthenticated media.
   #
-  # This flag currently defaults to false. A future release, likely in August 2024, will remove this flag
-  # and have the same effect as it being true (always on). This flag is primarily intended for servers to
-  # opt-in to the behaviour early.
-  freezeUnauthenticatedMedia: false
+  # This flag defaults to true. Previously it defauled to false. A future release, likely in 2025, will
+  # remove this flag and have the same effect as it being true (always on). This flag is primarily
+  # intended for servers to opt-out of the behaviour while they are still testing compatibility.
+  freezeUnauthenticatedMedia: true
 
 # Options for dealing with federation
 federation:
