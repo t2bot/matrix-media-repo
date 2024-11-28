@@ -71,17 +71,15 @@ func InvalidateAllTokens(ctx rcontext.RequestContext, accessToken string, appser
 	return nil
 }
 
-func GetUserId(ctx rcontext.RequestContext, accessToken string, appserviceUserId string) (userId string, isGuest bool, err error) {
+func GetUserId(ctx rcontext.RequestContext, accessToken string, appserviceUserId string) (string, bool, error) {
 	if ctx.Request == nil {
 		ctx.Log.Warn("Tried to get user ID for access token without a valid request reference")
-		err = errors.New("invalid context - missing request")
-		return
+		return "", false, errors.New("invalid context - missing request")
 	}
 
 	if accessToken == "" {
 		ctx.Log.Warn("No access token supplied - cannot get user ID")
-		err = matrix.ErrInvalidToken
-		return
+		return "", false, matrix.ErrInvalidToken
 	}
 
 	if ctx.Config.AccessTokens.MaxCacheTimeSeconds <= 0 {
@@ -95,13 +93,10 @@ func GetUserId(ctx rcontext.RequestContext, accessToken string, appserviceUserId
 	if ok {
 		token := record.(cachedToken)
 		if token.err != nil {
-			err = token.err
-		} else {
-			ctx.Log.Debugf("Access token belongs to %s", token.userId)
-			userId = token.userId
-			isGuest = token.isGuest
+			return "", false, token.err
 		}
-		return
+		ctx.Log.Debugf("Access token belongs to %s", token.userId)
+		return token.userId, token.isGuest, nil
 	}
 
 	if !ctx.Config.AccessTokens.UseAppservices {
@@ -117,8 +112,7 @@ func GetUserId(ctx rcontext.RequestContext, accessToken string, appserviceUserId
 		if r.SenderUserId != "" && (r.SenderUserId == appserviceUserId || appserviceUserId == "") {
 			ctx.Log.Debugf("Access token belongs to appservice (sender user ID): %s", r.Id)
 			cacheToken(ctx, accessToken, appserviceUserId, r.SenderUserId, false, nil)
-			userId = r.SenderUserId
-			return
+			return r.SenderUserId, false, nil
 		}
 
 		for _, n := range r.UserNamespaces {
@@ -130,8 +124,7 @@ func GetUserId(ctx rcontext.RequestContext, accessToken string, appserviceUserId
 			if regex.MatchString(appserviceUserId) {
 				ctx.Log.Debugf("Access token belongs to appservice: %s", r.Id)
 				cacheToken(ctx, accessToken, appserviceUserId, appserviceUserId, false, nil)
-				userId = appserviceUserId
-				return
+				return appserviceUserId, false, nil
 			}
 		}
 	}
