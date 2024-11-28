@@ -86,16 +86,23 @@ func (s *MSC3916DownloadsSuite) TestClientDownloads() {
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusUnauthorized, raw.StatusCode)
 
-	for _, authedClient := range []*test_internals.MatrixClient{client1, clientGuest} {
-		raw, err = authedClient.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/download/%s/%s", origin, mediaId), nil, "", nil)
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, raw.StatusCode)
-		test_internals.AssertIsTestImage(t, raw.Body)
-		raw, err = authedClient.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/download/%s/%s/whatever.png", origin, mediaId), nil, "", nil)
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, raw.StatusCode)
-		test_internals.AssertIsTestImage(t, raw.Body)
-	}
+	raw, err = client1.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/download/%s/%s", origin, mediaId), nil, "", nil)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, raw.StatusCode)
+	test_internals.AssertIsTestImage(t, raw.Body)
+	raw, err = client1.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/download/%s/%s/whatever.png", origin, mediaId), nil, "", nil)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, raw.StatusCode)
+	test_internals.AssertIsTestImage(t, raw.Body)
+
+	raw, err = clientGuest.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/download/%s/%s", origin, mediaId), nil, "", nil)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, raw.StatusCode)
+	test_internals.AssertIsTestImage(t, raw.Body)
+	raw, err = clientGuest.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/download/%s/%s/whatever.png", origin, mediaId), nil, "", nil)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, raw.StatusCode)
+	test_internals.AssertIsTestImage(t, raw.Body)
 }
 
 func (s *MSC3916DownloadsSuite) TestFederationDownloads() {
