@@ -18,7 +18,7 @@ import (
 
 type GeneratorWithUserFn = func(r *http.Request, ctx rcontext.RequestContext, user _apimeta.UserInfo) interface{}
 
-func RequireAccessToken(generator GeneratorWithUserFn) GeneratorFn {
+func RequireAccessToken(generator GeneratorWithUserFn, allowGuests bool) GeneratorFn {
 	return func(r *http.Request, ctx rcontext.RequestContext) interface{} {
 		accessToken := util.GetAccessTokenFromRequest(r)
 		if accessToken == "" {
@@ -38,7 +38,7 @@ func RequireAccessToken(generator GeneratorWithUserFn) GeneratorFn {
 		}
 		appserviceUserId := util.GetAppserviceUserIdFromRequest(r)
 		userId, isGuest, err := _auth_cache.GetUserId(ctx, accessToken, appserviceUserId)
-		if isGuest {
+		if isGuest && !allowGuests {
 			return _responses.GuestAuthFailed()
 		}
 		if err != nil || userId == "" {
