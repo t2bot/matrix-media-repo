@@ -99,6 +99,23 @@
         ]
     },
     {
+        "provider_name": "afreecaTV",
+        "provider_url": "https://www.sooplive.co.kr",
+        "endpoints": [
+            {
+                "schemes": [
+                    "https://vod.sooplive.co.kr/player/",
+                    "https://v.afree.ca/ST/",
+                    "https://vod.sooplive.co.kr/ST/",
+                    "https://vod.sooplive.co.kr/PLAYER/STATION/",
+                    "https://play.sooplive.co.kr/"
+                ],
+                "url": "https://openapi.sooplive.co.kr/oembed/embedinfo",
+                "discovery": true
+            }
+        ]
+    },
+    {
         "provider_name": "Altium LLC",
         "provider_url": "https://altium.com",
         "endpoints": [
@@ -411,6 +428,16 @@
                     "https://cloud.biqapp.com/*"
                 ],
                 "url": "https://biqapp.com/api/v1/video/oembed",
+                "discovery": true
+            }
+        ]
+    },
+    {
+        "provider_name": "Bitchute",
+        "provider_url": "https://bitchute.com/",
+        "endpoints": [
+            {
+                "url": "https://api.bitchute.com/oembed/",
                 "discovery": true
             }
         ]
@@ -2273,6 +2300,20 @@
         ]
     },
     {
+        "provider_name": "Linkstackz",
+        "provider_url": "https://www.linkstackz.com/",
+        "endpoints": [
+            {
+                "schemes": [
+                    "https://linkstackz.com/irf/*",
+                    "https://linkstackz.com/post/*"
+                ],
+                "url": "https://api.linkstackz.com/oembed",
+                "discovery": true
+            }
+        ]
+    },
+    {
         "provider_name": "Livestream",
         "provider_url": "https://livestream.com/",
         "endpoints": [
@@ -2286,6 +2327,20 @@
                     "https://livestream.com/*/*/videos/*"
                 ],
                 "url": "https://livestream.com/oembed",
+                "discovery": true
+            }
+        ]
+    },
+    {
+        "provider_name": "Loom",
+        "provider_url": "https://www.loom.com/",
+        "endpoints": [
+            {
+                "schemes": [
+                    "https://loom.com/i/*",
+                    "https://loom.com/share/*"
+                ],
+                "url": "https://www.loom.com/v1/oembed",
                 "discovery": true
             }
         ]
@@ -3386,6 +3441,19 @@
         ]
     },
     {
+        "provider_name": "sbedit",
+        "provider_url": "https://sbedit.net",
+        "endpoints": [
+            {
+                "schemes": [
+                    "https://sbedit.net/*"
+                ],
+                "url": "https://sbedit.net/oembed/",
+                "discovery": true
+            }
+        ]
+    },
+    {
         "provider_name": "Screen9",
         "provider_url": "http://www.screen9.com/",
         "endpoints": [
@@ -3958,6 +4026,19 @@
         ]
     },
     {
+        "provider_name": "The DAM consultants",
+        "provider_url": "https://hubspot-media-bridge.thedamconsultants.com/",
+        "endpoints": [
+            {
+                "schemes": [
+                    "https://hubspot-media-bridge.thedamconsultants.com/*"
+                ],
+                "url": "https://hubspot-media-bridge.thedamconsultants.com/oembed/",
+                "discovery": true
+            }
+        ]
+    },
+    {
         "provider_name": "The New York Times",
         "provider_url": "https://www.nytimes.com",
         "endpoints": [
@@ -4420,6 +4501,23 @@
         ]
     },
     {
+        "provider_name": "Vizdom",
+        "provider_url": "https://vizdom.dev",
+        "endpoints": [
+            {
+                "schemes": [
+                    "https://vizdom.dev/link/*"
+                ],
+                "url": "https://vizdom.dev/api/v1/oembed",
+                "discovery": true,
+                "formats": [
+                    "xml",
+                    "json"
+                ]
+            }
+        ]
+    },
+    {
         "provider_name": "Vizydrop",
         "provider_url": "https://vizydrop.com",
         "endpoints": [
@@ -4526,6 +4624,21 @@
                     "https://www.web3isgoinggreat.com/embed/*"
                 ],
                 "url": "https://www.web3isgoinggreat.com/api/oembed",
+                "discovery": true
+            }
+        ]
+    },
+    {
+        "provider_name": "Webcrumbs",
+        "provider_url": "https://webcrumbs.org/",
+        "endpoints": [
+            {
+                "schemes": [
+                    "https://share.webcrumbs.org/*",
+                    "https://tools.webcrumbs.org/*",
+                    "https://www.webcrumbs.org/*"
+                ],
+                "url": "http://share.webcrumbs.org/",
                 "discovery": true
             }
         ]

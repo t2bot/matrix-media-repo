@@ -113,7 +113,7 @@ func MakeSynapse(domainName string, depNet *NetworkDep, signingKeyFilePath strin
 	}
 	synContainer, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
-			Image:        "ghcr.io/element-hq/synapse:v1.110.0",
+			Image:        "ghcr.io/element-hq/synapse:v1.116.0",
 			ExposedPorts: []string{"8008/tcp"},
 			Mounts: []testcontainers.ContainerMount{
 				testcontainers.BindMount(f.Name(), "/data/homeserver.yaml"),
