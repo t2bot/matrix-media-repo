@@ -47,7 +47,7 @@ func MakeSynapse(domainName string, depNet *NetworkDep, signingKeyFilePath strin
 
 	// Start postgresql database
 	pgContainer, err := postgres.RunContainer(ctx,
-		testcontainers.WithImage("docker.io/library/postgres:15"),
+		testcontainers.WithImage("docker.io/library/postgres:16"),
 		postgres.WithDatabase("synapse"),
 		postgres.WithUsername("postgres"),
 		postgres.WithPassword("test1234"),

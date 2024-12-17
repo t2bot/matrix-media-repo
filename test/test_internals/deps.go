@@ -98,7 +98,7 @@ func MakeTestDeps() (*ContainerDeps, error) {
 
 	// Start postgresql database
 	pgContainer, err := postgres.RunContainer(ctx,
-		testcontainers.WithImage("docker.io/library/postgres:14"),
+		testcontainers.WithImage("docker.io/library/postgres:16"),
 		postgres.WithDatabase("mmr"),
 		postgres.WithUsername("postgres"),
 		postgres.WithPassword("test1234"),
