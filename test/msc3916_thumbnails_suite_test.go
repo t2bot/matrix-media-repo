@@ -51,6 +51,7 @@ func (s *MSC3916ThumbnailsSuite) TestClientThumbnails() {
 		AccessToken:     "", // this client isn't authed
 		UserId:          "", // this client isn't authed
 	}
+	clientGuest := s.deps.Homeservers[0].GuestUsers[0].WithCsUrl(s.deps.Machines[0].HttpUrl)
 
 	contentType, img, err := test_internals.MakeTestImage(512, 512)
 	assert.NoError(t, err)
@@ -76,6 +77,11 @@ func (s *MSC3916ThumbnailsSuite) TestClientThumbnails() {
 	assert.Equal(t, http.StatusUnauthorized, raw.StatusCode)
 
 	raw, err = client1.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/thumbnail/%s/%s", origin, mediaId), qs, "", nil)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, raw.StatusCode)
+	//test_internals.AssertIsTestImage(t, raw.Body) // we can't verify that the resulting image is correct
+
+	raw, err = clientGuest.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/thumbnail/%s/%s", origin, mediaId), qs, "", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, raw.StatusCode)
 	//test_internals.AssertIsTestImage(t, raw.Body) // we can't verify that the resulting image is correct

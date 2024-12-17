@@ -9,16 +9,13 @@ import (
 var ErrInvalidToken = errors.New("missing or invalid access token")
 var ErrGuestToken = errors.New("token belongs to a guest")
 
-func GetUserIdFromToken(ctx rcontext.RequestContext, serverName string, accessToken string, appserviceUserId string, ipAddr string) (string, error) {
+func GetUserIdFromToken(ctx rcontext.RequestContext, serverName string, accessToken string, appserviceUserId string, ipAddr string) (string, bool, error) {
 	response := &userIdResponse{}
 	err := doBreakerRequest(ctx, serverName, accessToken, appserviceUserId, ipAddr, "GET", "/_matrix/client/v3/account/whoami", response)
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
-	if response.IsGuest || response.IsGuest2 {
-		return "", ErrGuestToken
-	}
-	return response.UserId, nil
+	return response.UserId, response.IsGuest || response.IsGuest2, nil
 }
 
 func Logout(ctx rcontext.RequestContext, serverName string, accessToken string, appserviceUserId string, ipAddr string) error {

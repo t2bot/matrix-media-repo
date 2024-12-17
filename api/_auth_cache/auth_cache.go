@@ -17,8 +17,9 @@ var rwLock = &sync.RWMutex{}
 var regexCache = make(map[string]*regexp.Regexp)
 
 type cachedToken struct {
-	userId string
-	err    error
+	userId  string
+	isGuest bool
+	err     error
 }
 
 func cacheKey(accessToken string, appserviceUserId string) string {
@@ -70,15 +71,15 @@ func InvalidateAllTokens(ctx rcontext.RequestContext, accessToken string, appser
 	return nil
 }
 
-func GetUserId(ctx rcontext.RequestContext, accessToken string, appserviceUserId string) (string, error) {
+func GetUserId(ctx rcontext.RequestContext, accessToken string, appserviceUserId string) (string, bool, error) {
 	if ctx.Request == nil {
 		ctx.Log.Warn("Tried to get user ID for access token without a valid request reference")
-		return "", errors.New("invalid context - missing request")
+		return "", false, errors.New("invalid context - missing request")
 	}
 
 	if accessToken == "" {
 		ctx.Log.Warn("No access token supplied - cannot get user ID")
-		return "", matrix.ErrInvalidToken
+		return "", false, matrix.ErrInvalidToken
 	}
 
 	if ctx.Config.AccessTokens.MaxCacheTimeSeconds <= 0 {
@@ -92,10 +93,10 @@ func GetUserId(ctx rcontext.RequestContext, accessToken string, appserviceUserId
 	if ok {
 		token := record.(cachedToken)
 		if token.err != nil {
-			return "", token.err
+			return "", false, token.err
 		}
 		ctx.Log.Debugf("Access token belongs to %s", token.userId)
-		return token.userId, nil
+		return token.userId, token.isGuest, nil
 	}
 
 	if !ctx.Config.AccessTokens.UseAppservices {
@@ -110,8 +111,8 @@ func GetUserId(ctx rcontext.RequestContext, accessToken string, appserviceUserId
 
 		if r.SenderUserId != "" && (r.SenderUserId == appserviceUserId || appserviceUserId == "") {
 			ctx.Log.Debugf("Access token belongs to appservice (sender user ID): %s", r.Id)
-			cacheToken(ctx, accessToken, appserviceUserId, r.SenderUserId, nil)
-			return r.SenderUserId, nil
+			cacheToken(ctx, accessToken, appserviceUserId, r.SenderUserId, false, nil)
+			return r.SenderUserId, false, nil
 		}
 
 		for _, n := range r.UserNamespaces {
@@ -122,8 +123,8 @@ func GetUserId(ctx rcontext.RequestContext, accessToken string, appserviceUserId
 			}
 			if regex.MatchString(appserviceUserId) {
 				ctx.Log.Debugf("Access token belongs to appservice: %s", r.Id)
-				cacheToken(ctx, accessToken, appserviceUserId, appserviceUserId, nil)
-				return appserviceUserId, nil
+				cacheToken(ctx, accessToken, appserviceUserId, appserviceUserId, false, nil)
+				return appserviceUserId, false, nil
 			}
 		}
 	}
@@ -132,10 +133,11 @@ func GetUserId(ctx rcontext.RequestContext, accessToken string, appserviceUserId
 	return checkTokenWithHomeserver(ctx, accessToken, appserviceUserId, true)
 }
 
-func cacheToken(ctx rcontext.RequestContext, accessToken string, appserviceUserId string, userId string, err error) {
+func cacheToken(ctx rcontext.RequestContext, accessToken string, appserviceUserId string, userId string, isGuest bool, err error) {
 	v := cachedToken{
-		userId: userId,
-		err:    err,
+		userId:  userId,
+		isGuest: isGuest,
+		err:     err,
 	}
 	t := time.Duration(ctx.Config.AccessTokens.MaxCacheTimeSeconds) * time.Second
 	rwLock.Lock()
@@ -143,12 +145,12 @@ func cacheToken(ctx rcontext.RequestContext, accessToken string, appserviceUserI
 	rwLock.Unlock()
 }
 
-func checkTokenWithHomeserver(ctx rcontext.RequestContext, accessToken string, appserviceUserId string, withCache bool) (string, error) {
+func checkTokenWithHomeserver(ctx rcontext.RequestContext, accessToken string, appserviceUserId string, withCache bool) (string, bool, error) {
 	ctx.Log.Debug("Checking access token with homeserver")
-	hsUserId, err := matrix.GetUserIdFromToken(ctx, ctx.Request.Host, accessToken, appserviceUserId, ctx.Request.RemoteAddr)
+	hsUserId, hsIsGuest, err := matrix.GetUserIdFromToken(ctx, ctx.Request.Host, accessToken, appserviceUserId, ctx.Request.RemoteAddr)
 	if withCache {
 		ctx.Log.Debug("Caching access token response from homeserver")
-		cacheToken(ctx, accessToken, appserviceUserId, hsUserId, err)
+		cacheToken(ctx, accessToken, appserviceUserId, hsUserId, hsIsGuest, err)
 	}
-	return hsUserId, err
+	return hsUserId, hsIsGuest, err
 }

@@ -29,4 +29,5 @@ signing_key_path: "/data/signing.key"
 enable_media_repo: false
 enable_registration: true
 enable_registration_without_verification: true
+allow_guest_access: true
 trusted_key_servers: []
