@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Changed
+
+* The global `repo.freezeUnauthenticatedMedia` option now defaults to `true`, enabling authenticated media by default. A future release will remove this option, requiring the freeze behaviour. See `config.sample.yaml` for details.
+
 ### Fixed
 
 * Return a 404 instead of 500 when clients access media which is frozen.
