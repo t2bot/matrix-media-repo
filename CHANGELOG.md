@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Changed
+
+* MMR now requires Go 1.22 for compilation.
+
 ### Fixed
 
 * Return a 404 instead of 500 when clients access media which is frozen.
