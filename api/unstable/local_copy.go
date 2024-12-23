@@ -46,7 +46,7 @@ func LocalCopy(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 		"allowRemote": downloadRemote,
 	})
 
-	if !util.IsGlobalAdmin(user.UserId) && util.IsHostIgnored(server) {
+	if util.IsHostIgnored(server) && !util.IsGlobalAdmin(user.UserId) {
 		rctx.Log.Warn("Request blocked due to domain being ignored.")
 		return _responses.MediaBlocked()
 	}
