@@ -11,7 +11,6 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/docker/docker/api/types/container"
 	"github.com/docker/go-connections/nat"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -118,9 +117,9 @@ func makeMmrInstances(ctx context.Context, count int, depNet *NetworkDep, tmplAr
 				},
 				Networks:   []string{depNet.NetId},
 				WaitingFor: wait.ForHTTP("/healthz").WithPort(p),
-				HostConfigModifier: func(c *container.HostConfig) {
-					c.ExtraHosts = append(c.ExtraHosts, "host.docker.internal:host-gateway")
-				},
+				//HostConfigModifier: func(c *container.HostConfig) {
+				//	c.ExtraHosts = append(c.ExtraHosts, "host.docker.internal:host-gateway")
+				//},
 			},
 			Started: true,
 		})

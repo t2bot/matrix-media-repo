@@ -20,11 +20,12 @@ type netCustomizer struct {
 	network *NetworkDep
 }
 
-func (c *netCustomizer) Customize(req *testcontainers.GenericContainerRequest) {
+func (c *netCustomizer) Customize(req *testcontainers.GenericContainerRequest) error {
 	if req.Networks == nil {
 		req.Networks = make([]string, 0)
 	}
 	req.Networks = append(req.Networks, c.network.NetId)
+	return nil
 }
 
 func MakeNetwork() (*NetworkDep, error) {

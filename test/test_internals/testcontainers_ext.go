@@ -15,9 +15,10 @@ func WithEnvironment(name string, value string) *EnvCustomizer {
 	}
 }
 
-func (c *EnvCustomizer) Customize(req *testcontainers.GenericContainerRequest) {
+func (c *EnvCustomizer) Customize(req *testcontainers.GenericContainerRequest) error {
 	if req.Env == nil {
 		req.Env = make(map[string]string)
 	}
 	req.Env[c.varName] = c.varValue
+	return nil
 }
