@@ -115,11 +115,13 @@ func MakeTestDeps() (*ContainerDeps, error) {
 	}
 	// we can hardcode the port and most of the connection details because we're behind the docker network here
 	pgConnStr := fmt.Sprintf("host=%s port=5432 user=postgres password=test1234 dbname=mmr sslmode=disable", pgHost)
-	//extPgConnStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
-	extPgConnStr := pgConnStr
+	// the external connection string is a bit harder, because testcontainers wants to use `localhost` as a hostname,
+	// which prevents us from using the ConnectionString() function. We instead build the connection string manually
+	pgExtPort, err := pgContainer.MappedPort(ctx, "5432/tcp")
 	if err != nil {
 		return nil, err
 	}
+	extPgConnStr := fmt.Sprintf("host=%s port=%d user=postgres password=test1234 dbname=mmr sslmode=disable", pgHost, pgExtPort.Int())
 
 	// Start a redis container
 	cwd, err := os.Getwd()
