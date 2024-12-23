@@ -1,4 +1,4 @@
-version: '2.0'
+#version: '2.0'
 services:
   media_redis01:
     container_name: "media_repo_redis01"
@@ -35,7 +35,7 @@ services:
       - media_proxy
   media_homeserver:
     container_name: "media_repo_synapse"
-    image: "ghcr.io/element-hq/synapse:v1.111.0"
+    image: "ghcr.io/element-hq/synapse:v1.121.1"
     restart: unless-stopped
     volumes:
       - ./synapse-db:/data
