@@ -22,6 +22,6 @@ func RequireRepoAdmin(generator GeneratorWithUserFn) GeneratorFn {
 			}
 
 			return generator(r, ctx, user)
-		})(r, ctx)
+		}, false)(r, ctx)
 	}
 }

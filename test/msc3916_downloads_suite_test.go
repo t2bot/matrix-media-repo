@@ -17,6 +17,7 @@ import (
 	"github.com/t2bot/matrix-media-repo/matrix"
 	"github.com/t2bot/matrix-media-repo/test/test_internals"
 	"github.com/t2bot/matrix-media-repo/util"
+	"github.com/testcontainers/testcontainers-go"
 )
 
 type MSC3916DownloadsSuite struct {
@@ -64,6 +65,7 @@ func (s *MSC3916DownloadsSuite) TestClientDownloads() {
 		AccessToken:     "", // this client isn't authed
 		UserId:          "", // this client isn't authed
 	}
+	clientGuest := s.deps.Homeservers[0].GuestUsers[0].WithCsUrl(s.deps.Machines[0].HttpUrl)
 
 	contentType, img, err := test_internals.MakeTestImage(512, 512)
 	assert.NoError(t, err)
@@ -90,6 +92,15 @@ func (s *MSC3916DownloadsSuite) TestClientDownloads() {
 	assert.Equal(t, http.StatusOK, raw.StatusCode)
 	test_internals.AssertIsTestImage(t, raw.Body)
 	raw, err = client1.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/download/%s/%s/whatever.png", origin, mediaId), nil, "", nil)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, raw.StatusCode)
+	test_internals.AssertIsTestImage(t, raw.Body)
+
+	raw, err = clientGuest.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/download/%s/%s", origin, mediaId), nil, "", nil)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, raw.StatusCode)
+	test_internals.AssertIsTestImage(t, raw.Body)
+	raw, err = clientGuest.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/download/%s/%s/whatever.png", origin, mediaId), nil, "", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, raw.StatusCode)
 	test_internals.AssertIsTestImage(t, raw.Body)
@@ -154,8 +165,8 @@ func (s *MSC3916DownloadsSuite) TestFederationMakesAuthedDownloads() {
 	defer testServer.Close()
 
 	u, _ := url.Parse(testServer.URL)
-	origin = fmt.Sprintf("%s:%s", "host.docker.internal", u.Port())
-	config.AddDomainForTesting("host.docker.internal", nil) // no port for config lookup
+	origin = fmt.Sprintf("%s:%s", testcontainers.HostInternal, u.Port())
+	config.AddDomainForTesting(testcontainers.HostInternal, nil) // no port for config lookup
 
 	raw, err := client1.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/download/%s/%s", origin, mediaId), nil, "", nil)
 	assert.NoError(t, err)
@@ -182,7 +193,7 @@ func (s *MSC3916DownloadsSuite) TestFederationFollowsRedirects() {
 	defer testServer2.Close()
 	u, _ := url.Parse(testServer2.URL)
 	//goland:noinspection HttpUrlsUsage
-	redirectUrl := fmt.Sprintf("http://%s:%s/cdn/file", "host.docker.internal", u.Port())
+	redirectUrl := fmt.Sprintf("http://%s:%s/cdn/file", testcontainers.HostInternal, u.Port())
 
 	// Mock homeserver (1st hop)
 	testServer1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -196,8 +207,8 @@ func (s *MSC3916DownloadsSuite) TestFederationFollowsRedirects() {
 	defer testServer1.Close()
 
 	u, _ = url.Parse(testServer1.URL)
-	origin = fmt.Sprintf("%s:%s", "host.docker.internal", u.Port())
-	config.AddDomainForTesting("host.docker.internal", nil) // no port for config lookup
+	origin = fmt.Sprintf("%s:%s", testcontainers.HostInternal, u.Port())
+	config.AddDomainForTesting(testcontainers.HostInternal, nil) // no port for config lookup
 
 	raw, err := client1.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/download/%s/%s", origin, mediaId), nil, "", nil)
 	assert.NoError(t, err)
@@ -274,8 +285,8 @@ func (s *MSC3916DownloadsSuite) TestFederationMakesAuthedDownloadsAndFallsBack()
 	defer testServer.Close()
 
 	u, _ := url.Parse(testServer.URL)
-	origin = fmt.Sprintf("%s:%s", "host.docker.internal", u.Port())
-	config.AddDomainForTesting("host.docker.internal", nil) // no port for config lookup
+	origin = fmt.Sprintf("%s:%s", testcontainers.HostInternal, u.Port())
+	config.AddDomainForTesting(testcontainers.HostInternal, nil) // no port for config lookup
 
 	raw, err := client1.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/download/%s/%s", origin, mediaId), nil, "", nil)
 	assert.NoError(t, err)

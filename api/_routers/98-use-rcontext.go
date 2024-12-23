@@ -212,6 +212,9 @@ beforeParseDownload:
 		case common.ErrCodeForbidden:
 			proposedStatusCode = http.StatusForbidden
 			break
+		case common.ErrCodeNoGuests:
+			proposedStatusCode = http.StatusForbidden
+			break
 		case common.ErrCodeCannotOverwrite:
 			proposedStatusCode = http.StatusConflict
 			break

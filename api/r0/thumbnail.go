@@ -67,8 +67,8 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, auth _apimeta
 		"authServerName": auth.Server.ServerName,
 	})
 
-	if auth.User.UserId != "" {
-		if !util.IsGlobalAdmin(auth.User.UserId) && util.IsHostIgnored(server) {
+	if util.IsHostIgnored(server) {
+		if auth.User.UserId == "" || !util.IsGlobalAdmin(auth.User.UserId) {
 			rctx.Log.Warn("Request blocked due to domain being ignored.")
 			return _responses.MediaBlocked()
 		}

@@ -34,7 +34,10 @@ func OptionalAccessToken(generator GeneratorWithUserFn) GeneratorFn {
 			})
 		}
 		appserviceUserId := util.GetAppserviceUserIdFromRequest(r)
-		userId, err := _auth_cache.GetUserId(ctx, accessToken, appserviceUserId)
+		userId, isGuest, err := _auth_cache.GetUserId(ctx, accessToken, appserviceUserId)
+		if isGuest {
+			return _responses.GuestAuthFailed()
+		}
 		if err != nil {
 			if !errors.Is(err, matrix.ErrInvalidToken) {
 				sentry.CaptureException(err)

@@ -40,6 +40,7 @@ type SynapseDep struct {
 
 	AdminUsers        []*MatrixClient // uses ExternalClientServerApiUrl
 	UnprivilegedUsers []*MatrixClient // uses ExternalClientServerApiUrl
+	GuestUsers        []*MatrixClient // uses ExternalClientServerApiUrl
 }
 
 func MakeSynapse(domainName string, depNet *NetworkDep, signingKeyFilePath string) (*SynapseDep, error) {
@@ -47,7 +48,7 @@ func MakeSynapse(domainName string, depNet *NetworkDep, signingKeyFilePath strin
 
 	// Start postgresql database
 	pgContainer, err := postgres.RunContainer(ctx,
-		testcontainers.WithImage("docker.io/library/postgres:15"),
+		testcontainers.WithImage("docker.io/library/postgres:16"),
 		postgres.WithDatabase("synapse"),
 		postgres.WithUsername("postgres"),
 		postgres.WithPassword("test1234"),
@@ -113,7 +114,7 @@ func MakeSynapse(domainName string, depNet *NetworkDep, signingKeyFilePath strin
 	}
 	synContainer, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
-			Image:        "ghcr.io/element-hq/synapse:v1.116.0",
+			Image:        "ghcr.io/element-hq/synapse:v1.121.1",
 			ExposedPorts: []string{"8008/tcp"},
 			Mounts: []testcontainers.ContainerMount{
 				testcontainers.BindMount(f.Name(), "/data/homeserver.yaml"),
@@ -150,6 +151,7 @@ func MakeSynapse(domainName string, depNet *NetworkDep, signingKeyFilePath strin
 	// Register the accounts
 	adminUsers := make([]*MatrixClient, 0)
 	unprivilegedUsers := make([]*MatrixClient, 0)
+	guestUsers := make([]*MatrixClient, 0)
 	registerUser := func(localpart string, admin bool) error {
 		adminFlag := "--admin"
 		if !admin {
@@ -230,6 +232,55 @@ func MakeSynapse(domainName string, depNet *NetworkDep, signingKeyFilePath strin
 
 		return nil
 	}
+	registerGuest := func(localpart string) error {
+		log.Println("[Synapse API] Register guest")
+		u, err := url.Parse(extCsApiUrl + "/_matrix/client/v3/register?kind=guest")
+		if err != nil {
+			return err
+		}
+		b, err := json.Marshal(map[string]interface{}{})
+		if err != nil {
+			return err
+		}
+		res, err := http.DefaultClient.Post(u.String(), "application/json", bytes.NewBuffer(b))
+		if err != nil {
+			return err
+		}
+		b, err = io.ReadAll(res.Body)
+		if err != nil {
+			return err
+		}
+		if res.StatusCode != http.StatusOK {
+			return errors.New(res.Status + "\n" + string(b))
+		}
+		log.Println("[Synapse API] " + string(b))
+		m := make(map[string]interface{})
+		err = json.Unmarshal(b, &m)
+		if err != nil {
+			return err
+		}
+
+		var userId interface{}
+		var accessToken interface{}
+		var ok bool
+		if userId, ok = m["user_id"]; !ok {
+			return errors.New("missing user_id")
+		}
+		if accessToken, ok = m["access_token"]; !ok {
+			return errors.New("missing access_token")
+		}
+
+		mxClient := &MatrixClient{
+			AccessToken:     accessToken.(string),
+			ClientServerUrl: extCsApiUrl,
+			UserId:          userId.(string),
+			ServerName:      domainName,
+		}
+
+		guestUsers = append(guestUsers, mxClient)
+
+		return nil
+	}
 	err = registerUser("admin", true)
 	if err != nil {
 		return nil, err
@@ -239,6 +290,10 @@ func MakeSynapse(domainName string, depNet *NetworkDep, signingKeyFilePath strin
 		return nil, err
 	}
 	err = registerUser("user_bob", false)
+	if err != nil {
+		return nil, err
+	}
+	err = registerGuest("user_guest")
 	if err != nil {
 		return nil, err
 	}
@@ -254,6 +309,7 @@ func MakeSynapse(domainName string, depNet *NetworkDep, signingKeyFilePath strin
 		ServerName:                 domainName,
 		AdminUsers:                 adminUsers,
 		UnprivilegedUsers:          unprivilegedUsers,
+		GuestUsers:                 guestUsers,
 	}, nil
 }
 
