@@ -47,8 +47,8 @@ func (s *UploadTestSuite) TestUpload() {
 	client2 := &test_internals.MatrixClient{
 		ClientServerUrl: s.deps.Machines[1].HttpUrl,       // deliberately the second machine
 		ServerName:      s.deps.Homeservers[1].ServerName, // deliberately the second machine
-		AccessToken:     "",                               // no auth for downloads
-		UserId:          "",                               // no auth for downloads
+		AccessToken:     s.deps.Homeservers[1].UnprivilegedUsers[0].AccessToken,
+		UserId:          s.deps.Homeservers[1].UnprivilegedUsers[0].UserId,
 	}
 
 	contentType, img, err := test_internals.MakeTestImage(512, 512)
@@ -62,7 +62,7 @@ func (s *UploadTestSuite) TestUpload() {
 	assert.Equal(t, client1.ServerName, origin)
 	assert.NotEmpty(t, mediaId)
 
-	raw, err := client2.DoRaw("GET", fmt.Sprintf("/_matrix/media/v3/download/%s/%s", origin, mediaId), nil, "", nil)
+	raw, err := client2.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/download/%s/%s", origin, mediaId), nil, "", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, raw.StatusCode, http.StatusOK)
 	test_internals.AssertIsTestImage(t, raw.Body)
@@ -258,8 +258,8 @@ func (s *UploadTestSuite) TestUploadAsyncFlow() {
 	client2 := &test_internals.MatrixClient{
 		ClientServerUrl: s.deps.Machines[1].HttpUrl,       // deliberately the second machine
 		ServerName:      s.deps.Homeservers[1].ServerName, // deliberately the second machine
-		AccessToken:     "",                               // no auth for downloads
-		UserId:          "",                               // no auth for downloads
+		AccessToken:     s.deps.Homeservers[1].UnprivilegedUsers[0].AccessToken,
+		UserId:          s.deps.Homeservers[1].UnprivilegedUsers[0].UserId,
 	}
 
 	contentType, img, err := test_internals.MakeTestImage(512, 512)
@@ -278,7 +278,7 @@ func (s *UploadTestSuite) TestUploadAsyncFlow() {
 	assert.NotEmpty(t, mediaId)
 
 	// Do a test download to ensure that the media doesn't (yet) exist
-	errRes, err := client2.DoExpectError("GET", fmt.Sprintf("/_matrix/media/v3/download/%s/%s", origin, mediaId), url.Values{
+	errRes, err := client2.DoExpectError("GET", fmt.Sprintf("/_matrix/client/v1/media/download/%s/%s", origin, mediaId), url.Values{
 		"timeout_ms": []string{"1000"},
 	}, "", nil)
 	assert.NoError(t, err)
@@ -303,7 +303,7 @@ func (s *UploadTestSuite) TestUploadAsyncFlow() {
 	assert.Equal(t, http.StatusConflict, errRes.InjectedStatusCode)
 
 	// Download and test the upload
-	raw, err := client2.DoRaw("GET", fmt.Sprintf("/_matrix/media/v3/download/%s/%s", origin, mediaId), nil, "", nil)
+	raw, err := client2.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/download/%s/%s", origin, mediaId), nil, "", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, raw.StatusCode, http.StatusOK)
 	test_internals.AssertIsTestImage(t, raw.Body)

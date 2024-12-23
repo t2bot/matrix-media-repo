@@ -32,7 +32,7 @@ func NewDefaultMainConfig() MainRepoConfig {
 			LogLevel:                   "info",
 			TrustAnyForward:            false,
 			UseForwardedHost:           true,
-			FreezeUnauthenticatedMedia: false,
+			FreezeUnauthenticatedMedia: true,
 		},
 		Database: DatabaseConfig{
 			Postgres: "postgres://your_username:your_password@localhost/database_name?sslmode=disable",
