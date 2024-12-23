@@ -56,7 +56,7 @@ func (d gifGenerator) GenerateThumbnail(b io.Reader, contentType string, width i
 		draw.Draw(frameImg, frameImg.Bounds(), img, image.Point{X: 0, Y: 0}, draw.Over)
 
 		// Do the thumbnailing on the copied frame
-		frameThumb, err := u.MakeThumbnail(frameImg, method, width, height)
+		frameThumb, err := u.MakeThumbnailByImaging(frameImg, method, width, height)
 		if err != nil {
 			return nil, errors.New("gif: error generating thumbnail frame: " + err.Error())
 		}

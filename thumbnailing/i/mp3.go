@@ -105,7 +105,7 @@ func (d mp3Generator) GenerateFromStream(audio beep.StreamSeekCloser, format bee
 	if meta != nil && meta.Picture() != nil {
 		artwork, _, _ := image.Decode(bytes.NewBuffer(meta.Picture().Data))
 		if artwork != nil {
-			artworkImg, _ = u.MakeThumbnail(artwork, "crop", sq, sq)
+			artworkImg, _ = u.MakeThumbnailByImaging(artwork, "crop", sq, sq)
 		}
 	}
 
@@ -129,7 +129,7 @@ func (d mp3Generator) GenerateFromStream(audio beep.StreamSeekCloser, format bee
 			defer f.Close()
 			tmp, _, _ := image.Decode(f)
 			if tmp != nil {
-				artworkImg, _ = u.MakeThumbnail(tmp, "crop", ax, ay)
+				artworkImg, _ = u.MakeThumbnailByImaging(tmp, "crop", ax, ay)
 			}
 		}
 		if artworkImg == nil {

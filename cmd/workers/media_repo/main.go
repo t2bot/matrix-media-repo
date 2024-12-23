@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/davidbyttow/govips/v2/vips"
 	"github.com/fsnotify/fsnotify"
 	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
@@ -61,6 +62,9 @@ func main() {
 	assets.SetupMigrations(*migrationsPath)
 	assets.SetupTemplates(*templatesPath)
 	assets.SetupAssets(*assetsPath)
+
+	vips.Startup(nil)
+	defer vips.Shutdown()
 
 	err := logging.Setup(
 		config.Get().General.LogDirectory,
