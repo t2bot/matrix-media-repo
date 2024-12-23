@@ -115,7 +115,8 @@ func MakeTestDeps() (*ContainerDeps, error) {
 	}
 	// we can hardcode the port and most of the connection details because we're behind the docker network here
 	pgConnStr := fmt.Sprintf("host=%s port=5432 user=postgres password=test1234 dbname=mmr sslmode=disable", pgHost)
-	extPgConnStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
+	//extPgConnStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
+	extPgConnStr := pgConnStr
 	if err != nil {
 		return nil, err
 	}
