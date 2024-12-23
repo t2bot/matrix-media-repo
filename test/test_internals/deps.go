@@ -121,7 +121,7 @@ func MakeTestDeps() (*ContainerDeps, error) {
 	if err != nil {
 		return nil, err
 	}
-	extPgConnStr := fmt.Sprintf("host=%s port=%d user=postgres password=test1234 dbname=mmr sslmode=disable", "host.docker.internal", pgExtPort.Int())
+	extPgConnStr := fmt.Sprintf("host=%s port=%d user=postgres password=test1234 dbname=mmr sslmode=disable", testcontainers.HostInternal, pgExtPort.Int())
 
 	// Start a redis container
 	cwd, err := os.Getwd()
