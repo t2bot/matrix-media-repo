@@ -117,11 +117,12 @@ func MakeTestDeps() (*ContainerDeps, error) {
 	pgConnStr := fmt.Sprintf("host=%s port=5432 user=postgres password=test1234 dbname=mmr sslmode=disable", pgHost)
 	// the external connection string is a bit harder, because testcontainers wants to use `localhost` as a hostname,
 	// which prevents us from using the ConnectionString() function. We instead build the connection string manually
-	pgExtPort, err := pgContainer.MappedPort(ctx, "5432/tcp")
+	//pgExtPort, err := pgContainer.MappedPort(ctx, "5432/tcp")
+	extPgConnStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
 	if err != nil {
 		return nil, err
 	}
-	extPgConnStr := fmt.Sprintf("host=%s port=%d user=postgres password=test1234 dbname=mmr sslmode=disable", testcontainers.HostInternal, pgExtPort.Int())
+	//extPgConnStr := fmt.Sprintf("host=%s port=%d user=postgres password=test1234 dbname=mmr sslmode=disable", testcontainers.HostInternal, pgExtPort.Int())
 
 	// Start a redis container
 	cwd, err := os.Getwd()
