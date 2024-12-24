@@ -45,7 +45,6 @@ require (
 
 require (
 	github.com/didip/tollbooth/v7 v7.0.2
-	github.com/docker/docker v27.4.1+incompatible
 	github.com/docker/go-connections v0.5.0
 	github.com/go-redsync/redsync/v4 v4.13.0
 	github.com/julienschmidt/httprouter v1.3.0
@@ -54,7 +53,7 @@ require (
 	github.com/redis/go-redis/v9 v9.7.0
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
 	github.com/stretchr/testify v1.10.0
-	github.com/strukturag/libheif v1.17.6
+	github.com/strukturag/libheif v1.19.5
 	github.com/t2bot/go-leaky-bucket v1.0.0
 	github.com/t2bot/go-singleflight-streams v1.0.0
 	github.com/t2bot/go-typed-singleflight v0.0.3
@@ -82,6 +81,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/distribution/reference v0.6.0 // indirect
+	github.com/docker/docker v27.4.1+incompatible // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dsoprea/go-utility/v2 v2.0.0-20221003172846-a3e1774ef349 // indirect
 	github.com/fatih/color v1.18.0 // indirect

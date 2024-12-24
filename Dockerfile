@@ -1,18 +1,16 @@
 # ---- Stage 0 ----
 # Builds media repo binaries
-FROM golang:1.22-alpine3.18 AS builder
+FROM golang:1.22-alpine3.21 AS builder
 
 # Install build dependencies
 RUN apk add --no-cache git musl-dev dos2unix build-base libde265-dev
 
-WORKDIR /opt
-COPY . /opt
-
 # Build libheif manually
+WORKDIR /opt
 RUN apk add --no-cache build-base libtool cmake libjpeg-turbo-dev x265-dev ffmpeg-dev zlib-dev
 RUN git clone https://github.com/strukturag/libheif.git
 WORKDIR /opt/libheif
-RUN git checkout v1.17.6
+RUN git checkout v1.19.5
 RUN mkdir build
 WORKDIR /opt/libheif/build
 RUN cmake --preset=release ..
@@ -20,13 +18,15 @@ RUN make
 RUN make install
 WORKDIR /opt
 
+COPY . /opt
+
 # Run remaining build steps
 RUN dos2unix ./build.sh ./docker/run.sh && chmod 744 ./build.sh
 RUN ./build.sh
 
 # ---- Stage 1 ----
 # Final runtime stage.
-FROM alpine:3.18
+FROM alpine:3.21
 
 RUN mkdir /plugins
 RUN apk add --no-cache \
@@ -35,6 +35,18 @@ RUN apk add --no-cache \
         dos2unix \
         imagemagick \
         ffmpeg
+
+# We have to manually recompile libheif due to musl/alpine weirdness introduced in alpine-3.19
+WORKDIR /opt
+RUN apk add --no-cache git libde265-dev musl-dev build-base libtool cmake libjpeg-turbo-dev x265-dev ffmpeg-dev zlib-dev
+RUN git clone https://github.com/strukturag/libheif.git
+WORKDIR /opt/libheif
+RUN git checkout v1.19.5
+RUN mkdir build
+WORKDIR /opt/libheif/build
+RUN cmake --preset=release ..
+RUN make
+RUN make install
 
 COPY --from=builder /opt/bin/plugin_antispam_ocr /plugins/
 COPY --from=builder \
