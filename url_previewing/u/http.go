@@ -4,10 +4,12 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"io"
 	"mime"
 	"net"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -17,7 +19,16 @@ import (
 	"github.com/t2bot/matrix-media-repo/url_previewing/m"
 	"github.com/t2bot/matrix-media-repo/util"
 	"github.com/t2bot/matrix-media-repo/util/readers"
+	"golang.org/x/net/proxy"
 )
+
+func getProxy(dialer *net.Dialer, ctx rcontext.RequestContext) (proxy.Dialer, error) {
+	url, err := url.Parse(ctx.Config.UrlPreviews.ProxyURL)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing proxy url: %w", err)
+	}
+	return proxy.FromURL(url, dialer)
+}
 
 func doHttpGet(urlPayload *m.UrlPayload, languageHeader string, ctx rcontext.RequestContext) (*http.Response, error) {
 	var client *http.Client
@@ -37,6 +48,18 @@ func doHttpGet(urlPayload *m.UrlPayload, languageHeader string, ctx rcontext.Req
 			return nil, err
 		}
 
+		if ctx.Config.UrlPreviews.ProxyURL != "" {
+			proxyDialer, err := getProxy(dialer, ctx)
+			if err != nil {
+				return nil, fmt.Errorf("error creating proxy: %w", err)
+			}
+			if contextDialer, ok := proxyDialer.(proxy.ContextDialer); ok {
+				return contextDialer.DialContext(ctx2, network, net.JoinHostPort(safeIp.String(), safePort))
+			} else {
+				return nil, errors.New("failed proxy type assertion to ContextDialer")
+			}
+		}
+
 		return dialer.DialContext(ctx2, network, net.JoinHostPort(safeIp.String(), safePort))
 	}
 
@@ -48,9 +71,19 @@ func doHttpGet(urlPayload *m.UrlPayload, languageHeader string, ctx rcontext.Req
 			TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
 			// Based on https://github.com/matrix-org/gomatrixserverlib/blob/51152a681e69a832efcd934b60080b92bc98b286/client.go#L74-L90
 			DialTLSContext: func(ctx2 context.Context, network, addr string) (net.Conn, error) {
-				rawconn, err := net.Dial(network, addr)
-				if err != nil {
-					return nil, err
+				var rawconn net.Conn
+				var connErr error
+				if ctx.Config.UrlPreviews.ProxyURL != "" {
+					proxyDialer, err := getProxy(dialer, ctx)
+					if err != nil {
+						return nil, fmt.Errorf("error creating proxy: %w", err)
+					}
+					rawconn, connErr = proxyDialer.Dial(network, addr)
+				} else {
+					rawconn, connErr = net.Dial(network, addr)
+				}
+				if connErr != nil {
+					return nil, connErr
 				}
 				// Wrap a raw connection ourselves since tls.Dial defaults the SNI
 				conn := tls.Client(rawconn, &tls.Config{
