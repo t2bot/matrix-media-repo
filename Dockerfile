@@ -61,6 +61,7 @@ COPY --from=builder \
  /opt/bin/s3_consistency_check \
  /opt/bin/combine_signing_keys \
  /opt/bin/generate_signing_key \
+ /opt/bin/thumbnailer \
  /usr/local/bin/
 
 COPY ./config.sample.yaml /etc/media-repo.yaml.sample

@@ -10,6 +10,7 @@
 /ipfs
 /dev/conduit-db
 /dev/psql
+/dev/thumb_*
 /vcpkg
 /libheif
 
