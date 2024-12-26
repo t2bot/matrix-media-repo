@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 
 * Allow guests to access uploaded media, as per [MSC4189](https://github.com/matrix-org/matrix-spec-proposals/pull/4189).
+* The thumbnailer can now be run independently with the `thumbnailer` binary. See `thumbnailer -help` for details.
 
 ### Changed
 
