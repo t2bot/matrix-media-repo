@@ -224,6 +224,20 @@ datastores:
       # capability. MMR may still be responsible for bandwidth charges incurred from going to
       # the bucket directly.
       #publicBaseUrl: "https://mycdn.example.org/"
+      # When set, the public S3 URL will be presigned before redirection. This allows users
+      # to directly download from private S3 buckets as long as the URL is still valid.
+      #presignUrl: false
+      # The time in seconds that a presigned URL will be valid for before expiring.
+      # This value must be between 60 (1 minute) and 604800 (7 days). Ensure it is high
+      # enough that users with slow connections will be able to download the media before it expires.
+      #presignExpiry: 86400
+      # When set, the presigned S3 URLs will be cached and reused as long as they are still valid.
+      # Otherwise, clients will not be able to use their cache, and will redownload the same file.
+      #cachePresignedUrls: true
+      # The time in seconds that a presigned URL will be cached and reused. If the URL is older,
+      # a new URL will be generated and cached in its place.
+      # It is recommended to use a value a bit less than presignExpiry.
+      #presignCacheExpiry: 79200
       # Set to `true` to bypass any local cache when `publicBaseUrl` is set. Has no effect
       # when `publicBaseUrl` is unset. Defaults to false (cached media will be served by MMR
       # before redirection if present).
