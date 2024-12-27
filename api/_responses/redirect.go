@@ -4,7 +4,6 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"net/url"
 	"strconv"
 	"time"
@@ -31,19 +30,14 @@ func Redirect(ctx rcontext.RequestContext, toUrl string, auth _apimeta.AuthConte
 		toUrl = appendQueryParam(toUrl, "matrix_exp", strconv.FormatInt(expirationTime.UnixMilli(), 10))
 
 		// Prepare our HMAC message contents as a JSON object
-		hmacInput := make(map[string]string)
-		hmacInput["url"] = toUrl
+		hmacMessage := toUrl + "||"
 		if auth.User.UserId != "" {
-			hmacInput["access_token"] = auth.User.AccessToken
-		}
-		hmacMessage, err := json.Marshal(hmacInput)
-		if err != nil {
-			panic(err) // "should never happen"
+			hmacMessage += auth.User.AccessToken
 		}
 
 		// Actually do the HMAC
 		mac := hmac.New(sha256.New, []byte("THIS_IS_A_SECRET_KEY")) // TODO: @@ Actual secret key
-		mac.Write(hmacMessage)
+		mac.Write([]byte(hmacMessage))
 		verifyHmac := mac.Sum(nil)
 
 		// Append the HMAC to the URL
