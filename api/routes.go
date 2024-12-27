@@ -19,6 +19,7 @@ import (
 const PrefixMedia = "/_matrix/media"
 const PrefixClient = "/_matrix/client"
 const PrefixFederation = "/_matrix/federation"
+const PrefixMMR = "/_mmr"
 
 func buildRoutes() http.Handler {
 	counter := &_routers.RequestCounter{}
@@ -61,6 +62,7 @@ func buildRoutes() http.Handler {
 	purgeOneRoute := makeRoute(_routers.RequireAccessToken(custom.PurgeIndividualRecord, false), "purge_individual_media", counter)
 	register([]string{"DELETE"}, PrefixMedia, "download/:server/:mediaId", mxUnstable, router, purgeOneRoute)
 	register([]string{"GET"}, PrefixMedia, "usage", msc4034, router, makeRoute(_routers.RequireAccessToken(unstable.PublicUsage, false), "usage", counter))
+	register([]string{"GET"}, PrefixMMR, "byid/:objectId", mxNoVersion, router, makeRoute(_routers.RequireRepoAdmin(custom.GetMediaById), "byid", counter))
 
 	// Custom and top-level features
 	router.Handler("GET", fmt.Sprintf("%s/version", PrefixMedia), makeRoute(_routers.OptionalAccessToken(custom.GetVersion), "get_version", counter))

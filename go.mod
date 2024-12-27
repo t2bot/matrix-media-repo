@@ -46,6 +46,7 @@ require (
 require (
 	github.com/didip/tollbooth/v7 v7.0.2
 	github.com/docker/go-connections v0.5.0
+	github.com/go-jose/go-jose/v4 v4.0.4
 	github.com/go-redsync/redsync/v4 v4.13.0
 	github.com/h2non/filetype v1.1.3
 	github.com/julienschmidt/httprouter v1.3.0

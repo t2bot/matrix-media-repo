@@ -184,7 +184,7 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, auth _apimeta
 				}
 			}
 		} else if errors.As(err, &redirect) {
-			return _responses.Redirect(redirect.RedirectUrl)
+			return _responses.Redirect(rctx, redirect.RedirectUrl, auth)
 		}
 		rctx.Log.Error("Unexpected error locating media: ", err)
 		sentry.CaptureException(err)
