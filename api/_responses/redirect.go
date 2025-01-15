@@ -2,7 +2,7 @@ package _responses
 
 import (
 	"crypto/hmac"
-	"crypto/sha256"
+	"crypto/sha512"
 	"encoding/hex"
 	"net/url"
 	"strconv"
@@ -27,7 +27,14 @@ func Redirect(ctx rcontext.RequestContext, toUrl string, auth _apimeta.AuthConte
 		}
 
 		// Append the expiration time to the URL
-		toUrl = appendQueryParam(toUrl, "matrix_exp", strconv.FormatInt(expirationTime.UnixMilli(), 10))
+		toUrl = appendQueryParam(toUrl, "exp", strconv.FormatInt(expirationTime.UnixMilli(), 10))
+
+		// Append a value we expect to survive the round trip that only we know about
+		// We do this after the expiration value to cover that field as well.
+		mac := hmac.New(sha512.New, []byte("THIS IS ANOTHER SECRET VALUE")) // TODO: @@ Actual secret key
+		mac.Write([]byte(toUrl))
+		requestHmac := mac.Sum(nil)
+		toUrl = appendQueryParam(toUrl, "request", hex.EncodeToString(requestHmac)+"."+hex.EncodeToString([]byte(toUrl)))
 
 		// Prepare our HMAC message contents as a JSON object
 		hmacMessage := toUrl + "||"
@@ -36,12 +43,12 @@ func Redirect(ctx rcontext.RequestContext, toUrl string, auth _apimeta.AuthConte
 		}
 
 		// Actually do the HMAC
-		mac := hmac.New(sha256.New, []byte("THIS_IS_A_SECRET_KEY")) // TODO: @@ Actual secret key
+		mac = hmac.New(sha512.New, []byte("THIS_IS_A_SECRET_KEY")) // TODO: @@ Actual secret key
 		mac.Write([]byte(hmacMessage))
 		verifyHmac := mac.Sum(nil)
 
 		// Append the HMAC to the URL
-		toUrl = appendQueryParam(toUrl, "matrix_verify", hex.EncodeToString(verifyHmac))
+		toUrl = appendQueryParam(toUrl, "verify", hex.EncodeToString(verifyHmac))
 	}
 	return &RedirectResponse{ToUrl: toUrl}
 }

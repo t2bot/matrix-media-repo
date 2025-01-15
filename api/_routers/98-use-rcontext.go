@@ -129,7 +129,8 @@ beforeParseDownload:
 		}
 
 		if shouldCache {
-			headers.Set("Cache-Control", "private, max-age=259200") // 3 days
+			// TODO: @@ Only set `public` for CDNs, otherwise use `private`
+			headers.Set("Cache-Control", "public, max-age=259200") // 3 days
 		}
 
 		if downloadRes.SizeBytes > 0 {
