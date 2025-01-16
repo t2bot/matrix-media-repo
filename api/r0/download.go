@@ -112,7 +112,7 @@ func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, auth _apimeta.
 		} else if errors.Is(err, common.ErrMediaNotYetUploaded) {
 			return _responses.NotYetUploaded()
 		} else if errors.As(err, &redirect) {
-			return _responses.Redirect(redirect.RedirectUrl)
+			return _responses.Redirect(rctx, redirect.RedirectUrl, auth)
 		}
 		rctx.Log.Error("Unexpected error locating media: ", err)
 		sentry.CaptureException(err)
