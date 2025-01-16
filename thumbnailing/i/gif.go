@@ -1,7 +1,9 @@
 package i
 
 import (
+	"bytes"
 	"errors"
+	"fmt"
 	"image"
 	"image/draw"
 	"image/gif"
@@ -76,19 +78,15 @@ func (d gifGenerator) GenerateThumbnail(b io.Reader, contentType string, width i
 			}
 
 			// The thumbnailer decided that it shouldn't thumbnail, so encode it ourselves
-			pr, pw := io.Pipe()
-			go func(pw *io.PipeWriter, p *image.Paletted) {
-				err = u.Encode(ctx, pw, p)
-				if err != nil {
-					_ = pw.CloseWithError(errors.New("gif: error encoding still frame thumbnail: " + err.Error()))
-				} else {
-					_ = pw.Close()
-				}
-			}(pw, targetImg)
+			buf := bytes.NewBuffer(make([]byte, 0, 128*1024))
+			err = u.Encode(ctx, buf, targetImg)
+			if err != nil {
+				return nil, fmt.Errorf("gif: error encoding static thumbnail: %w", err)
+			}
 			return &m.Thumbnail{
 				Animated:    false,
 				ContentType: "image/png",
-				Reader:      pr,
+				Reader:      io.NopCloser(buf),
 			}, nil
 		}
 
@@ -110,20 +108,16 @@ func (d gifGenerator) GenerateThumbnail(b io.Reader, contentType string, width i
 	g.Config.Width = g.Image[0].Bounds().Max.X
 	g.Config.Height = g.Image[0].Bounds().Max.Y
 
-	pr, pw := io.Pipe()
-	go func(pw *io.PipeWriter, g *gif.GIF) {
-		err = gif.EncodeAll(pw, g)
-		if err != nil {
-			_ = pw.CloseWithError(errors.New("gif: error encoding final thumbnail: " + err.Error()))
-		} else {
-			_ = pw.Close()
-		}
-	}(pw, g)
+	buf := bytes.NewBuffer(make([]byte, 0, 512*1024))
+	err = gif.EncodeAll(buf, g)
+	if err != nil {
+		return nil, fmt.Errorf("gif: error encoding animated thumbnail: %w", err)
+	}
 
 	return &m.Thumbnail{
 		ContentType: "image/gif",
 		Animated:    true,
-		Reader:      pr,
+		Reader:      io.NopCloser(buf),
 	}, nil
 }
 
