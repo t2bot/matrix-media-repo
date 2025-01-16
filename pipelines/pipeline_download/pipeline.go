@@ -10,6 +10,7 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/t2bot/go-leaky-bucket"
 	"github.com/t2bot/go-singleflight-streams"
+
 	"github.com/t2bot/matrix-media-repo/common"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/database"
@@ -76,7 +77,8 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 	}
 
 	// Check rate limits before moving on much further
-	limitBucket, err := limits.GetBucket(ctx, limits.GetRequestIP(ctx.Request))
+	subject := limits.GetRequestIP(ctx.Request)
+	limitBucket, err := limits.GetBucket(ctx, subject)
 	if err != nil {
 		cancel()
 		return nil, nil, err
@@ -90,7 +92,8 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 				if limitErr := limitBucket.Add(ctx.Config.Downloads.MaxSizeBytes); limitErr != nil {
 					cancel()
 					if errors.Is(limitErr, leaky.ErrBucketFull) {
-						ctx.Log.Debugf("Rate limited on MaxSizeBytes=%d/%d", ctx.Config.Downloads.MaxSizeBytes, limitBucket.Remaining())
+						ctx.Log.WithField("subject", subject).
+							Debugf("Rate limited on MaxSizeBytes=%d/%d", ctx.Config.Downloads.MaxSizeBytes, limitBucket.Remaining())
 						return nil, nil, common.ErrRateLimitExceeded
 					}
 					return nil, nil, limitErr
@@ -101,7 +104,8 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 			if limitErr := limitBucket.Add(record.SizeBytes); limitErr != nil {
 				cancel()
 				if errors.Is(limitErr, leaky.ErrBucketFull) {
-					ctx.Log.Debugf("Rate limited on SizeBytes=%d/%d", record.SizeBytes, limitBucket.Remaining())
+					ctx.Log.WithField("subject", subject).
+						Debugf("Rate limited on SizeBytes=%d/%d", record.SizeBytes, limitBucket.Remaining())
 					return nil, nil, common.ErrRateLimitExceeded
 				}
 				return nil, nil, limitErr
