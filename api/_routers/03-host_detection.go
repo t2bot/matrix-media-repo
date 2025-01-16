@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sebest/xff"
 	"github.com/sirupsen/logrus"
@@ -45,7 +44,6 @@ func (h *HostRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	host, _, err := net.SplitHostPort(raddr)
 	if err != nil {
 		logrus.Error(err)
-		sentry.CaptureException(err)
 		host = raddr
 	}
 	r.RemoteAddr = host
