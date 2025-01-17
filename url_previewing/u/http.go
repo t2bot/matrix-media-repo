@@ -2,9 +2,11 @@ package u
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"mime"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -22,12 +24,22 @@ func doHttpGet(urlPayload *m.UrlPayload, languageHeader string, ctx rcontext.Req
 		return nil, errors.New("must provide https url")
 	}
 
+	var proxyUrlProvider func(*http.Request) (*url.URL, error)
+	if ctx.Config.UrlPreviews.ProxyURL != "" {
+		proxyUrl, err := url.Parse(ctx.Config.UrlPreviews.ProxyURL)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing proxy url: %w", err)
+		}
+		proxyUrlProvider = http.ProxyURL(proxyUrl)
+	}
+
 	client := matrix.NewHttpClient(ctx, &matrix.HttpClientConfig{
 		Timeout:                time.Duration(ctx.Config.TimeoutSeconds.UrlPreviews) * time.Second,
 		AllowUnsafeCertificate: ctx.Config.UrlPreviews.UnsafeCertificates,
 		AllowedCIDRs:           ctx.Config.UrlPreviews.AllowedNetworks,
 		DeniedCIDRs:            ctx.Config.UrlPreviews.DisallowedNetworks,
 		FollowRedirects:        true, // we may need to chase some resources down
+		Proxy:                  proxyUrlProvider,
 	})
 
 	req, err := http.NewRequest("GET", urlPayload.ParsedUrl.String(), nil)

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"syscall"
 	"time"
 
@@ -22,6 +23,7 @@ type HttpClientConfig struct {
 	// Used for federation. Set to the *real* server name, without port.
 	TLSServerName   string
 	FollowRedirects bool
+	Proxy           func(*http.Request) (*url.URL, error)
 }
 
 func NewHttpClient(ctx rcontext.RequestContext, clientConfig *HttpClientConfig) *http.Client {
@@ -36,6 +38,11 @@ func NewHttpClient(ctx rcontext.RequestContext, clientConfig *HttpClientConfig) 
 		clientConfig.AllowedCIDRs = []string{"0.0.0.0/0"}
 	}
 
+	// Default to environment variable proxy if unspecified
+	if clientConfig.Proxy == nil {
+		clientConfig.Proxy = http.ProxyFromEnvironment
+	}
+
 	// safeDialer and safeTransport are from https://www.agwa.name/blog/post/preventing_server_side_request_forgery_in_golang
 	// We add our client config and request context to the safeControl function for logging, primarily.
 	safeDialer := &net.Dialer{
@@ -47,12 +54,12 @@ func NewHttpClient(ctx rcontext.RequestContext, clientConfig *HttpClientConfig) 
 	}
 	safeTransport := &http.Transport{
 		DialContext:           safeDialer.DialContext,
-		Proxy:                 http.ProxyFromEnvironment, // default
-		ForceAttemptHTTP2:     true,                      // default
-		MaxIdleConns:          100,                       // default
-		IdleConnTimeout:       90 * time.Second,          // default
-		TLSHandshakeTimeout:   10 * time.Second,          // default
-		ExpectContinueTimeout: 1 * time.Second,           // default
+		Proxy:                 clientConfig.Proxy,
+		ForceAttemptHTTP2:     true,             // default
+		MaxIdleConns:          100,              // default
+		IdleConnTimeout:       90 * time.Second, // default
+		TLSHandshakeTimeout:   10 * time.Second, // default
+		ExpectContinueTimeout: 1 * time.Second,  // default
 	}
 
 	// If we're allowing invalid certificates, ensure mistakes can be made. If we've got a
