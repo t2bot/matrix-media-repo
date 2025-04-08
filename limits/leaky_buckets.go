@@ -13,10 +13,6 @@ var buckets = make(map[string]*leaky.Bucket)
 var bucketLock = &sync.Mutex{}
 
 func GetBucket(ctx rcontext.RequestContext, subject string) (*leaky.Bucket, error) {
-	if !config.Get().RateLimit.Enabled {
-		return nil, nil
-	}
-
 	bucketLock.Lock()
 	defer bucketLock.Unlock()
 
