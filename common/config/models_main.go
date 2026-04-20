@@ -96,9 +96,10 @@ type SentryConfig struct {
 }
 
 type RedisConfig struct {
-	Enabled bool               `yaml:"enabled"`
-	Shards  []RedisShardConfig `yaml:"shards,flow"`
-	DbNum   int                `default:"0" yaml:"databaseNumber"`
+	Enabled  bool               `yaml:"enabled"`
+	Shards   []RedisShardConfig `yaml:"shards,flow"`
+	DbNum    int                `default:"0" yaml:"databaseNumber"`
+	Password string             `yaml:"password"`
 }
 
 type RedisShardConfig struct {

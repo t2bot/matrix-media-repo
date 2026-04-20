@@ -100,7 +100,8 @@ func onFileChanged() {
 
 	redisEnabledChange := configNew.Redis.Enabled != configNow.Redis.Enabled
 	redisShardsChange := hasRedisShardConfigChanged(configNew, configNow)
-	if redisEnabledChange || redisShardsChange {
+	redisPasswordChange := configNew.Redis.Password != configNow.Redis.Password
+	if redisEnabledChange || redisShardsChange || redisPasswordChange {
 		logrus.Warn("Cache configuration changed - reloading")
 		globals.CacheReplaceChan <- true
 	}

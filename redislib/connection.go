@@ -35,6 +35,7 @@ func makeConnection() {
 				DialTimeout: 10 * time.Second,
 				DB:          conf.DbNum,
 				Addr:        c.Address,
+				Password:    conf.Password,
 			})
 			clients = append(clients, client)
 			pools = append(pools, goredis.NewPool(client))
@@ -43,6 +44,7 @@ func makeConnection() {
 			Addrs:       addresses,
 			DialTimeout: 10 * time.Second,
 			DB:          conf.DbNum,
+			Password:    conf.Password,
 		})
 		rs = redsync.New(pools...)
 	})
