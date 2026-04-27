@@ -405,7 +405,7 @@ urlPreviews:
     - 'fc00::/7'
   allowedNetworks:
     - "0.0.0.0/0" # "Everything". The deny list will help limit this.
-                  # This is the default value for this field.
+    # This is the default value for this field.
 
   # How many days after a preview is generated before it expires and is deleted. The preview
   # can be regenerated safely - this just helps free up some space in your database. Set to
@@ -640,7 +640,7 @@ plugins:
 # Sections of this config might disappear or be added over time. By default all
 # features are disabled in here and must be explicitly enabled to be used.
 featureSupport:
-  # No unstable features are currently supported.
+# No unstable features are currently supported.
 
 # Support for redis as a cache mechanism
 #
@@ -654,6 +654,10 @@ redis:
 
   # The database number to use. Leave at zero if using a dedicated Redis instance.
   databaseNumber: 0
+
+  # Optional password for Redis authentication. Leave empty if your Redis instance
+  # does not require authentication. This password applies to all shards and the ring.
+  password: ""
 
   # The Redis shards that should be used by the media repo in the ring. The names of the
   # shards are for your reference and have no bearing on the connection, but must be unique.
