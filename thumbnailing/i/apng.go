@@ -1,6 +1,7 @@
 package i
 
 import (
+	"bytes"
 	"errors"
 	"image"
 	"image/draw"
@@ -112,42 +113,54 @@ func init() {
 }
 
 func isAnimatedPNG(r io.Reader) bool {
-	maxBytes := 4096 // if we don't have an acTL chunk after 4kb, give up
-	IDAT := []byte{0x49, 0x44, 0x41, 0x54}
-	acTL := []byte{0x61, 0x63, 0x54, 0x4C}
+	// APNG is signaled by an acTL chunk before the first IDAT chunk.
+	// Parse chunk headers instead of scanning raw bytes to avoid false positives
+	// from compressed image data containing the "acTL" byte sequence.
+	pngSig := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}
+	idat := []byte{0x49, 0x44, 0x41, 0x54}
+	actl := []byte{0x61, 0x63, 0x54, 0x4C}
 
-	b := make([]byte, maxBytes)
-	c, err := r.Read(b)
-	if err != nil {
-		// we don't log the error, but we do want to report it if sentry is hooked up
-		sentry.CaptureException(err)
-		return false // assume read errors are a problem
+	sigBuf := make([]byte, len(pngSig))
+	if _, err := io.ReadFull(r, sigBuf); err != nil {
+		if !errors.Is(err, io.EOF) && !errors.Is(err, io.ErrUnexpectedEOF) {
+			sentry.CaptureException(err)
+		}
+		return false
+	}
+	if !bytes.Equal(sigBuf, pngSig) {
+		return false
 	}
 
-	idatIdx := 0
-	actlIdx := 0
-	for i, bt := range b {
-		if i > c {
-			break
-		}
-		if bt == IDAT[idatIdx] {
-			idatIdx++
-			actlIdx = 0
-		} else if bt == acTL[actlIdx] {
-			actlIdx++
-			idatIdx = 0
-		} else {
-			idatIdx = 0
-			actlIdx = 0
-		}
-
-		if idatIdx == len(IDAT) {
+	lenBuf := make([]byte, 4)
+	chunkTypeBuf := make([]byte, 4)
+	for {
+		if _, err := io.ReadFull(r, lenBuf); err != nil {
+			if !errors.Is(err, io.EOF) && !errors.Is(err, io.ErrUnexpectedEOF) {
+				sentry.CaptureException(err)
+			}
 			return false
 		}
-		if actlIdx == len(acTL) {
+		if _, err := io.ReadFull(r, chunkTypeBuf); err != nil {
+			if !errors.Is(err, io.EOF) && !errors.Is(err, io.ErrUnexpectedEOF) {
+				sentry.CaptureException(err)
+			}
+			return false
+		}
+
+		if bytes.Equal(chunkTypeBuf, actl) {
 			return true
 		}
-	}
+		if bytes.Equal(chunkTypeBuf, idat) {
+			return false
+		}
 
-	return false
+		chunkLen := (uint32(lenBuf[0]) << 24) | (uint32(lenBuf[1]) << 16) | (uint32(lenBuf[2]) << 8) | uint32(lenBuf[3])
+		// skip chunk payload + CRC
+		if _, err := io.CopyN(io.Discard, r, int64(chunkLen)+4); err != nil {
+			if !errors.Is(err, io.EOF) && !errors.Is(err, io.ErrUnexpectedEOF) {
+				sentry.CaptureException(err)
+			}
+			return false
+		}
+	}
 }
