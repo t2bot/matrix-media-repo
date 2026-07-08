@@ -35,7 +35,7 @@ type DownloadOpts struct {
 	BlockForReadUntil   time.Duration
 	RecordOnly          bool
 	CanRedirect         bool
-	AuthProvided        bool
+	AuthenticatedUserId string
 }
 
 func (o DownloadOpts) String() string {
@@ -46,7 +46,7 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 	// Step 0: Check restrictions
 	if requiresAuth, err := restrictions.DoesMediaRequireAuth(ctx, origin, mediaId); err != nil {
 		return nil, nil, err
-	} else if requiresAuth && !opts.AuthProvided {
+	} else if requiresAuth && opts.AuthenticatedUserId == "" {
 		return nil, nil, common.ErrRestrictedAuth
 	}
 
@@ -76,7 +76,13 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 	}
 
 	// Check rate limits before moving on much further
-	limitBucket, err := limits.GetBucket(ctx, limits.GetRequestIP(ctx.Request))
+	var bucketSubj string
+	if opts.AuthenticatedUserId != "" {
+		bucketSubj = opts.AuthenticatedUserId
+	} else {
+		bucketSubj = limits.GetRequestIP(ctx.Request)
+	}
+	limitBucket, err := limits.GetBucket(ctx, bucketSubj)
 	if err != nil {
 		cancel()
 		return nil, nil, err
