@@ -2,7 +2,7 @@ name: Create and publish a Docker image
 
 on:
   push:
-    branches: ['main']
+    branches: ['tchap']
     tags: ['*']
 
 env:
@@ -20,9 +20,9 @@ jobs:
       matrix:
         platform:
           - linux/amd64
-          - linux/arm/v6
-          - linux/arm/v7
-          - linux/arm64
+          # - linux/arm/v6
+          # - linux/arm/v7
+          # - linux/arm64
 
     steps:
       - name: Prepare
