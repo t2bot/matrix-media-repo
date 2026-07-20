@@ -87,7 +87,13 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Th
 	}
 
 	// Check rate limits before moving on much further
-	limitBucket, err := limits.GetBucket(ctx, limits.GetRequestIP(ctx.Request))
+	var bucketSubj string
+	if opts.AuthenticatedUserId != "" {
+		bucketSubj = opts.AuthenticatedUserId
+	} else {
+		bucketSubj = limits.GetRequestIP(ctx.Request)
+	}
+	limitBucket, err := limits.GetBucket(ctx, bucketSubj)
 	if err != nil {
 		cancel()
 		return nil, nil, err
