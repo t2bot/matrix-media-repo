@@ -223,6 +223,7 @@ beforeParseDownload:
 			break
 		case common.ErrCodeRateLimitExceeded:
     		proposedStatusCode = http.StatusTooManyRequests
+			break
 		default: // Treat as unknown (a generic server error)
 			proposedStatusCode = http.StatusInternalServerError
 			break
