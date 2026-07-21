@@ -221,6 +221,9 @@ beforeParseDownload:
 		case common.ErrCodeNotYetUploaded:
 			proposedStatusCode = http.StatusGatewayTimeout
 			break
+		case common.ErrCodeRateLimitExceeded:
+    		proposedStatusCode = http.StatusTooManyRequests
+			break
 		default: // Treat as unknown (a generic server error)
 			proposedStatusCode = http.StatusInternalServerError
 			break
