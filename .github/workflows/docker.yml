@@ -4,7 +4,6 @@ on:
   push:
     branches: ['tchap']
     tags: ['*']
-  workflow_dispatch: {}
 
 env:
   REGISTRY: ghcr.io
@@ -39,10 +38,6 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=dev,enable=${{ github.event_name == 'workflow_dispatch' }}
-            type=ref,event=branch,enable=${{ github.event_name != 'workflow_dispatch' }}
-            type=ref,event=tag,enable=${{ github.event_name != 'workflow_dispatch' }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -99,10 +94,6 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY  }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=dev,enable=${{ github.event_name == 'workflow_dispatch' }}
-            type=ref,event=branch,enable=${{ github.event_name != 'workflow_dispatch' }}
-            type=ref,event=tag,enable=${{ github.event_name != 'workflow_dispatch' }}
 
       - name: Login
         uses: docker/login-action@v3
