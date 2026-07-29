@@ -43,7 +43,7 @@ func postgresConnectionString(host string, port int) string {
 	return fmt.Sprintf("host=%s port=%d user=postgres password=test1234 dbname=mmr sslmode=disable", host, port)
 }
 
-func MakeTestDeps() (*ContainerDeps, error) {
+func MakeTestDeps(hostAccessPorts ...int) (*ContainerDeps, error) {
 	ctx := context.Background()
 
 	// Create a network
@@ -199,7 +199,7 @@ func MakeTestDeps() (*ContainerDeps, error) {
 		PgConnectionString: pgConnStr,
 		S3Endpoint:         minioDep.Endpoint,
 	}
-	mmrs, err := makeMmrInstances(ctx, 2, depNet, tmplArgs)
+	mmrs, err := makeMmrInstances(ctx, 2, depNet, tmplArgs, hostAccessPorts)
 	if err != nil {
 		return nil, err
 	}
