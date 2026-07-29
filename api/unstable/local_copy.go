@@ -61,6 +61,8 @@ func LocalCopy(r *http.Request, rctx rcontext.RequestContext, user _apimeta.User
 		FetchRemoteIfNeeded: downloadRemote,
 		BlockForReadUntil:   30 * time.Second,
 		RecordOnly:          false,
+		AuthProvided:        user.UserId != "",
+		AuthenticatedUserId: user.UserId,
 	})
 	// Error handling copied from download endpoint
 	if err != nil {

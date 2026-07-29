@@ -35,6 +35,7 @@ type DownloadOpts struct {
 	BlockForReadUntil   time.Duration
 	RecordOnly          bool
 	CanRedirect         bool
+	AuthProvided        bool
 	AuthenticatedUserId string
 }
 
@@ -46,7 +47,7 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 	// Step 0: Check restrictions
 	if requiresAuth, err := restrictions.DoesMediaRequireAuth(ctx, origin, mediaId); err != nil {
 		return nil, nil, err
-	} else if requiresAuth && opts.AuthenticatedUserId == "" {
+	} else if requiresAuth && !opts.AuthProvided {
 		return nil, nil, common.ErrRestrictedAuth
 	}
 

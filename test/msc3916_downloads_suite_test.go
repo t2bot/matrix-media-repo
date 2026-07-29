@@ -130,7 +130,17 @@ func (s *MSC3916DownloadsSuite) TestClientDownloads() {
 	assert.Equal(t, client1.ServerName, origin)
 	assert.NotEmpty(t, mediaId)
 
-	raw, err := client2.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/download/%s/%s", origin, mediaId), nil, "", nil)
+	legacyDownloadPath := fmt.Sprintf("/_matrix/media/v3/download/%s/%s", origin, mediaId)
+	raw, err := client2.DoRaw("GET", legacyDownloadPath, nil, "", nil)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusNotFound, raw.StatusCode)
+
+	raw, err = client1.DoRaw("GET", legacyDownloadPath, nil, "", nil)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, raw.StatusCode)
+	test_internals.AssertIsTestImage(t, raw.Body)
+
+	raw, err = client2.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/download/%s/%s", origin, mediaId), nil, "", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusUnauthorized, raw.StatusCode)
 	raw, err = client2.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/download/%s/%s/whatever.png", origin, mediaId), nil, "", nil)

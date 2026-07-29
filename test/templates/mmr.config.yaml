@@ -7,7 +7,7 @@ repo:
   logLevel: "debug"
   trustAnyForwardedAddress: false
   useForwardedHost: true
-  freezeUnauthenticatedMedia: false
+  freezeUnauthenticatedMedia: true
 database:
   postgres: "{{.PgConnectionString}}"
   pool:

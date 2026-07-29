@@ -132,6 +132,7 @@ func ThumbnailMedia(r *http.Request, rctx rcontext.RequestContext, auth _apimeta
 			BlockForReadUntil:   blockFor,
 			RecordOnly:          false, // overridden
 			CanRedirect:         canRedirect,
+			AuthProvided:        auth.IsAuthenticated(),
 			AuthenticatedUserId: auth.User.UserId,
 		},
 		Width:    width,
