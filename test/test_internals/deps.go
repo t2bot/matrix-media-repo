@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/docker/go-connections/nat"
+	_ "github.com/lib/pq"
 	"github.com/t2bot/matrix-media-repo/common/assets"
 	"github.com/t2bot/matrix-media-repo/common/config"
 	"github.com/t2bot/matrix-media-repo/homeserver_interop"
@@ -31,6 +33,13 @@ type ContainerDeps struct {
 
 	Homeservers []*SynapseDep
 	Machines    []*mmrContainer
+}
+
+func postgresConnectionString(host string, port int) string {
+	if host == "localhost" {
+		host = "127.0.0.1"
+	}
+	return fmt.Sprintf("host=%s port=%d user=postgres password=test1234 dbname=mmr sslmode=disable", host, port)
 }
 
 func MakeTestDeps() (*ContainerDeps, error) {
@@ -106,7 +115,9 @@ func MakeTestDeps() (*ContainerDeps, error) {
 		testcontainers.WithWaitStrategy(
 			wait.ForAll(
 				wait.ForLog("database system is ready to accept connections").WithOccurrence(2),
-				wait.ForListeningPort("5432/tcp"),
+				wait.ForSQL("5432/tcp", "postgres", func(host string, port nat.Port) string {
+					return postgresConnectionString(host, port.Int())
+				}),
 			).WithDeadline(30*time.Second)),
 	)
 	if err != nil {
@@ -116,14 +127,18 @@ func MakeTestDeps() (*ContainerDeps, error) {
 	if err != nil {
 		return nil, err
 	}
-	// we can hardcode the port and most of the connection details because we're behind the docker network here
-	pgConnStr := fmt.Sprintf("host=%s port=5432 user=postgres password=test1234 dbname=mmr sslmode=disable", pgHost)
+	pgConnStr := postgresConnectionString(pgHost, 5432)
 
-	// This connection string is used by the test process after the mapped port is ready.
-	extPgConnStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
+	pgExtHost, err := pgContainer.Host(ctx)
 	if err != nil {
 		return nil, err
 	}
+	pgExtPort, err := pgContainer.MappedPort(ctx, "5432/tcp")
+	if err != nil {
+		return nil, err
+	}
+	// wait.ForSQL validated this exact host-side connection before returning.
+	extPgConnStr := postgresConnectionString(pgExtHost, pgExtPort.Int())
 
 	// Start a redis container
 	cwd, err := os.Getwd()
