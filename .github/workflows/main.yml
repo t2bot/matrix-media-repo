@@ -45,6 +45,8 @@ jobs:
         run: "$PWD/bin/compile_assets"
       - name: "Run: config unit tests"
         run: "go test ./common/config"
+      - name: "Run: router unit tests"
+        run: "go test -v ./api/_routers"
       - name: "Run: tests"
         run: "go test -c -v ./test && ./test.test '-test.v' -test.parallel 1" # cheat and work around working directory issues
         timeout-minutes: 30
