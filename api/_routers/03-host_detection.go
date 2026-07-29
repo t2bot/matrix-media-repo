@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"strings"
@@ -28,14 +29,15 @@ func NewHostRouter(next http.Handler) *HostRouter {
 }
 
 func hostFromRemoteAddress(address string) (string, error) {
-	host, _, err := net.SplitHostPort(address)
+	clientAddress := strings.TrimSpace(strings.SplitN(address, ",", 2)[0])
+	host, _, err := net.SplitHostPort(clientAddress)
 	if err == nil {
 		return host, nil
 	}
-	if host = strings.Trim(address, "[]"); net.ParseIP(host) != nil {
+	if host = strings.Trim(clientAddress, "[]"); net.ParseIP(host) != nil {
 		return host, nil
 	}
-	return host, err
+	return host, fmt.Errorf("invalid client address %q: %w", clientAddress, err)
 }
 
 func (h *HostRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -55,7 +57,7 @@ func (h *HostRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	host, err := hostFromRemoteAddress(raddr)
 	if err != nil {
-		logrus.Error(err)
+		logrus.WithField("forwardedAddress", raddr).WithError(err).Warn("Unable to parse forwarded client address")
 		sentry.CaptureException(err)
 	}
 	r.RemoteAddr = host

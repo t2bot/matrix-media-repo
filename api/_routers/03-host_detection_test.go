@@ -30,6 +30,16 @@ func TestHostFromRemoteAddress(t *testing.T) {
 			expected: "2001:db8::1",
 		},
 		{
+			name:     "forwarded IPv4 chain",
+			address:  "203.0.113.10, 192.168.99.22, 127.0.0.1",
+			expected: "203.0.113.10",
+		},
+		{
+			name:     "forwarded IPv6 chain",
+			address:  "[2001:db8::1]:1234, 192.168.99.22",
+			expected: "2001:db8::1",
+		},
+		{
 			name:        "invalid address",
 			address:     "not-an-address",
 			expected:    "not-an-address",
