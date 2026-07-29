@@ -43,6 +43,12 @@ func (h *replaceableHandler) Set(handler http.Handler) {
 	h.handler = handler
 }
 
+func validateXMatrixAuthForDestination(request *http.Request, destination string) (string, error) {
+	requestCopy := request.Clone(request.Context())
+	requestCopy.Host = destination
+	return matrix.ValidateXMatrixAuth(requestCopy, true)
+}
+
 type MSC3916DownloadsSuite struct {
 	suite.Suite
 	deps         *test_internals.ContainerDeps
@@ -200,14 +206,14 @@ func (s *MSC3916DownloadsSuite) TestFederationMakesAuthedDownloads() {
 	assert.NoError(t, err)
 	s.setHostHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, fmt.Sprintf("/_matrix/federation/v1/media/download/%s", mediaId), r.URL.Path)
-		requestOrigin, validationErr := matrix.ValidateXMatrixAuth(r, true)
+		requestOrigin, validationErr := validateXMatrixAuthForDestination(r, origin)
 		assert.NoError(t, validationErr)
 		assert.Equal(t, client1.ServerName, requestOrigin)
 		w.Header().Set("Content-Type", "multipart/mixed; boundary=gc0p4Jq0M2Yt08jU534c0p")
 		_, _ = w.Write([]byte("--gc0p4Jq0M2Yt08jU534c0p\nContent-Type: application/json\n\n{}\n\n--gc0p4Jq0M2Yt08jU534c0p\nContent-Type: text/plain\n\nThis media is plain text. Maybe somebody used it as a paste bin.\n\n--gc0p4Jq0M2Yt08jU534c0p"))
 	}))
 	defer s.setHostHandler(nil)
-	config.AddDomainForTesting(testcontainers.HostInternal, nil) // no port for config lookup
+	config.AddDomainForTesting(origin, nil)
 
 	raw, err := client1.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/download/%s/%s", origin, mediaId), nil, "", nil)
 	assert.NoError(t, err)
@@ -233,7 +239,7 @@ func (s *MSC3916DownloadsSuite) TestFederationFollowsRedirects() {
 			w.Header().Set("Content-Type", "text/plain")
 			_, _ = w.Write([]byte(fileContents))
 		case fmt.Sprintf("/_matrix/federation/v1/media/download/%s", mediaId):
-			requestOrigin, validationErr := matrix.ValidateXMatrixAuth(r, true)
+			requestOrigin, validationErr := validateXMatrixAuthForDestination(r, origin)
 			assert.NoError(t, validationErr)
 			assert.Equal(t, client1.ServerName, requestOrigin)
 			w.Header().Set("Content-Type", "multipart/mixed; boundary=gc0p4Jq0M2Yt08jU534c0p")
@@ -243,7 +249,7 @@ func (s *MSC3916DownloadsSuite) TestFederationFollowsRedirects() {
 		}
 	}))
 	defer s.setHostHandler(nil)
-	config.AddDomainForTesting(testcontainers.HostInternal, nil) // no port for config lookup
+	config.AddDomainForTesting(origin, nil)
 
 	raw, err := client1.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/download/%s/%s", origin, mediaId), nil, "", nil)
 	assert.NoError(t, err)
@@ -304,7 +310,7 @@ func (s *MSC3916DownloadsSuite) TestFederationMakesAuthedDownloadsAndFallsBack()
 	reqNum := 0
 	s.setHostHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if reqNum == 0 {
-			requestOrigin, validationErr := matrix.ValidateXMatrixAuth(r, true)
+			requestOrigin, validationErr := validateXMatrixAuthForDestination(r, origin)
 			assert.NoError(t, validationErr)
 			assert.Equal(t, client1.ServerName, requestOrigin)
 			assert.Equal(t, fmt.Sprintf("/_matrix/federation/v1/media/download/%s", mediaId), r.URL.Path)
@@ -319,7 +325,7 @@ func (s *MSC3916DownloadsSuite) TestFederationMakesAuthedDownloadsAndFallsBack()
 		_, _ = w.Write([]byte(fileContents))
 	}))
 	defer s.setHostHandler(nil)
-	config.AddDomainForTesting(testcontainers.HostInternal, nil) // no port for config lookup
+	config.AddDomainForTesting(origin, nil)
 
 	raw, err := client1.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/download/%s/%s", origin, mediaId), nil, "", nil)
 	assert.NoError(t, err)
