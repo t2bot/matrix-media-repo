@@ -27,6 +27,17 @@ func NewHostRouter(next http.Handler) *HostRouter {
 	return &HostRouter{next: next}
 }
 
+func hostFromRemoteAddress(address string) (string, error) {
+	host, _, err := net.SplitHostPort(address)
+	if err == nil {
+		return host, nil
+	}
+	if host = strings.Trim(address, "[]"); net.ParseIP(host) != nil {
+		return host, nil
+	}
+	return host, err
+}
+
 func (h *HostRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("X-Forwarded-Host") != "" && config.Get().General.UseForwardedHost {
 		r.Host = r.Header.Get("X-Forwarded-Host")
@@ -42,11 +53,10 @@ func (h *HostRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if raddr == "" {
 		raddr = r.RemoteAddr
 	}
-	host, _, err := net.SplitHostPort(raddr)
+	host, err := hostFromRemoteAddress(raddr)
 	if err != nil {
 		logrus.Error(err)
 		sentry.CaptureException(err)
-		host = raddr
 	}
 	r.RemoteAddr = host
 
