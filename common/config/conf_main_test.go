@@ -1,6 +1,10 @@
 package config
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
 
 func TestRateLimitRequestsEnabledConfiguration(t *testing.T) {
 	t.Run("defaults to enabled", func(t *testing.T) {
@@ -45,4 +49,49 @@ func TestRateLimitRequestsEnabledConfiguration(t *testing.T) {
 			t.Fatal("expected byte-based rate limit buckets to remain enabled")
 		}
 	})
+}
+
+func TestLoadFromPathForTestsReloadsConfig(t *testing.T) {
+	originalPath := Path
+	originalInstance := instance
+	originalDomains := domains
+	originalSingletonLock := singletonLock
+	t.Cleanup(func() {
+		Path = originalPath
+		instance = originalInstance
+		domains = originalDomains
+		singletonLock = originalSingletonLock
+	})
+
+	dir := t.TempDir()
+	firstPath := filepath.Join(dir, "first.yaml")
+	secondPath := filepath.Join(dir, "second.yaml")
+	if err := os.WriteFile(
+		firstPath,
+		[]byte("database:\n  postgres: postgres://first\n"),
+		0600,
+	); err != nil {
+		t.Fatalf("failed to write first config: %v", err)
+	}
+	if err := os.WriteFile(
+		secondPath,
+		[]byte("database:\n  postgres: postgres://second\n"),
+		0600,
+	); err != nil {
+		t.Fatalf("failed to write second config: %v", err)
+	}
+
+	if err := LoadFromPathForTests(firstPath); err != nil {
+		t.Fatalf("failed to load first config: %v", err)
+	}
+	if got := Get().Database.Postgres; got != "postgres://first" {
+		t.Fatalf("expected first database, got %q", got)
+	}
+
+	if err := LoadFromPathForTests(secondPath); err != nil {
+		t.Fatalf("failed to load second config: %v", err)
+	}
+	if got := Get().Database.Postgres; got != "postgres://second" {
+		t.Fatalf("expected second database, got %q", got)
+	}
 }

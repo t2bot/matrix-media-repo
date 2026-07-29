@@ -196,6 +196,20 @@ func reloadConfig() (*MainRepoConfig, map[string]*DomainRepoConfig, error) {
 	return &c, domainConfs, nil
 }
 
+// LoadFromPathForTests replaces the active configuration for integration tests.
+func LoadFromPathForTests(configPath string) error {
+	Path = configPath
+
+	c, d, err := reloadConfig()
+	if err != nil {
+		return err
+	}
+	instance = c
+	domains = d
+	singletonLock = &sync.Once{}
+	return nil
+}
+
 func Get() *MainRepoConfig {
 	if instance == nil {
 		singletonLock.Do(func() {

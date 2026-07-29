@@ -14,6 +14,7 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/t2bot/matrix-media-repo/common/assets"
 	"github.com/t2bot/matrix-media-repo/common/config"
+	"github.com/t2bot/matrix-media-repo/database"
 	"github.com/t2bot/matrix-media-repo/homeserver_interop"
 	"github.com/t2bot/matrix-media-repo/homeserver_interop/mmr"
 	"github.com/t2bot/matrix-media-repo/homeserver_interop/synapse"
@@ -213,10 +214,15 @@ func MakeTestDeps() (*ContainerDeps, error) {
 	if err != nil {
 		return nil, err
 	}
-	config.Path = tmpPath
 	assets.SetupMigrations(config.DefaultMigrationsPath)
 	assets.SetupTemplates(config.DefaultTemplatesPath)
 	assets.SetupAssets(config.DefaultAssetsPath)
+	if err = database.ResetForTests(); err != nil {
+		return nil, err
+	}
+	if err = config.LoadFromPathForTests(tmpPath); err != nil {
+		return nil, err
+	}
 
 	return &ContainerDeps{
 		ctx:               ctx,
@@ -232,6 +238,9 @@ func MakeTestDeps() (*ContainerDeps, error) {
 }
 
 func (c *ContainerDeps) Teardown() {
+	if err := database.ResetForTests(); err != nil {
+		log.Fatalf("Error resetting test database: %s", err.Error())
+	}
 	for _, machine := range c.Machines {
 		machine.Teardown()
 	}

@@ -62,6 +62,17 @@ func Reload() {
 	GetInstance()
 }
 
+// ResetForTests closes and clears the process-wide database instance.
+func ResetForTests() error {
+	var err error
+	if instance != nil && instance.conn != nil {
+		err = instance.conn.Close()
+	}
+	instance = nil
+	singleton = &sync.Once{}
+	return err
+}
+
 // GetAccessorForTests
 // Deprecated: For tests only.
 func GetAccessorForTests() *sql.DB {
