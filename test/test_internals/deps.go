@@ -104,7 +104,10 @@ func MakeTestDeps() (*ContainerDeps, error) {
 		postgres.WithPassword("test1234"),
 		depNet.ApplyToContainer(),
 		testcontainers.WithWaitStrategy(
-			wait.ForLog("database system is ready to accept connections").WithOccurrence(2).WithStartupTimeout(5*time.Second)),
+			wait.ForAll(
+				wait.ForLog("database system is ready to accept connections").WithOccurrence(2),
+				wait.ForListeningPort("5432/tcp"),
+			).WithDeadline(30*time.Second)),
 	)
 	if err != nil {
 		return nil, err
@@ -116,23 +119,11 @@ func MakeTestDeps() (*ContainerDeps, error) {
 	// we can hardcode the port and most of the connection details because we're behind the docker network here
 	pgConnStr := fmt.Sprintf("host=%s port=5432 user=postgres password=test1234 dbname=mmr sslmode=disable", pgHost)
 
-	// Build the host-side connection string explicitly. On some CI runners, localhost resolves to
-	// IPv6 while Docker only publishes the mapped PostgreSQL port on IPv4.
-	pgExtHost, err := pgContainer.Host(ctx)
+	// This connection string is used by the test process after the mapped port is ready.
+	extPgConnStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
 	if err != nil {
 		return nil, err
 	}
-	if pgExtHost == "localhost" {
-		pgExtHost = "127.0.0.1"
-	}
-	pgExtPort, err := pgContainer.MappedPort(ctx, "5432/tcp")
-	if err != nil {
-		return nil, err
-	}
-	extPgConnStr := fmt.Sprintf(
-		"host=%s port=%d user=postgres password=test1234 dbname=mmr sslmode=disable",
-		pgExtHost, pgExtPort.Int(),
-	)
 
 	// Start a redis container
 	cwd, err := os.Getwd()
