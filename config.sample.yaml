@@ -514,6 +514,10 @@ rateLimit:
   # Set this to false if rate limiting is handled at a higher level or you don't want it enabled.
   enabled: true
 
+  # Set this to false to disable the IP-based request rate limit while keeping the byte-based
+  # download buckets enabled.
+  requestsEnabled: true
+
   # The number of requests per second before an IP will be rate limited. Must be a whole number.
   requestsPerSecond: 1
 

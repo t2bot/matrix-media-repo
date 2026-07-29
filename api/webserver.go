@@ -32,8 +32,8 @@ func Init() *sync.WaitGroup {
 
 	handler := buildRoutes()
 
-	if config.Get().RateLimit.Enabled {
-		logrus.Debug("Enabling rate limit")
+	if config.Get().RateLimit.Enabled && config.Get().RateLimit.RequestsEnabled {
+		logrus.Debug("Enabling request rate limit")
 		handler = tollbooth.LimitHandler(limits.GetRequestLimiter(), handler)
 	}
 

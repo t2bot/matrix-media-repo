@@ -50,6 +50,7 @@ type MainUrlPreviewsConfig struct {
 
 type RateLimitConfig struct {
 	RequestsPerSecond float64                `yaml:"requestsPerSecond"`
+	RequestsEnabled   bool                   `yaml:"requestsEnabled"`
 	Enabled           bool                   `yaml:"enabled"`
 	BurstCount        int                    `yaml:"burst"`
 	Buckets           RateLimitBucketsConfig `yaml:"buckets"`
