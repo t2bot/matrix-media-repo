@@ -47,6 +47,7 @@ func (o ThumbnailOpts) ImpliedDownloadOpts() pipeline_download.DownloadOpts {
 		FetchRemoteIfNeeded: o.FetchRemoteIfNeeded,
 		BlockForReadUntil:   o.BlockForReadUntil,
 		RecordOnly:          true,
+		AuthProvided:        o.AuthProvided,
 		AuthenticatedUserId: o.AuthenticatedUserId,
 	}
 }
@@ -55,7 +56,7 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Th
 	// Step 0: Check restrictions
 	if requiresAuth, err := restrictions.DoesMediaRequireAuth(ctx, origin, mediaId); err != nil {
 		return nil, nil, err
-	} else if requiresAuth && opts.AuthenticatedUserId == "" {
+	} else if requiresAuth && !opts.AuthProvided {
 		return nil, nil, common.ErrRestrictedAuth
 	}
 

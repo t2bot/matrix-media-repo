@@ -113,9 +113,10 @@ func NewDefaultMainConfig() MainRepoConfig {
 			ExpireDays: 0,
 		},
 		RateLimit: RateLimitConfig{
-			Enabled:           true,
-			RequestsPerSecond: 5,
-			BurstCount:        10,
+			Enabled:            true,
+			RequestsEnabled:    true,
+			RequestsPerSecond:  5,
+			BurstCount:         10,
 			Buckets: RateLimitBucketsConfig{
 				Downloads: RateLimitDownloadBucketConfig{
 					CapacityBytes:       524288000, // 500mb

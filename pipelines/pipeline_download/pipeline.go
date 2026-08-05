@@ -35,6 +35,7 @@ type DownloadOpts struct {
 	BlockForReadUntil   time.Duration
 	RecordOnly          bool
 	CanRedirect         bool
+	AuthProvided        bool
 	AuthenticatedUserId string
 }
 
@@ -46,7 +47,7 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 	// Step 0: Check restrictions
 	if requiresAuth, err := restrictions.DoesMediaRequireAuth(ctx, origin, mediaId); err != nil {
 		return nil, nil, err
-	} else if requiresAuth && opts.AuthenticatedUserId == "" {
+	} else if requiresAuth && !opts.AuthProvided {
 		return nil, nil, common.ErrRestrictedAuth
 	}
 
@@ -87,31 +88,63 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 		cancel()
 		return nil, nil, err
 	}
-	didBucketMaxSize := false
+	var downloadReservation *bucketReservation
+	releaseDownloadReservation := func() {
+		if downloadReservation == nil || downloadReservation.reservedBytes == 0 {
+			return
+		}
+		reservedBytes := downloadReservation.reservedBytes
+		if releaseErr := downloadReservation.Release(); releaseErr != nil {
+			ctx.Log.WithError(releaseErr).Error("Failed to release download bucket reservation")
+			sentry.CaptureException(releaseErr)
+			return
+		}
+		ctx.Log.Debugf(
+			"Released download bucket reservation ReservedBytes=%d RemainingBytes=%d CapacityBytes=%d",
+			reservedBytes,
+			limitBucket.Remaining(),
+			limitBucket.Capacity,
+		)
+	}
+	defer releaseDownloadReservation()
+
 	if limitBucket != nil {
 		if record == nil {
 			if opts.FetchRemoteIfNeeded {
 				// No record means we may need to download it. Track that in the bucket.
 				// We use the maximum size possible for now, until we actually know the file size.
-				if limitErr := limitBucket.Add(ctx.Config.Downloads.MaxSizeBytes); limitErr != nil {
+				downloadReservation, err = reserveBucket(limitBucket, ctx.Config.Downloads.MaxSizeBytes)
+				if err != nil {
 					cancel()
-					if errors.Is(limitErr, leaky.ErrBucketFull) {
+					if errors.Is(err, leaky.ErrBucketFull) {
 						ctx.Log.Debugf("Rate limited on MaxSizeBytes=%d/%d", ctx.Config.Downloads.MaxSizeBytes, limitBucket.Remaining())
 						return nil, nil, common.ErrRateLimitExceeded
 					}
-					return nil, nil, limitErr
+					return nil, nil, err
 				}
-				didBucketMaxSize = true
+				ctx.Log.Debugf(
+					"Reserved download bucket MaxSizeBytes=%d RemainingBytes=%d CapacityBytes=%d",
+					ctx.Config.Downloads.MaxSizeBytes,
+					limitBucket.Remaining(),
+					limitBucket.Capacity,
+				)
 			}
 		} else if !opts.RecordOnly && !record.Quarantined { // check that a media request body is going to be returned
-			if limitErr := limitBucket.Add(record.SizeBytes); limitErr != nil {
+			downloadReservation, err = reserveBucket(limitBucket, record.SizeBytes)
+			if err != nil {
 				cancel()
-				if errors.Is(limitErr, leaky.ErrBucketFull) {
+				if errors.Is(err, leaky.ErrBucketFull) {
 					ctx.Log.Debugf("Rate limited on SizeBytes=%d/%d", record.SizeBytes, limitBucket.Remaining())
 					return nil, nil, common.ErrRateLimitExceeded
 				}
-				return nil, nil, limitErr
+				return nil, nil, err
 			}
+			ctx.Log.Debugf(
+				"Reserved download bucket SizeBytes=%d RemainingBytes=%d CapacityBytes=%d",
+				record.SizeBytes,
+				limitBucket.Remaining(),
+				limitBucket.Capacity,
+			)
 		}
 	}
 
@@ -162,6 +195,7 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 		if notAllowedErr.ServerName != ctx.Request.Host {
 			ctx.Log.Debug("'Not allowed' error is for another server - retrying")
 			cancel()
+			releaseDownloadReservation()
 			return Execute(ctx, origin, mediaId, opts)
 		}
 	}
@@ -181,17 +215,24 @@ func Execute(ctx rcontext.RequestContext, origin string, mediaId string, opts Do
 			return nil, nil, errors.New("unexpected error: no viable record and no error condition")
 		}
 	}
-	if didBucketMaxSize && limitBucket != nil {
-		// We need to restore the difference between max size and actual size to the caller's bucket.
-		// If for some reason the downloaded file is larger than the max size, the bucket will be added to instead.
-		// We should only get a limit error when the file is larger than the max size.
-		if limitErr := limitBucket.Drain(ctx.Config.Downloads.MaxSizeBytes - record.SizeBytes); limitErr != nil {
+	if downloadReservation != nil {
+		// Finalize the reservation with the actual response size. Unknown media initially reserve the
+		// maximum size, while known media reserve their recorded size.
+		reservedBytes := downloadReservation.reservedBytes
+		if limitErr := downloadReservation.Commit(record.SizeBytes); limitErr != nil {
 			cancel()
 			if errors.Is(limitErr, leaky.ErrBucketFull) {
 				return nil, nil, common.ErrRateLimitExceeded
 			}
 			return nil, nil, limitErr
 		}
+		ctx.Log.Debugf(
+			"Committed download bucket ReservedBytes=%d SizeBytes=%d RemainingBytes=%d CapacityBytes=%d",
+			reservedBytes,
+			record.SizeBytes,
+			limitBucket.Remaining(),
+			limitBucket.Capacity,
+		)
 	}
 	if opts.RecordOnly {
 		if r != nil {

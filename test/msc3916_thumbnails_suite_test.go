@@ -72,7 +72,16 @@ func (s *MSC3916ThumbnailsSuite) TestClientThumbnails() {
 		"method": []string{"scale"},
 	}
 
-	raw, err := client2.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/thumbnail/%s/%s", origin, mediaId), qs, "", nil)
+	legacyThumbnailPath := fmt.Sprintf("/_matrix/media/v3/thumbnail/%s/%s", origin, mediaId)
+	raw, err := client2.DoRaw("GET", legacyThumbnailPath, qs, "", nil)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusNotFound, raw.StatusCode)
+
+	raw, err = client1.DoRaw("GET", legacyThumbnailPath, qs, "", nil)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, raw.StatusCode)
+
+	raw, err = client2.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/thumbnail/%s/%s", origin, mediaId), qs, "", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusUnauthorized, raw.StatusCode)
 

@@ -72,7 +72,7 @@ func writeMmrConfig(tmplArgs mmrTmplArgs) (string, error) {
 	return f.Name(), nil
 }
 
-func makeMmrInstances(ctx context.Context, count int, depNet *NetworkDep, tmplArgs mmrTmplArgs) ([]*mmrContainer, error) {
+func makeMmrInstances(ctx context.Context, count int, depNet *NetworkDep, tmplArgs mmrTmplArgs, hostAccessPorts []int) ([]*mmrContainer, error) {
 	// We need to relocate the signing key paths for a Docker mount
 	additionalMounts := make([]testcontainers.ContainerMount, 0)
 	for i, hs := range tmplArgs.Homeservers {
@@ -107,6 +107,7 @@ func makeMmrInstances(ctx context.Context, count int, depNet *NetworkDep, tmplAr
 					PrintBuildLog:  true,
 					KeepImage:      true,
 				},
+				HostAccessPorts: hostAccessPorts,
 				ExposedPorts: []string{"8000/tcp"},
 				Mounts: append([]testcontainers.ContainerMount{
 					testcontainers.BindMount(intTmpName, "/data/media-repo.yaml"),

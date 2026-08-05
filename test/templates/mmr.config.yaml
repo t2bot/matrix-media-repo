@@ -7,6 +7,7 @@ repo:
   logLevel: "debug"
   trustAnyForwardedAddress: false
   useForwardedHost: true
+  freezeUnauthenticatedMedia: true
 database:
   postgres: "{{.PgConnectionString}}"
   pool:
@@ -41,10 +42,13 @@ datastores:
       ssl: false
 rateLimit:
   enabled: false # we've got tests which intentionally spam
+federation:
+  disallowedNetworks: []
+  allowedNetworks: ["0.0.0.0/0"]
 urlPreviews:
   enabled: true
   maxPageSizeBytes: 10485760
-  previewUnsafeCertificates: false
+  previewUnsafeCertificates: true
   numWords: 50
   maxLength: 200
   numTitleWords: 30

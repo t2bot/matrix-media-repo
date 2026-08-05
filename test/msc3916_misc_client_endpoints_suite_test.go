@@ -1,49 +1,57 @@
 package test
 
 import (
+	"fmt"
 	"log"
+	"net"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"github.com/t2bot/matrix-media-repo/test/test_internals"
+	"github.com/testcontainers/testcontainers-go"
 )
 
 type MSC3916MiscClientEndpointsSuite struct {
 	suite.Suite
-	deps     *test_internals.ContainerDeps
-	htmlPage *test_internals.HostedFile
+	deps        *test_internals.ContainerDeps
+	htmlPage    *httptest.Server
+	htmlPageURL string
 }
 
 func (s *MSC3916MiscClientEndpointsSuite) SetupSuite() {
-	deps, err := test_internals.MakeTestDeps()
+	htmlPage := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		_, _ = w.Write([]byte("<h1>This is a test file</h1>"))
+	}))
+	htmlPagePort := htmlPage.Listener.Addr().(*net.TCPAddr).Port
+
+	deps, err := test_internals.MakeTestDeps(htmlPagePort)
 	if err != nil {
+		htmlPage.Close()
 		log.Fatal(err)
 	}
 	s.deps = deps
-
-	file, err := test_internals.ServeFile("index.html", deps, "<h1>This is a test file</h1>")
-	if err != nil {
-		log.Fatal(err)
-	}
-	s.htmlPage = file
+	s.htmlPage = htmlPage
+	s.htmlPageURL = fmt.Sprintf(
+		"https://%s:%d/index.html",
+		testcontainers.HostInternal,
+		htmlPagePort,
+	)
 }
 
 func (s *MSC3916MiscClientEndpointsSuite) TearDownSuite() {
-	if s.htmlPage != nil {
-		if s.T().Failed() {
-			staticLogs, err := s.htmlPage.Logs()
-			s.deps.DumpDebugLogs(staticLogs, err, -1, s.htmlPage.PublicUrl)
-		}
-		s.htmlPage.Teardown()
-	}
 	if s.deps != nil {
 		if s.T().Failed() {
 			s.deps.Debug()
 		}
 		s.deps.Teardown()
+	}
+	if s.htmlPage != nil {
+		s.htmlPage.Close()
 	}
 }
 
@@ -60,7 +68,7 @@ func (s *MSC3916MiscClientEndpointsSuite) TestPreviewUrlRequiresAuth() {
 	clientGuest := s.deps.Homeservers[0].GuestUsers[0].WithCsUrl(s.deps.Machines[0].HttpUrl)
 
 	qs := url.Values{
-		"url": []string{s.htmlPage.PublicUrl},
+		"url": []string{s.htmlPageURL},
 	}
 	raw, err := client2.DoRaw("GET", "/_matrix/client/v1/media/preview_url", qs, "", nil)
 	assert.NoError(t, err)
