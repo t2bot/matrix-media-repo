@@ -40,10 +40,10 @@ jobs:
           choco install pkgconfiglite
           git clone https://github.com/Microsoft/vcpkg.git
           cd vcpkg
+          git checkout 37ee1035430210394448cea04d60ee431df9ca0d
           .\bootstrap-vcpkg.bat
           .\vcpkg integrate install
-          .\vcpkg install libde265:x64-windows
-          .\vcpkg install libheif:x64-windows
+          .\vcpkg install "libheif[core]:x64-windows"
           cd ..
 
       - name: Dist

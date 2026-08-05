@@ -86,6 +86,7 @@ func DownloadMedia(r *http.Request, rctx rcontext.RequestContext, auth _apimeta.
 		BlockForReadUntil:   blockFor,
 		CanRedirect:         canRedirect,
 		RecordOnly:          recordOnly,
+		AuthProvided:        auth.IsAuthenticated(),
 		AuthenticatedUserId: auth.User.UserId,
 	})
 	if err != nil {

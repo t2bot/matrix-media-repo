@@ -10,8 +10,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/docker/go-connections/nat"
+	_ "github.com/lib/pq"
 	"github.com/t2bot/matrix-media-repo/common/assets"
 	"github.com/t2bot/matrix-media-repo/common/config"
+	"github.com/t2bot/matrix-media-repo/database"
 	"github.com/t2bot/matrix-media-repo/homeserver_interop"
 	"github.com/t2bot/matrix-media-repo/homeserver_interop/mmr"
 	"github.com/t2bot/matrix-media-repo/homeserver_interop/synapse"
@@ -33,7 +36,14 @@ type ContainerDeps struct {
 	Machines    []*mmrContainer
 }
 
-func MakeTestDeps() (*ContainerDeps, error) {
+func postgresConnectionString(host string, port int) string {
+	if host == "localhost" {
+		host = "127.0.0.1"
+	}
+	return fmt.Sprintf("host=%s port=%d user=postgres password=test1234 dbname=mmr sslmode=disable", host, port)
+}
+
+func MakeTestDeps(hostAccessPorts ...int) (*ContainerDeps, error) {
 	ctx := context.Background()
 
 	// Create a network
@@ -104,7 +114,12 @@ func MakeTestDeps() (*ContainerDeps, error) {
 		postgres.WithPassword("test1234"),
 		depNet.ApplyToContainer(),
 		testcontainers.WithWaitStrategy(
-			wait.ForLog("database system is ready to accept connections").WithOccurrence(2).WithStartupTimeout(5*time.Second)),
+			wait.ForAll(
+				wait.ForLog("database system is ready to accept connections").WithOccurrence(2),
+				wait.ForSQL("5432/tcp", "postgres", func(host string, port nat.Port) string {
+					return postgresConnectionString(host, port.Int())
+				}),
+			).WithDeadline(30*time.Second)),
 	)
 	if err != nil {
 		return nil, err
@@ -113,16 +128,18 @@ func MakeTestDeps() (*ContainerDeps, error) {
 	if err != nil {
 		return nil, err
 	}
-	// we can hardcode the port and most of the connection details because we're behind the docker network here
-	pgConnStr := fmt.Sprintf("host=%s port=5432 user=postgres password=test1234 dbname=mmr sslmode=disable", pgHost)
-	// the external connection string is a bit harder, because testcontainers wants to use `localhost` as a hostname,
-	// which prevents us from using the ConnectionString() function. We instead build the connection string manually
-	//pgExtPort, err := pgContainer.MappedPort(ctx, "5432/tcp")
-	extPgConnStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
+	pgConnStr := postgresConnectionString(pgHost, 5432)
+
+	pgExtHost, err := pgContainer.Host(ctx)
 	if err != nil {
 		return nil, err
 	}
-	//extPgConnStr := fmt.Sprintf("host=%s port=%d user=postgres password=test1234 dbname=mmr sslmode=disable", testcontainers.HostInternal, pgExtPort.Int())
+	pgExtPort, err := pgContainer.MappedPort(ctx, "5432/tcp")
+	if err != nil {
+		return nil, err
+	}
+	// wait.ForSQL validated this exact host-side connection before returning.
+	extPgConnStr := postgresConnectionString(pgExtHost, pgExtPort.Int())
 
 	// Start a redis container
 	cwd, err := os.Getwd()
@@ -182,7 +199,7 @@ func MakeTestDeps() (*ContainerDeps, error) {
 		PgConnectionString: pgConnStr,
 		S3Endpoint:         minioDep.Endpoint,
 	}
-	mmrs, err := makeMmrInstances(ctx, 2, depNet, tmplArgs)
+	mmrs, err := makeMmrInstances(ctx, 2, depNet, tmplArgs, hostAccessPorts)
 	if err != nil {
 		return nil, err
 	}
@@ -197,10 +214,15 @@ func MakeTestDeps() (*ContainerDeps, error) {
 	if err != nil {
 		return nil, err
 	}
-	config.Path = tmpPath
 	assets.SetupMigrations(config.DefaultMigrationsPath)
 	assets.SetupTemplates(config.DefaultTemplatesPath)
 	assets.SetupAssets(config.DefaultAssetsPath)
+	if err = database.ResetForTests(); err != nil {
+		return nil, err
+	}
+	if err = config.LoadFromPathForTests(tmpPath); err != nil {
+		return nil, err
+	}
 
 	return &ContainerDeps{
 		ctx:               ctx,
@@ -216,6 +238,9 @@ func MakeTestDeps() (*ContainerDeps, error) {
 }
 
 func (c *ContainerDeps) Teardown() {
+	if err := database.ResetForTests(); err != nil {
+		log.Fatalf("Error resetting test database: %s", err.Error())
+	}
 	for _, machine := range c.Machines {
 		machine.Teardown()
 	}

@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"os"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,11 +21,41 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 )
 
+type replaceableHandler struct {
+	mutex   sync.RWMutex
+	handler http.Handler
+}
+
+func (h *replaceableHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.mutex.RLock()
+	handler := h.handler
+	h.mutex.RUnlock()
+	if handler == nil {
+		http.NotFound(w, r)
+		return
+	}
+	handler.ServeHTTP(w, r)
+}
+
+func (h *replaceableHandler) Set(handler http.Handler) {
+	h.mutex.Lock()
+	defer h.mutex.Unlock()
+	h.handler = handler
+}
+
+func validateXMatrixAuthForDestination(request *http.Request, destination string) (string, error) {
+	requestCopy := request.Clone(request.Context())
+	requestCopy.Host = destination
+	return matrix.ValidateXMatrixAuth(requestCopy, true)
+}
+
 type MSC3916DownloadsSuite struct {
 	suite.Suite
 	deps         *test_internals.ContainerDeps
 	keyServer    *test_internals.HostedFile
 	keyServerKey *homeserver_interop.SigningKey
+	hostServer   *httptest.Server
+	hostHandler  *replaceableHandler
 }
 
 func (s *MSC3916DownloadsSuite) SetupSuite() {
@@ -33,11 +64,18 @@ func (s *MSC3916DownloadsSuite) SetupSuite() {
 		s.T().Fatal(err)
 	}
 
-	deps, err := test_internals.MakeTestDeps()
+	hostHandler := &replaceableHandler{}
+	hostServer := httptest.NewServer(hostHandler)
+	hostPort := hostServer.Listener.Addr().(*net.TCPAddr).Port
+
+	deps, err := test_internals.MakeTestDeps(hostPort)
 	if err != nil {
+		hostServer.Close()
 		log.Fatal(err)
 	}
 	s.deps = deps
+	s.hostHandler = hostHandler
+	s.hostServer = hostServer
 
 	s.keyServer, s.keyServerKey = test_internals.MakeKeyServer(deps)
 }
@@ -53,6 +91,18 @@ func (s *MSC3916DownloadsSuite) TearDownSuite() {
 		}
 		s.deps.Teardown()
 	}
+	if s.hostServer != nil {
+		s.hostServer.Close()
+	}
+}
+
+func (s *MSC3916DownloadsSuite) hostOrigin() string {
+	hostPort := s.hostServer.Listener.Addr().(*net.TCPAddr).Port
+	return fmt.Sprintf("%s:%d", testcontainers.HostInternal, hostPort)
+}
+
+func (s *MSC3916DownloadsSuite) setHostHandler(handler http.Handler) {
+	s.hostHandler.Set(handler)
 }
 
 func (s *MSC3916DownloadsSuite) TestClientDownloads() {
@@ -80,7 +130,17 @@ func (s *MSC3916DownloadsSuite) TestClientDownloads() {
 	assert.Equal(t, client1.ServerName, origin)
 	assert.NotEmpty(t, mediaId)
 
-	raw, err := client2.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/download/%s/%s", origin, mediaId), nil, "", nil)
+	legacyDownloadPath := fmt.Sprintf("/_matrix/media/v3/download/%s/%s", origin, mediaId)
+	raw, err := client2.DoRaw("GET", legacyDownloadPath, nil, "", nil)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusNotFound, raw.StatusCode)
+
+	raw, err = client1.DoRaw("GET", legacyDownloadPath, nil, "", nil)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, raw.StatusCode)
+	test_internals.AssertIsTestImage(t, raw.Body)
+
+	raw, err = client2.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/download/%s/%s", origin, mediaId), nil, "", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusUnauthorized, raw.StatusCode)
 	raw, err = client2.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/download/%s/%s/whatever.png", origin, mediaId), nil, "", nil)
@@ -150,23 +210,20 @@ func (s *MSC3916DownloadsSuite) TestFederationMakesAuthedDownloads() {
 
 	client1 := s.deps.Homeservers[0].UnprivilegedUsers[0].WithCsUrl(s.deps.Machines[0].HttpUrl)
 
-	origin := ""
-	mediaId := "abc123"
+	origin := s.hostOrigin()
+	mediaId := "authed-download"
 	err := matrix.TestsOnlyInjectSigningKey(s.deps.Homeservers[0].ServerName, s.deps.Homeservers[0].ExternalClientServerApiUrl)
 	assert.NoError(t, err)
-	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	s.setHostHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, fmt.Sprintf("/_matrix/federation/v1/media/download/%s", mediaId), r.URL.Path)
-		origin, err := matrix.ValidateXMatrixAuth(r, true)
-		assert.NoError(t, err)
-		assert.Equal(t, client1.ServerName, origin)
+		requestOrigin, validationErr := validateXMatrixAuthForDestination(r, origin)
+		assert.NoError(t, validationErr)
+		assert.Equal(t, client1.ServerName, requestOrigin)
 		w.Header().Set("Content-Type", "multipart/mixed; boundary=gc0p4Jq0M2Yt08jU534c0p")
 		_, _ = w.Write([]byte("--gc0p4Jq0M2Yt08jU534c0p\nContent-Type: application/json\n\n{}\n\n--gc0p4Jq0M2Yt08jU534c0p\nContent-Type: text/plain\n\nThis media is plain text. Maybe somebody used it as a paste bin.\n\n--gc0p4Jq0M2Yt08jU534c0p"))
 	}))
-	defer testServer.Close()
-
-	u, _ := url.Parse(testServer.URL)
-	origin = fmt.Sprintf("%s:%s", testcontainers.HostInternal, u.Port())
-	config.AddDomainForTesting(testcontainers.HostInternal, nil) // no port for config lookup
+	defer s.setHostHandler(nil)
+	config.AddDomainForTesting(origin, nil)
 
 	raw, err := client1.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/download/%s/%s", origin, mediaId), nil, "", nil)
 	assert.NoError(t, err)
@@ -178,37 +235,31 @@ func (s *MSC3916DownloadsSuite) TestFederationFollowsRedirects() {
 
 	client1 := s.deps.Homeservers[0].UnprivilegedUsers[0].WithCsUrl(s.deps.Machines[0].HttpUrl)
 
-	origin := ""
-	mediaId := "abc123"
+	origin := s.hostOrigin()
+	mediaId := "redirect-download"
 	fileContents := "hello world! This is a test file"
 	err := matrix.TestsOnlyInjectSigningKey(s.deps.Homeservers[0].ServerName, s.deps.Homeservers[0].ExternalClientServerApiUrl)
 	assert.NoError(t, err)
 
-	// Mock CDN (2nd hop)
-	testServer2 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/cdn/file", r.URL.Path)
-		w.Header().Set("Content-Type", "text/plain")
-		_, _ = w.Write([]byte(fileContents))
-	}))
-	defer testServer2.Close()
-	u, _ := url.Parse(testServer2.URL)
 	//goland:noinspection HttpUrlsUsage
-	redirectUrl := fmt.Sprintf("http://%s:%s/cdn/file", testcontainers.HostInternal, u.Port())
-
-	// Mock homeserver (1st hop)
-	testServer1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, fmt.Sprintf("/_matrix/federation/v1/media/download/%s", mediaId), r.URL.Path)
-		origin, err := matrix.ValidateXMatrixAuth(r, true)
-		assert.NoError(t, err)
-		assert.Equal(t, client1.ServerName, origin)
-		w.Header().Set("Content-Type", "multipart/mixed; boundary=gc0p4Jq0M2Yt08jU534c0p")
-		_, _ = w.Write([]byte(fmt.Sprintf("--gc0p4Jq0M2Yt08jU534c0p\nContent-Type: application/json\n\n{}\n\n--gc0p4Jq0M2Yt08jU534c0p\nLocation: %s\n\n-gc0p4Jq0M2Yt08jU534c0p", redirectUrl)))
+	redirectUrl := fmt.Sprintf("http://%s/cdn/file", origin)
+	s.setHostHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/cdn/file":
+			w.Header().Set("Content-Type", "text/plain")
+			_, _ = w.Write([]byte(fileContents))
+		case fmt.Sprintf("/_matrix/federation/v1/media/download/%s", mediaId):
+			requestOrigin, validationErr := validateXMatrixAuthForDestination(r, origin)
+			assert.NoError(t, validationErr)
+			assert.Equal(t, client1.ServerName, requestOrigin)
+			w.Header().Set("Content-Type", "multipart/mixed; boundary=gc0p4Jq0M2Yt08jU534c0p")
+			_, _ = w.Write([]byte(fmt.Sprintf("--gc0p4Jq0M2Yt08jU534c0p\nContent-Type: application/json\n\n{}\n\n--gc0p4Jq0M2Yt08jU534c0p\nLocation: %s\n\n-gc0p4Jq0M2Yt08jU534c0p", redirectUrl)))
+		default:
+			http.NotFound(w, r)
+		}
 	}))
-	defer testServer1.Close()
-
-	u, _ = url.Parse(testServer1.URL)
-	origin = fmt.Sprintf("%s:%s", testcontainers.HostInternal, u.Port())
-	config.AddDomainForTesting(testcontainers.HostInternal, nil) // no port for config lookup
+	defer s.setHostHandler(nil)
+	config.AddDomainForTesting(origin, nil)
 
 	raw, err := client1.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/download/%s/%s", origin, mediaId), nil, "", nil)
 	assert.NoError(t, err)
@@ -260,33 +311,31 @@ func (s *MSC3916DownloadsSuite) TestFederationMakesAuthedDownloadsAndFallsBack()
 
 	client1 := s.deps.Homeservers[0].UnprivilegedUsers[0].WithCsUrl(s.deps.Machines[0].HttpUrl)
 
-	origin := ""
-	mediaId := "abc123"
+	origin := s.hostOrigin()
+	mediaId := "fallback-download"
 	fileContents := "hello world! This is a test file"
 	err := matrix.TestsOnlyInjectSigningKey(s.deps.Homeservers[0].ServerName, s.deps.Homeservers[0].ExternalClientServerApiUrl)
 	assert.NoError(t, err)
 
 	reqNum := 0
-	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	s.setHostHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if reqNum == 0 {
-			origin, err := matrix.ValidateXMatrixAuth(r, true)
-			assert.NoError(t, err)
-			assert.Equal(t, client1.ServerName, origin)
+			requestOrigin, validationErr := validateXMatrixAuthForDestination(r, origin)
+			assert.NoError(t, validationErr)
+			assert.Equal(t, client1.ServerName, requestOrigin)
 			assert.Equal(t, fmt.Sprintf("/_matrix/federation/v1/media/download/%s", mediaId), r.URL.Path)
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusNotFound)
 			_, _ = w.Write([]byte("{\"errcode\":\"M_UNRECOGNIZED\"}"))
 			reqNum++
-		} else {
-			assert.Equal(t, fmt.Sprintf("/_matrix/media/v3/download/%s/%s", origin, mediaId), r.URL.Path)
+			return
 		}
+		assert.Equal(t, fmt.Sprintf("/_matrix/media/v3/download/%s/%s", origin, mediaId), r.URL.Path)
 		w.Header().Set("Content-Type", "text/plain")
 		_, _ = w.Write([]byte(fileContents))
 	}))
-	defer testServer.Close()
-
-	u, _ := url.Parse(testServer.URL)
-	origin = fmt.Sprintf("%s:%s", testcontainers.HostInternal, u.Port())
-	config.AddDomainForTesting(testcontainers.HostInternal, nil) // no port for config lookup
+	defer s.setHostHandler(nil)
+	config.AddDomainForTesting(origin, nil)
 
 	raw, err := client1.DoRaw("GET", fmt.Sprintf("/_matrix/client/v1/media/download/%s/%s", origin, mediaId), nil, "", nil)
 	assert.NoError(t, err)
