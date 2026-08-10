@@ -3,10 +3,9 @@ package i
 import (
 	"errors"
 	"image"
-	_ "image/png"
+	"image/png"
 	"io"
 
-	"github.com/disintegration/imaging"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
 	"github.com/t2bot/matrix-media-repo/thumbnailing/u"
@@ -28,7 +27,9 @@ func (d pngGenerator) matches(img io.Reader, contentType string) bool {
 }
 
 func (d pngGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx rcontext.RequestContext) (bool, int, int, error) {
-	i, _, err := image.DecodeConfig(b)
+	// Prefer image/png over image.DecodeConfig: kettek/apng registers the same PNG
+	// magic and can steal static PNG decoding (leading to apng checksum errors).
+	i, err := png.DecodeConfig(b)
 	if err != nil {
 		return false, 0, 0, err
 	}
@@ -36,7 +37,7 @@ func (d pngGenerator) GetOriginDimensions(b io.Reader, contentType string, ctx r
 }
 
 func (d pngGenerator) GenerateThumbnail(b io.Reader, contentType string, width int, height int, method string, animated bool, ctx rcontext.RequestContext) (*m.Thumbnail, error) {
-	src, err := imaging.Decode(b)
+	src, err := png.Decode(b)
 	if err != nil {
 		return nil, errors.New("png: error decoding thumbnail: " + err.Error())
 	}

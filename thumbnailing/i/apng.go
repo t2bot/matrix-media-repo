@@ -1,14 +1,14 @@
 package i
 
 import (
-	"bytes"
 	"errors"
 	"image"
 	"image/draw"
 	"io"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/kettek/apng"
+	"github.com/sapphi-red/midec"
+	_ "github.com/sapphi-red/midec/png"
 	"github.com/t2bot/matrix-media-repo/common/rcontext"
 	"github.com/t2bot/matrix-media-repo/thumbnailing/m"
 	"github.com/t2bot/matrix-media-repo/thumbnailing/u"
@@ -113,54 +113,11 @@ func init() {
 }
 
 func isAnimatedPNG(r io.Reader) bool {
-	// APNG is signaled by an acTL chunk before the first IDAT chunk.
-	// Parse chunk headers instead of scanning raw bytes to avoid false positives
-	// from compressed image data containing the "acTL" byte sequence.
-	pngSig := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}
-	idat := []byte{0x49, 0x44, 0x41, 0x54}
-	actl := []byte{0x61, 0x63, 0x54, 0x4C}
-
-	sigBuf := make([]byte, len(pngSig))
-	if _, err := io.ReadFull(r, sigBuf); err != nil {
-		if !errors.Is(err, io.EOF) && !errors.Is(err, io.ErrUnexpectedEOF) {
-			sentry.CaptureException(err)
-		}
+	// Use midec's APNG detector (acTL before IDAT) instead of custom chunk parsing.
+	// Static PNGs are rejected without attempting a full image decode.
+	ok, err := midec.IsAnimated(r)
+	if err != nil {
 		return false
 	}
-	if !bytes.Equal(sigBuf, pngSig) {
-		return false
-	}
-
-	lenBuf := make([]byte, 4)
-	chunkTypeBuf := make([]byte, 4)
-	for {
-		if _, err := io.ReadFull(r, lenBuf); err != nil {
-			if !errors.Is(err, io.EOF) && !errors.Is(err, io.ErrUnexpectedEOF) {
-				sentry.CaptureException(err)
-			}
-			return false
-		}
-		if _, err := io.ReadFull(r, chunkTypeBuf); err != nil {
-			if !errors.Is(err, io.EOF) && !errors.Is(err, io.ErrUnexpectedEOF) {
-				sentry.CaptureException(err)
-			}
-			return false
-		}
-
-		if bytes.Equal(chunkTypeBuf, actl) {
-			return true
-		}
-		if bytes.Equal(chunkTypeBuf, idat) {
-			return false
-		}
-
-		chunkLen := (uint32(lenBuf[0]) << 24) | (uint32(lenBuf[1]) << 16) | (uint32(lenBuf[2]) << 8) | uint32(lenBuf[3])
-		// skip chunk payload + CRC
-		if _, err := io.CopyN(io.Discard, r, int64(chunkLen)+4); err != nil {
-			if !errors.Is(err, io.EOF) && !errors.Is(err, io.ErrUnexpectedEOF) {
-				sentry.CaptureException(err)
-			}
-			return false
-		}
-	}
+	return ok
 }
