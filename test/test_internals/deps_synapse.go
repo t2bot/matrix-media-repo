@@ -16,7 +16,6 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/docker/go-connections/nat"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -99,7 +98,6 @@ func MakeSynapse(domainName string, depNet *NetworkDep, signingKeyFilePath strin
 	}
 
 	// Start synapse
-	p, _ := nat.NewPort("tcp", "8008")
 	d, err := os.MkdirTemp(os.TempDir(), "mmr-synapse")
 	if err != nil {
 		return nil, err
@@ -122,7 +120,7 @@ func MakeSynapse(domainName string, depNet *NetworkDep, signingKeyFilePath strin
 				testcontainers.BindMount(path.Join(cwd, ".", "test", "templates", "synapse.log.config"), "/data/log.config"),
 				testcontainers.BindMount(d, "/app"),
 			},
-			WaitingFor: wait.ForHTTP("/health").WithPort(p),
+			WaitingFor: wait.ForHTTP("/health").WithPort("8008/tcp"),
 			Networks:   []string{depNet.NetId},
 		},
 		Started: true,
@@ -146,7 +144,7 @@ func MakeSynapse(domainName string, depNet *NetworkDep, signingKeyFilePath strin
 	}
 	//goland:noinspection HttpUrlsUsage
 	intCsApiUrl := fmt.Sprintf("http://%s:%d", synIp, 8008)
-	extCsApiUrl := fmt.Sprintf("http://%s:%d", synHost, synPort.Int())
+	extCsApiUrl := fmt.Sprintf("http://%s:%d", synHost, synPort.Num())
 
 	// Register the accounts
 	adminUsers := make([]*MatrixClient, 0)
