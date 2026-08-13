@@ -11,7 +11,6 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/docker/go-connections/nat"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
@@ -97,7 +96,6 @@ func makeMmrInstances(ctx context.Context, count int, depNet *NetworkDep, tmplAr
 		if err != nil {
 			return nil, err
 		}
-		p, _ := nat.NewPort("tcp", "8000")
 		container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 			ContainerRequest: testcontainers.ContainerRequest{
 				FromDockerfile: testcontainers.FromDockerfile{
@@ -116,7 +114,7 @@ func makeMmrInstances(ctx context.Context, count int, depNet *NetworkDep, tmplAr
 					"MEDIA_REPO_HTTP_ONLY_FEDERATION": "true",
 				},
 				Networks:   []string{depNet.NetId},
-				WaitingFor: wait.ForHTTP("/healthz").WithPort(p),
+				WaitingFor: wait.ForHTTP("/healthz").WithPort("8000/tcp"),
 				//HostConfigModifier: func(c *container.HostConfig) {
 				//	c.ExtraHosts = append(c.ExtraHosts, "host.docker.internal:host-gateway")
 				//},
@@ -137,7 +135,7 @@ func makeMmrInstances(ctx context.Context, count int, depNet *NetworkDep, tmplAr
 			return nil, err
 		}
 		//goland:noinspection HttpUrlsUsage
-		csApiUrl := fmt.Sprintf("http://%s:%d", mmrHost, mmrPort.Int())
+		csApiUrl := fmt.Sprintf("http://%s:%d", mmrHost, mmrPort.Num())
 
 		// Create the container object
 		mmrs = append(mmrs, &mmrContainer{

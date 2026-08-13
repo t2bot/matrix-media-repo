@@ -10,7 +10,6 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/docker/go-connections/nat"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
@@ -31,7 +30,6 @@ func MakeMinio(depNet *NetworkDep) (*MinioDep, error) {
 	ctx := context.Background()
 
 	// Start the minio container
-	consolePort, _ := nat.NewPort("tcp", "9090")
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
 			Image:        "quay.io/minio/minio:latest",
@@ -40,7 +38,7 @@ func MakeMinio(depNet *NetworkDep) (*MinioDep, error) {
 				"MINIO_ROOT_USER":     "admin",
 				"MINIO_ROOT_PASSWORD": "test1234",
 			},
-			WaitingFor: wait.ForHTTP("/login").WithPort(consolePort),
+			WaitingFor: wait.ForHTTP("/login").WithPort("9090/tcp"),
 			Networks:   []string{depNet.NetId},
 			Cmd:        []string{"server", "/data", "--console-address", ":9090"},
 			// we don't bind any volumes because we don't care if we lose the data
@@ -119,7 +117,7 @@ func MakeMinio(depNet *NetworkDep) (*MinioDep, error) {
 		ctx:              ctx,
 		container:        container,
 		Endpoint:         fmt.Sprintf("%s:%d", minioIp, 9000), // we're behind the network
-		ExternalEndpoint: fmt.Sprintf("%s:%d", minioHost, minioPort.Int()),
+		ExternalEndpoint: fmt.Sprintf("%s:%d", minioHost, minioPort.Num()),
 	}, nil
 }
 

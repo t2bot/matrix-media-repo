@@ -188,7 +188,7 @@ func MakeTestDeps() (*ContainerDeps, error) {
 	}
 
 	// Generate a config that's safe to use in tests, for inspecting state of the containers
-	tmplArgs.RedisAddr = fmt.Sprintf("%s:%d", redisHost, redisPort.Int())
+	tmplArgs.RedisAddr = fmt.Sprintf("%s:%d", redisHost, redisPort.Num())
 	tmplArgs.PgConnectionString = extPgConnStr
 	tmplArgs.S3Endpoint = minioDep.ExternalEndpoint
 	tmplArgs.Homeservers[0].ClientServerApiUrl = syn1.ExternalClientServerApiUrl
