@@ -43,7 +43,6 @@ require (
 
 require (
 	github.com/didip/tollbooth/v7 v7.0.2
-	github.com/docker/go-connections v0.8.1
 	github.com/go-redsync/redsync/v4 v4.17.0
 	github.com/h2non/filetype v1.1.3
 	github.com/julienschmidt/httprouter v1.3.0
@@ -80,6 +79,7 @@ require (
 	github.com/cpuguy83/dockercfg v0.3.2 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/distribution/reference v0.6.0 // indirect
+	github.com/docker/go-connections v0.8.1 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dsoprea/go-utility/v2 v2.0.0-20221003172846-a3e1774ef349 // indirect
 	github.com/ebitengine/purego v0.10.2 // indirect
