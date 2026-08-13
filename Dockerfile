@@ -10,7 +10,7 @@ WORKDIR /opt
 RUN apk add --no-cache build-base libtool cmake libjpeg-turbo-dev x265-dev ffmpeg-dev zlib-dev
 RUN git clone https://github.com/strukturag/libheif.git
 WORKDIR /opt/libheif
-RUN git checkout v1.19.5
+RUN git checkout v1.23.1
 RUN mkdir build
 WORKDIR /opt/libheif/build
 RUN cmake --preset=release ..
@@ -41,7 +41,7 @@ WORKDIR /opt
 RUN apk add --no-cache git libde265-dev musl-dev build-base libtool cmake libjpeg-turbo-dev x265-dev ffmpeg-dev zlib-dev
 RUN git clone https://github.com/strukturag/libheif.git
 WORKDIR /opt/libheif
-RUN git checkout v1.19.5
+RUN git checkout v1.23.1
 RUN mkdir build
 WORKDIR /opt/libheif/build
 RUN cmake --preset=release ..
